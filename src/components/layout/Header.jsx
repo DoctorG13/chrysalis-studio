@@ -19,58 +19,84 @@ export default function Header({
   return (
     <header
       style={{
+        height: 90,
         background: "#FFFFFF",
-        borderBottom: "1px solid #E5E5E5",
-        padding: "20px 30px",
+        borderBottom: "1px solid #E8E8E8",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
+        padding: "0 32px",
       }}
     >
       <div>
         <h1
           style={{
             margin: 0,
-            color: "#2F3A3F",
             fontSize: 30,
+            color: "#2F3A3F",
+            fontWeight: "700",
           }}
         >
-          🦋 {title}
+          {title}
         </h1>
 
-        <p
-          style={{
-            margin: "8px 0 0 0",
-            color: "#777",
-          }}
-        >
-          {greeting}, {user}
-        </p>
-      </div>
+        <div
+  style={{
+    marginTop: 6,
+    fontSize: 15,
+    color: "#666",
+    fontWeight: "500",
+  }}
+>
+  {greeting}, {user}. Welcome back to your studio.
+</div>
 
-      <div
-        style={{
-          textAlign: "right",
-        }}
-      >
         <div
           style={{
-            fontWeight: "bold",
-            color: "#2F3A3F",
+            marginTop: 2,
+            fontSize: 13,
+            color: "#999",
           }}
         >
           {today}
         </div>
+      </div>
 
-        <div
-          style={{
-            marginTop: 10,
-            fontSize: 20,
-          }}
+      <div
+        style={{
+          display: "flex",
+          gap: 18,
+          fontSize: 22,
+        }}
+      >
+        <button
+          style={iconButton}
         >
-          🔍 &nbsp; 🔔 &nbsp; 👤
-        </div>
+          🔍
+        </button>
+
+        <button
+          style={iconButton}
+        >
+          🔔
+        </button>
+
+        <button
+          style={iconButton}
+        >
+          👤
+        </button>
       </div>
     </header>
   );
 }
+
+const iconButton = {
+  width: 42,
+  height: 42,
+  borderRadius: 10,
+  border: "none",
+  background: "#F7F7F7",
+  cursor: "pointer",
+  fontSize: 20,
+};

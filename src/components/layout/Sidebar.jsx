@@ -15,41 +15,44 @@ export default function Sidebar({
   return (
     <aside
       style={{
-        width: 260,
+        width: 240,
         background: "#2F3A3F",
         color: "white",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: 24,
+        padding: 20,
       }}
     >
       <div>
         <div
-          style={{
-            marginBottom: 40,
-          }}
-        >
+  style={{
+    marginBottom: 40,
+    textAlign: "center",
+  }}
+>
           <h1
             style={{
               margin: 0,
-              fontSize: 28,
+              fontSize: 30,
+              fontWeight: "700",
             }}
           >
             🦋 Chrysalis
           </h1>
 
           <p
-            style={{
-              color: "#CCCCCC",
-              marginTop: 10,
-              lineHeight: 1.5,
-            }}
-          >
-            Dressmaker Business
-            <br />
-            Operating System
-          </p>
+  style={{
+    color: "#CCCCCC",
+    marginTop: 10,
+    lineHeight: 1.5,
+    fontSize: 14,
+  }}
+>
+  Professional Dressmaker
+  <br />
+  Business System
+</p>
         </div>
 
         {menu.map((item) => (
