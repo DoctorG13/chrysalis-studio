@@ -6,6 +6,7 @@ import StatCard from "../components/common/StatCard";
 import SlidePanel from "../components/common/SlidePanel";
 import TextInput from "../components/common/TextInput";
 import ClientForm from "../components/clients/ClientForm";
+import ClientList from "../components/clients/ClientList";
 
 export default function StudioPage({
   clients,
@@ -138,6 +139,8 @@ export default function StudioPage({
           </div>
         </Card>
       </div>
+
+      <ClientList clients={clients} />
 
       <SlidePanel open={showClientPanel}>
   <ClientForm
