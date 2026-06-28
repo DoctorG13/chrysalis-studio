@@ -1,20 +1,25 @@
 export default function SlidePanel({
   open,
+  onClose,
   children,
 }) {
+  
   return (
     <>
       <div
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,0.25)",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity .3s",
-          zIndex: 999,
-        }}
-      />
+  onClick={open ? onClose : undefined}
+  style={{
+    position: "fixed",
+    inset: 0,
+    background: "rgba(47,58,63,0.35)",
+    backdropFilter: "blur(2px)",
+    opacity: open ? 1 : 0,
+    pointerEvents: open ? "auto" : "none",
+    transition: "opacity .3s ease",
+    zIndex: 999,
+    cursor: "pointer",
+  }}
+/>
 
       <div
         style={{
