@@ -6,24 +6,28 @@ import Header from "./components/layout/Header";
 import StudioPage from "./pages/StudioPage";
 
 export default function App() {
-const [currentPage, setCurrentPage] = useState("studio");
+  const [currentPage, setCurrentPage] = useState("studio");
+  const [clients, setClients] = useState([]);
 
   return (
     <AppShell
-  sidebar={
-    <Sidebar
-      currentPage={currentPage}
-      setCurrentPage={setCurrentPage}
-    />
-  }
-  header={
-    <Header
-      title="Chrysalis Studio"
-      user="Donna"
-    />
-  }
->
-  <StudioPage />
-</AppShell>
+      sidebar={
+        <Sidebar
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+        />
+      }
+      header={
+        <Header
+          title="Chrysalis Studio"
+          user="Donna"
+        />
+      }
+    >
+      <StudioPage
+        clients={clients}
+        setClients={setClients}
+      />
+    </AppShell>
   );
 }

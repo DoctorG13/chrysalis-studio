@@ -4,21 +4,23 @@ export default function StatCard({
   title,
   value,
   subtitle,
+  icon = "🦋",
 }) {
   return (
     <Card>
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          gap: 6,
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 15,
         }}
       >
         <div
           style={{
-            fontSize: 15,
-            color: "#777",
-            fontWeight: 500,
+            fontSize: 16,
+            color: "#666",
+            fontWeight: 600,
           }}
         >
           {title}
@@ -26,25 +28,34 @@ export default function StatCard({
 
         <div
           style={{
-            fontSize: 34,
-            fontWeight: "700",
-            color: "#2F3A3F",
+            fontSize: 28,
           }}
         >
-          {value}
+          {icon}
         </div>
-
-        {subtitle && (
-          <div
-            style={{
-              fontSize: 13,
-              color: "#999",
-            }}
-          >
-            {subtitle}
-          </div>
-        )}
       </div>
+
+      <div
+        style={{
+          fontSize: 36,
+          fontWeight: "700",
+          color: "#2F3A3F",
+        }}
+      >
+        {value}
+      </div>
+
+      {subtitle && (
+        <div
+          style={{
+            marginTop: 8,
+            color: "#999",
+            fontSize: 13,
+          }}
+        >
+          {subtitle}
+        </div>
+      )}
     </Card>
   );
 }
