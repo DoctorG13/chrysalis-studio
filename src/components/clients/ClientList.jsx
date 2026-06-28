@@ -1,27 +1,20 @@
+import { useState } from "react";
+
 import Card from "../common/Card";
 import ClientCard from "./ClientCard";
 
-export default function ClientList({ clients }) {
-  if (clients.length === 0) {
-    return (
-      <Card title="Clients">
-        <p
-          style={{
-            margin: 0,
-            color: "#777",
-            lineHeight: 1.7,
-          }}
-        >
-          No clients have been added yet.
+export default function ClientList({
+  clients,
+  onClientClick,
+}) {
+  const [search, setSearch] = useState("");
 
-          <br />
-          <br />
+  const filteredClients = clients.filter((client) => {
+    const searchText =
+      `${client.firstName} ${client.lastName} ${client.phone} ${client.email}`.toLowerCase();
 
-          Click <strong>+ New Client</strong> to create your first client.
-        </p>
-      </Card>
-    );
-  }
+    return searchText.includes(search.toLowerCase());
+  });
 
   return (
     <div
@@ -29,28 +22,49 @@ export default function ClientList({ clients }) {
         marginTop: 30,
       }}
     >
-      <h2
-        style={{
-          color: "#2F3A3F",
-          marginBottom: 20,
-        }}
-      >
-        Clients
-      </h2>
+      <Card title="Clients">
+        <input
+          type="text"
+          placeholder="🔍 Search clients..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "12px 14px",
+            borderRadius: 10,
+            border: "1px solid #DDD",
+            marginBottom: 20,
+            fontSize: 15,
+            boxSizing: "border-box",
+          }}
+        />
 
-      <div
-        style={{
-          display: "grid",
-          gap: 20,
-        }}
-      >
-        {clients.map((client) => (
-          <ClientCard
-            key={client.id}
-            client={client}
-          />
-        ))}
-      </div>
+        {filteredClients.length === 0 ? (
+          <p
+            style={{
+              color: "#777",
+              margin: 0,
+            }}
+          >
+            No matching clients.
+          </p>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gap: 16,
+            }}
+          >
+            {filteredClients.map((client) => (
+              <ClientCard
+                key={client.id}
+                client={client}
+                onClick={onClientClick}
+              />
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
