@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import SlidePanel from "../components/common/SlidePanel";
+import Button from "../components/common/Button";
 
 import ClientForm from "../components/clients/ClientForm";
 import ClientList from "../components/clients/ClientList";
@@ -79,16 +80,42 @@ export default function StudioPage({
         onClose={() => setShowClientDetails(false)}
       >
         {selectedClient && (
-          <>
-            <h2>
-              {selectedClient.firstName} {selectedClient.lastName}
-            </h2>
+  <>
+    <h2
+      style={{
+        marginTop: 0,
+        color: "#2F3A3F",
+      }}
+    >
+      👤 {selectedClient.firstName} {selectedClient.lastName}
+    </h2>
 
-            <p>📞 {selectedClient.phone}</p>
+    <p>📞 {selectedClient.phone}</p>
 
-            <p>✉️ {selectedClient.email}</p>
-          </>
-        )}
+    <p>✉️ {selectedClient.email}</p>
+
+    <hr
+      style={{
+        margin: "30px 0",
+      }}
+    />
+
+    <h3>Garments</h3>
+
+    <p
+      style={{
+        color: "#777",
+      }}
+    >
+      No garments have been added yet.
+    </p>
+
+    <Button>
+      + New Garment
+    </Button>
+  </>
+)}
+
       </SlidePanel>
     </>
   );
