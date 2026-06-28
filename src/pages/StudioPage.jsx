@@ -9,6 +9,8 @@ import ClientForm from "../components/clients/ClientForm";
 import ClientList from "../components/clients/ClientList";
 import WelcomeCard from "../components/dashboard/WelcomeCard";
 import StatsGrid from "../components/dashboard/StatsGrid";
+import QuickActions from "../components/dashboard/QuickActions";
+
 
 export default function StudioPage({
   clients,
@@ -47,33 +49,10 @@ export default function StudioPage({
 
       <WelcomeCard clients={clients} />
 
-      <div
-        style={{
-          marginTop: 30,
-        }}
-      >
-        <Card title="Quick Actions">
-          <div
-            style={{
-              display: "flex",
-              gap: 15,
-              flexWrap: "wrap",
-            }}
-          >
-            <Button onClick={() => setShowClientPanel(true)}>
-              + New Client
-            </Button>
+      <QuickActions
+  onNewClient={() => setShowClientPanel(true)}
+/>
 
-            <Button>
-              + New Garment
-            </Button>
-
-            <Button>
-              + Appointment
-            </Button>
-          </div>
-        </Card>
-      </div>
 
       <ClientList clients={clients} />
 
