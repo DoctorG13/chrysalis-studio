@@ -1,33 +1,35 @@
 import GarmentCard from "./GarmentCard";
 
 export default function GarmentList({
-  garments,
+  garments = [],
+  onGarmentClick,
 }) {
   if (garments.length === 0) {
-    return null;
+    return (
+      <p
+        style={{
+          color: "#777",
+        }}
+      >
+        No garments have been added yet.
+      </p>
+    );
   }
 
   return (
     <div
       style={{
-        marginTop: 30,
+        display: "grid",
+        gap: 16,
       }}
     >
-      <h2>Garments</h2>
-
-      <div
-        style={{
-          display: "grid",
-          gap: 20,
-        }}
-      >
-        {garments.map((garment) => (
-          <GarmentCard
-            key={garment.id}
-            garment={garment}
-          />
-        ))}
-      </div>
+      {garments.map((garment) => (
+        <GarmentCard
+          key={garment.id}
+          garment={garment}
+          onClick={onGarmentClick}
+        />
+      ))}
     </div>
   );
 }

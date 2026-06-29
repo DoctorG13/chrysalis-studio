@@ -1,27 +1,29 @@
 export function createGarment({
-  clientId,
-  name,
-  type,
-}) {
+  name = "",
+  type = "",
+  status = "Quote",
+  dueDate = "",
+  notes = "",
+} = {}) {
   return {
     id: crypto.randomUUID(),
-
-    clientId,
 
     name,
 
     type,
 
-    status: "New",
+    status,
 
-    created: new Date(),
+    dueDate,
 
-    fittings: [],
+    notes,
 
     measurements: [],
 
+    fittings: [],
+
     payments: [],
 
-    notes: [],
+    photos: [],
   };
 }
