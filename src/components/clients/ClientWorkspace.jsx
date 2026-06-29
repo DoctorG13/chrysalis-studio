@@ -111,19 +111,19 @@ export default function ClientWorkspace({
         }}
       />
 
-      <h3>Garments</h3>
+      <h3>Jobs</h3>
 
-      <p
-        style={{
-          color: "#777",
-        }}
-      >
-        No garments have been added yet.
-      </p>
+<p
+  style={{
+    color: "#777",
+  }}
+>
+  No jobs have been created yet.
+</p>
 
-      <Button>
-        + New Garment
-      </Button>
+<Button>
+  + New Job
+</Button>
 
       <hr
         style={{
