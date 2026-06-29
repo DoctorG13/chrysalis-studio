@@ -17,7 +17,7 @@ export default function StudioPage({
   const [showClientPanel, setShowClientPanel] = useState(false);
 
   const [selectedClient, setSelectedClient] = useState(null);
-  const [showClientWorkspace, setShowClientWorkspace] = useState(false);
+  const [showWorkspace, setShowWorkspace] = useState(false);
 
   function handleSaveClient(client) {
     setClients([...clients, client]);
@@ -26,7 +26,12 @@ export default function StudioPage({
 
   function handleClientClick(client) {
     setSelectedClient(client);
-    setShowClientWorkspace(true);
+    setShowWorkspace(true);
+  }
+
+  function closeWorkspace() {
+    setSelectedClient(null);
+    setShowWorkspace(false);
   }
 
   return (
@@ -76,12 +81,14 @@ export default function StudioPage({
       </SlidePanel>
 
       <SlidePanel
-        open={showClientWorkspace}
-        onClose={() => setShowClientWorkspace(false)}
+        open={showWorkspace}
+        onClose={closeWorkspace}
       >
         <ClientWorkspace
           client={selectedClient}
-          onClose={() => setShowClientWorkspace(false)}
+          clients={clients}
+          setClients={setClients}
+          onClose={closeWorkspace}
         />
       </SlidePanel>
     </>

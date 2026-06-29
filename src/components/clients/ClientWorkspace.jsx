@@ -1,10 +1,68 @@
+import { useEffect, useState } from "react";
+
+import TextInput from "../common/TextInput";
 import Button from "../common/Button";
 
 export default function ClientWorkspace({
   client,
+  clients,
+  setClients,
   onClose,
 }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (!client) return;
+
+    setFirstName(client.firstName || "");
+    setLastName(client.lastName || "");
+    setPhone(client.phone || "");
+    setEmail(client.email || "");
+    setNotes(client.notes || "");
+  }, [client]);
+
   if (!client) return null;
+
+  function handleSave() {
+    const updatedClient = {
+      ...client,
+      firstName,
+      lastName,
+      phone,
+      email,
+      notes,
+    };
+
+    const updatedClients = clients.map((c) =>
+      c.id === client.id ? updatedClient : c
+    );
+
+    setClients(updatedClients);
+
+    onClose();
+  }
+
+  function handleDelete() {
+    if (
+      !window.confirm(
+        `Delete ${client.firstName} ${client.lastName}?`
+      )
+    ) {
+      return;
+    }
+
+    const updatedClients = clients.filter(
+      (c) => c.id !== client.id
+    );
+
+    setClients(updatedClients);
+
+    onClose();
+  }
 
   return (
     <>
@@ -14,12 +72,38 @@ export default function ClientWorkspace({
           color: "#2F3A3F",
         }}
       >
-        👤 {client.firstName} {client.lastName}
+        Client Workspace
       </h2>
 
-      <p>📞 {client.phone || "No phone number"}</p>
+      <TextInput
+        label="First Name"
+        value={firstName}
+        onChange={setFirstName}
+      />
 
-      <p>✉️ {client.email || "No email address"}</p>
+      <TextInput
+        label="Last Name"
+        value={lastName}
+        onChange={setLastName}
+      />
+
+      <TextInput
+        label="Phone"
+        value={phone}
+        onChange={setPhone}
+      />
+
+      <TextInput
+        label="Email"
+        value={email}
+        onChange={setEmail}
+      />
+
+      <TextInput
+        label="Notes"
+        value={notes}
+        onChange={setNotes}
+      />
 
       <hr
         style={{
@@ -54,12 +138,12 @@ export default function ClientWorkspace({
           flexWrap: "wrap",
         }}
       >
-        <Button>
-          Save Changes
+        <Button onClick={handleSave}>
+          💾 Save Changes
         </Button>
 
-        <Button>
-          Delete Client
+        <Button onClick={handleDelete}>
+          🗑 Delete Client
         </Button>
 
         <Button onClick={onClose}>

@@ -9,35 +9,53 @@ export default function ClientCard({
       onClick={() => onClick(client)}
       style={{
         cursor: "pointer",
-        transition: "transform .15s ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
       }}
     >
       <Card>
-        <h3
-          style={{
-            marginTop: 0,
-            marginBottom: 12,
-            color: "#2F3A3F",
-          }}
-        >
-          👤 {client.firstName} {client.lastName}
-        </h3>
-
         <div
           style={{
-            color: "#666",
-            lineHeight: 1.8,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
           }}
         >
-          <div>📞 {client.phone || "No phone number"}</div>
+          <div>
+            <h3
+              style={{
+                margin: 0,
+                color: "#2F3A3F",
+              }}
+            >
+              👤 {client.firstName} {client.lastName}
+            </h3>
 
-          <div>✉️ {client.email || "No email address"}</div>
+            <p
+              style={{
+                margin: "10px 0 4px",
+                color: "#666",
+              }}
+            >
+              📞 {client.phone || "No phone number"}
+            </p>
+
+            <p
+              style={{
+                margin: 0,
+                color: "#666",
+              }}
+            >
+              ✉️ {client.email || "No email address"}
+            </p>
+          </div>
+
+          <div
+            style={{
+              fontSize: 24,
+              color: "#BBB",
+            }}
+          >
+            ›
+          </div>
         </div>
       </Card>
     </div>
