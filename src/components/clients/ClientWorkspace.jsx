@@ -3,6 +3,10 @@ import { useEffect, useState } from "react";
 import TextInput from "../common/TextInput";
 import Button from "../common/Button";
 
+import WorkspaceSection from "../workspace/WorkspaceSection";
+import MeasurementsSection from "../workspace/MeasurementsSection";
+import ClientJobsPanel from "./ClientJobsPanel";
+
 export default function ClientWorkspace({
   client,
   clients,
@@ -15,6 +19,35 @@ export default function ClientWorkspace({
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [measurements, setMeasurements] = useState({
+    bust: "",
+    waist: "",
+    hips: "",
+    shoulderWidth: "",
+    backWidth: "",
+    sleeveLength: "",
+    upperArm: "",
+    wrist: "",
+    neck: "",
+    height: "",
+    inseam: "",
+    outseam: "",
+    acrossBust: "",
+    acrossBack: "",
+    hemLength: "",
+  });
+
+  const [openSections, setOpenSections] = useState({
+    client: true,
+    measurements: false,
+    jobs: false,
+    appointments: false,
+    payments: false,
+    notes: false,
+    photos: false,
+    documents: false,
+  });
+
   useEffect(() => {
     if (!client) return;
 
@@ -23,9 +56,50 @@ export default function ClientWorkspace({
     setPhone(client.phone || "");
     setEmail(client.email || "");
     setNotes(client.notes || "");
+
+    setMeasurements({
+      bust: client.measurements?.bust || "",
+      waist: client.measurements?.waist || "",
+      hips: client.measurements?.hips || "",
+      shoulderWidth: client.measurements?.shoulderWidth || "",
+      backWidth: client.measurements?.backWidth || "",
+      sleeveLength: client.measurements?.sleeveLength || "",
+      upperArm: client.measurements?.upperArm || "",
+      wrist: client.measurements?.wrist || "",
+      neck: client.measurements?.neck || "",
+      height: client.measurements?.height || "",
+      inseam: client.measurements?.inseam || "",
+      outseam: client.measurements?.outseam || "",
+      acrossBust: client.measurements?.acrossBust || "",
+      acrossBack: client.measurements?.acrossBack || "",
+      hemLength: client.measurements?.hemLength || "",
+    });
   }, [client]);
 
   if (!client) return null;
+
+  function toggleSection(section) {
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  }
+
+  function expandAll() {
+    setOpenSections((prev) =>
+      Object.fromEntries(
+        Object.keys(prev).map((key) => [key, true])
+      )
+    );
+  }
+
+  function collapseAll() {
+    setOpenSections((prev) =>
+      Object.fromEntries(
+        Object.keys(prev).map((key) => [key, false])
+      )
+    );
+  }
 
   function handleSave() {
     const updatedClient = {
@@ -35,6 +109,7 @@ export default function ClientWorkspace({
       phone,
       email,
       notes,
+      measurements,
     };
 
     const updatedClients = clients.map((c) =>
@@ -55,95 +130,111 @@ export default function ClientWorkspace({
       return;
     }
 
-    const updatedClients = clients.filter(
-      (c) => c.id !== client.id
+    setClients(
+      clients.filter((c) => c.id !== client.id)
     );
-
-    setClients(updatedClients);
 
     onClose();
   }
 
   return (
     <>
-      <h2
-        style={{
-          marginTop: 0,
-          color: "#2F3A3F",
-        }}
-      >
+      <h2 style={{ marginTop: 0 }}>
         Client Workspace
       </h2>
-
-      <TextInput
-        label="First Name"
-        value={firstName}
-        onChange={setFirstName}
-      />
-
-      <TextInput
-        label="Last Name"
-        value={lastName}
-        onChange={setLastName}
-      />
-
-      <TextInput
-        label="Phone"
-        value={phone}
-        onChange={setPhone}
-      />
-
-      <TextInput
-        label="Email"
-        value={email}
-        onChange={setEmail}
-      />
-
-      <TextInput
-        label="Notes"
-        value={notes}
-        onChange={setNotes}
-      />
-
-      <hr
-        style={{
-          margin: "30px 0",
-        }}
-      />
-
-      <h3>Jobs</h3>
-
-<p
-  style={{
-    color: "#777",
-  }}
->
-  No jobs have been created yet.
-</p>
-
-<Button>
-  + New Job
-</Button>
-
-      <hr
-        style={{
-          margin: "30px 0",
-        }}
-      />
 
       <div
         style={{
           display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
+          gap: 10,
+          marginBottom: 20,
+        }}
+      >
+        <Button onClick={expandAll}>
+          Expand All
+        </Button>
+
+        <Button onClick={collapseAll}>
+          Collapse All
+        </Button>
+      </div>
+
+      <WorkspaceSection
+        title="Client Details"
+        icon="👤"
+        isOpen={openSections.client}
+        onToggle={() => toggleSection("client")}
+      >
+        <TextInput
+          label="First Name"
+          value={firstName}
+          onChange={setFirstName}
+        />
+
+        <TextInput
+          label="Last Name"
+          value={lastName}
+          onChange={setLastName}
+        />
+
+        <TextInput
+          label="Phone"
+          value={phone}
+          onChange={setPhone}
+        />
+
+        <TextInput
+          label="Email"
+          value={email}
+          onChange={setEmail}
+        />
+
+        <TextInput
+          label="Notes"
+          value={notes}
+          onChange={setNotes}
+        />
+      </WorkspaceSection>
+
+      <WorkspaceSection
+        title="Measurements"
+        icon="📏"
+        isOpen={openSections.measurements}
+        onToggle={() => toggleSection("measurements")}
+      >
+        <MeasurementsSection
+          measurements={measurements}
+          setMeasurements={setMeasurements}
+        />
+      </WorkspaceSection>
+
+      <WorkspaceSection
+        title="Jobs"
+        icon="💼"
+        isOpen={openSections.jobs}
+        onToggle={() => toggleSection("jobs")}
+      >
+        <ClientJobsPanel
+    client={client}
+    clients={clients}
+    setClients={setClients}
+/>
+      </WorkspaceSection>
+
+      <hr />
+
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
         }}
       >
         <Button onClick={handleSave}>
-          💾 Save Changes
+          💾 Save
         </Button>
 
         <Button onClick={handleDelete}>
-          🗑 Delete Client
+          🗑 Delete
         </Button>
 
         <Button onClick={onClose}>
