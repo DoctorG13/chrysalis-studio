@@ -1,16 +1,149 @@
-# React + Vite
+# 🦋 Chrysalis Studio
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> Empowering independent makers to run their business beautifully.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## About
 
-## React Compiler
+Chrysalis Studio is a modern business operating system designed for independent dressmakers and makers.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Originally created to help manage a professional dressmaking business, Chrysalis is being built as a scalable platform capable of supporting many creative industries through a clean, intuitive workflow.
 
-## Expanding the Oxlint configuration
+The project focuses on helping users manage their daily work without relying on paper notebooks, spreadsheets or disconnected applications.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+---
+
+## Vision
+
+Our goal is simple.
+
+> Help independent makers spend less time managing their business and more time creating.
+
+---
+
+## Current Features
+
+### Dashboard
+
+- Daily business overview
+- Quick Actions
+- Client summaries
+
+### Clients
+
+- Client database
+- Search
+- Client Workspace
+
+### Measurements
+
+- Full measurement records
+- Editable measurements
+- Stored with each client
+
+### Jobs
+
+- Create Jobs
+- Edit Jobs
+- Job status tracking
+- Job Workspace
+
+---
+
+## Current Roadmap
+
+- Appointments
+- Payments
+- Notes
+- Photos
+- Documents
+- Timeline
+- Dashboard 2.0
+- Reporting
+- Calendar
+
+---
+
+## Technology
+
+- React
+- Vite
+- JavaScript
+- Local Storage
+- Git
+- GitHub
+
+---
+
+## Running Chrysalis
+
+Install dependencies
+
+```bash
+npm install
+```
+
+Run the development server
+
+```bash
+npm run dev
+```
+
+Build for production
+
+```bash
+npm run build
+```
+
+---
+
+## Project Structure
+
+```
+src
+│
+├── components
+├── models
+├── theme
+├── services
+├── hooks
+├── utils
+└── workspace
+```
+
+---
+
+## Development Philosophy
+
+Every feature should:
+
+- Solve a real business problem
+- Be simple to use
+- Be reusable
+- Improve the overall architecture
+- Be production quality
+
+---
+
+## Authors
+
+**Founder & Product Owner**
+
+Darren Griffiths
+
+**Software Architecture & Development Partner**
+
+Winson
+
+---
+
+## License
+
+See the LICENSE file for details.
+
+---
+
+🦋 Chrysalis Studio
+
+Built with care.
