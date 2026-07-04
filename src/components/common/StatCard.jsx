@@ -1,61 +1,99 @@
-import Card from "./Card";
+import {
+  colours,
+  radius,
+  shadows,
+  spacing,
+  typography,
+} from "../../theme";
 
 export default function StatCard({
+  icon,
   title,
   value,
   subtitle,
-  icon = "🦋",
+  onClick,
 }) {
+  const clickable =
+    typeof onClick === "function";
+
   return (
-    <Card>
+    <div
+      //onClick={onClick}
+      onClick={() => {
+  alert("Card clicked");
+
+  if (onClick) {
+    onClick();
+  }
+}}
+
+
+      style={{
+        background: colours.surface,
+        border: `1px solid ${colours.border}`,
+        borderRadius: radius.card,
+        boxShadow: shadows.card,
+        padding: spacing.lg,
+
+        cursor: clickable
+          ? "pointer"
+          : "default",
+
+        transition:
+          "transform .15s ease",
+
+        userSelect: "none",
+      }}
+      onMouseEnter={(e) => {
+        if (!clickable) return;
+
+        e.currentTarget.style.transform =
+          "translateY(-2px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform =
+          "translateY(0)";
+      }}
+    >
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 15,
+          fontSize: 34,
         }}
       >
-        <div
-          style={{
-            fontSize: 16,
-            color: "#666",
-            fontWeight: 600,
-          }}
-        >
-          {title}
-        </div>
-
-        <div
-          style={{
-            fontSize: 28,
-          }}
-        >
-          {icon}
-        </div>
+        {icon}
       </div>
 
       <div
         style={{
-          fontSize: 36,
-          fontWeight: "700",
-          color: "#2F3A3F",
+          marginTop: spacing.md,
+          ...typography.heading,
+          fontSize: 30,
+          color: colours.primary,
         }}
       >
         {value}
       </div>
 
+      <div
+        style={{
+          marginTop: spacing.sm,
+          ...typography.label,
+        }}
+      >
+        {title}
+      </div>
+
       {subtitle && (
         <div
           style={{
-            marginTop: 8,
-            color: "#999",
-            fontSize: 13,
+            marginTop: spacing.xs,
+            ...typography.small,
+            color: colours.textSecondary,
           }}
         >
           {subtitle}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

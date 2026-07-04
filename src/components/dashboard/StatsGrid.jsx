@@ -1,11 +1,32 @@
 import StatCard from "../common/StatCard";
 
-export default function StatsGrid({ clients }) {
+import {
+  getActiveJobs,
+  getAppointmentsToday,
+  getOutstandingPayments,
+} from "../../utils/dashboard";
+
+export default function StatsGrid({
+  clients = [],
+  onClientsClick,
+  onJobsClick,
+  onAppointmentsClick,
+  onPaymentsClick,
+}) {
+  const activeJobs = getActiveJobs(clients);
+
+  const todaysAppointments =
+    getAppointmentsToday(clients);
+
+  const outstandingPayments =
+    getOutstandingPayments(clients);
+
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px,1fr))",
+        gridTemplateColumns:
+          "repeat(auto-fit,minmax(220px,1fr))",
         gap: 20,
         marginBottom: 30,
       }}
@@ -15,28 +36,32 @@ export default function StatsGrid({ clients }) {
         title="Clients"
         value={clients.length}
         subtitle="Registered clients"
+        onClick={onClientsClick}
       />
 
       <StatCard
-        icon="👗"
-        title="Garments"
-        value="0"
-        subtitle="Active garments"
+        icon="💼"
+        title="Active Jobs"
+        value={activeJobs.length}
+        subtitle="Currently in progress"
+        onClick={onJobsClick}
       />
 
       <StatCard
         icon="📅"
-        title="Appointments"
-        value="0"
-        subtitle="Today's schedule"
+        title="Today's Appointments"
+        value={todaysAppointments.length}
+        subtitle="Scheduled today"
+        onClick={onAppointmentsClick}
       />
 
       <StatCard
-  icon="💰"
-  title="Revenue"
-  value="$0"
-  subtitle="This financial year"
-/>
+        icon="💰"
+        title="Outstanding"
+        value={`$${outstandingPayments.toFixed(2)}`}
+        subtitle="Awaiting payment"
+        onClick={onPaymentsClick}
+      />
     </div>
   );
 }

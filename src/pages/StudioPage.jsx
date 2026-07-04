@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 import SlidePanel from "../components/common/SlidePanel";
 
@@ -6,18 +6,22 @@ import ClientForm from "../components/clients/ClientForm";
 import ClientList from "../components/clients/ClientList";
 import ClientWorkspace from "../components/clients/ClientWorkspace";
 
-import WelcomeCard from "../components/dashboard/WelcomeCard";
-import StatsGrid from "../components/dashboard/StatsGrid";
-import QuickActions from "../components/dashboard/QuickActions";
+import DashboardPage from "../components/dashboard/DashboardPage";
 
 export default function StudioPage({
   clients,
   setClients,
 }) {
-  const [showClientPanel, setShowClientPanel] = useState(false);
+  const [showClientPanel, setShowClientPanel] =
+    useState(false);
 
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [showWorkspace, setShowWorkspace] = useState(false);
+  const [selectedClient, setSelectedClient] =
+    useState(null);
+
+  const [showWorkspace, setShowWorkspace] =
+    useState(false);
+
+  const clientListRef = useRef(null);
 
   function handleSaveClient(client) {
     setClients([...clients, client]);
@@ -32,6 +36,25 @@ export default function StudioPage({
   function closeWorkspace() {
     setSelectedClient(null);
     setShowWorkspace(false);
+  }
+
+  function handleClientsClick() {
+  clientListRef.current?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
+  function handleJobsClick() {
+    console.log("Jobs clicked");
+  }
+
+  function handleAppointmentsClick() {
+    console.log("Appointments clicked");
+  }
+
+  function handlePaymentsClick() {
+    console.log("Payments clicked");
   }
 
   return (
@@ -54,29 +77,41 @@ export default function StudioPage({
           marginBottom: 35,
         }}
       >
-        Welcome back. Everything is ready for your day.
+        Welcome back. Everything is ready
+        for your day.
       </p>
 
-      <StatsGrid clients={clients} />
-
-      <WelcomeCard clients={clients} />
-
-      <QuickActions
-        onNewClient={() => setShowClientPanel(true)}
-      />
-
-      <ClientList
+      <DashboardPage
         clients={clients}
-        onClientClick={handleClientClick}
+        onNewClient={() =>
+          setShowClientPanel(true)
+        }
+        onClientsClick={handleClientsClick}
+        onJobsClick={handleJobsClick}
+        onAppointmentsClick={
+          handleAppointmentsClick
+        }
+        onPaymentsClick={handlePaymentsClick}
       />
+
+      <div ref={clientListRef}>
+  <ClientList
+    clients={clients}
+    onClientClick={handleClientClick}
+  />
+</div>
 
       <SlidePanel
         open={showClientPanel}
-        onClose={() => setShowClientPanel(false)}
+        onClose={() =>
+          setShowClientPanel(false)
+        }
       >
         <ClientForm
           onSave={handleSaveClient}
-          onCancel={() => setShowClientPanel(false)}
+          onCancel={() =>
+            setShowClientPanel(false)
+          }
         />
       </SlidePanel>
 

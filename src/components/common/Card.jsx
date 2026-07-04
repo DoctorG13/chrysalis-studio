@@ -1,28 +1,106 @@
-export default function Card({ children, title }) {
+import {
+  colours,
+  spacing,
+  radius,
+  shadows,
+  typography,
+} from "../../theme";
+
+export default function Card({
+  title,
+  subtitle,
+  icon,
+  actions,
+  children,
+  style = {},
+  bodyStyle = {},
+}) {
   return (
     <div
       style={{
-        background: "#FFFFFF",
-        borderRadius: 16,
-        padding: 24,
-        boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-        border: "1px solid #ECECEC",
+        background: colours.surface,
+        border: `1px solid ${colours.border}`,
+        borderRadius: radius.card,
+        boxShadow: shadows.card,
+        overflow: "hidden",
+        marginBottom: spacing.lg,
+        ...style,
       }}
     >
-      {title && (
-        <h2
+      {(title || subtitle || icon || actions) && (
+        <div
           style={{
-            marginTop: 0,
-            marginBottom: 20,
-            color: "#2F3A3F",
-            fontSize: 22,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: spacing.cardPadding,
+            borderBottom: `1px solid ${colours.borderLight}`,
+            background: colours.surfaceAlt,
           }}
         >
-          {title}
-        </h2>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: spacing.md,
+            }}
+          >
+            {icon && (
+              <span
+                style={{
+                  fontSize: 22,
+                }}
+              >
+                {icon}
+              </span>
+            )}
+
+            <div>
+              {title && (
+                <div
+                  style={{
+                    ...typography.section,
+                    color: colours.text,
+                  }}
+                >
+                  {title}
+                </div>
+              )}
+
+              {subtitle && (
+                <div
+                  style={{
+                    ...typography.small,
+                    color: colours.textSecondary,
+                  }}
+                >
+                  {subtitle}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {actions && (
+            <div
+              style={{
+                display: "flex",
+                gap: spacing.sm,
+              }}
+            >
+              {actions}
+            </div>
+          )}
+        </div>
       )}
 
-      {children}
+      <div
+        style={{
+          padding: spacing.cardPadding,
+          ...bodyStyle,
+        }}
+      >
+        {children}
+      </div>
     </div>
   );
 }

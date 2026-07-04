@@ -3,6 +3,9 @@ import Button from "../common/Button";
 
 export default function QuickActions({
   onNewClient,
+  onNewJob,
+  onNewAppointment,
+  onRecordPayment,
 }) {
   return (
     <div
@@ -22,12 +25,16 @@ export default function QuickActions({
             + New Client
           </Button>
 
-          <Button>
-            + New Garment
+          <Button onClick={onNewJob}>
+            + New Job
           </Button>
 
-          <Button>
+          <Button onClick={onNewAppointment}>
             + Appointment
+          </Button>
+
+          <Button onClick={onRecordPayment}>
+            + Payment
           </Button>
         </div>
       </Card>
