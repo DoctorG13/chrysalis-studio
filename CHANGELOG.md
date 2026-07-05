@@ -1,32 +1,20 @@
 # Changelog
 
-All notable changes to Chrysalis Studio will be documented in this file.
-
----
-
-## v0.3.0-alpha
-
-**Official Beginning of Chrysalis Studio**
+## 0.8.0-alpha
 
 ### Added
 
-- Dashboard
-- Client Workspace
-- Measurements
-- Jobs Module
-- Job Editor
-- Slide Panels
-- Expand / Collapse Sections
-- Local Storage
-- Modular React Architecture
+- Dashboard 2.0
+- Live Statistics
+- Priorities
+- Recent Activity
+
+### Improved
+
+- Theme System
+- Dashboard Navigation
 
 ### Fixed
 
-- Job creation state refresh
-- Client workspace synchronisation
-
-### Changed
-
-- Project officially renamed to **Chrysalis Studio**
-- Introduced GitHub repository
-- Began professional development workflow
+- Job Saving
+- Workspace Stability
