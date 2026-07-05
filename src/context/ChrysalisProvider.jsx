@@ -1,9 +1,14 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
+
+import useLocalStorage from "../hooks/useLocalStorage";
 
 const ChrysalisContext = createContext(null);
 
 export function ChrysalisProvider({ children }) {
-    const [clients, setClients] = useState([]);
+    const [clients, setClients] = useLocalStorage(
+        "chrysalis-clients",
+        []
+    );
 
     const value = useMemo(
         () => ({
