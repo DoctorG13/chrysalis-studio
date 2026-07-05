@@ -5,29 +5,35 @@ import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
 import StudioPage from "./pages/StudioPage";
 
-export default function App() {
-  const [currentPage, setCurrentPage] = useState("studio");
-  const [clients, setClients] = useState([]);
+import { useChrysalis } from "./context/ChrysalisProvider";
 
-  return (
-    <AppShell
-      sidebar={
-        <Sidebar
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-        />
-      }
-      header={
-        <Header
-          title="Chrysalis Studio"
-          user="Donna"
-        />
-      }
-    >
-      <StudioPage
-        clients={clients}
-        setClients={setClients}
-      />
-    </AppShell>
-  );
+export default function App() {
+    const [currentPage, setCurrentPage] = useState("studio");
+
+    const {
+        clients,
+        setClients,
+    } = useChrysalis();
+
+    return (
+        <AppShell
+            sidebar={
+                <Sidebar
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                />
+            }
+            header={
+                <Header
+                    title="Chrysalis Studio"
+                    user="Donna"
+                />
+            }
+        >
+            <StudioPage
+                clients={clients}
+                setClients={setClients}
+            />
+        </AppShell>
+    );
 }
