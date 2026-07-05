@@ -7,6 +7,8 @@ import WorkspaceSection from "../workspace/WorkspaceSection";
 import MeasurementsSection from "../workspace/MeasurementsSection";
 import ClientJobsPanel from "./ClientJobsPanel";
 
+import ClientWorkspaceHeader from "./ClientWorkspaceHeader";
+
 export default function ClientWorkspace({
   client,
   clients,
@@ -139,9 +141,9 @@ export default function ClientWorkspace({
 
   return (
     <>
-      <h2 style={{ marginTop: 0 }}>
-        Client Workspace
-      </h2>
+      <ClientWorkspaceHeader
+  client={client}
+/>
 
       <div
         style={{

@@ -11,7 +11,6 @@ export default function ClientJobsPanel({
   clients,
   setClients,
 }) {
-  // Always work with the latest version of the client
   const currentClient =
     clients.find((c) => c.id === client.id) || client;
 
@@ -39,12 +38,14 @@ export default function ClientJobsPanel({
   }
 
   function handleCreateJob(job) {
-    updateClient([
-      ...jobs,
-      job,
-    ]);
+    const updatedJobs = [...jobs, job];
+
+    updateClient(updatedJobs);
 
     setShowJobForm(false);
+
+    // Automatically open the newly created job
+    setSelectedJob(job);
   }
 
   function handleOpenJob(job) {
@@ -58,46 +59,37 @@ export default function ClientJobsPanel({
 
     updateClient(updatedJobs);
 
-    setSelectedJob(null);
+    // Keep the editor open using the latest data
+    setSelectedJob(job);
   }
 
   return (
     <>
       <JobsSection
         jobs={jobs}
-        onNewJob={() =>
-          setShowJobForm(true)
-        }
+        onNewJob={() => setShowJobForm(true)}
         onOpenJob={handleOpenJob}
       />
 
       <SlidePanel
         open={showJobForm}
-        onClose={() =>
-          setShowJobForm(false)
-        }
+        onClose={() => setShowJobForm(false)}
       >
         <JobForm
           onSave={handleCreateJob}
-          onCancel={() =>
-            setShowJobForm(false)
-          }
+          onCancel={() => setShowJobForm(false)}
         />
       </SlidePanel>
 
       <SlidePanel
         open={!!selectedJob}
-        onClose={() =>
-          setSelectedJob(null)
-        }
+        onClose={() => setSelectedJob(null)}
       >
         {selectedJob && (
           <JobEditor
             job={selectedJob}
             onSave={handleSaveJob}
-            onCancel={() =>
-              setSelectedJob(null)
-            }
+            onCancel={() => setSelectedJob(null)}
           />
         )}
       </SlidePanel>
