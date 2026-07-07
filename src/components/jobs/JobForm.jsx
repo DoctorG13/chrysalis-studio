@@ -90,13 +90,16 @@ export default function JobForm({
           }}
         >
           <option>Quote</option>
-          <option>Accepted</option>
-          <option>In Progress</option>
-          <option>Awaiting Fitting</option>
-          <option>Ready</option>
-          <option>Collected</option>
-          <option>Completed</option>
-          <option>Cancelled</option>
+<option>Booked</option>
+<option>Pattern</option>
+<option>Cutting</option>
+<option>Construction</option>
+<option>First Fitting</option>
+<option>Alterations</option>
+<option>Ready</option>
+<option>Collected</option>
+<option>Completed</option>
+<option>Cancelled</option>
         </select>
       </div>
 

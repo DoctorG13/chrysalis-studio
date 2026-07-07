@@ -1,24 +1,43 @@
 import Card from "../common/Card";
 
-function getStatusColour(status) {
+
+  function getStatusColour(status) {
   switch (status) {
-    case "In Progress":
-      return "#2ecc71";
+    case "Quote":
+      return "#94A3B8";
 
-    case "Awaiting Fitting":
-      return "#f1c40f";
+    case "Booked":
+      return "#3B82F6";
 
-    case "Ready for Collection":
-      return "#3498db";
+    case "Pattern":
+      return "#8B5CF6";
+
+    case "Cutting":
+      return "#F97316";
+
+    case "Construction":
+      return "#F59E0B";
+
+    case "First Fitting":
+      return "#EC4899";
+
+    case "Alterations":
+      return "#EAB308";
+
+    case "Ready":
+      return "#10B981";
+
+    case "Collected":
+      return "#059669";
 
     case "Completed":
-      return "#9b59b6";
+      return "#6366F1";
 
-    case "Overdue":
-      return "#e74c3c";
+    case "Cancelled":
+      return "#6B7280";
 
     default:
-      return "#95a5a6";
+      return "#9CA3AF";
   }
 }
 
