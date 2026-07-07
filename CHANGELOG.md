@@ -49,3 +49,8 @@ Cancelled
 #### Added
 
 - Workspace production workflow progress indicator.
+
+### Changed
+
+- Centralised production workflow stages and status colours into shared constants.
+- Standardised workflow progress calculations across the application.
