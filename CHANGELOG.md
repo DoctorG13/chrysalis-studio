@@ -1,27 +1,51 @@
 # Changelog
 
-## 0.8.0-alpha
+All notable changes to Chrysalis are recorded here.
 
-### Added
+---
 
-- Dashboard 2.0
-- Live Statistics
-- Priorities
-- Recent Activity
+## Release 0.5
 
-### Improved
+### 0.5.1
 
-- Theme System
-- Dashboard Navigation
+#### Added
 
-### Fixed
+- Dashboard Insight Engine.
+- Dynamic dashboard summaries.
+- "Today's Focus" dashboard panel.
 
-- Job Saving
-- Workspace Stability
+---
 
+### 0.5.2
 
-### Added
+#### Changed
 
-- Visual production workflow tracker to workspace job cards.
-- Automatic progress calculation from the Chrysalis production workflow.
-- Colour-coded workflow stages showing completed, current and upcoming steps.
+- Replaced generic job statuses with the Chrysalis production workflow.
+
+Quote
+
+Booked
+
+Pattern
+
+Cutting
+
+Construction
+
+First Fitting
+
+Alterations
+
+Ready
+
+Collected
+
+Completed
+
+Cancelled
+
+---
+
+#### Added
+
+- Workspace production workflow progress indicator.
