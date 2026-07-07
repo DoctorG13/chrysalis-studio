@@ -1,13 +1,30 @@
 import Button from "../common/Button";
 
+const WORKFLOW = [
+  "Quote",
+  "Booked",
+  "Pattern",
+  "Cutting",
+  "Construction",
+  "First Fitting",
+  "Alterations",
+  "Ready",
+  "Collected",
+  "Completed",
+];
+
 const STATUS_COLOURS = {
-  Quote: "#6B7280",
-  "Awaiting Deposit": "#F59E0B",
-  "Waiting For Fabric": "#8B5CF6",
-  "In Progress": "#2563EB",
-  "Ready For Fitting": "#0EA5E9",
-  "Ready For Collection": "#10B981",
+  Quote: "#94A3B8",
+  Booked: "#3B82F6",
+  Pattern: "#8B5CF6",
+  Cutting: "#F97316",
+  Construction: "#F59E0B",
+  "First Fitting": "#EC4899",
+  Alterations: "#EAB308",
+  Ready: "#10B981",
+  Collected: "#059669",
   Completed: "#16A34A",
+  Cancelled: "#6B7280",
 };
 
 export default function JobCard({
@@ -18,18 +35,18 @@ export default function JobCard({
   const deposit = Number(job.deposit || 0);
   const balance = Math.max(0, quote - deposit);
 
-  const progressMap = {
-    Quote: 5,
-    "Awaiting Deposit": 15,
-    "Waiting For Fabric": 30,
-    "In Progress": 55,
-    "Ready For Fitting": 75,
-    "Ready For Collection": 95,
-    Completed: 100,
-  };
+  const currentStep = Math.max(
+    0,
+    WORKFLOW.indexOf(job.status)
+  );
 
   const progress =
-    progressMap[job.status] ?? 0;
+    job.status === "Completed"
+      ? 100
+      : Math.round(
+          (currentStep / (WORKFLOW.length - 1)) *
+            100
+        );
 
   const latestActivity =
     job.timeline?.length > 0
@@ -121,22 +138,17 @@ export default function JobCard({
         </div>
       </div>
 
-      <div
-        style={{
-          marginBottom: 20,
-        }}
-      >
+      <div style={{ marginBottom: 20 }}>
         <div
           style={{
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             marginBottom: 8,
             fontSize: 13,
             fontWeight: 600,
           }}
         >
-          <span>Progress</span>
+          <span>Production Progress</span>
           <span>{progress}%</span>
         </div>
 
@@ -152,11 +164,58 @@ export default function JobCard({
             style={{
               width: `${progress}%`,
               height: "100%",
-              background: "#7B3FF2",
+              background:
+                STATUS_COLOURS[job.status] ||
+                "#7B3FF2",
               transition:
                 "width .3s ease",
             }}
           />
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 6,
+            marginTop: 12,
+          }}
+        >
+          {WORKFLOW.map((step, index) => {
+            const active =
+              index === currentStep;
+            const complete =
+              index < currentStep;
+
+            return (
+              <span
+                key={step}
+                style={{
+                  padding: "4px 8px",
+                  borderRadius: 999,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  background: complete
+                    ? "#DCFCE7"
+                    : active
+                    ? "#DBEAFE"
+                    : "#F3F4F6",
+                  color: complete
+                    ? "#166534"
+                    : active
+                    ? "#1D4ED8"
+                    : "#6B7280",
+                }}
+              >
+                {complete
+                  ? "✓ "
+                  : active
+                  ? "● "
+                  : ""}
+                {step}
+              </span>
+            );
+          })}
         </div>
       </div>
 
@@ -206,9 +265,7 @@ export default function JobCard({
         </div>
       )}
 
-      <Button
-        onClick={() => onOpen(job)}
-      >
+      <Button onClick={() => onOpen(job)}>
         Open Job
       </Button>
     </div>
