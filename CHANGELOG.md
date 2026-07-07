@@ -18,3 +18,10 @@
 
 - Job Saving
 - Workspace Stability
+
+
+### Added
+
+- Visual production workflow tracker to workspace job cards.
+- Automatic progress calculation from the Chrysalis production workflow.
+- Colour-coded workflow stages showing completed, current and upcoming steps.
