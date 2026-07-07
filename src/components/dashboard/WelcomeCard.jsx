@@ -1,10 +1,7 @@
 import Card from "../common/Card";
 
 import {
-  getActiveJobs,
-  getAppointmentsToday,
-  getJobsDueThisWeek,
-  getOutstandingPayments,
+  getDashboardInsights,
 } from "../../utils/dashboard";
 
 export default function WelcomeCard({
@@ -19,18 +16,6 @@ export default function WelcomeCard({
       ? "Good Afternoon"
       : "Good Evening";
 
-  const activeJobs =
-    getActiveJobs(clients);
-
-  const todaysAppointments =
-    getAppointmentsToday(clients);
-
-  const jobsDue =
-    getJobsDueThisWeek(clients);
-
-  const outstanding =
-    getOutstandingPayments(clients);
-
   const formattedDate =
     today.toLocaleDateString("en-AU", {
       weekday: "long",
@@ -38,6 +23,9 @@ export default function WelcomeCard({
       month: "long",
       year: "numeric",
     });
+
+  const insights =
+    getDashboardInsights(clients);
 
   return (
     <Card
@@ -51,8 +39,7 @@ export default function WelcomeCard({
           color: "#555",
         }}
       >
-        Here's what's happening in your
-        studio today.
+        Welcome back to Chrysalis Studio.
       </p>
 
       <div
@@ -65,27 +52,35 @@ export default function WelcomeCard({
         }}
       >
         <SummaryCard
-          value={todaysAppointments.length}
-          label="Appointments Today"
           icon="📅"
+          value={
+            insights.appointments.length
+          }
+          label="Appointments Today"
         />
 
         <SummaryCard
-          value={activeJobs.length}
-          label="Active Jobs"
           icon="💼"
+          value={
+            insights.activeJobs.length
+          }
+          label="Active Jobs"
         />
 
         <SummaryCard
-          value={jobsDue.length}
-          label="Due This Week"
           icon="🧵"
+          value={
+            insights.dueThisWeek.length
+          }
+          label="Due This Week"
         />
 
         <SummaryCard
-          value={`$${outstanding.toFixed(2)}`}
-          label="Outstanding"
           icon="💰"
+          value={`$${insights.outstanding.toFixed(
+            2
+          )}`}
+          label="Outstanding"
         />
       </div>
 
@@ -98,23 +93,23 @@ export default function WelcomeCard({
           border: "1px solid #E5E7EB",
         }}
       >
-        <strong>
-          Today's Goal
-        </strong>
+        <strong>🎯 Today's Focus</strong>
 
-        <p
+        <ul
           style={{
+            marginTop: 12,
             marginBottom: 0,
-            marginTop: 10,
-            lineHeight: 1.7,
-            color: "#666",
+            paddingLeft: 20,
+            lineHeight: 1.8,
+            color: "#555",
           }}
         >
-          Stay focused on today's
-          appointments, complete garments
-          due this week, and keep payments
-          up to date.
-        </p>
+          {insights.focus.map(
+            (item, index) => (
+              <li key={index}>{item}</li>
+            )
+          )}
+        </ul>
       </div>
     </Card>
   );
@@ -135,11 +130,7 @@ function SummaryCard({
         textAlign: "center",
       }}
     >
-      <div
-        style={{
-          fontSize: 28,
-        }}
-      >
+      <div style={{ fontSize: 28 }}>
         {icon}
       </div>
 
