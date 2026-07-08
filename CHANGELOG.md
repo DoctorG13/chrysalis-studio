@@ -88,3 +88,10 @@ Cancelled
 
 - Jobs Due This Week now displays shared job health indicators.
 - Added colour-coded borders and health labels using the shared dashboard intelligence.
+
+### Changed
+
+- StatsGrid now displays contextual subtitles based on live dashboard data.
+- Active Jobs highlights overdue work.
+- Today's Appointments indicates when the schedule is clear.
+- Outstanding Payments confirms when all invoices have been paid.

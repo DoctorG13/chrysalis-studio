@@ -15,12 +15,8 @@ export default function StatsGrid({
   onPaymentsClick,
 }) {
   const activeJobs = getActiveJobs(clients);
-
   const overdueJobs = getOverdueJobs(clients);
-
-  const todaysAppointments =
-    getAppointmentsToday(clients);
-
+  const todaysAppointments = getAppointmentsToday(clients);
   const outstandingPayments =
     getOutstandingPayments(clients);
 
@@ -47,7 +43,7 @@ export default function StatsGrid({
         title="Active Jobs"
         value={activeJobs.length}
         subtitle={
-          overdueJobs.length
+          overdueJobs.length > 0
             ? `${overdueJobs.length} overdue`
             : "Currently in progress"
         }
