@@ -77,3 +77,9 @@ Cancelled
 - Added jobs due today detection.
 - Improved dashboard insights model.
 - Established a shared health model for future dashboard and job components.
+
+### Changed
+
+- Refactored Today's Priorities to use the shared `getDashboardInsights()` utility.
+- Added visual priority levels for dashboard focus items.
+- Simplified the component by moving business logic into the dashboard utility layer.
