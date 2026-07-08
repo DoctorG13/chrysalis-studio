@@ -1,6 +1,12 @@
 // 🦋 Chrysalis Studio
 // Dashboard Intelligence
 
+function startOfDay(date = new Date()) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export function getAllJobs(clients = []) {
   return clients.flatMap((client) => client.jobs || []);
 }
@@ -48,18 +54,41 @@ export function getAppointmentsToday(clients = []) {
   );
 }
 
+export function getOverdueJobs(clients = []) {
+  const today = startOfDay();
+
+  return getActiveJobs(clients).filter((job) => {
+    if (!job.dueDate) return false;
+
+    return startOfDay(job.dueDate) < today;
+  });
+}
+
+export function getJobsDueToday(clients = []) {
+  const today = startOfDay();
+
+  return getActiveJobs(clients).filter((job) => {
+    if (!job.dueDate) return false;
+
+    return (
+      startOfDay(job.dueDate).getTime() ===
+      today.getTime()
+    );
+  });
+}
+
 export function getJobsDueThisWeek(clients = []) {
-  const today = new Date();
-  const nextWeek = new Date();
+  const today = startOfDay();
+  const nextWeek = startOfDay();
 
   nextWeek.setDate(today.getDate() + 7);
 
-  return getAllJobs(clients).filter((job) => {
+  return getActiveJobs(clients).filter((job) => {
     if (!job.dueDate) return false;
 
-    const due = new Date(job.dueDate);
+    const due = startOfDay(job.dueDate);
 
-    return due >= today && due <= nextWeek;
+    return due > today && due <= nextWeek;
   });
 }
 
@@ -82,16 +111,38 @@ export function getDashboardInsights(
   const appointments =
     getAppointmentsToday(clients);
 
-  const activeJobs =
-    getActiveJobs(clients);
+  const overdueJobs =
+    getOverdueJobs(clients);
+
+  const dueToday =
+    getJobsDueToday(clients);
 
   const dueThisWeek =
     getJobsDueThisWeek(clients);
+
+  const activeJobs =
+    getActiveJobs(clients);
 
   const outstanding =
     getOutstandingPayments(clients);
 
   const focus = [];
+
+  if (overdueJobs.length) {
+    focus.push(
+      `🔴 ${overdueJobs.length} overdue job${
+        overdueJobs.length === 1 ? "" : "s"
+      } require immediate attention`
+    );
+  }
+
+  if (dueToday.length) {
+    focus.push(
+      `🟠 ${dueToday.length} job${
+        dueToday.length === 1 ? "" : "s"
+      } due today`
+    );
+  }
 
   if (appointments.length) {
     focus.push(
@@ -111,24 +162,26 @@ export function getDashboardInsights(
 
   if (outstanding > 0) {
     focus.push(
-      `💰 $${outstanding.toFixed(
+      `💰 Collect $${outstanding.toFixed(
         2
-      )} outstanding`
+      )} in outstanding payments`
     );
   }
 
   if (!focus.length) {
     focus.push(
-      "Everything is under control today."
+      "🎉 You're all caught up today."
     );
     focus.push(
-      "A great day to prepare upcoming garments or contact clients."
+      "Use today to prepare upcoming garments or contact clients."
     );
   }
 
   return {
     appointments,
     activeJobs,
+    overdueJobs,
+    dueToday,
     dueThisWeek,
     outstanding,
     focus,

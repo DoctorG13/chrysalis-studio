@@ -54,3 +54,10 @@ Cancelled
 
 - Centralised production workflow stages and status colours into shared constants.
 - Standardised workflow progress calculations across the application.
+
+### Added
+
+- Dashboard "Jobs Requiring Attention" widget.
+- Automatic identification of overdue jobs.
+- Automatic identification of jobs due today.
+- Automatic identification of garments ready for collection.
