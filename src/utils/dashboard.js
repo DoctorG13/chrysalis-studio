@@ -12,23 +12,17 @@ export function getAllJobs(clients = []) {
 }
 
 export function getAllAppointments(clients = []) {
-  return clients.flatMap(
-    (client) => client.appointments || []
-  );
+  return clients.flatMap((client) => client.appointments || []);
 }
 
 export function getAllPayments(clients = []) {
-  return clients.flatMap(
-    (client) => client.payments || []
-  );
+  return clients.flatMap((client) => client.payments || []);
 }
 
 export function getActiveJobs(clients = []) {
   return getAllJobs(clients).filter(
     (job) =>
-      !["Completed", "Collected", "Cancelled"].includes(
-        job.status
-      )
+      !["Completed", "Collected", "Cancelled"].includes(job.status)
   );
 }
 
@@ -37,8 +31,7 @@ export function getOutstandingPayments(clients = []) {
     const quote = Number(job.price || 0);
 
     const paid = (job.payments || []).reduce(
-      (sum, payment) =>
-        sum + Number(payment.amount || 0),
+      (sum, payment) => sum + Number(payment.amount || 0),
       0
     );
 
@@ -70,10 +63,7 @@ export function getJobsDueToday(clients = []) {
   return getActiveJobs(clients).filter((job) => {
     if (!job.dueDate) return false;
 
-    return (
-      startOfDay(job.dueDate).getTime() ===
-      today.getTime()
-    );
+    return startOfDay(job.dueDate).getTime() === today.getTime();
   });
 }
 
@@ -92,89 +82,107 @@ export function getJobsDueThisWeek(clients = []) {
   });
 }
 
-export function getRecentActivity(
-  clients = [],
-  limit = 5
-) {
+export function getJobHealth(job) {
+  if (!job) {
+    return {
+      level: "unknown",
+      label: "Unknown",
+      icon: "⚪",
+      colour: "#9CA3AF",
+    };
+  }
+
+  const today = startOfDay();
+
+  if (job.dueDate) {
+    const due = startOfDay(job.dueDate);
+
+    if (due < today) {
+      return {
+        level: "critical",
+        label: "Overdue",
+        icon: "🔴",
+        colour: "#DC2626",
+      };
+    }
+
+    if (due.getTime() === today.getTime()) {
+      return {
+        level: "warning",
+        label: "Due Today",
+        icon: "🟠",
+        colour: "#EA580C",
+      };
+    }
+  }
+
+  if (job.priority === "High") {
+    return {
+      level: "attention",
+      label: "High Priority",
+      icon: "🟡",
+      colour: "#CA8A04",
+    };
+  }
+
+  return {
+    level: "healthy",
+    label: "On Track",
+    icon: "🟢",
+    colour: "#16A34A",
+  };
+}
+
+export function getRecentActivity(clients = [], limit = 5) {
   return getAllJobs(clients)
     .flatMap((job) => job.timeline || [])
-    .sort(
-      (a, b) =>
-        new Date(b.date) - new Date(a.date)
-    )
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, limit);
 }
 
-export function getDashboardInsights(
-  clients = []
-) {
-  const appointments =
-    getAppointmentsToday(clients);
-
-  const overdueJobs =
-    getOverdueJobs(clients);
-
-  const dueToday =
-    getJobsDueToday(clients);
-
-  const dueThisWeek =
-    getJobsDueThisWeek(clients);
-
-  const activeJobs =
-    getActiveJobs(clients);
-
-  const outstanding =
-    getOutstandingPayments(clients);
+export function getDashboardInsights(clients = []) {
+  const appointments = getAppointmentsToday(clients);
+  const activeJobs = getActiveJobs(clients);
+  const overdueJobs = getOverdueJobs(clients);
+  const dueToday = getJobsDueToday(clients);
+  const dueThisWeek = getJobsDueThisWeek(clients);
+  const outstanding = getOutstandingPayments(clients);
 
   const focus = [];
 
   if (overdueJobs.length) {
-    focus.push(
-      `🔴 ${overdueJobs.length} overdue job${
-        overdueJobs.length === 1 ? "" : "s"
-      } require immediate attention`
-    );
+    focus.push({
+      level: "critical",
+      message: `🔴 ${overdueJobs.length} overdue job${overdueJobs.length === 1 ? "" : "s"}`,
+    });
   }
 
   if (dueToday.length) {
-    focus.push(
-      `🟠 ${dueToday.length} job${
-        dueToday.length === 1 ? "" : "s"
-      } due today`
-    );
+    focus.push({
+      level: "warning",
+      message: `🟠 ${dueToday.length} job${dueToday.length === 1 ? "" : "s"} due today`,
+    });
   }
 
   if (appointments.length) {
-    focus.push(
-      `📅 ${appointments.length} appointment${
-        appointments.length === 1 ? "" : "s"
-      } today`
-    );
+    focus.push({
+      level: "info",
+      message: `📅 ${appointments.length} appointment${appointments.length === 1 ? "" : "s"} today`,
+    });
   }
 
   if (dueThisWeek.length) {
-    focus.push(
-      `🧵 ${dueThisWeek.length} job${
-        dueThisWeek.length === 1 ? "" : "s"
-      } due this week`
-    );
+    focus.push({
+      level: "info",
+      message: `🧵 ${dueThisWeek.length} job${dueThisWeek.length === 1 ? "" : "s"} due this week`,
+    });
   }
 
   if (outstanding > 0) {
-    focus.push(
-      `💰 Collect $${outstanding.toFixed(
-        2
-      )} in outstanding payments`
-    );
-  }
-
-  if (!focus.length) {
-    focus.push(
-      "🎉 You're all caught up today."
-    );
-    focus.push(
-      "Use today to prepare upcoming garments or contact clients."
-    );
+    focus.push({
+      level: "success",
+      message: `💰 $${outstanding.toFixed(2)} outstanding`,
+    });
   }
 
   return {

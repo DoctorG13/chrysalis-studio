@@ -61,3 +61,11 @@ Cancelled
 - Automatic identification of overdue jobs.
 - Automatic identification of jobs due today.
 - Automatic identification of garments ready for collection.
+
+
+### Added
+
+- Dashboard intelligence now detects overdue jobs.
+- Added jobs due today.
+- Improved weekly due calculations.
+- Dashboard focus list now prioritises critical work before routine tasks.
