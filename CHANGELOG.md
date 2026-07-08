@@ -83,3 +83,8 @@ Cancelled
 - Refactored Today's Priorities to use the shared `getDashboardInsights()` utility.
 - Added visual priority levels for dashboard focus items.
 - Simplified the component by moving business logic into the dashboard utility layer.
+
+### Changed
+
+- Jobs Due This Week now displays shared job health indicators.
+- Added colour-coded borders and health labels using the shared dashboard intelligence.

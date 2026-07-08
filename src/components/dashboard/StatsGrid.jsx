@@ -4,6 +4,7 @@ import {
   getActiveJobs,
   getAppointmentsToday,
   getOutstandingPayments,
+  getOverdueJobs,
 } from "../../utils/dashboard";
 
 export default function StatsGrid({
@@ -14,6 +15,8 @@ export default function StatsGrid({
   onPaymentsClick,
 }) {
   const activeJobs = getActiveJobs(clients);
+
+  const overdueJobs = getOverdueJobs(clients);
 
   const todaysAppointments =
     getAppointmentsToday(clients);
@@ -43,7 +46,11 @@ export default function StatsGrid({
         icon="💼"
         title="Active Jobs"
         value={activeJobs.length}
-        subtitle="Currently in progress"
+        subtitle={
+          overdueJobs.length
+            ? `${overdueJobs.length} overdue`
+            : "Currently in progress"
+        }
         onClick={onJobsClick}
       />
 
@@ -51,7 +58,11 @@ export default function StatsGrid({
         icon="📅"
         title="Today's Appointments"
         value={todaysAppointments.length}
-        subtitle="Scheduled today"
+        subtitle={
+          todaysAppointments.length === 0
+            ? "No appointments today"
+            : "Scheduled today"
+        }
         onClick={onAppointmentsClick}
       />
 
@@ -59,7 +70,11 @@ export default function StatsGrid({
         icon="💰"
         title="Outstanding"
         value={`$${outstandingPayments.toFixed(2)}`}
-        subtitle="Awaiting payment"
+        subtitle={
+          outstandingPayments === 0
+            ? "All payments received"
+            : "Awaiting payment"
+        }
         onClick={onPaymentsClick}
       />
     </div>
