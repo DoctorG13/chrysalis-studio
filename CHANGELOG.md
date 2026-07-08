@@ -69,3 +69,11 @@ Cancelled
 - Added jobs due today.
 - Improved weekly due calculations.
 - Dashboard focus list now prioritises critical work before routine tasks.
+
+### Added
+
+- Added shared `getJobHealth()` utility.
+- Added overdue job detection.
+- Added jobs due today detection.
+- Improved dashboard insights model.
+- Established a shared health model for future dashboard and job components.
