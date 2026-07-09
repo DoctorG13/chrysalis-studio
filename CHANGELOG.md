@@ -115,3 +115,15 @@ Added Smart Job Status Engine.
 - Overdue detection
 - Needs Attention flag
 - Job enrichment helper
+
+### Changed
+
+- All jobs are now automatically enriched by the Smart Job Status Engine before being exposed through the Chrysalis context.
+- UI components can now consume:
+  - progress
+  - workflowIndex
+  - nextStep
+  - nextAction
+  - overdue
+  - dueToday
+  - needsAttention
