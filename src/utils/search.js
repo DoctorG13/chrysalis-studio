@@ -7,7 +7,7 @@ export function searchStudio(query, clients = [], jobs = []) {
 
   const results = [];
 
-  clients.forEach((client) = {
+  clients.forEach((client) => {
     const searchable = [
       client.name,
       client.phone,
@@ -15,21 +15,21 @@ export function searchStudio(query, clients = [], jobs = []) {
       client.notes,
     ]
       .filter(Boolean)
-      .join( )
+      .join(" ")
       .toLowerCase();
 
     if (searchable.includes(term)) {
       results.push({
-        type client,
-        id client.id,
-        title client.name,
-        subtitle client.phone  client.email  ,
-        data client,
+        type: "client",
+        id: client.id,
+        title: client.name,
+        subtitle: client.phone || client.email || "",
+        data: client,
       });
     }
   });
 
-  jobs.forEach((job) = {
+  jobs.forEach((job) => {
     const searchable = [
       job.name,
       job.reference,
@@ -37,21 +37,21 @@ export function searchStudio(query, clients = [], jobs = []) {
       job.garment,
     ]
       .filter(Boolean)
-      .join( )
+      .join(" ")
       .toLowerCase();
 
     if (searchable.includes(term)) {
       results.push({
-        type job,
-        id job.id,
-        title job.name,
-        subtitle `${job.status} • ${job.reference  }`,
-        data job,
+        type: "job",
+        id: job.id,
+        title: job.name,
+        subtitle: `${job.status} • ${job.reference ?? ""}`,
+        data: job,
       });
     }
   });
 
-  return results.sort((a, b) =
+  return results.sort((a, b) =>
     a.title.localeCompare(b.title)
   );
 }
