@@ -102,3 +102,16 @@ Cancelled
 - Active Jobs now highlights overdue work.
 - Today's Appointments indicates when no appointments are scheduled.
 - Outstanding Payments confirms when all payments have been received.
+
+## Release 0.5.1
+
+Added Smart Job Status Engine.
+
+- Workflow helper functions
+- Automatic progress calculation
+- Next workflow step
+- Next action generation
+- Due today detection
+- Overdue detection
+- Needs Attention flag
+- Job enrichment helper
