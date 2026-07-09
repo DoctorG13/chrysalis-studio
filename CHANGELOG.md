@@ -194,3 +194,14 @@ Added Smart Job Status Engine.
   - Job Health
   - Outstanding Payments
   - Recent Activity
+
+  ## Release 0.5.5
+
+Added universal search utility.
+
+- Search clients
+- Search jobs
+- Search phone numbers
+- Search email addresses
+- Search garment references
+- Search status

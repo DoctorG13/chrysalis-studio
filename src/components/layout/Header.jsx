@@ -1,6 +1,17 @@
+import { useState } from "react";
+
 export default function Header({
   title = "Chrysalis Studio",
+  onSearch,
 }) {
+  const [search, setSearch] = useState("");
+
+  function handleChange(event) {
+    const value = event.target.value;
+    setSearch(value);
+    onSearch?.(value);
+  }
+
   return (
     <header
       style={{
@@ -11,19 +22,44 @@ export default function Header({
         justifyContent: "space-between",
         alignItems: "center",
         padding: "0 32px",
+        gap: 24,
       }}
     >
-      <div>
-        <h1
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 30,
+          color: "#2F3A3F",
+          fontWeight: 700,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {title}
+      </h1>
+
+      <div
+        style={{
+          flex: 1,
+          maxWidth: 520,
+          position: "relative",
+        }}
+      >
+        <input
+          type="text"
+          value={search}
+          onChange={handleChange}
+          placeholder="Search clients, jobs, phone, email..."
           style={{
-            margin: 0,
-            fontSize: 30,
-            color: "#2F3A3F",
-            fontWeight: 700,
+            width: "100%",
+            height: 44,
+            borderRadius: 12,
+            border: "1px solid #D9D9D9",
+            padding: "0 16px",
+            fontSize: 15,
+            outline: "none",
+            boxSizing: "border-box",
           }}
-        >
-          {title}
-        </h1>
+        />
       </div>
 
       <div
@@ -32,17 +68,9 @@ export default function Header({
           gap: 18,
         }}
       >
-        <button style={iconButton}>
-          🔍
-        </button>
+        <button style={iconButton}>🔔</button>
 
-        <button style={iconButton}>
-          🔔
-        </button>
-
-        <button style={iconButton}>
-          👤
-        </button>
+        <button style={iconButton}>👤</button>
       </div>
     </header>
   );
