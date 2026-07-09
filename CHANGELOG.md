@@ -182,3 +182,15 @@ Added Smart Job Status Engine.
   - Completed jobs
   - Collected jobs
 - Activity feed is automatically sorted newest-first.
+
+### Refactored
+
+- Centralized dashboard calculations into a single dashboard utility.
+- Dashboard now shares one source of truth for:
+  - Statistics
+  - Priorities
+  - Due Today
+  - Due This Week
+  - Job Health
+  - Outstanding Payments
+  - Recent Activity

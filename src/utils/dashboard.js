@@ -148,28 +148,39 @@ export function getDashboardInsights(clients = []) {
   const priorities = getTodaysPriorities(clients);
 
   return {
-    appointments,
-    activeJobs,
-    overdueJobs,
-    dueToday,
-    dueThisWeek,
-    outstanding,
-    priorities,
+  appointments,
+  activeJobs,
+  overdueJobs,
+  dueToday,
+  dueThisWeek,
+  outstanding,
+  priorities,
 
-    stats: {
-      clients: clients.length,
-      activeJobs: activeJobs.length,
-      overdue: overdueJobs.length,
-      dueToday: dueToday.length,
-      dueThisWeek: dueThisWeek.length,
-      outstanding,
-      priorities: priorities.length,
-      readyForCollection: activeJobs.filter(
-        (j) => j.status === "Ready"
-      ).length,
-      needsAttention: activeJobs.filter(
-        (j) => j.needsAttention
-      ).length,
-    },
-  };
+  focus:
+    priorities.length > 0
+      ? priorities.map((job) => ({
+          message: `${job.name} — ${job.nextAction}`,
+        }))
+      : [
+          {
+            message: "No urgent priorities today.",
+          },
+        ],
+
+  stats: {
+    clients: clients.length,
+    activeJobs: activeJobs.length,
+    overdue: overdueJobs.length,
+    dueToday: dueToday.length,
+    dueThisWeek: dueThisWeek.length,
+    outstanding,
+    priorities: priorities.length,
+    readyForCollection: activeJobs.filter(
+      (j) => j.status === "Ready"
+    ).length,
+    needsAttention: activeJobs.filter(
+      (j) => j.needsAttention
+    ).length,
+  },
+};
 }

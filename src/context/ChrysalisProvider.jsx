@@ -10,30 +10,25 @@ export function ChrysalisProvider({ children }) {
     []
   );
 
-  const [rawJobs, setJobs] = useLocalStorage(
+  const [rawJobs, setRawJobs] = useLocalStorage(
     "chrysalis-jobs",
     []
   );
 
   const jobs = useMemo(
-    () => rawJobs.map((job) => enrichJob(job)),
+    () => rawJobs.map(enrichJob),
     [rawJobs]
   );
 
   const value = useMemo(
     () => ({
       clients,
-      setClients,
+      jobs,
 
-      jobs,
-      setJobs,
-    }),
-    [
-      clients,
-      jobs,
       setClients,
-      setJobs,
-    ]
+      setJobs: setRawJobs,
+    }),
+    [clients, jobs, setClients, setRawJobs]
   );
 
   return (
