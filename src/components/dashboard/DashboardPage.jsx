@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+
 import WelcomeCard from "./WelcomeCard";
 import StatsGrid from "./StatsGrid";
 import TodaysPriorities from "./TodaysPriorities";
@@ -7,6 +9,7 @@ import RecentActivity from "./RecentActivity";
 
 export default function DashboardPage({
   clients = [],
+  jobs = [],
 
   onNewClient,
 
@@ -15,6 +18,54 @@ export default function DashboardPage({
   onAppointmentsClick,
   onPaymentsClick,
 }) {
+  const dashboard = useMemo(() => {
+    const today = new Date();
+
+    const startOfToday = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    const endOfWeek = new Date(startOfToday);
+    endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+    const dueThisWeek = jobs.filter((job) => {
+      if (!job.dueDate) return false;
+
+      const due = new Date(job.dueDate);
+
+      return due >= startOfToday && due <= endOfWeek;
+    });
+
+    return {
+      totalClients: clients.length,
+
+      totalJobs: jobs.length,
+
+      overdueJobs: jobs.filter((j) => j.overdue).length,
+
+      dueToday: jobs.filter((j) => j.dueToday).length,
+
+      readyForCollection: jobs.filter(
+        (j) => j.status === "Ready"
+      ).length,
+
+      needsAttention: jobs.filter(
+        (j) => j.needsAttention
+      ).length,
+
+      outstandingPayments: jobs.reduce(
+        (total, job) =>
+          total +
+          Number(job.balance ?? job.outstanding ?? 0),
+        0
+      ),
+
+      jobsDueThisWeek: dueThisWeek.length,
+    };
+  }, [clients, jobs]);
+
   return (
     <div
       style={{
@@ -24,10 +75,15 @@ export default function DashboardPage({
         marginBottom: 40,
       }}
     >
-      <WelcomeCard clients={clients} />
+      <WelcomeCard
+        clients={clients}
+        dashboard={dashboard}
+      />
 
       <StatsGrid
         clients={clients}
+        jobs={jobs}
+        dashboard={dashboard}
         onClientsClick={onClientsClick}
         onJobsClick={onJobsClick}
         onAppointmentsClick={onAppointmentsClick}
@@ -44,14 +100,20 @@ export default function DashboardPage({
       >
         <TodaysPriorities
           clients={clients}
+          jobs={jobs}
+          dashboard={dashboard}
         />
 
         <JobsDueThisWeek
           clients={clients}
+          jobs={jobs}
+          dashboard={dashboard}
         />
 
         <RecentActivity
           clients={clients}
+          jobs={jobs}
+          dashboard={dashboard}
         />
       </div>
 

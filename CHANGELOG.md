@@ -127,3 +127,14 @@ Added Smart Job Status Engine.
   - overdue
   - dueToday
   - needsAttention
+
+### Improved
+
+- Job cards now display:
+  - Progress percentage
+  - Next Action
+  - Due Today badge
+  - Overdue badge
+  - Needs Attention badge
+
+- Removed duplicated status colour logic by using the shared workflow constants.
