@@ -1,19 +1,20 @@
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 
-import {
-  getJobsDueThisWeek,
-  getJobHealth,
-} from "../../utils/dashboard";
-
 export default function JobsDueThisWeek({
-  clients = [],
+  jobs = [],
 }) {
-  const jobs = getJobsDueThisWeek(clients);
+  const dueJobs = [...jobs]
+    .filter((job) => job.dueDate)
+    .sort(
+      (a, b) =>
+        new Date(a.dueDate) - new Date(b.dueDate)
+    )
+    .slice(0, 7);
 
   return (
     <Card title="Jobs Due This Week">
-      {jobs.length === 0 ? (
+      {dueJobs.length === 0 ? (
         <EmptyState
           icon="🧵"
           title="Nothing Due"
@@ -27,9 +28,13 @@ export default function JobsDueThisWeek({
             gap: 14,
           }}
         >
-          {jobs.map((job) => (
+          {dueJobs.map((job) => (
             <JobRow
-              key={job.id}
+              key={
+                job.id ??
+                job.reference ??
+                `${job.name}-${job.dueDate}`
+              }
               job={job}
             />
           ))}
@@ -40,7 +45,17 @@ export default function JobsDueThisWeek({
 }
 
 function JobRow({ job }) {
-  const health = getJobHealth(job);
+  const borderColour = job.overdue
+    ? "#DC2626"
+    : job.dueToday
+      ? "#EA580C"
+      : "#16A34A";
+
+  const badge = job.overdue
+    ? "🔴 Overdue"
+    : job.dueToday
+      ? "🟠 Due Today"
+      : "🟢 Scheduled";
 
   return (
     <div
@@ -51,27 +66,28 @@ function JobRow({ job }) {
         padding: 16,
         borderRadius: 10,
         background: "#FFFFFF",
-        border: `2px solid ${health.colour}`,
+        border: `2px solid ${borderColour}`,
       }}
     >
-      <div>
+      <div
+        style={{
+          flex: 1,
+        }}
+      >
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            fontWeight: 600,
+            fontWeight: 700,
+            marginBottom: 6,
           }}
         >
-          <span>{health.icon}</span>
-          <span>{job.name}</span>
+          {job.name}
         </div>
 
         <div
           style={{
-            marginTop: 6,
             fontSize: 13,
             color: "#666",
+            marginBottom: 4,
           }}
         >
           {job.status}
@@ -79,24 +95,53 @@ function JobRow({ job }) {
 
         <div
           style={{
-            marginTop: 6,
-            fontSize: 12,
-            color: health.colour,
-            fontWeight: 600,
+            fontSize: 13,
+            color: "#666",
+            marginBottom: 8,
           }}
         >
-          {health.label}
+          Next: {job.nextAction || "-"}
+        </div>
+
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 220,
+            height: 8,
+            background: "#E5E7EB",
+            borderRadius: 999,
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: `${job.progress ?? 0}%`,
+              height: "100%",
+              background: borderColour,
+            }}
+          />
+        </div>
+
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: 12,
+            color: "#666",
+          }}
+        >
+          {job.progress ?? 0}% Complete
         </div>
       </div>
 
       <div
         style={{
           textAlign: "right",
+          marginLeft: 20,
         }}
       >
         <div
           style={{
-            fontWeight: 600,
+            fontWeight: 700,
           }}
         >
           {job.dueDate}
@@ -104,12 +149,13 @@ function JobRow({ job }) {
 
         <div
           style={{
-            marginTop: 4,
+            marginTop: 6,
             fontSize: 12,
-            color: "#999",
+            fontWeight: 600,
+            color: borderColour,
           }}
         >
-          Due Date
+          {badge}
         </div>
       </div>
     </div>

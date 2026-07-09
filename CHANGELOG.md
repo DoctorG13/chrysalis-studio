@@ -153,3 +153,12 @@ Added Smart Job Status Engine.
 - Added live Ready for Collection tile.
 - Added live Needs Attention tile.
 - Eliminated duplicated dashboard calculation logic.
+
+### Improved
+
+- Today's Priorities is now generated entirely from live job data.
+- Priorities automatically include:
+  - Overdue jobs
+  - Due today
+  - Needs attention
+- Each priority displays the job, current status and recommended next action.
