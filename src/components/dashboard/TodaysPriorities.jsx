@@ -1,16 +1,30 @@
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 
-import { getDashboardInsights } from "../../utils/dashboard";
-
 export default function TodaysPriorities({
-  clients = [],
+  jobs = [],
 }) {
-  const { focus } = getDashboardInsights(clients);
+  const priorities = [...jobs]
+    .filter(
+      (job) =>
+        job.overdue ||
+        job.dueToday ||
+        job.needsAttention
+    )
+    .sort((a, b) => {
+      const score = (job) => {
+        if (job.overdue) return 1;
+        if (job.dueToday) return 2;
+        if (job.needsAttention) return 3;
+        return 99;
+      };
+
+      return score(a) - score(b);
+    });
 
   return (
     <Card title="Today's Priorities">
-      {focus.length === 0 ? (
+      {priorities.length === 0 ? (
         <EmptyState
           icon="🎉"
           title="You're all caught up!"
@@ -24,11 +38,10 @@ export default function TodaysPriorities({
             gap: 16,
           }}
         >
-          {focus.map((item, index) => (
+          {priorities.map((job) => (
             <PriorityRow
-              key={index}
-              level={item.level}
-              message={item.message}
+              key={job.id ?? job.reference ?? job.name}
+              job={job}
             />
           ))}
         </div>
@@ -37,10 +50,21 @@ export default function TodaysPriorities({
   );
 }
 
-function PriorityRow({
-  level,
-  message,
-}) {
+function PriorityRow({ job }) {
+  let level = "info";
+  let icon = "ℹ️";
+
+  if (job.overdue) {
+    level = "critical";
+    icon = "🔴";
+  } else if (job.dueToday) {
+    level = "warning";
+    icon = "🟠";
+  } else if (job.needsAttention) {
+    level = "success";
+    icon = "🟡";
+  }
+
   const styles = {
     critical: {
       border: "#DC2626",
@@ -60,22 +84,37 @@ function PriorityRow({
     },
   };
 
-  const style =
-    styles[level] || styles.info;
+  const style = styles[level];
 
   return (
     <div
       style={{
         display: "flex",
-        alignItems: "center",
+        flexDirection: "column",
+        gap: 6,
         padding: 16,
         borderLeft: `6px solid ${style.border}`,
         background: style.background,
         borderRadius: 10,
-        fontWeight: 600,
       }}
     >
-      {message}
+      <strong>
+        {icon} {job.name}
+      </strong>
+
+      <div>
+        <strong>Status:</strong> {job.status}
+      </div>
+
+      <div>
+        <strong>Next:</strong> {job.nextAction}
+      </div>
+
+      {job.dueDate && (
+        <div>
+          <strong>Due:</strong> {job.dueDate}
+        </div>
+      )}
     </div>
   );
 }

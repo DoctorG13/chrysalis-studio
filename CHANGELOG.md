@@ -145,3 +145,11 @@ Added Smart Job Status Engine.
 - Added central dashboard summary object.
 - Shared dashboard metrics with child components.
 - Established a single source of truth for dashboard calculations.
+
+### Changed
+
+- StatsGrid no longer performs its own calculations.
+- All statistics now come from the shared dashboard summary.
+- Added live Ready for Collection tile.
+- Added live Needs Attention tile.
+- Eliminated duplicated dashboard calculation logic.
