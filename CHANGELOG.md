@@ -138,3 +138,10 @@ Added Smart Job Status Engine.
   - Needs Attention badge
 
 - Removed duplicated status colour logic by using the shared workflow constants.
+
+### Changed
+
+- DashboardPage now accepts live jobs.
+- Added central dashboard summary object.
+- Shared dashboard metrics with child components.
+- Established a single source of truth for dashboard calculations.

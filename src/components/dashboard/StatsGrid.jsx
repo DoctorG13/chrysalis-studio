@@ -1,25 +1,12 @@
 import StatCard from "../common/StatCard";
 
-import {
-  getActiveJobs,
-  getAppointmentsToday,
-  getOutstandingPayments,
-  getOverdueJobs,
-} from "../../utils/dashboard";
-
 export default function StatsGrid({
-  clients = [],
+  dashboard,
   onClientsClick,
   onJobsClick,
   onAppointmentsClick,
   onPaymentsClick,
 }) {
-  const activeJobs = getActiveJobs(clients);
-  const overdueJobs = getOverdueJobs(clients);
-  const todaysAppointments = getAppointmentsToday(clients);
-  const outstandingPayments =
-    getOutstandingPayments(clients);
-
   return (
     <div
       style={{
@@ -33,42 +20,62 @@ export default function StatsGrid({
       <StatCard
         icon="👥"
         title="Clients"
-        value={clients.length}
+        value={dashboard.totalClients}
         subtitle="Registered clients"
         onClick={onClientsClick}
       />
 
       <StatCard
         icon="💼"
-        title="Active Jobs"
-        value={activeJobs.length}
+        title="Jobs"
+        value={dashboard.totalJobs}
         subtitle={
-          overdueJobs.length > 0
-            ? `${overdueJobs.length} overdue`
-            : "Currently in progress"
+          dashboard.overdueJobs > 0
+            ? `${dashboard.overdueJobs} overdue`
+            : "All on schedule"
         }
         onClick={onJobsClick}
       />
 
       <StatCard
         icon="📅"
-        title="Today's Appointments"
-        value={todaysAppointments.length}
+        title="Due Today"
+        value={dashboard.dueToday}
         subtitle={
-          todaysAppointments.length === 0
-            ? "No appointments today"
-            : "Scheduled today"
+          dashboard.dueToday === 0
+            ? "Nothing due today"
+            : "Requires attention today"
         }
         onClick={onAppointmentsClick}
       />
 
       <StatCard
+        icon="🧵"
+        title="Ready"
+        value={dashboard.readyForCollection}
+        subtitle="Ready for collection"
+        onClick={onJobsClick}
+      />
+
+      <StatCard
+        icon="⚠️"
+        title="Attention"
+        value={dashboard.needsAttention}
+        subtitle={
+          dashboard.needsAttention === 0
+            ? "Everything looks good"
+            : "Jobs requiring action"
+        }
+        onClick={onJobsClick}
+      />
+
+      <StatCard
         icon="💰"
         title="Outstanding"
-        value={`$${outstandingPayments.toFixed(2)}`}
+        value={`$${dashboard.outstandingPayments.toFixed(2)}`}
         subtitle={
-          outstandingPayments === 0
-            ? "All payments received"
+          dashboard.outstandingPayments === 0
+            ? "Fully paid"
             : "Awaiting payment"
         }
         onClick={onPaymentsClick}
