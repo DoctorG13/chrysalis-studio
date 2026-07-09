@@ -7,17 +7,18 @@ import {
 export default function WelcomeCard({
   clients = [],
 }) {
-  const today = new Date();
+  const now = new Date();
+  const hour = now.getHours();
 
   const greeting =
-    today.getHours() < 12
+    hour < 12
       ? "Good Morning"
-      : today.getHours() < 18
+      : hour < 18
       ? "Good Afternoon"
       : "Good Evening";
 
   const formattedDate =
-    today.toLocaleDateString("en-AU", {
+    now.toLocaleDateString("en-AU", {
       weekday: "long",
       day: "numeric",
       month: "long",
@@ -26,6 +27,21 @@ export default function WelcomeCard({
 
   const insights =
     getDashboardInsights(clients);
+
+  const intro =
+    insights.overdueJobs.length > 0
+      ? `You have ${insights.overdueJobs.length} overdue ${
+          insights.overdueJobs.length === 1
+            ? "job"
+            : "jobs"
+        } requiring immediate attention.`
+      : insights.appointments.length > 0
+      ? `You have ${insights.appointments.length} appointment${
+          insights.appointments.length === 1
+            ? ""
+            : "s"
+        } scheduled today.`
+      : "Your studio is looking organised today.";
 
   return (
     <Card
@@ -37,49 +53,42 @@ export default function WelcomeCard({
           marginTop: 0,
           lineHeight: 1.7,
           color: "#555",
+          fontSize: 16,
         }}
       >
-        Welcome back to Chrysalis Studio.
+        {intro}
       </p>
 
       <div
         style={{
           display: "grid",
           gridTemplateColumns:
-            "repeat(auto-fit,minmax(220px,1fr))",
-          gap: 18,
+  "repeat(auto-fit,minmax(160px,1fr))",
+gap: 12,
           marginTop: 24,
         }}
       >
         <SummaryCard
           icon="📅"
-          value={
-            insights.appointments.length
-          }
+          value={insights.appointments.length}
           label="Appointments Today"
         />
 
         <SummaryCard
           icon="💼"
-          value={
-            insights.activeJobs.length
-          }
+          value={insights.activeJobs.length}
           label="Active Jobs"
         />
 
         <SummaryCard
           icon="🧵"
-          value={
-            insights.dueThisWeek.length
-          }
+          value={insights.dueThisWeek.length}
           label="Due This Week"
         />
 
         <SummaryCard
           icon="💰"
-          value={`$${insights.outstanding.toFixed(
-            2
-          )}`}
+          value={`$${insights.outstanding.toFixed(2)}`}
           label="Outstanding"
         />
       </div>
@@ -104,11 +113,13 @@ export default function WelcomeCard({
             color: "#555",
           }}
         >
-          {insights.focus.map(
-            (item, index) => (
-              <li key={index}>{item}</li>
-            )
-          )}
+          {insights.focus.map((item, index) => (
+            <li key={index}>
+              {typeof item === "string"
+                ? item
+                : item.message}
+            </li>
+          ))}
         </ul>
       </div>
     </Card>
@@ -123,23 +134,29 @@ function SummaryCard({
   return (
     <div
       style={{
-        background: "#FFFFFF",
-        border: "1px solid #E5E7EB",
-        borderRadius: 10,
-        padding: 20,
-        textAlign: "center",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "4px 2px",
       }}
     >
-      <div style={{ fontSize: 28 }}>
+      <div
+        style={{
+          fontSize: 16,
+          lineHeight: 1,
+          marginBottom: 4,
+        }}
+      >
         {icon}
       </div>
 
       <div
         style={{
-          marginTop: 10,
-          fontSize: 28,
+          fontSize: 18,
           fontWeight: 700,
           color: "#2F3A3F",
+          lineHeight: 1,
         }}
       >
         {value}
@@ -147,9 +164,12 @@ function SummaryCard({
 
       <div
         style={{
-          marginTop: 8,
-          color: "#666",
-          fontSize: 14,
+          marginTop: 3,
+          fontSize: 10,
+          fontWeight: 500,
+          color: "#777",
+          textTransform: "uppercase",
+          letterSpacing: 0.4,
         }}
       >
         {label}

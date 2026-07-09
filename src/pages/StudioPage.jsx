@@ -39,11 +39,11 @@ export default function StudioPage({
   }
 
   function handleClientsClick() {
-  clientListRef.current?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
-  });
-}
+    clientListRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
 
   function handleJobsClick() {
     console.log("Jobs clicked");
@@ -59,28 +59,6 @@ export default function StudioPage({
 
   return (
     <>
-      <h1
-        style={{
-          marginTop: 0,
-          marginBottom: 8,
-          color: "#2F3A3F",
-          fontSize: 38,
-        }}
-      >
-        Today's Studio
-      </h1>
-
-      <p
-        style={{
-          color: "#777",
-          fontSize: 18,
-          marginBottom: 35,
-        }}
-      >
-        Welcome back. Everything is ready
-        for your day.
-      </p>
-
       <DashboardPage
         clients={clients}
         onNewClient={() =>
@@ -95,11 +73,11 @@ export default function StudioPage({
       />
 
       <div ref={clientListRef}>
-  <ClientList
-    clients={clients}
-    onClientClick={handleClientClick}
-  />
-</div>
+        <ClientList
+          clients={clients}
+          onClientClick={handleClientClick}
+        />
+      </div>
 
       <SlidePanel
         open={showClientPanel}

@@ -15,6 +15,17 @@ export default function JobForm({
   const [status, setStatus] = useState("Quote");
   const [description, setDescription] = useState("");
 
+  function createTimelineEvent(title, type = "system") {
+    return {
+      id:
+        globalThis.crypto?.randomUUID?.() ??
+        `timeline-${Date.now()}`,
+      title,
+      type,
+      date: new Date().toISOString(),
+    };
+  }
+
   function handleSave() {
     if (!name.trim()) {
       alert("Please enter a Job Name.");
@@ -27,6 +38,9 @@ export default function JobForm({
       priority,
       status,
       description,
+      timeline: [
+        createTimelineEvent("Job Created"),
+      ],
     });
 
     onSave(job);
@@ -34,14 +48,7 @@ export default function JobForm({
 
   return (
     <>
-      <h2
-        style={{
-          marginTop: 0,
-          color: "#2F3A3F",
-        }}
-      >
-        New Job
-      </h2>
+      <h2>Create Job</h2>
 
       <TextInput
         label="Job Name"
@@ -56,52 +63,17 @@ export default function JobForm({
         onChange={setDueDate}
       />
 
-      <div style={{ marginBottom: 20 }}>
-        <label>Priority</label>
+      <TextInput
+        label="Priority"
+        value={priority}
+        onChange={setPriority}
+      />
 
-        <select
-          value={priority}
-          onChange={(e) => setPriority(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 6,
-            borderRadius: 8,
-          }}
-        >
-          <option>Low</option>
-          <option>Normal</option>
-          <option>High</option>
-          <option>Urgent</option>
-        </select>
-      </div>
-
-      <div style={{ marginBottom: 20 }}>
-        <label>Status</label>
-
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 6,
-            borderRadius: 8,
-          }}
-        >
-          <option>Quote</option>
-<option>Booked</option>
-<option>Pattern</option>
-<option>Cutting</option>
-<option>Construction</option>
-<option>First Fitting</option>
-<option>Alterations</option>
-<option>Ready</option>
-<option>Collected</option>
-<option>Completed</option>
-<option>Cancelled</option>
-        </select>
-      </div>
+      <TextInput
+        label="Status"
+        value={status}
+        onChange={setStatus}
+      />
 
       <TextInput
         label="Description"
@@ -113,11 +85,11 @@ export default function JobForm({
         style={{
           display: "flex",
           gap: 12,
-          marginTop: 30,
+          marginTop: 24,
         }}
       >
         <Button onClick={handleSave}>
-          Create Job
+          Save
         </Button>
 
         <Button onClick={onCancel}>

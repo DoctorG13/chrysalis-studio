@@ -9,12 +9,23 @@ export function ChrysalisProvider({ children }) {
     []
   );
 
+  const [jobs, setJobs] = useLocalStorage(
+    "chrysalis-jobs",
+    []
+  );
+
   const value = useMemo(
     () => ({
       clients,
       setClients,
+
+      jobs,
+      setJobs,
     }),
-    [clients]
+    [
+      clients,
+      jobs,
+    ]
   );
 
   return (

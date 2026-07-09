@@ -95,3 +95,10 @@ Cancelled
 - Active Jobs highlights overdue work.
 - Today's Appointments indicates when the schedule is clear.
 - Outstanding Payments confirms when all invoices have been paid.
+
+### Changed
+
+- Improved dashboard statistics with contextual subtitles.
+- Active Jobs now highlights overdue work.
+- Today's Appointments indicates when no appointments are scheduled.
+- Outstanding Payments confirms when all payments have been received.
