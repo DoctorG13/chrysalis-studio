@@ -40,86 +40,64 @@ export function getOutstandingPayments(clients = []) {
 }
 
 export function getAppointmentsToday(clients = []) {
-  const today = new Date().toLocaleDateString("en-AU");
+  const today = startOfDay();
 
-  return getAllAppointments(clients).filter(
-    (appointment) => appointment.date === today
-  );
+  return getAllAppointments(clients).filter((appointment) => {
+    if (!appointment.date) return false;
+    return startOfDay(appointment.date).getTime() === today.getTime();
+  });
 }
 
 export function getOverdueJobs(clients = []) {
-  const today = startOfDay();
-
-  return getActiveJobs(clients).filter((job) => {
-    if (!job.dueDate) return false;
-
-    return startOfDay(job.dueDate) < today;
-  });
+  return getActiveJobs(clients).filter((job) => job.overdue);
 }
 
 export function getJobsDueToday(clients = []) {
-  const today = startOfDay();
-
-  return getActiveJobs(clients).filter((job) => {
-    if (!job.dueDate) return false;
-
-    return startOfDay(job.dueDate).getTime() === today.getTime();
-  });
+  return getActiveJobs(clients).filter((job) => job.dueToday);
 }
 
 export function getJobsDueThisWeek(clients = []) {
   const today = startOfDay();
-  const nextWeek = startOfDay();
 
-  nextWeek.setDate(today.getDate() + 7);
+  const end = startOfDay();
+  end.setDate(end.getDate() + 7);
 
-  return getActiveJobs(clients).filter((job) => {
-    if (!job.dueDate) return false;
+  return getActiveJobs(clients)
+    .filter((job) => {
+      if (!job.dueDate) return false;
 
-    const due = startOfDay(job.dueDate);
+      const due = startOfDay(job.dueDate);
 
-    return due > today && due <= nextWeek;
-  });
+      return due >= today && due <= end;
+    })
+    .sort(
+      (a, b) => new Date(a.dueDate) - new Date(b.dueDate)
+    );
 }
 
 export function getJobHealth(job) {
-  if (!job) {
+  if (job?.overdue) {
     return {
-      level: "unknown",
-      label: "Unknown",
-      icon: "⚪",
-      colour: "#9CA3AF",
+      level: "critical",
+      label: "Overdue",
+      icon: "🔴",
+      colour: "#DC2626",
     };
   }
 
-  const today = startOfDay();
-
-  if (job.dueDate) {
-    const due = startOfDay(job.dueDate);
-
-    if (due < today) {
-      return {
-        level: "critical",
-        label: "Overdue",
-        icon: "🔴",
-        colour: "#DC2626",
-      };
-    }
-
-    if (due.getTime() === today.getTime()) {
-      return {
-        level: "warning",
-        label: "Due Today",
-        icon: "🟠",
-        colour: "#EA580C",
-      };
-    }
+  if (job?.dueToday) {
+    return {
+      level: "warning",
+      label: "Due Today",
+      icon: "🟠",
+      colour: "#EA580C",
+    };
   }
 
-  if (job.priority === "High") {
+  if (job?.needsAttention) {
     return {
       level: "attention",
-      label: "High Priority",
+      label: "Needs Attention",
       icon: "🟡",
       colour: "#CA8A04",
     };
@@ -140,6 +118,26 @@ export function getRecentActivity(clients = [], limit = 5) {
     .slice(0, limit);
 }
 
+export function getTodaysPriorities(clients = []) {
+  return getActiveJobs(clients)
+    .filter(
+      (job) =>
+        job.overdue ||
+        job.dueToday ||
+        job.needsAttention
+    )
+    .sort((a, b) => {
+      const score = (job) => {
+        if (job.overdue) return 1;
+        if (job.dueToday) return 2;
+        if (job.needsAttention) return 3;
+        return 99;
+      };
+
+      return score(a) - score(b);
+    });
+}
+
 export function getDashboardInsights(clients = []) {
   const appointments = getAppointmentsToday(clients);
   const activeJobs = getActiveJobs(clients);
@@ -147,43 +145,7 @@ export function getDashboardInsights(clients = []) {
   const dueToday = getJobsDueToday(clients);
   const dueThisWeek = getJobsDueThisWeek(clients);
   const outstanding = getOutstandingPayments(clients);
-
-  const focus = [];
-
-  if (overdueJobs.length) {
-    focus.push({
-      level: "critical",
-      message: `🔴 ${overdueJobs.length} overdue job${overdueJobs.length === 1 ? "" : "s"}`,
-    });
-  }
-
-  if (dueToday.length) {
-    focus.push({
-      level: "warning",
-      message: `🟠 ${dueToday.length} job${dueToday.length === 1 ? "" : "s"} due today`,
-    });
-  }
-
-  if (appointments.length) {
-    focus.push({
-      level: "info",
-      message: `📅 ${appointments.length} appointment${appointments.length === 1 ? "" : "s"} today`,
-    });
-  }
-
-  if (dueThisWeek.length) {
-    focus.push({
-      level: "info",
-      message: `🧵 ${dueThisWeek.length} job${dueThisWeek.length === 1 ? "" : "s"} due this week`,
-    });
-  }
-
-  if (outstanding > 0) {
-    focus.push({
-      level: "success",
-      message: `💰 $${outstanding.toFixed(2)} outstanding`,
-    });
-  }
+  const priorities = getTodaysPriorities(clients);
 
   return {
     appointments,
@@ -192,6 +154,22 @@ export function getDashboardInsights(clients = []) {
     dueToday,
     dueThisWeek,
     outstanding,
-    focus,
+    priorities,
+
+    stats: {
+      clients: clients.length,
+      activeJobs: activeJobs.length,
+      overdue: overdueJobs.length,
+      dueToday: dueToday.length,
+      dueThisWeek: dueThisWeek.length,
+      outstanding,
+      priorities: priorities.length,
+      readyForCollection: activeJobs.filter(
+        (j) => j.status === "Ready"
+      ).length,
+      needsAttention: activeJobs.filter(
+        (j) => j.needsAttention
+      ).length,
+    },
   };
 }

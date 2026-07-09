@@ -171,3 +171,14 @@ Added Smart Job Status Engine.
 - Added next action display.
 - Sorted jobs by due date.
 - Removed dependency on dashboard helper functions for job health.
+
+### Improved
+
+- Recent Activity now combines:
+  - Client activity
+  - Overdue jobs
+  - Due today jobs
+  - Ready for collection
+  - Completed jobs
+  - Collected jobs
+- Activity feed is automatically sorted newest-first.
