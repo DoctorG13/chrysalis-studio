@@ -162,3 +162,12 @@ Added Smart Job Status Engine.
   - Due today
   - Needs attention
 - Each priority displays the job, current status and recommended next action.
+
+### Improved
+
+- Jobs Due This Week now uses enriched job data.
+- Added workflow progress bar.
+- Added overdue and due today highlighting.
+- Added next action display.
+- Sorted jobs by due date.
+- Removed dependency on dashboard helper functions for job health.
