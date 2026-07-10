@@ -39,10 +39,12 @@ export default function App() {
             }
             header={
                 <Header
-                    title="Chrysalis Studio"
-                    user="Donna"
-                    onSearch={setSearchQuery}
-                />
+    title="Chrysalis Studio"
+    user="Donna"
+    searchQuery={searchQuery}
+    searchResults={searchResults}
+    onSearch={setSearchQuery}
+/>
             }
         >
             <StudioPage

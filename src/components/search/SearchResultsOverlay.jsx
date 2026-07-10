@@ -10,12 +10,21 @@ export default function SearchResultsOverlay({
   return (
     <div
       style={{
+        position: "fixed",
+        top: 95,
+        left: "50%",
+        transform: "translateX(-50%)",
+
+        width: 520,
+        maxHeight: 420,
+
         background: "#FFFFFF",
         border: "1px solid #E5E7EB",
         borderRadius: 12,
-        boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
-        marginBottom: 20,
-        overflow: "hidden",
+        boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+
+        overflowY: "auto",
+        zIndex: 9999,
       }}
     >
       <div
@@ -23,6 +32,7 @@ export default function SearchResultsOverlay({
           padding: "12px 16px",
           borderBottom: "1px solid #F3F4F6",
           fontWeight: 700,
+          background: "#FAFAFA",
         }}
       >
         🔍 Search Results ({results.length})
@@ -49,7 +59,14 @@ export default function SearchResultsOverlay({
             style={{
               padding: 16,
               cursor: "pointer",
-              borderBottom: "1px solid #F5F5F5",
+              borderBottom: "1px solid #F3F4F6",
+              transition: "background 0.15s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#F8FAFC";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#FFFFFF";
             }}
           >
             <div
@@ -62,9 +79,9 @@ export default function SearchResultsOverlay({
 
             <div
               style={{
-                color: "#666",
-                fontSize: 14,
                 marginTop: 4,
+                fontSize: 14,
+                color: "#666",
               }}
             >
               {result.subtitle}
@@ -73,7 +90,7 @@ export default function SearchResultsOverlay({
             <div
               style={{
                 marginTop: 6,
-                fontSize: 12,
+                fontSize: 11,
                 color: "#999",
                 textTransform: "uppercase",
               }}
