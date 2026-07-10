@@ -18,10 +18,16 @@ export default function App() {
         setClients,
     } = useChrysalis();
 
-    const searchResults = useMemo(
-        () => searchStudio(searchQuery, clients, jobs),
-        [searchQuery, clients, jobs]
-    );
+    const searchResults = useMemo(() => {
+    const results = searchStudio(searchQuery, clients, jobs);
+
+    console.log("Query:", searchQuery);
+    console.log("Clients:", clients);
+    console.log("Jobs:", jobs);
+    console.log("Results:", results);
+
+    return results;
+}, [searchQuery, clients, jobs]);
 
     return (
         <AppShell
