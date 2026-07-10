@@ -7,6 +7,8 @@ import JobsDueThisWeek from "./JobsDueThisWeek";
 import QuickActions from "./QuickActions";
 import RecentActivity from "./RecentActivity";
 
+import TodaysWorkPanel from "./TodaysWorkPanel";
+
 export default function DashboardPage({
   clients = [],
   jobs = [],
@@ -80,6 +82,12 @@ export default function DashboardPage({
         dashboard={dashboard}
       />
 
+<TodaysWorkPanel
+    jobs={jobs}
+    onSelectJob={(job) => {
+        console.log("Open job:", job);
+    }}
+/>
       <StatsGrid
         clients={clients}
         jobs={jobs}
