@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Button from "../common/Button";
 
-import JobTabs from "../jobs/JobTabs";
-import JobOverview from "../jobs/JobOverview";
-import JobMeasurements from "../jobs/JobMeasurements";
-import JobPayments from "../jobs/JobPayments";
-import JobTimeline from "../jobs/JobTimeline";
-import JobFittings from "../jobs/JobFittings";
-import JobPhotos from "../jobs/JobPhotos";
+import JobTabs from "./JobTabs";
+import JobOverview from "./JobOverview";
+import JobDetailsPanel from "./JobDetailsPanel";
+import JobMeasurements from "./JobMeasurements";
+import JobPayments from "./JobPayments";
+import JobTimeline from "./JobTimeline";
+import JobFittings from "./JobFittings";
+import JobPhotos from "./JobPhotos";
 
 export default function JobEditor({
   job,
@@ -18,31 +19,51 @@ export default function JobEditor({
   const [activeTab, setActiveTab] =
     useState("Overview");
 
-  if (!job) return null;
+  const [editedJob, setEditedJob] =
+    useState(job);
+
+  useEffect(() => {
+    setEditedJob(job);
+    setActiveTab("Overview");
+  }, [job]);
+
+  if (!editedJob) return null;
 
   function renderTab() {
     switch (activeTab) {
       case "Overview":
         return (
-          <JobOverview job={job} />
+          <JobOverview
+            job={editedJob}
+          />
+        );
+
+      case "Details":
+        return (
+          <JobDetailsPanel
+            job={editedJob}
+            onChange={setEditedJob}
+          />
         );
 
       case "Measurements":
         return (
           <JobMeasurements
-            job={job}
+            job={editedJob}
           />
         );
 
       case "Payments":
         return (
-          <JobPayments job={job} />
+          <JobPayments
+            job={editedJob}
+          />
         );
 
       case "Fittings":
         return (
           <JobFittings
-            job={job}
+            job={editedJob}
             onAddFitting={() => {}}
             onEditFitting={() => {}}
           />
@@ -51,7 +72,7 @@ export default function JobEditor({
       case "Photos":
         return (
           <JobPhotos
-            job={job}
+            job={editedJob}
             onAddPhoto={() => {}}
             onOpenPhoto={() => {}}
           />
@@ -59,14 +80,22 @@ export default function JobEditor({
 
       case "Timeline":
         return (
-          <JobTimeline job={job} />
+          <JobTimeline
+            job={editedJob}
+          />
         );
 
       default:
         return (
-          <JobOverview job={job} />
+          <JobOverview
+            job={editedJob}
+          />
         );
     }
+  }
+
+  function handleSave() {
+    onSave?.(editedJob);
   }
 
   return (
@@ -92,7 +121,7 @@ export default function JobEditor({
               color: "#2F3A3F",
             }}
           >
-            {job.name}
+            {editedJob.name}
           </h2>
 
           <div
@@ -101,7 +130,7 @@ export default function JobEditor({
               color: "#777",
             }}
           >
-            {job.garmentType ||
+            {editedJob.garmentType ||
               "General Job"}
           </div>
         </div>
@@ -113,11 +142,9 @@ export default function JobEditor({
           }}
         >
           <Button
-            onClick={() =>
-              onSave?.(job)
-            }
+            onClick={handleSave}
           >
-            Save
+            💾 Save
           </Button>
 
           <Button
