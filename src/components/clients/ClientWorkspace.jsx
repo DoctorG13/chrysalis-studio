@@ -4,10 +4,11 @@ import TextInput from "../common/TextInput";
 import Button from "../common/Button";
 
 import WorkspaceSection from "../workspace/WorkspaceSection";
-import MeasurementsSection from "../workspace/MeasurementsSection";
 import ClientJobsPanel from "./ClientJobsPanel";
 
 import ClientWorkspaceHeader from "./ClientWorkspaceHeader";
+import MeasurementsSection from "../clients/MeasurementsSection";
+import AppointmentsSection from "../appointments/AppointmentsSection";
 
 export default function ClientWorkspace({
   client,
@@ -20,6 +21,7 @@ export default function ClientWorkspace({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
+  const [appointments, setAppointments] = useState([]);
 
   const [measurements, setMeasurements] = useState({
     bust: "",
@@ -58,6 +60,7 @@ export default function ClientWorkspace({
     setPhone(client.phone || "");
     setEmail(client.email || "");
     setNotes(client.notes || "");
+    setAppointments(client.appointments || []);
 
     setMeasurements({
       bust: client.measurements?.bust || "",
@@ -112,6 +115,7 @@ export default function ClientWorkspace({
       email,
       notes,
       measurements,
+       appointments,
     };
 
     const updatedClients = clients.map((c) =>
@@ -222,6 +226,18 @@ export default function ClientWorkspace({
     setClients={setClients}
 />
       </WorkspaceSection>
+
+<WorkspaceSection
+  title="Appointments"
+  icon="📅"
+  isOpen={openSections.appointments}
+  onToggle={() => toggleSection("appointments")}
+>
+  <AppointmentsSection
+    appointments={appointments}
+    setAppointments={setAppointments}
+  />
+</WorkspaceSection>
 
       <hr />
 

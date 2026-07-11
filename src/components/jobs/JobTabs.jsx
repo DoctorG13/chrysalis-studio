@@ -4,6 +4,7 @@ export default function JobTabs({
 }) {
   const tabs = [
     "Overview",
+    "Details",
     "Measurements",
     "Payments",
     "Timeline",
@@ -32,16 +33,17 @@ export default function JobTabs({
             border:
               activeTab === tab
                 ? "2px solid #7B3FF2"
-                : "1px solid #ddd",
+                : "1px solid #DDD",
             background:
               activeTab === tab
                 ? "#F3EEFF"
-                : "#fff",
+                : "#FFF",
             cursor: "pointer",
             fontWeight:
               activeTab === tab
                 ? 700
                 : 500,
+            transition: "all 0.15s ease",
           }}
         >
           {tab}

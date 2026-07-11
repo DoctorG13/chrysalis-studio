@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import SlidePanel from "../common/SlidePanel";
 
-import JobsSection from "../workspace/JobsSection";
 import JobForm from "../jobs/JobForm";
-import JobEditor from "../workspace/JobEditor";
+import JobsSection from "../jobs/JobsSection";
+
+import JobEditor from "../jobs/JobEditor";
 
 export default function ClientJobsPanel({
   client,
@@ -49,8 +50,9 @@ export default function ClientJobsPanel({
   }
 
   function handleOpenJob(job) {
-    setSelectedJob(job);
-  }
+  console.log("Opening job:", job);
+  setSelectedJob(job);
+}
 
   function handleSaveJob(job) {
     const updatedJobs = jobs.map((j) =>

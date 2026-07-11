@@ -27,7 +27,7 @@ export default function JobList({
         <JobCard
           key={job.id}
           job={job}
-          onClick={onJobClick}
+          onOpen={onJobClick}
         />
       ))}
     </div>

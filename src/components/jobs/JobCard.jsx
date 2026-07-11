@@ -21,12 +21,12 @@ function Badge({ label, background, color = "#fff" }) {
   );
 }
 
-export default function JobCard({ job, onClick }) {
+export default function JobCard({ job, onOpen }) {
   const outstanding = Number(job.balance ?? job.outstanding ?? 0);
 
   return (
     <div
-      onClick={() => onClick?.(job)}
+      onClick={() => onOpen?.(job)}
       style={{ cursor: "pointer" }}
     >
       <Card>
