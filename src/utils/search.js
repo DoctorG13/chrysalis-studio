@@ -8,8 +8,15 @@ export function searchStudio(query, clients = [], jobs = []) {
   const results = [];
 
   clients.forEach((client) => {
+    const fullName = [
+      client.firstName,
+      client.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     const searchable = [
-      client.name,
+      fullName,
       client.phone,
       client.email,
       client.notes,
@@ -22,7 +29,7 @@ export function searchStudio(query, clients = [], jobs = []) {
       results.push({
         type: "client",
         id: client.id,
-        title: client.name,
+        title: fullName,
         subtitle: client.phone || client.email || "",
         data: client,
       });
@@ -44,14 +51,14 @@ export function searchStudio(query, clients = [], jobs = []) {
       results.push({
         type: "job",
         id: job.id,
-        title: job.name,
-        subtitle: `${job.status} • ${job.reference ?? ""}`,
+        title: job.name ?? "",
+        subtitle: `${job.status ?? ""} • ${job.reference ?? ""}`,
         data: job,
       });
     }
   });
 
   return results.sort((a, b) =>
-    a.title.localeCompare(b.title)
+    (a.title ?? "").localeCompare(b.title ?? "")
   );
 }

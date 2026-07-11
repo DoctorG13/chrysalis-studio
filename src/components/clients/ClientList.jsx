@@ -18,13 +18,11 @@ export default function ClientList({
 
     return clients.filter((client) => {
       const searchable = [
-        client.name,
-        client.firstName,
-        client.lastName,
-        client.phone,
-        client.email,
-        client.notes,
-      ]
+  `${client.firstName ?? ""} ${client.lastName ?? ""}`.trim(),
+  client.phone,
+  client.email,
+  client.notes,
+]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
