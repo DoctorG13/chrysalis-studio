@@ -65,6 +65,16 @@ export default function ClientJobsPanel({
     setSelectedJobId(job.id);
   }
 
+  function handleDeleteJob(jobId) {
+    const updatedJobs = jobs.filter(
+      (job) => job.id !== jobId
+    );
+
+    updateClient(updatedJobs);
+
+    setSelectedJobId(null);
+  }
+
   return (
     <>
       <JobsSection
@@ -99,6 +109,7 @@ export default function ClientJobsPanel({
           <JobEditor
             job={selectedJob}
             onSave={handleSaveJob}
+            onDelete={handleDeleteJob}
             onCancel={() =>
               setSelectedJobId(null)
             }
