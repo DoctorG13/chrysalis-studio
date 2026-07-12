@@ -14,6 +14,7 @@ import JobPhotos from "./JobPhotos";
 export default function JobEditor({
   job,
   onSave,
+  onDelete,
   onCancel,
 }) {
   const [activeTab, setActiveTab] =
@@ -28,6 +29,20 @@ export default function JobEditor({
   }, [job]);
 
   if (!editedJob) return null;
+
+  function handleSave() {
+    onSave?.(editedJob);
+  }
+
+  function handleDelete() {
+    if (
+      window.confirm(
+        `Delete "${editedJob.name}"?`
+      )
+    ) {
+      onDelete?.(editedJob.id);
+    }
+  }
 
   function renderTab() {
     switch (activeTab) {
@@ -94,10 +109,6 @@ export default function JobEditor({
     }
   }
 
-  function handleSave() {
-    onSave?.(editedJob);
-  }
-
   return (
     <div
       style={{
@@ -139,12 +150,19 @@ export default function JobEditor({
           style={{
             display: "flex",
             gap: 10,
+            flexWrap: "wrap",
           }}
         >
           <Button
             onClick={handleSave}
           >
             💾 Save
+          </Button>
+
+          <Button
+            onClick={handleDelete}
+          >
+            🗑 Delete
           </Button>
 
           <Button
