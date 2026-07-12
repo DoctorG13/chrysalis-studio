@@ -4,7 +4,6 @@ import SlidePanel from "../common/SlidePanel";
 
 import JobForm from "../jobs/JobForm";
 import JobsSection from "../jobs/JobsSection";
-
 import JobEditor from "../jobs/JobEditor";
 
 export default function ClientJobsPanel({
@@ -20,8 +19,12 @@ export default function ClientJobsPanel({
   const [showJobForm, setShowJobForm] =
     useState(false);
 
-  const [selectedJob, setSelectedJob] =
+  const [selectedJobId, setSelectedJobId] =
     useState(null);
+
+  const selectedJob =
+    jobs.find((job) => job.id === selectedJobId) ||
+    null;
 
   function updateClient(updatedJobs) {
     const updatedClient = {
@@ -45,14 +48,12 @@ export default function ClientJobsPanel({
 
     setShowJobForm(false);
 
-    // Automatically open the newly created job
-    setSelectedJob(job);
+    setSelectedJobId(job.id);
   }
 
   function handleOpenJob(job) {
-  console.log("Opening job:", job);
-  setSelectedJob(job);
-}
+    setSelectedJobId(job.id);
+  }
 
   function handleSaveJob(job) {
     const updatedJobs = jobs.map((j) =>
@@ -61,37 +62,46 @@ export default function ClientJobsPanel({
 
     updateClient(updatedJobs);
 
-    // Keep the editor open using the latest data
-    setSelectedJob(job);
+    setSelectedJobId(job.id);
   }
 
   return (
     <>
       <JobsSection
         jobs={jobs}
-        onNewJob={() => setShowJobForm(true)}
+        onNewJob={() =>
+          setShowJobForm(true)
+        }
         onOpenJob={handleOpenJob}
       />
 
       <SlidePanel
         open={showJobForm}
-        onClose={() => setShowJobForm(false)}
+        onClose={() =>
+          setShowJobForm(false)
+        }
       >
         <JobForm
           onSave={handleCreateJob}
-          onCancel={() => setShowJobForm(false)}
+          onCancel={() =>
+            setShowJobForm(false)
+          }
         />
       </SlidePanel>
 
       <SlidePanel
         open={!!selectedJob}
-        onClose={() => setSelectedJob(null)}
+        onClose={() =>
+          setSelectedJobId(null)
+        }
       >
         {selectedJob && (
           <JobEditor
             job={selectedJob}
             onSave={handleSaveJob}
-            onCancel={() => setSelectedJob(null)}
+            onCancel={() =>
+              setSelectedJobId(null)
+            }
           />
         )}
       </SlidePanel>

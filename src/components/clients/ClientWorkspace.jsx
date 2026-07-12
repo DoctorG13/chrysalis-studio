@@ -42,7 +42,7 @@ export default function ClientWorkspace({
   });
 
   const [openSections, setOpenSections] = useState({
-    client: true,
+    client: false,
     measurements: false,
     jobs: false,
     appointments: false,
