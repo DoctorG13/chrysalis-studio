@@ -48,12 +48,20 @@ export function searchStudio(query, clients = [], jobs = []) {
       .toLowerCase();
 
     if (searchable.includes(term)) {
+      const owningClient =
+        clients.find(
+          (client) => client.id === job.clientId
+        ) || null;
+
       results.push({
         type: "job",
         id: job.id,
         title: job.name ?? "",
         subtitle: `${job.status ?? ""} • ${job.reference ?? ""}`,
-        data: job,
+        data: {
+          ...job,
+          client: owningClient,
+        },
       });
     }
   });

@@ -1,6 +1,5 @@
 import { createContext, useContext, useMemo } from "react";
 import useLocalStorage from "../hooks/useLocalStorage";
-import { enrichJob } from "../constants/jobWorkflow";
 
 const ChrysalisContext = createContext(null);
 
@@ -10,25 +9,28 @@ export function ChrysalisProvider({ children }) {
     []
   );
 
-  const [rawJobs, setRawJobs] = useLocalStorage(
-    "chrysalis-jobs",
-    []
+  const jobs = useMemo(() => {
+  return clients.flatMap((client) =>
+    (client.jobs ?? []).map((job) => ({
+      ...job,
+      clientId: client.id,
+      clientName: [
+        client.firstName,
+        client.lastName,
+      ]
+        .filter(Boolean)
+        .join(" "),
+    }))
   );
-
-  const jobs = useMemo(
-    () => rawJobs.map(enrichJob),
-    [rawJobs]
-  );
+}, [clients]);
 
   const value = useMemo(
     () => ({
       clients,
       jobs,
-
       setClients,
-      setJobs: setRawJobs,
     }),
-    [clients, jobs, setClients, setRawJobs]
+    [clients, jobs, setClients]
   );
 
   return (

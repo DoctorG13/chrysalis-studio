@@ -2,9 +2,27 @@ export default function SearchResultsOverlay({
   query = "",
   results = [],
   onSelectClient,
+  onSelectJob,
 }) {
   if (!query.trim()) {
     return null;
+  }
+
+  function handleSelect(result) {
+    if (result.type === "client") {
+      onSelectClient?.(result.data);
+      return;
+    }
+
+    if (result.type === "job") {
+      const { client, id } = result.data;
+
+      if (client) {
+        onSelectJob?.(client, id);
+      }
+
+      return;
+    }
   }
 
   return (
@@ -14,15 +32,12 @@ export default function SearchResultsOverlay({
         top: 95,
         left: "50%",
         transform: "translateX(-50%)",
-
         width: 520,
         maxHeight: 420,
-
         background: "#FFFFFF",
         border: "1px solid #E5E7EB",
         borderRadius: 12,
         boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
-
         overflowY: "auto",
         zIndex: 9999,
       }}
@@ -51,11 +66,7 @@ export default function SearchResultsOverlay({
         results.map((result) => (
           <div
             key={`${result.type}-${result.id}`}
-            onClick={() => {
-              if (result.type === "client") {
-                onSelectClient?.(result.data);
-              }
-            }}
+            onClick={() => handleSelect(result)}
             style={{
               padding: 16,
               cursor: "pointer",

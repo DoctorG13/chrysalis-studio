@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import SlidePanel from "../common/SlidePanel";
 
@@ -10,6 +10,7 @@ export default function ClientJobsPanel({
   client,
   clients,
   setClients,
+  initialJobId,
 }) {
   const currentClient =
     clients.find((c) => c.id === client.id) || client;
@@ -22,58 +23,106 @@ export default function ClientJobsPanel({
   const [selectedJobId, setSelectedJobId] =
     useState(null);
 
+  useEffect(() => {
+    if (!initialJobId) return;
+
+    const exists = jobs.some(
+      (job) => job.id === initialJobId
+    );
+
+    if (exists) {
+      setSelectedJobId(initialJobId);
+    }
+  }, [initialJobId, jobs]);
+
   const selectedJob =
     jobs.find((job) => job.id === selectedJobId) ||
     null;
 
   function updateClient(updatedJobs) {
-    const updatedClient = {
-      ...currentClient,
-      jobs: updatedJobs,
-    };
+  console.group("updateClient");
 
-    setClients(
-      clients.map((c) =>
-        c.id === currentClient.id
-          ? updatedClient
-          : c
-      )
-    );
-  }
+  console.log("Current Client:", currentClient);
+  console.log("Jobs BEFORE:", jobs);
+  console.log("Jobs AFTER :", updatedJobs);
+
+  const updatedClient = {
+    ...currentClient,
+    jobs: updatedJobs,
+  };
+
+  const updatedClients = clients.map((c) =>
+    c.id === currentClient.id ? updatedClient : c
+  );
+
+  console.log("Updated Client:", updatedClient);
+  console.log("Updated Clients:", updatedClients);
+
+  console.groupEnd();
+
+  setClients(updatedClients);
+}
 
   function handleCreateJob(job) {
-    const updatedJobs = [...jobs, job];
+  console.group("CREATE JOB");
 
-    updateClient(updatedJobs);
+  console.log("Jobs before create:", jobs);
+  console.log("New Job:", job);
 
-    setShowJobForm(false);
+  const updatedJobs = [...jobs, job];
 
-    setSelectedJobId(job.id);
-  }
+  console.log("Jobs after create:", updatedJobs);
 
-  function handleOpenJob(job) {
-    setSelectedJobId(job.id);
-  }
+  updateClient(updatedJobs);
+
+  setShowJobForm(false);
+  setSelectedJobId(job.id);
+
+  console.groupEnd();
+}
+
+function handleOpenJob(job) {
+  setSelectedJobId(job.id);
+}
+
 
   function handleSaveJob(job) {
-    const updatedJobs = jobs.map((j) =>
-      j.id === job.id ? job : j
-    );
+  console.group("SAVE JOB");
 
-    updateClient(updatedJobs);
+  console.log("Jobs before save:", jobs);
+  console.log("Saving:", job);
 
-    setSelectedJobId(job.id);
-  }
+  const updatedJobs = jobs.map((j) =>
+    j.id === job.id ? job : j
+  );
+
+  console.log("Jobs after save:", updatedJobs);
+
+  updateClient(updatedJobs);
+
+  setSelectedJobId(job.id);
+
+  console.groupEnd();
+}
 
   function handleDeleteJob(jobId) {
-    const updatedJobs = jobs.filter(
-      (job) => job.id !== jobId
-    );
+  console.group("DELETE JOB");
 
-    updateClient(updatedJobs);
+  console.log("Jobs before delete:", jobs);
+  console.log("Deleting:", jobId);
 
-    setSelectedJobId(null);
-  }
+  const updatedJobs = jobs.filter(
+    (job) => job.id !== jobId
+  );
+
+  console.log("Jobs after delete:", updatedJobs);
+
+  updateClient(updatedJobs);
+
+  setSelectedJobId(null);
+
+  console.groupEnd();
+}
 
   return (
     <>

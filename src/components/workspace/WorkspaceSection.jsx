@@ -13,6 +13,7 @@ export default function WorkspaceSection({
         type="button"
         className="workspace-header"
         onClick={onToggle}
+        data-workspace-section={title.toLowerCase()}
       >
         <div className="workspace-title">
           {icon && (

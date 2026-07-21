@@ -10,9 +10,11 @@ import DashboardPage from "../components/dashboard/DashboardPage";
 
 import SearchResultsOverlay from "../components/search/SearchResultsOverlay";
 
+import JobsWorkspace from "../components/jobs/JobsWorkspace";
+
 export default function StudioPage({
   clients,
-  jobs = [],
+  jobs,
   setClients,
   searchQuery = "",
   searchResults = [],
@@ -23,8 +25,14 @@ export default function StudioPage({
   const [selectedClient, setSelectedClient] =
     useState(null);
 
+  const [selectedJobId, setSelectedJobId] =
+    useState(null);
+
   const [showWorkspace, setShowWorkspace] =
     useState(false);
+
+  const [showJobsWorkspace, setShowJobsWorkspace] =
+  useState(false);
 
   const clientListRef = useRef(null);
 
@@ -34,12 +42,20 @@ export default function StudioPage({
   }
 
   function handleClientClick(client) {
+    setSelectedJobId(null);
     setSelectedClient(client);
+    setShowWorkspace(true);
+  }
+
+  function handleJobClick(client, jobId) {
+    setSelectedClient(client);
+    setSelectedJobId(jobId);
     setShowWorkspace(true);
   }
 
   function closeWorkspace() {
     setSelectedClient(null);
+    setSelectedJobId(null);
     setShowWorkspace(false);
   }
 
@@ -51,8 +67,8 @@ export default function StudioPage({
   }
 
   function handleJobsClick() {
-    console.log("Jobs clicked");
-  }
+  setShowJobsWorkspace(true);
+}
 
   function handleAppointmentsClick() {
     console.log("Appointments clicked");
@@ -65,22 +81,23 @@ export default function StudioPage({
   return (
     <>
       <DashboardPage
-  clients={clients}
-  jobs={jobs}
-  onNewClient={() => setShowClientPanel(true)}
-  onClientsClick={handleClientsClick}
-  onJobsClick={handleJobsClick}
-  onAppointmentsClick={handleAppointmentsClick}
-  onPaymentsClick={handlePaymentsClick}
-/>
+        clients={clients}
+        jobs={jobs}
+        onNewClient={() => setShowClientPanel(true)}
+        onClientsClick={handleClientsClick}
+        onJobsClick={handleJobsClick}
+        onAppointmentsClick={handleAppointmentsClick}
+        onPaymentsClick={handlePaymentsClick}
+      />
 
-  {searchQuery.trim() !== "" && (
-  <SearchResultsOverlay
-    query={searchQuery}
-    results={searchResults}
-    onSelectClient={handleClientClick}
-  />
-)}
+      {searchQuery.trim() !== "" && (
+        <SearchResultsOverlay
+          query={searchQuery}
+          results={searchResults}
+          onSelectClient={handleClientClick}
+          onSelectJob={handleJobClick}
+        />
+      )}
 
       <div ref={clientListRef}>
         <ClientList
@@ -91,15 +108,11 @@ export default function StudioPage({
 
       <SlidePanel
         open={showClientPanel}
-        onClose={() =>
-          setShowClientPanel(false)
-        }
+        onClose={() => setShowClientPanel(false)}
       >
         <ClientForm
           onSave={handleSaveClient}
-          onCancel={() =>
-            setShowClientPanel(false)
-          }
+          onCancel={() => setShowClientPanel(false)}
         />
       </SlidePanel>
 
@@ -111,9 +124,23 @@ export default function StudioPage({
           client={selectedClient}
           clients={clients}
           setClients={setClients}
+          initialJobId={selectedJobId}
           onClose={closeWorkspace}
         />
       </SlidePanel>
+
+      <SlidePanel
+  open={showJobsWorkspace}
+  onClose={() => setShowJobsWorkspace(false)}
+>
+  <JobsWorkspace
+    jobs={jobs}
+    clients={clients}
+    setClients={setClients}
+    onClose={() => setShowJobsWorkspace(false)}
+  />
+</SlidePanel>
+
     </>
   );
 }

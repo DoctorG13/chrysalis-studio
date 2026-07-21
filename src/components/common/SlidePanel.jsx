@@ -41,14 +41,14 @@ export default function SlidePanel({
         }}
       >
         <div
-          style={{
-            padding: 30,
-            flex: 1,
-            overflowY: "auto",
-          }}
-        >
-          {children}
-        </div>
+  style={{
+    padding: 30,
+    flex: 1,
+    overflowY: "auto",
+  }}
+>
+  {open ? children : null}
+</div>
       </div>
     </>
   );

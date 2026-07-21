@@ -6,7 +6,6 @@ import TodaysPriorities from "./TodaysPriorities";
 import JobsDueThisWeek from "./JobsDueThisWeek";
 import QuickActions from "./QuickActions";
 import RecentActivity from "./RecentActivity";
-
 import TodaysWorkPanel from "./TodaysWorkPanel";
 
 export default function DashboardPage({
@@ -20,6 +19,12 @@ export default function DashboardPage({
   onAppointmentsClick,
   onPaymentsClick,
 }) {
+  const allJobs = useMemo(() => {
+    return clients.flatMap(
+      (client) => client.jobs ?? []
+    );
+  }, [clients]);
+
   const dashboard = useMemo(() => {
     const today = new Date();
 
@@ -32,7 +37,7 @@ export default function DashboardPage({
     const endOfWeek = new Date(startOfToday);
     endOfWeek.setDate(endOfWeek.getDate() + 7);
 
-    const dueThisWeek = jobs.filter((job) => {
+    const dueThisWeek = allJobs.filter((job) => {
       if (!job.dueDate) return false;
 
       const due = new Date(job.dueDate);
@@ -43,30 +48,38 @@ export default function DashboardPage({
     return {
       totalClients: clients.length,
 
-      totalJobs: jobs.length,
+      totalJobs: allJobs.length,
 
-      overdueJobs: jobs.filter((j) => j.overdue).length,
+      overdueJobs: allJobs.filter(
+        (j) => j.overdue
+      ).length,
 
-      dueToday: jobs.filter((j) => j.dueToday).length,
+      dueToday: allJobs.filter(
+        (j) => j.dueToday
+      ).length,
 
-      readyForCollection: jobs.filter(
+      readyForCollection: allJobs.filter(
         (j) => j.status === "Ready"
       ).length,
 
-      needsAttention: jobs.filter(
+      needsAttention: allJobs.filter(
         (j) => j.needsAttention
       ).length,
 
-      outstandingPayments: jobs.reduce(
+      outstandingPayments: allJobs.reduce(
         (total, job) =>
           total +
-          Number(job.balance ?? job.outstanding ?? 0),
+          Number(
+            job.balance ??
+              job.outstanding ??
+              0
+          ),
         0
       ),
 
       jobsDueThisWeek: dueThisWeek.length,
     };
-  }, [clients, jobs]);
+  }, [clients, allJobs]);
 
   return (
     <div
@@ -82,20 +95,23 @@ export default function DashboardPage({
         dashboard={dashboard}
       />
 
-<TodaysWorkPanel
-    jobs={jobs}
-    onSelectJob={(job) => {
-        console.log("Open job:", job);
-    }}
-/>
+      <TodaysWorkPanel
+        jobs={allJobs}
+        onSelectJob={(job) => {
+          console.log("Open job:", job);
+        }}
+      />
+
       <StatsGrid
-        clients={clients}
-        jobs={jobs}
         dashboard={dashboard}
         onClientsClick={onClientsClick}
         onJobsClick={onJobsClick}
-        onAppointmentsClick={onAppointmentsClick}
-        onPaymentsClick={onPaymentsClick}
+        onAppointmentsClick={
+          onAppointmentsClick
+        }
+        onPaymentsClick={
+          onPaymentsClick
+        }
       />
 
       <div
@@ -108,19 +124,19 @@ export default function DashboardPage({
       >
         <TodaysPriorities
           clients={clients}
-          jobs={jobs}
+          jobs={allJobs}
           dashboard={dashboard}
         />
 
         <JobsDueThisWeek
           clients={clients}
-          jobs={jobs}
+          jobs={allJobs}
           dashboard={dashboard}
         />
 
         <RecentActivity
           clients={clients}
-          jobs={jobs}
+          jobs={allJobs}
           dashboard={dashboard}
         />
       </div>
