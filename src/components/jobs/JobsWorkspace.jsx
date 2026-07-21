@@ -1,15 +1,15 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 
 import JobsSection from "./JobsSection";
 import JobEditor from "./JobEditor";
 import Button from "../common/Button";
-
 export default function JobsWorkspace({
   jobs = [],
   clients = [],
   setClients,
   onClose,
 }) {
+  const editorRef = useRef(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] =
     useState("All");
@@ -39,6 +39,15 @@ export default function JobsWorkspace({
     filteredJobs.find(
       (job) => job.id === selectedJobId
     ) || null;
+
+    useEffect(() => {
+  if (selectedJob && editorRef.current) {
+    editorRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+}, [selectedJob]);
 
   function saveJob(updatedJob) {
     const updatedClients = clients.map((client) => {
@@ -156,41 +165,32 @@ export default function JobsWorkspace({
         </select>
       </div>
 
-      <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "420px 1fr",
-    gap: 24,
-    alignItems: "start",
-  }}
->
-    <JobsSection
-        jobs={filteredJobs}
-        onOpenJob={(job) => setSelectedJobId(job.id)}
-        onNewJob={() => {}}
-    />
+     <>
+  <JobsSection
+  jobs={filteredJobs}
+  selectedJobId={selectedJobId}
+  onOpenJob={(job) => setSelectedJobId(job.id)}
+  onNewJob={() => {}}
+/>
 
-    {selectedJob ? (
-        <JobEditor
-            job={selectedJob}
-            onSave={saveJob}
-            onDelete={deleteJob}
-            onCancel={() => setSelectedJobId(null)}
-        />
-    ) : (
-        <div
-            style={{
-                border: "2px dashed #DDD",
-                borderRadius: 12,
-                padding: 60,
-                textAlign: "center",
-                color: "#888",
-            }}
-        >
-            Select a job to begin editing.
-        </div>
-    )}
-</div>
+  {selectedJob && (
+  <div
+    ref={editorRef}
+    style={{
+      marginTop: 24,
+      borderTop: "1px solid #ddd",
+      paddingTop: 24,
+    }}
+    >
+      <JobEditor
+        job={selectedJob}
+        onSave={saveJob}
+        onDelete={deleteJob}
+        onCancel={() => setSelectedJobId(null)}
+      />
+    </div>
+  )}
+</>
     </div>
   );
 }

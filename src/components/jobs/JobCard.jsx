@@ -21,30 +21,78 @@ function Badge({ label, background, color = "#fff" }) {
   );
 }
 
-export default function JobCard({ job, onOpen }) {
-  const outstanding = Number(job.balance ?? job.outstanding ?? 0);
+export default function JobCard({
+  job,
+  selected = false,
+  onOpen,
+}) {
+
+  console.log("THIS IS THE NEW JOBCARD");
+  if (!job) return null;
+
+  const outstanding = Math.max(
+    0,
+    Number(
+      job.balance ??
+        job.outstanding ??
+        (Number(job.price || 0) - Number(job.deposit || 0))
+    )
+  );
 
   return (
     <div
       onClick={() => onOpen?.(job)}
-      style={{ cursor: "pointer" }}
+      style={{
+        cursor: "pointer",
+      }}
     >
-      <Card>
+      <Card
+        style={{
+          border: selected
+            ? "2px solid #8B1E3F"
+            : "1px solid #DDD",
+          boxShadow: selected
+            ? "0 8px 24px rgba(139,30,63,.18)"
+            : undefined,
+          transition: "all .18s ease",
+        }}
+      >
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 20,
+            gap: 18,
           }}
         >
           <div style={{ flex: 1 }}>
             <div
               style={{
+                fontWeight: 700,
+                fontSize: 17,
+                color: "#2F3A3F",
+              }}
+            >
+              👤 {job.clientName || "Unknown Client"}
+            </div>
+
+            {job.clientPhone && (
+              <div
+                style={{
+                  marginTop: 4,
+                  color: "#777",
+                  fontSize: 13,
+                }}
+              >
+                📞 {job.clientPhone}
+              </div>
+            )}
+
+            <div
+              style={{
+                marginTop: 16,
                 fontSize: 12,
-                fontWeight: "bold",
+                fontWeight: 700,
                 color: "#999",
-                marginBottom: 8,
               }}
             >
               {job.reference || "CHR-NEW"}
@@ -52,25 +100,24 @@ export default function JobCard({ job, onOpen }) {
 
             <h3
               style={{
-                margin: 0,
+                margin: "6px 0 10px",
                 color: "#2F3A3F",
               }}
             >
-              {job.name}
+              {job.name || "Untitled Job"}
             </h3>
 
             <div
               style={{
                 display: "inline-block",
-                marginTop: 10,
-                marginBottom: 12,
-                padding: "4px 10px",
+                padding: "5px 10px",
                 borderRadius: 20,
                 background:
                   JOB_STATUS_COLOURS[job.status] ?? "#9CA3AF",
                 color: "#fff",
                 fontSize: 12,
-                fontWeight: "bold",
+                fontWeight: 700,
+                marginBottom: 14,
               }}
             >
               {job.status || "Unknown"}
@@ -92,7 +139,7 @@ export default function JobCard({ job, onOpen }) {
               ➜ Next: {job.nextAction || "-"}
             </p>
 
-            <div style={{ marginTop: 10 }}>
+            <div style={{ marginTop: 12 }}>
               {job.dueToday && (
                 <Badge
                   label="Due Today"
@@ -118,9 +165,10 @@ export default function JobCard({ job, onOpen }) {
 
           <div
             style={{
-              fontSize: 24,
-              color: "#BBB",
+              fontSize: 28,
+              color: selected ? "#8B1E3F" : "#BBB",
               alignSelf: "center",
+              fontWeight: 700,
             }}
           >
             ›

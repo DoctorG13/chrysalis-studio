@@ -3,10 +3,10 @@ import Button from "../common/Button";
 
 export default function JobsSection({
   jobs = [],
+  selectedJobId = null,
   onNewJob,
   onOpenJob,
 }) {
-
   const activeJobs = jobs.filter(
     (job) => job.status !== "Completed"
   );
@@ -121,13 +121,16 @@ export default function JobsSection({
             gap: 20,
           }}
         >
-          {jobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              onOpen={onOpenJob}
-            />
-          ))}
+          {jobs
+  .filter(Boolean)
+  .map((job) => (
+    <JobCard
+      key={job.id}
+      job={job}
+      selected={selectedJobId === job.id}
+      onOpen={onOpenJob}
+    />
+  ))}
         </div>
       )}
     </div>

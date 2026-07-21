@@ -136,14 +136,39 @@ export default function JobEditor({
           </h2>
 
           <div
-            style={{
-              marginTop: 6,
-              color: "#777",
-            }}
-          >
-            {editedJob.garmentType ||
-              "General Job"}
-          </div>
+  style={{
+    marginTop: 6,
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+    color: "#777",
+  }}
+>
+  <div>
+    {editedJob.garmentType || "General Job"}
+  </div>
+
+  <div
+    style={{
+      fontWeight: 600,
+      color: "#2F3A3F",
+    }}
+  >
+    👤 {editedJob.clientName}
+  </div>
+
+  {editedJob.status && (
+    <div>
+      Status: {editedJob.status}
+    </div>
+  )}
+
+  {editedJob.dueDate && (
+    <div>
+      📅 Due: {editedJob.dueDate}
+    </div>
+  )}
+</div>
         </div>
 
         <div
