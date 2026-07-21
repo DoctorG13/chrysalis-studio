@@ -27,7 +27,6 @@ export default function JobCard({
   onOpen,
 }) {
 
-  console.log("THIS IS THE NEW JOBCARD");
   if (!job) return null;
 
   const outstanding = Math.max(
@@ -52,8 +51,8 @@ export default function JobCard({
             ? "2px solid #8B1E3F"
             : "1px solid #DDD",
           boxShadow: selected
-            ? "0 8px 24px rgba(139,30,63,.18)"
-            : undefined,
+  ? "0 10px 30px rgba(139,30,63,.22)"
+  : "0 2px 8px rgba(0,0,0,.06)",
           transition: "all .18s ease",
         }}
       >
@@ -127,9 +126,21 @@ export default function JobCard({
               📅 Due: {job.dueDate || "-"}
             </p>
 
-            <p style={{ margin: "4px 0", color: "#666" }}>
-              💰 Outstanding: ${outstanding.toFixed(2)}
-            </p>
+            <div
+  style={{
+    margin: "8px 0",
+    padding: "10px 12px",
+    borderRadius: 8,
+    background:
+      outstanding > 0 ? "#FEF2F2" : "#ECFDF5",
+    color:
+      outstanding > 0 ? "#991B1B" : "#166534",
+    fontWeight: 700,
+    display: "inline-block",
+  }}
+>
+  💰 Outstanding: ${outstanding.toFixed(2)}
+</div>
 
             <p style={{ margin: "4px 0", color: "#666" }}>
               📈 Progress: {job.progress ?? 0}%
