@@ -126,14 +126,67 @@ export default function JobEditor({
         }}
       >
         <div>
-          <h2
-            style={{
-              margin: 0,
-              color: "#2F3A3F",
-            }}
-          >
-            {editedJob.name}
-          </h2>
+          <div>
+  <div
+    style={{
+      display: "inline-block",
+      padding: "6px 12px",
+      marginBottom: 12,
+      borderRadius: 8,
+      background: "#8B1E3F",
+      color: "#fff",
+      fontSize: 20,
+      fontWeight: 800,
+      letterSpacing: 1,
+    }}
+  >
+    {editedJob.reference || "CHR-NEW"}
+  </div>
+
+  <h2
+    style={{
+      margin: 0,
+      color: "#2F3A3F",
+    }}
+  >
+    {editedJob.name}
+  </h2>
+
+  <div
+    style={{
+      marginTop: 8,
+      display: "flex",
+      flexDirection: "column",
+      gap: 4,
+      color: "#666",
+    }}
+  >
+    <div
+      style={{
+        fontWeight: 700,
+        color: "#2F3A3F",
+      }}
+    >
+      👤 {editedJob.clientName}
+    </div>
+
+    <div>
+      {editedJob.garmentType || "General Job"}
+    </div>
+
+    {editedJob.status && (
+      <div>
+        Status: {editedJob.status}
+      </div>
+    )}
+
+    {editedJob.dueDate && (
+      <div>
+        📅 Due: {editedJob.dueDate}
+      </div>
+    )}
+  </div>
+</div>
 
           <div
   style={{
