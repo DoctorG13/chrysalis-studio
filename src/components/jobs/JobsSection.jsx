@@ -7,21 +7,45 @@ export default function JobsSection({
   onNewJob,
   onOpenJob,
 }) {
-  const activeJobs = jobs.filter(
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const endOfWeek = new Date(today);
+  endOfWeek.setDate(today.getDate() + 7);
+
+  const inProgressJobs = jobs.filter(
     (job) => job.status !== "Completed"
   );
 
-  const completedJobs = jobs.filter(
-    (job) => job.status === "Completed"
+  const overdueJobs = jobs.filter(
+    (job) => job.overdue
   );
+
+  const dueThisWeekJobs = jobs.filter((job) => {
+    if (!job.dueDate) return false;
+
+    const due = new Date(job.dueDate);
+
+    if (Number.isNaN(due.getTime())) {
+      return false;
+    }
+
+    due.setHours(0, 0, 0, 0);
+
+    return due >= today && due <= endOfWeek;
+  });
 
   const outstanding = jobs.reduce(
     (total, job) =>
       total +
       Math.max(
         0,
-        Number(job.price || 0) -
-          Number(job.deposit || 0)
+        Number(
+          job.balance ??
+            job.outstanding ??
+            (Number(job.price || 0) -
+              Number(job.deposit || 0))
+        )
       ),
     0
   );
@@ -75,23 +99,43 @@ export default function JobsSection({
         }}
       >
         <SummaryCard
-          title="Total Jobs"
+          title="📋 Total Jobs"
           value={jobs.length}
+          background="#F8FAFC"
+          border="#CBD5E1"
+          colour="#1E293B"
         />
 
         <SummaryCard
-          title="Active"
-          value={activeJobs.length}
+          title="🟠 In Progress"
+          value={inProgressJobs.length}
+          background="#FFF7ED"
+          border="#FDBA74"
+          colour="#C2410C"
         />
 
         <SummaryCard
-          title="Completed"
-          value={completedJobs.length}
+          title="🔵 Due This Week"
+          value={dueThisWeekJobs.length}
+          background="#EFF6FF"
+          border="#93C5FD"
+          colour="#1D4ED8"
         />
 
         <SummaryCard
-          title="Outstanding"
+          title="🔴 Overdue"
+          value={overdueJobs.length}
+          background="#FEF2F2"
+          border="#FCA5A5"
+          colour="#B91C1C"
+        />
+
+        <SummaryCard
+          title="💰 Outstanding"
           value={`$${outstanding.toFixed(2)}`}
+          background="#F0FDF4"
+          border="#86EFAC"
+          colour="#166534"
         />
       </div>
 
@@ -122,15 +166,15 @@ export default function JobsSection({
           }}
         >
           {jobs
-  .filter(Boolean)
-  .map((job) => (
-    <JobCard
-      key={job.id}
-      job={job}
-      selected={selectedJobId === job.id}
-      onOpen={onOpenJob}
-    />
-  ))}
+            .filter(Boolean)
+            .map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                selected={selectedJobId === job.id}
+                onOpen={onOpenJob}
+              />
+            ))}
         </div>
       )}
     </div>
@@ -140,20 +184,25 @@ export default function JobsSection({
 function SummaryCard({
   title,
   value,
+  background,
+  border,
+  colour,
 }) {
   return (
     <div
       style={{
-        background: "#fff",
-        border: "1px solid #ddd",
-        borderRadius: 12,
+        background,
+        border: `1px solid ${border}`,
+        borderRadius: 14,
         padding: 20,
+        boxShadow: "0 2px 8px rgba(0,0,0,.05)",
       }}
     >
       <div
         style={{
           fontSize: 13,
-          color: "#777",
+          fontWeight: 700,
+          color: "#64748B",
         }}
       >
         {title}
@@ -161,10 +210,10 @@ function SummaryCard({
 
       <div
         style={{
-          marginTop: 8,
-          fontSize: 28,
+          marginTop: 10,
+          fontSize: 30,
           fontWeight: 700,
-          color: "#2F3A3F",
+          color: colour,
         }}
       >
         {value}
