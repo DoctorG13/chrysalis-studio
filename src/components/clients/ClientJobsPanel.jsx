@@ -64,6 +64,24 @@ export default function ClientJobsPanel({
 }
 
   function handleCreateJob(job) {
+
+      const today = new Date();
+
+  const datePart =
+    String(today.getDate()).padStart(2, "0") +
+    String(today.getMonth() + 1).padStart(2, "0") +
+    today.getFullYear();
+
+  const todaysJobs = jobs.filter((j) =>
+    j.reference?.startsWith(`CHR-${datePart}-`)
+  );
+
+  const nextNumber = String(
+    todaysJobs.length + 1
+  ).padStart(3, "0");
+
+  job.reference = `CHR-${datePart}-${nextNumber}`;
+  
   console.group("CREATE JOB");
 
   console.log("Jobs before create:", jobs);

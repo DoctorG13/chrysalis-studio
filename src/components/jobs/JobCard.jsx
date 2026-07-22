@@ -26,7 +26,6 @@ export default function JobCard({
   selected = false,
   onOpen,
 }) {
-
   if (!job) return null;
 
   const outstanding = Math.max(
@@ -51,8 +50,8 @@ export default function JobCard({
             ? "2px solid #8B1E3F"
             : "1px solid #DDD",
           boxShadow: selected
-  ? "0 10px 30px rgba(139,30,63,.22)"
-  : "0 2px 8px rgba(0,0,0,.06)",
+            ? "0 10px 30px rgba(139,30,63,.22)"
+            : "0 2px 8px rgba(0,0,0,.06)",
           transition: "all .18s ease",
         }}
       >
@@ -64,6 +63,24 @@ export default function JobCard({
           }}
         >
           <div style={{ flex: 1 }}>
+            {/* Primary Identifier */}
+            <div
+              style={{
+                display: "inline-block",
+                padding: "6px 12px",
+                borderRadius: 8,
+                background: "#8B1E3F",
+                color: "#fff",
+                fontWeight: 800,
+                fontSize: 20,
+                letterSpacing: 1,
+                marginBottom: 12,
+              }}
+            >
+              {job.reference || "CHR-NEW"}
+            </div>
+
+            {/* Client */}
             <div
               style={{
                 fontWeight: 700,
@@ -86,26 +103,17 @@ export default function JobCard({
               </div>
             )}
 
-            <div
-              style={{
-                marginTop: 16,
-                fontSize: 12,
-                fontWeight: 700,
-                color: "#999",
-              }}
-            >
-              {job.reference || "CHR-NEW"}
-            </div>
-
+            {/* Job Name */}
             <h3
               style={{
-                margin: "6px 0 10px",
+                margin: "16px 0 10px",
                 color: "#2F3A3F",
               }}
             >
               {job.name || "Untitled Job"}
             </h3>
 
+            {/* Status */}
             <div
               style={{
                 display: "inline-block",
@@ -127,20 +135,20 @@ export default function JobCard({
             </p>
 
             <div
-  style={{
-    margin: "8px 0",
-    padding: "10px 12px",
-    borderRadius: 8,
-    background:
-      outstanding > 0 ? "#FEF2F2" : "#ECFDF5",
-    color:
-      outstanding > 0 ? "#991B1B" : "#166534",
-    fontWeight: 700,
-    display: "inline-block",
-  }}
->
-  💰 Outstanding: ${outstanding.toFixed(2)}
-</div>
+              style={{
+                margin: "8px 0",
+                padding: "10px 12px",
+                borderRadius: 8,
+                background:
+                  outstanding > 0 ? "#FEF2F2" : "#ECFDF5",
+                color:
+                  outstanding > 0 ? "#991B1B" : "#166534",
+                fontWeight: 700,
+                display: "inline-block",
+              }}
+            >
+              💰 Outstanding: ${outstanding.toFixed(2)}
+            </div>
 
             <p style={{ margin: "4px 0", color: "#666" }}>
               📈 Progress: {job.progress ?? 0}%
