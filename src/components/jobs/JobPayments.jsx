@@ -9,6 +9,16 @@ export default function JobPayments({ job }) {
   const quote = Number(job.price || 0);
   const balance = quote - totalPaid;
 
+  let paymentStatus = "🔴 Unpaid";
+
+if (quote > 0) {
+  if (balance <= 0) {
+    paymentStatus = "🟢 Paid";
+  } else if (totalPaid > 0) {
+    paymentStatus = "🟡 Part Paid";
+  }
+}
+
   return (
     <div
       style={{
@@ -39,6 +49,12 @@ export default function JobPayments({ job }) {
           title="Outstanding"
           value={`$${balance.toFixed(2)}`}
         />
+
+        <SummaryCard
+  title="Payment Status"
+  value={paymentStatus}
+/>
+
       </div>
 
       <div

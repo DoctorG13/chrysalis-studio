@@ -27,21 +27,84 @@ export default function JobDetailsPanel({
         }
       />
 
-      <TextInput
-        label="Garment Type"
-        value={job.garmentType || ""}
-        onChange={(value) =>
-          update("garmentType", value)
-        }
-      />
+      <div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: 6,
+      fontWeight: 600,
+    }}
+  >
+    Garment Type
+  </label>
 
-      <TextInput
-        label="Status"
-        value={job.status || ""}
-        onChange={(value) =>
-          update("status", value)
-        }
-      />
+  <select
+    value={job.garmentType || "Alteration"}
+    onChange={(e) =>
+      update("garmentType", e.target.value)
+    }
+    style={{
+      width: "100%",
+      height: 42,
+      border: "1px solid #D9D9D9",
+      borderRadius: 8,
+      padding: "0 12px",
+      fontSize: 15,
+      background: "#fff",
+    }}
+  >
+    <option>Wedding Dress</option>
+    <option>Formal Dress</option>
+    <option>Bridesmaid Dress</option>
+    <option>Suit</option>
+    <option>Jacket</option>
+    <option>Pants</option>
+    <option>Skirt</option>
+    <option>Shirt</option>
+    <option>Costume</option>
+    <option>Alteration</option>
+    <option>Repair</option>
+    <option>Other</option>
+  </select>
+</div>
+
+      <div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: 6,
+      fontWeight: 600,
+    }}
+  >
+    Status
+  </label>
+
+  <select
+    value={job.status || "New"}
+    onChange={(e) =>
+      update("status", e.target.value)
+    }
+    style={{
+      width: "100%",
+      height: 42,
+      border: "1px solid #D9D9D9",
+      borderRadius: 8,
+      padding: "0 12px",
+      fontSize: 15,
+      background: "#fff",
+    }}
+  >
+    <option>New</option>
+    <option>Measuring</option>
+    <option>Cutting</option>
+    <option>Sewing</option>
+    <option>Fitting</option>
+    <option>Alterations</option>
+    <option>Ready</option>
+    <option>Collected</option>
+    <option>Cancelled</option>
+  </select>
+</div>
 
       <TextInput
         label="Priority"
@@ -51,14 +114,38 @@ export default function JobDetailsPanel({
         }
       />
 
-      <TextInput
-        label="Due Date"
-        type="date"
-        value={job.dueDate || ""}
-        onChange={(value) =>
-          update("dueDate", value)
-        }
-      />
+      <div>
+  <label
+    style={{
+      display: "block",
+      marginBottom: 6,
+      fontWeight: 600,
+    }}
+  >
+    Priority
+  </label>
+
+  <select
+    value={job.priority || "Normal"}
+    onChange={(e) =>
+      update("priority", e.target.value)
+    }
+    style={{
+      width: "100%",
+      height: 42,
+      border: "1px solid #D9D9D9",
+      borderRadius: 8,
+      padding: "0 12px",
+      fontSize: 15,
+      background: "#fff",
+    }}
+  >
+    <option>Low</option>
+    <option>Normal</option>
+    <option>High</option>
+    <option>Urgent</option>
+  </select>
+</div>
 
       <TextInput
         label="Quoted Price"

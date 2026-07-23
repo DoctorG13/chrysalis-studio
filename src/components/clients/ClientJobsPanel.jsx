@@ -63,6 +63,16 @@ export default function ClientJobsPanel({
   setClients(updatedClients);
 }
 
+function createTimelineEvent(type, title, description = "") {
+  return {
+    id: crypto.randomUUID(),
+    type,
+    title,
+    description,
+    date: new Date().toISOString(),
+  };
+}
+
   function handleCreateJob(job) {
 
       const today = new Date();
@@ -81,7 +91,15 @@ export default function ClientJobsPanel({
   ).padStart(3, "0");
 
   job.reference = `CHR-${datePart}-${nextNumber}`;
-  
+
+  job.timeline = [
+  createTimelineEvent(
+    "created",
+    "Job Created",
+    `Reference ${job.reference} created.`
+  ),
+];
+
   console.group("CREATE JOB");
 
   console.log("Jobs before create:", jobs);
@@ -110,9 +128,36 @@ function handleOpenJob(job) {
   console.log("Jobs before save:", jobs);
   console.log("Saving:", job);
 
-  const updatedJobs = jobs.map((j) =>
-    j.id === job.id ? job : j
-  );
+  const updatedJobs = jobs.map((j) => {
+  if (j.id !== job.id) {
+    return j;
+  }
+
+  const timeline = [...(job.timeline || [])];
+
+  if (j.status !== job.status) {
+    timeline.push(
+      createTimelineEvent(
+        "status",
+        "Status Changed",
+        `${j.status || "Unknown"} → ${job.status}`
+      )
+    );
+  } else {
+    timeline.push(
+      createTimelineEvent(
+        "note",
+        "Job Updated",
+        "Job information updated."
+      )
+    );
+  }
+
+  return {
+    ...job,
+    timeline,
+  };
+});
 
   console.log("Jobs after save:", updatedJobs);
 
