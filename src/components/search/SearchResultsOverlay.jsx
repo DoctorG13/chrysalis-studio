@@ -3,27 +3,29 @@ export default function SearchResultsOverlay({
   results = [],
   onSelectClient,
   onSelectJob,
+  onClose,
 }) {
   if (!query.trim()) {
     return null;
   }
 
   function handleSelect(result) {
-    if (result.type === "client") {
-      onSelectClient?.(result.data);
-      return;
-    }
-
-    if (result.type === "job") {
-      const { client, id } = result.data;
-
-      if (client) {
-        onSelectJob?.(client, id);
-      }
-
-      return;
-    }
+  if (result.type === "client") {
+    onSelectClient?.(result.data);
+    onClose?.();
+    return;
   }
+
+  if (result.type === "job") {
+    const { client, id } = result.data;
+
+    if (client) {
+      onSelectJob?.(client, id);
+    }
+
+    onClose?.();
+  }
+}
 
   return (
     <div
@@ -81,33 +83,66 @@ export default function SearchResultsOverlay({
             }}
           >
             <div
-              style={{
-                fontWeight: 600,
-              }}
-            >
-              {result.title}
-            </div>
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  }}
+>
+  {result.reference && (
+    <div
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#8B1E3F",
+        letterSpacing: 1,
+      }}
+    >
+      {result.reference}
+    </div>
+  )}
 
-            <div
-              style={{
-                marginTop: 4,
-                fontSize: 14,
-                color: "#666",
-              }}
-            >
-              {result.subtitle}
-            </div>
+  <div
+    style={{
+      fontWeight: 600,
+    }}
+  >
+    {result.title}
+  </div>
 
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 11,
-                color: "#999",
-                textTransform: "uppercase",
-              }}
-            >
-              {result.type}
-            </div>
+  {result.subtitle && (
+    <div
+      style={{
+        fontSize: 14,
+        color: "#666",
+      }}
+    >
+      {result.subtitle}
+    </div>
+  )}
+
+  {result.status && (
+    <div
+      style={{
+        fontSize: 12,
+        color: "#0F766E",
+        fontWeight: 600,
+      }}
+    >
+      {result.status}
+    </div>
+  )}
+
+  <div
+    style={{
+      fontSize: 11,
+      color: "#999",
+      textTransform: "uppercase",
+    }}
+  >
+    {result.type}
+  </div>
+</div>
           </div>
         ))
       )}

@@ -54,17 +54,26 @@ export function searchStudio(query, clients = [], jobs = []) {
         ) || null;
 
       results.push({
-        type: "job",
-        id: job.id,
-        title: job.name ?? "",
-        subtitle: `${job.status ?? ""} • ${job.reference ?? ""}`,
-        data: {
-          ...job,
-          client: owningClient,
-        },
-      });
-    }
-  });
+  type: "job",
+  id: job.id,
+
+  reference: job.reference,
+  status: job.status,
+
+  title: job.name ?? "",
+
+  subtitle:
+    owningClient
+      ? `${owningClient.firstName ?? ""} ${owningClient.lastName ?? ""}`.trim()
+      : "",
+
+  data: {
+    ...job,
+    client: owningClient,
+  },
+});
+}
+});
 
   return results.sort((a, b) =>
     (a.title ?? "").localeCompare(b.title ?? "")

@@ -2,15 +2,15 @@ import { useState } from "react";
 
 export default function Header({
   title = "Chrysalis Studio",
+  searchQuery = "",
   onSearch,
 }) {
-  const [search, setSearch] = useState("");
+
+  // no import needed
 
   function handleChange(event) {
-    const value = event.target.value;
-    setSearch(value);
-    onSearch?.(value);
-  }
+  onSearch?.(event.target.value);
+}
 
   return (
     <header
@@ -46,7 +46,7 @@ export default function Header({
       >
         <input
           type="text"
-          value={search}
+          value={searchQuery}
           onChange={handleChange}
           placeholder="Search clients, jobs, phone, email..."
           style={{

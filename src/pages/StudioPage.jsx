@@ -18,6 +18,7 @@ export default function StudioPage({
   setClients,
   searchQuery = "",
   searchResults = [],
+  onClearSearch,
 }) {
   const [showClientPanel, setShowClientPanel] =
     useState(false);
@@ -92,11 +93,12 @@ export default function StudioPage({
 
       {searchQuery.trim() !== "" && (
         <SearchResultsOverlay
-          query={searchQuery}
-          results={searchResults}
-          onSelectClient={handleClientClick}
-          onSelectJob={handleJobClick}
-        />
+  query={searchQuery}
+  results={searchResults}
+  onSelectClient={handleClientClick}
+  onSelectJob={handleJobClick}
+  onClose={onClearSearch}
+/>
       )}
 
       <div ref={clientListRef}>

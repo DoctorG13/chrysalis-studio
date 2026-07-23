@@ -52,12 +52,13 @@ export default function App() {
       }
     >
       <StudioPage
-        clients={clients}
-        jobs={jobs}
-        setClients={setClients}
-        searchQuery={searchQuery}
-        searchResults={searchResults}
-      />
+  clients={clients}
+  jobs={jobs}
+  setClients={setClients}
+  searchQuery={searchQuery}
+  searchResults={searchResults}
+  onClearSearch={() => setSearchQuery("")}
+/>
     </AppShell>
   );
 }
