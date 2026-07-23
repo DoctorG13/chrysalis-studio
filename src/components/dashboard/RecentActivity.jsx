@@ -20,18 +20,26 @@ export default function RecentActivity({
           job.status === "Ready"
       )
       .map((job) => ({
-        id: `job-${job.id ?? job.reference ?? job.name}`,
+  id: `job-${job.id ?? job.reference ?? job.name}`,
 
-        title: getTitle(job),
+  reference: job.reference,
 
-        description: getDescription(job),
+  client:
+    job.clientName ??
+    job.client ??
+    "",
 
-        date: job.updatedAt ??
-          job.completedAt ??
-          job.collectedAt ??
-          job.dueDate ??
-          new Date().toISOString(),
-      })),
+  title: getTitle(job),
+
+  description: getDescription(job),
+
+  date:
+    job.updatedAt ??
+    job.completedAt ??
+    job.collectedAt ??
+    job.dueDate ??
+    new Date().toISOString(),
+})),
   ].sort(
     (a, b) =>
       new Date(b.date) - new Date(a.date)
@@ -76,12 +84,44 @@ function ActivityRow({ item }) {
       }}
     >
       <div
-        style={{
-          fontWeight: 600,
-        }}
-      >
-        {item.title}
-      </div>
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: 4,
+  }}
+>
+  {item.reference && (
+    <div
+      style={{
+        fontSize: 12,
+        fontWeight: 700,
+        color: "#8B1E3F",
+        letterSpacing: 1,
+      }}
+    >
+      {item.reference}
+    </div>
+  )}
+
+  <div
+    style={{
+      fontWeight: 600,
+    }}
+  >
+    {item.title}
+  </div>
+
+  {item.client && (
+    <div
+      style={{
+        fontSize: 13,
+        color: "#777",
+      }}
+    >
+      {item.client}
+    </div>
+  )}
+</div>
 
       {item.description && (
         <div
