@@ -100,6 +100,7 @@ export default function JobDetailsPanel({
     <option>Sewing</option>
     <option>Fitting</option>
     <option>Alterations</option>
+    <option>Mending</option>
     <option>Ready</option>
     <option>Collected</option>
     <option>Cancelled</option>
