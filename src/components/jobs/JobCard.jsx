@@ -128,6 +128,7 @@ export default function JobCard({
               }}
             >
               {job.status || "Unknown"}
+
             </div>
 
             <p style={{ margin: "4px 0", color: "#666" }}>

@@ -1,14 +1,16 @@
 export const JOB_WORKFLOW = [
   "Quote",
   "Booked",
+  "Measuring",
   "Pattern",
   "Cutting",
-  "Construction",
-  "First Fitting",
+  "Sewing",
+  "Fitting",
   "Alterations",
+  "Mending",
   "Ready",
   "Collected",
-  "Completed",
+  "Cancelled"
 ];
 
 export const JOB_STATUS_COLOURS = {
@@ -19,6 +21,7 @@ export const JOB_STATUS_COLOURS = {
   Construction: "#F59E0B",
   "First Fitting": "#EC4899",
   Alterations: "#EAB308",
+  Mending: "#92400E",
   Ready: "#10B981",
   Collected: "#059669",
   Completed: "#16A34A",
@@ -51,7 +54,7 @@ export function getNextWorkflowStep(status) {
 }
 
 export function isCompleted(status) {
-  return status === "Completed";
+  return status === "Collected";
 }
 
 export function isReadyForCollection(status) {
@@ -110,34 +113,37 @@ export function isDueToday(job) {
 export function getNextAction(job) {
   switch (job.status) {
     case "Quote":
-      return "Book client";
+  return "Book client";
 
-    case "Booked":
-      return "Draft pattern";
+case "Booked":
+  return "Take measurements";
 
-    case "Pattern":
-      return "Cut fabric";
+case "Measuring":
+  return "Draft pattern";
 
-    case "Cutting":
-      return "Begin construction";
+case "Pattern":
+  return "Cut fabric";
 
-    case "Construction":
-      return "Prepare first fitting";
+case "Cutting":
+  return "Begin sewing";
 
-    case "First Fitting":
-      return "Complete alterations";
+case "Sewing":
+  return "Schedule fitting";
 
-    case "Alterations":
-      return "Final preparation";
+case "Fitting":
+  return "Complete alterations";
 
-    case "Ready":
-      return "Await collection";
+case "Alterations":
+  return "Finish mending";
 
-    case "Collected":
-      return "Archive job";
+case "Mending":
+  return "Prepare for collection";
 
-    case "Completed":
-      return "Finished";
+case "Ready":
+  return "Await collection";
+
+case "Collected":
+  return "Archive job";
 
     default:
       return "";
