@@ -83,35 +83,73 @@ const searchableJobs = useMemo(() => {
   }, [selectedJob]);
 
   function saveJob(updatedJob) {
-    const updatedClients = clients.map((client) => {
-      if (client.id !== updatedJob.clientId)
-        return client;
+  const now = new Date().toISOString();
 
-      return {
-        ...client,
-        jobs: (client.jobs || []).map((job) =>
-          job.id === updatedJob.id
-    ? {
-        ...updatedJob,
+  const updatedClients = clients.map((client) => {
+    if (client.id !== updatedJob.clientId) {
+      return client;
+    }
 
-        updatedAt: new Date().toISOString(),
+    return {
+      ...client,
+      jobs: (client.jobs || []).map((job) => {
+        if (job.id !== updatedJob.id) {
+          return job;
+        }
 
-        collectedAt:
-          updatedJob.status === "Collected"
-            ? (
-                updatedJob.collectedAt ??
-                job.collectedAt ??
-                new Date().toISOString()
-              )
-            : job.collectedAt,
-      }
-    : job
-        ),
-      };
-    });
+        const savedJob = {
+          ...updatedJob,
 
-    setClients(updatedClients);
-  }
+          updatedAt: now,
+
+          measuredAt:
+            updatedJob.status === "Measuring"
+              ? (job.measuredAt ?? now)
+              : job.measuredAt,
+
+          cutAt:
+            updatedJob.status === "Cutting"
+              ? (job.cutAt ?? now)
+              : job.cutAt,
+
+          sewnAt:
+            updatedJob.status === "Sewing"
+              ? (job.sewnAt ?? now)
+              : job.sewnAt,
+
+          fittedAt:
+            updatedJob.status === "Fitting"
+              ? (job.fittedAt ?? now)
+              : job.fittedAt,
+
+          alteredAt:
+            updatedJob.status === "Alterations"
+              ? (job.alteredAt ?? now)
+              : job.alteredAt,
+
+          mendedAt:
+            updatedJob.status === "Mending"
+              ? (job.mendedAt ?? now)
+              : job.mendedAt,
+
+          readyAt:
+            updatedJob.status === "Ready"
+              ? (job.readyAt ?? now)
+              : job.readyAt,
+
+          collectedAt:
+            updatedJob.status === "Collected"
+              ? (job.collectedAt ?? now)
+              : job.collectedAt,
+        };
+
+        return savedJob;
+      }),
+    };
+  });
+
+  setClients(updatedClients);
+}
 
   function deleteJob(jobId) {
     const updatedClients = clients.map(
