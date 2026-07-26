@@ -91,8 +91,21 @@ const searchableJobs = useMemo(() => {
         ...client,
         jobs: (client.jobs || []).map((job) =>
           job.id === updatedJob.id
-            ? updatedJob
-            : job
+    ? {
+        ...updatedJob,
+
+        updatedAt: new Date().toISOString(),
+
+        collectedAt:
+          updatedJob.status === "Collected"
+            ? (
+                updatedJob.collectedAt ??
+                job.collectedAt ??
+                new Date().toISOString()
+              )
+            : job.collectedAt,
+      }
+    : job
         ),
       };
     });

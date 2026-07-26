@@ -136,14 +136,15 @@ function ActivityRow({ item }) {
       )}
 
       <div
-        style={{
-          marginTop: 8,
-          fontSize: 12,
-          color: "#999",
-        }}
-      >
-        {new Date(item.date).toLocaleString("en-AU")}
-      </div>
+  style={{
+    marginTop: 8,
+    fontSize: 12,
+    color: "#999",
+  }}
+>
+  {formatActivityDate(item.date)}
+</div>
+
     </div>
   );
 }
@@ -194,4 +195,16 @@ function getDescription(job) {
   }
 
   return "";
+}
+
+function formatActivityDate(value) {
+  if (!value) return "Unknown date";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown date";
+  }
+
+  return date.toLocaleString("en-AU");
 }

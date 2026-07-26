@@ -123,6 +123,8 @@ function handleOpenJob(job) {
 
 
   function handleSaveJob(job) {
+    alert("handleSaveJob()");
+    
   console.group("SAVE JOB");
 
   console.log("Jobs before save:", jobs);
@@ -154,12 +156,28 @@ function handleOpenJob(job) {
   }
 
   return {
-    ...job,
-    timeline,
-  };
+  ...job,
+
+  updatedAt: new Date().toISOString(),
+
+  collectedAt:
+  job.status === "Collected"
+    ? (j.collectedAt ?? new Date().toISOString())
+    : j.collectedAt,
+
+  timeline,
+};
 });
 
   console.log("Jobs after save:", updatedJobs);
+
+  const saved = updatedJobs.find(j => j.id === job.id);
+
+console.log("Saved timestamps:", {
+  status: saved.status,
+  updatedAt: saved.updatedAt,
+  collectedAt: saved.collectedAt,
+});
 
   updateClient(updatedJobs);
 

@@ -31,9 +31,17 @@ export default function JobEditor({
   if (!editedJob) return null;
 
   function handleSave() {
-    onSave?.(editedJob);
-  }
+  console.log("onSave source:");
+console.log(onSave.toString()); 
+  console.log({
+  status: editedJob.status,
+  updatedAt: editedJob.updatedAt,
+  collectedAt: editedJob.collectedAt,
+  completedAt: editedJob.completedAt,
+});
 
+  onSave?.(editedJob);
+}
   function handleDelete() {
     if (
       window.confirm(

@@ -151,13 +151,49 @@ export default function JobCard({
               💰 Outstanding: ${outstanding.toFixed(2)}
             </div>
 
-            <p style={{ margin: "4px 0", color: "#666" }}>
-              📈 Progress: {job.progress ?? 0}%
-            </p>
+            <div style={{ margin: "12px 0" }}>
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      fontSize: 12,
+      color: "#666",
+      marginBottom: 4,
+    }}
+  >
+    <span>Workflow</span>
+    <span>{job.progress ?? 0}%</span>
+  </div>
 
-            <p style={{ margin: "4px 0", color: "#666" }}>
-              ➜ Next: {job.nextAction || "-"}
-            </p>
+  <div
+    style={{
+      height: 10,
+      background: "#E5E7EB",
+      borderRadius: 999,
+      overflow: "hidden",
+    }}
+  >
+    <div
+      style={{
+        width: `${job.progress ?? 0}%`,
+        height: "100%",
+        background:
+          JOB_STATUS_COLOURS[job.status] ?? "#9CA3AF",
+        transition: "width .3s ease",
+      }}
+    />
+  </div>
+</div>
+
+            <p
+  style={{
+    margin: "10px 0 4px",
+    color: "#555",
+    fontWeight: 600,
+  }}
+>
+  ➜ Next: {job.nextAction || "Completed"}
+</p>
 
             <div style={{ marginTop: 12 }}>
               {job.dueToday && (

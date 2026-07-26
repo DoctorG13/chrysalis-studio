@@ -90,9 +90,9 @@ function TimelineItem({ event }) {
               fontSize: 12,
             }}
           >
-            {new Date(event.date).toLocaleString(
-              "en-AU"
-            )}
+            {event.date
+  ? new Date(event.date).toLocaleString("en-AU")
+  : "Unknown date"}
           </span>
         </div>
 
