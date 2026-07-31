@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 import AppShell from "./components/layout/AppShell";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
+
 import StudioPage from "./pages/StudioPage";
+import CalendarPage from "./pages/CalendarPage";
 
 import { useChrysalis } from "./context/ChrysalisProvider";
 import { searchStudio } from "./utils/search";
@@ -33,6 +35,34 @@ export default function App() {
     jobs,
   ]);
 
+  function renderPage() {
+    switch (currentPage) {
+
+      case "calendar":
+        return (
+          <CalendarPage
+            clients={clients}
+            jobs={jobs}
+          />
+        );
+
+      case "studio":
+      default:
+        return (
+          <StudioPage
+            clients={clients}
+            jobs={jobs}
+            setClients={setClients}
+            searchQuery={searchQuery}
+            searchResults={searchResults}
+            onClearSearch={() =>
+              setSearchQuery("")
+            }
+          />
+        );
+    }
+  }
+
   return (
     <AppShell
       sidebar={
@@ -41,9 +71,14 @@ export default function App() {
           setCurrentPage={setCurrentPage}
         />
       }
-      header={
+
+            header={
         <Header
-          title="Chrysalis Studio"
+          title={
+            currentPage === "calendar"
+              ? "Calendar"
+              : "Chrysalis Studio"
+          }
           user="Donna"
           searchQuery={searchQuery}
           searchResults={searchResults}
@@ -51,14 +86,7 @@ export default function App() {
         />
       }
     >
-      <StudioPage
-  clients={clients}
-  jobs={jobs}
-  setClients={setClients}
-  searchQuery={searchQuery}
-  searchResults={searchResults}
-  onClearSearch={() => setSearchQuery("")}
-/>
+      {renderPage()}
     </AppShell>
   );
 }
