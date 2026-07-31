@@ -1,63 +1,17 @@
 import { useMemo, useState } from "react";
 
-const WEEK_DAYS = [
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-  "Sun",
-];
+import CalendarToolbar from "../features/calendar/CalendarToolbar";
+import CalendarGrid from "../features/calendar/CalendarGrid";
 
-function startOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function endOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
-}
-
-function startOfCalendar(date) {
-  const first = startOfMonth(date);
-
-  const day = first.getDay();
-
-  const mondayOffset =
-    day === 0
-      ? -6
-      : 1 - day;
-
-  const result = new Date(first);
-
-  result.setDate(first.getDate() + mondayOffset);
-
-  return result;
-}
-
-function sameDay(a, b) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function buildCalendar(month) {
-  const start = startOfCalendar(month);
-
-  const days = [];
-
-  for (let i = 0; i < 42; i++) {
-    const date = new Date(start);
-
-    date.setDate(start.getDate() + i);
-
-    days.push(date);
-  }
-
-  return days;
-}
+import {
+  buildCalendar,
+  endOfMonth,
+  monthLabel,
+  nextMonth,
+  previousMonth,
+  sameDay,
+  startOfMonth,
+} from "../features/calendar/calendarUtils";
 
 export default function CalendarPage({
   clients = [],
@@ -71,41 +25,26 @@ export default function CalendarPage({
 
   const today = new Date();
 
-  const monthStart = startOfMonth(displayMonth);
-
-  const monthEnd = endOfMonth(displayMonth);
-
-  const monthTitle =
-    displayMonth.toLocaleDateString(
-      "en-AU",
-      {
-        month: "long",
-        year: "numeric",
-      }
-    );
-
   const calendarDays = useMemo(
     () => buildCalendar(displayMonth),
     [displayMonth]
   );
 
-  function previousMonth() {
+  const monthStart =
+    startOfMonth(displayMonth);
+
+  const monthEnd =
+    endOfMonth(displayMonth);
+
+  function goPrevious() {
     setDisplayMonth(
-      new Date(
-        displayMonth.getFullYear(),
-        displayMonth.getMonth() - 1,
-        1
-      )
+      previousMonth(displayMonth)
     );
   }
 
-  function nextMonth() {
+  function goNext() {
     setDisplayMonth(
-      new Date(
-        displayMonth.getFullYear(),
-        displayMonth.getMonth() + 1,
-        1
-      )
+      nextMonth(displayMonth)
     );
   }
 
@@ -117,7 +56,7 @@ export default function CalendarPage({
     setSelectedDate(now);
   }
 
-  function eventsForDate(date) {
+  function getEventsForDate(date) {
     const events = [];
 
     clients.forEach((client) => {
@@ -125,13 +64,19 @@ export default function CalendarPage({
         (appointment) => {
           if (!appointment.date) return;
 
-          const d = new Date(
-            appointment.date
-          );
+          const appointmentDate =
+            new Date(
+              appointment.date
+            );
 
-          if (sameDay(d, date)) {
+          if (
+            sameDay(
+              appointmentDate,
+              date
+            )
+          ) {
             events.push({
-              type: "appointment",
+              icon: "👤",
               colour: "#1976D2",
               label:
                 appointment.title ||
@@ -145,11 +90,12 @@ export default function CalendarPage({
     jobs.forEach((job) => {
       if (!job.dueDate) return;
 
-      const due = new Date(job.dueDate);
+      const due =
+        new Date(job.dueDate);
 
       if (sameDay(due, date)) {
         events.push({
-          type: "job",
+          icon: "✂️",
           colour: "#C62828",
           label:
             job.reference ||
@@ -160,266 +106,47 @@ export default function CalendarPage({
     });
 
     return events.slice(0, 3);
-}
+  }
+
   return (
-    <div>
+    <>
+      <CalendarToolbar
+        monthLabel={monthLabel(
+          displayMonth
+        )}
+        onPrevious={goPrevious}
+        onToday={goToday}
+        onNext={goNext}
+      />
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems: "center",
-          marginBottom: 30,
-        }}
-      >
-        <div>
+      <CalendarGrid
+        calendarDays={calendarDays}
+        monthStart={monthStart}
+        monthEnd={monthEnd}
+        today={today}
+        selectedDate={selectedDate}
+        onSelectDate={
+          setSelectedDate
+        }
+        getEventsForDate={
+          getEventsForDate
+        }
+        sameDay={sameDay}
+      />
 
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 34,
-            }}
-          >
-            📅 Calendar
-          </h1>
-
-          <p
-            style={{
-              marginTop: 8,
-              color: "#666",
-            }}
-          >
-            Schedule appointments,
-            fittings, due dates
-            and collections.
-          </p>
-
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            gap: 12,
-          }}
-        >
-
-          <button
-            onClick={previousMonth}
-          >
-            ◀
-          </button>
-
-          <button
-            onClick={goToday}
-          >
-            Today
-          </button>
-
-          <button
-            onClick={nextMonth}
-          >
-            ▶
-          </button>
-
-        </div>
-
-      </div>
-
-      <div
-        style={{
-          textAlign: "center",
-          marginBottom: 24,
-          fontSize: 28,
-          fontWeight: 700,
-        }}
-      >
-        {monthTitle}
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(7,1fr)",
-          gap: 8,
-          marginBottom: 10,
-        }}
-      >
-        {WEEK_DAYS.map((day) => (
-          <div
-            key={day}
-            style={{
-              textAlign: "center",
-              fontWeight: 700,
-              padding: 10,
-            }}
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-
-      <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "repeat(7,1fr)",
-    gap: 8,
-  }}
->
-  {calendarDays.map((date) => {
-          const inMonth =
-            date >= monthStart &&
-            date <= monthEnd;
-
-          const isToday =
-            sameDay(date, today);
-
-          const isSelected =
-            sameDay(
-              date,
-              selectedDate
-            );
-
-          const events =
-            eventsForDate(date);
-
-          return (
             <div
-              key={date.toISOString()}
-              onClick={() =>
-                setSelectedDate(
-                  new Date(date)
-                )
-              }
-              style={{
-                minHeight: 130,
-                padding: 10,
-                borderRadius: 12,
-                cursor: "pointer",
-                border: isSelected
-                  ? "2px solid #F4C542"
-                  : "1px solid #DDDDDD",
-                background: inMonth
-                  ? "#FFFFFF"
-                  : "#F4F4F4",
-                transition: "0.2s",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent:
-                    "space-between",
-                  alignItems: "center",
-                  marginBottom: 8,
-                }}
-              >
-                <span
-                  style={{
-                    fontWeight: isToday
-                      ? 700
-                      : 500,
-                    color: inMonth
-                      ? "#222"
-                      : "#AAA",
-                  }}
-                >
-                  {date.getDate()}
-                </span>
-
-                {isToday && (
-                  <span
-                    style={{
-                      background:
-                        "#F4C542",
-                      color: "#2F3A3F",
-                      fontSize: 10,
-                      padding:
-                        "2px 6px",
-                      borderRadius: 12,
-                      fontWeight: 700,
-                    }}
-                  >
-                    TODAY
-                  </span>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection:
-                    "column",
-                  gap: 4,
-                }}
-              >
-                {events.length === 0 && (
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "#BBBBBB",
-                      fontStyle:
-                        "italic",
-                    }}
-                  >
-                    No events
-                  </div>
-                )}
-
-                {events.map(
-                  (
-                    event,
-                    index
-                  ) => (
-                    <div
-                      key={index}
-                      style={{
-                        background:
-                          event.colour,
-                        color:
-                          "white",
-                        borderRadius: 6,
-                        padding:
-                          "4px 6px",
-                        fontSize: 11,
-                        overflow:
-                          "hidden",
-                        whiteSpace:
-                          "nowrap",
-                        textOverflow:
-                          "ellipsis",
-                      }}
-                    >
-                      {event.type ===
-                      "appointment"
-                        ? "👤 "
-                        : "✂️ "}
-                      {event.label}
-                    </div>
-                  )
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div
         style={{
-          marginTop: 32,
-          padding: 20,
-          borderRadius: 12,
+          marginTop: 30,
           background: "#FFFFFF",
-          border:
-            "1px solid #DDDDDD",
+          border: "1px solid #DDDDDD",
+          borderRadius: 12,
+          padding: 20,
         }}
       >
         <h3
           style={{
             marginTop: 0,
+            marginBottom: 12,
           }}
         >
           Selected Day
@@ -428,6 +155,7 @@ export default function CalendarPage({
         <p
           style={{
             color: "#666",
+            marginBottom: 20,
           }}
         >
           {selectedDate.toLocaleDateString(
@@ -441,58 +169,64 @@ export default function CalendarPage({
           )}
         </p>
 
-        {eventsForDate(
-          selectedDate
-        ).length === 0 ? (
+        {getEventsForDate(selectedDate).length === 0 ? (
           <p
             style={{
-              color: "#999",
+              color: "#999999",
+              fontStyle: "italic",
             }}
           >
-            No appointments,
-            fittings or due
-            jobs scheduled.
+            No appointments or jobs scheduled.
           </p>
         ) : (
-          eventsForDate(
-            selectedDate
-          ).map(
-            (
-              event,
-              index
-            ) => (
+          getEventsForDate(selectedDate).map(
+            (event, index) => (
               <div
                 key={index}
                 style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 12px",
                   marginBottom: 10,
-                  padding: 12,
                   borderLeft: `5px solid ${event.colour}`,
-                  background:
-                    "#FAFAFA",
+                  background: "#F8F8F8",
                   borderRadius: 8,
                 }}
               >
-                <strong>
-                  {event.label}
-                </strong>
-
-                <div
+                <span
                   style={{
-                    color: "#666",
-                    marginTop: 4,
-                    fontSize: 13,
+                    fontSize: 20,
                   }}
                 >
-                  {event.type ===
-                  "appointment"
-                    ? "Appointment"
-                    : "Job Due"}
+                  {event.icon}
+                </span>
+
+                <div>
+                  <div
+                    style={{
+                      fontWeight: 600,
+                    }}
+                  >
+                    {event.label}
+                  </div>
+
+                  <div
+                    style={{
+                      color: "#666",
+                      fontSize: 13,
+                    }}
+                  >
+                    {event.icon === "👤"
+                      ? "Appointment"
+                      : "Job Due"}
+                  </div>
                 </div>
               </div>
             )
           )
         )}
       </div>
-    </div>
+    </>
   );
 }
