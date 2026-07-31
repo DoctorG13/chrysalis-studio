@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import CalendarToolbar from "../features/calendar/CalendarToolbar";
 import CalendarGrid from "../features/calendar/CalendarGrid";
 
+import { useChrysalis } from "../context/ChrysalisProvider";
+
 import {
   buildCalendar,
   endOfMonth,
@@ -22,6 +24,11 @@ export default function CalendarPage({
 
   const [selectedDate, setSelectedDate] =
     useState(new Date());
+
+const {
+  openClient,
+  openJob,
+} = useChrysalis();
 
   const today = new Date();
 
@@ -76,12 +83,15 @@ export default function CalendarPage({
             )
           ) {
             events.push({
-              icon: "👤",
-              colour: "#1976D2",
-              label:
-                appointment.title ||
-                client.name,
-            });
+  type: "appointment",
+  client,
+  appointment,
+  icon: "👤",
+  colour: "#1976D2",
+  label:
+    appointment.title ||
+    client.name,
+});
           }
         }
       );
@@ -95,13 +105,19 @@ export default function CalendarPage({
 
       if (sameDay(due, date)) {
         events.push({
-          icon: "✂️",
-          colour: "#C62828",
-          label:
-            job.reference ||
-            job.title ||
-            "Job",
-        });
+  type: "job",
+  client: clients.find(
+    (c) => c.id === job.clientId
+  ),
+  jobId: job.id,
+  job,
+  icon: "✂️",
+  colour: "#C62828",
+  label:
+    job.reference ||
+    job.title ||
+    "Job",
+});
       }
     });
 
@@ -179,21 +195,42 @@ export default function CalendarPage({
             No appointments or jobs scheduled.
           </p>
         ) : (
-          getEventsForDate(selectedDate).map(
-            (event, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  padding: "10px 12px",
-                  marginBottom: 10,
-                  borderLeft: `5px solid ${event.colour}`,
-                  background: "#F8F8F8",
-                  borderRadius: 8,
-                }}
-              >
+  getEventsForDate(selectedDate).map(
+    (event, index) => (
+      <div
+
+  key={index}
+  onClick={() => {
+    if (
+      event.type === "appointment" &&
+      event.client
+    ) {
+      openClient(event.client);
+    }
+
+    if (
+      event.type === "job" &&
+      event.client
+    ) {
+      openJob(
+        event.client,
+        event.jobId
+      );
+    }
+  }}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "10px 12px",
+    marginBottom: 10,
+    borderLeft: `5px solid ${event.colour}`,
+    background: "#F8F8F8",
+    borderRadius: 8,
+    cursor: "pointer",
+    transition: "0.2s",
+  }}
+>
                 <span
                   style={{
                     fontSize: 20,

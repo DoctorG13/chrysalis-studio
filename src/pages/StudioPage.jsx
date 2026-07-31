@@ -11,6 +11,7 @@ import DashboardPage from "../components/dashboard/DashboardPage";
 import SearchResultsOverlay from "../components/search/SearchResultsOverlay";
 
 import JobsWorkspace from "../components/jobs/JobsWorkspace";
+import { useChrysalis } from "../context/ChrysalisProvider";
 
 export default function StudioPage({
   clients,
@@ -23,14 +24,14 @@ export default function StudioPage({
   const [showClientPanel, setShowClientPanel] =
     useState(false);
 
-  const [selectedClient, setSelectedClient] =
-    useState(null);
-
-  const [selectedJobId, setSelectedJobId] =
-    useState(null);
-
-  const [showWorkspace, setShowWorkspace] =
-    useState(false);
+  const {
+  showWorkspace,
+  selectedClient,
+  selectedJobId,
+  openClient,
+  openJob,
+  closeWorkspace,
+} = useChrysalis();
 
   const [showJobsWorkspace, setShowJobsWorkspace] =
   useState(false);
@@ -43,22 +44,13 @@ export default function StudioPage({
   }
 
   function handleClientClick(client) {
-    setSelectedJobId(null);
-    setSelectedClient(client);
-    setShowWorkspace(true);
-  }
+  openClient(client);
+}
 
   function handleJobClick(client, jobId) {
-    setSelectedClient(client);
-    setSelectedJobId(jobId);
-    setShowWorkspace(true);
-  }
+  openJob(client, jobId);
+}
 
-  function closeWorkspace() {
-    setSelectedClient(null);
-    setSelectedJobId(null);
-    setShowWorkspace(false);
-  }
 
   function handleClientsClick() {
     clientListRef.current?.scrollIntoView({
