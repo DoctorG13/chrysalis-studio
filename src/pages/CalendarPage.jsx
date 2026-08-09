@@ -62,6 +62,40 @@ export default function CalendarPage({
     setSelectedDate(now);
   }
 
+  function parseCalendarDate(value) {
+    if (!value) return null;
+
+    if (
+      typeof value === "string" &&
+      /^\d{2}\/\d{2}\/\d{4}$/.test(value)
+    ) {
+      const [day, month, year] =
+        value.split("/").map(Number);
+
+      const date = new Date(
+        year,
+        month - 1,
+        day
+      );
+
+      if (
+        date.getFullYear() === year &&
+        date.getMonth() === month - 1 &&
+        date.getDate() === day
+      ) {
+        return date;
+      }
+
+      return null;
+    }
+
+    const date = new Date(value);
+
+    return Number.isNaN(date.getTime())
+      ? null
+      : date;
+  }
+
   function getEventsForDate(date) {
     const events = [];
 
@@ -71,9 +105,12 @@ export default function CalendarPage({
           if (!appointment.date) return;
 
           const appointmentDate =
-            new Date(appointment.date);
+            parseCalendarDate(
+              appointment.date
+            );
 
           if (
+            appointmentDate &&
             sameDay(
               appointmentDate,
               date
@@ -97,9 +134,11 @@ export default function CalendarPage({
     jobs.forEach((job) => {
       if (!job.dueDate) return;
 
-      const due = new Date(job.dueDate);
+      const due = parseCalendarDate(
+        job.dueDate
+      );
 
-      if (sameDay(due, date)) {
+      if (due && sameDay(due, date)) {
         events.push({
           type: "job",
           client: clients.find(
