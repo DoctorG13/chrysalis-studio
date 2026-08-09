@@ -7,17 +7,31 @@ export default function CalendarToolbar({
   return (
     <div
       style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 20,
         display: "flex",
-        justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 24,
+        justifyContent: "space-between",
+        gap: 16,
+        marginBottom: 14,
+        padding: "8px 0 10px",
+        background: "#FFFFFF",
+        borderBottom: "1px solid #E5E5E5",
       }}
     >
-      <div>
+      <div
+        style={{
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
         <h1
           style={{
             margin: 0,
-            fontSize: 34,
+            fontSize: 24,
+            lineHeight: 1.1,
+            color: "#2F3A3F",
           }}
         >
           📅 Calendar
@@ -25,12 +39,13 @@ export default function CalendarToolbar({
 
         <p
           style={{
-            marginTop: 8,
-            color: "#666",
+            margin: "3px 0 0",
+            color: "#777",
+            fontSize: 12,
+            lineHeight: 1.2,
           }}
         >
-          Schedule appointments, fittings,
-          due dates and collections.
+          Appointments, fittings, due dates & collections
         </p>
       </div>
 
@@ -38,7 +53,8 @@ export default function CalendarToolbar({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 12,
+          gap: 6,
+          flexShrink: 0,
         }}
       >
         <button onClick={onPrevious}>
@@ -56,10 +72,12 @@ export default function CalendarToolbar({
 
       <div
         style={{
-          fontSize: 26,
+          minWidth: 170,
+          fontSize: 20,
           fontWeight: 700,
-          minWidth: 220,
           textAlign: "right",
+          color: "#2F3A3F",
+          flexShrink: 0,
         }}
       >
         {monthLabel}
