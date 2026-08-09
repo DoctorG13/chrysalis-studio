@@ -8,6 +8,8 @@ import QuickActions from "./QuickActions";
 import RecentActivity from "./RecentActivity";
 import TodaysWorkPanel from "./TodaysWorkPanel";
 
+import { parseJobDate } from "../../constants/jobWorkflow";
+
 export default function DashboardPage({
   clients = [],
   jobs = [],
@@ -18,6 +20,8 @@ export default function DashboardPage({
   onJobsClick,
   onAppointmentsClick,
   onPaymentsClick,
+
+  onSelectJob,
 }) {
   const allJobs = useMemo(() => {
     return clients.flatMap(
@@ -38,11 +42,20 @@ export default function DashboardPage({
     endOfWeek.setDate(endOfWeek.getDate() + 7);
 
     const dueThisWeek = allJobs.filter((job) => {
-      if (!job.dueDate) return false;
+      const due = parseJobDate(job.dueDate);
 
-      const due = new Date(job.dueDate);
+      if (!due) return false;
 
-      return due >= startOfToday && due <= endOfWeek;
+      const dueDay = new Date(
+        due.getFullYear(),
+        due.getMonth(),
+        due.getDate()
+      );
+
+      return (
+        dueDay >= startOfToday &&
+        dueDay <= endOfWeek
+      );
     });
 
     return {
@@ -97,9 +110,7 @@ export default function DashboardPage({
 
       <TodaysWorkPanel
         jobs={allJobs}
-        onSelectJob={(job) => {
-          console.log("Open job:", job);
-        }}
+        onSelectJob={onSelectJob}
       />
 
       <StatsGrid
