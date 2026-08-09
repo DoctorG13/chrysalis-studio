@@ -10,7 +10,7 @@ export const JOB_WORKFLOW = [
   "Mending",
   "Ready",
   "Collected",
-  "Cancelled"
+  "Cancelled",
 ];
 
 export const JOB_STATUS_COLOURS = {
@@ -27,6 +27,51 @@ export const JOB_STATUS_COLOURS = {
   Completed: "#16A34A",
   Cancelled: "#6B7280",
 };
+
+export function parseJobDate(dateValue) {
+  if (!dateValue) return null;
+
+  if (dateValue instanceof Date) {
+    return Number.isNaN(dateValue.getTime())
+      ? null
+      : new Date(dateValue.getTime());
+  }
+
+  const value = String(dateValue).trim();
+
+  if (!value) return null;
+
+  const australianMatch = value.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+  );
+
+  if (australianMatch) {
+    const [, day, month, year] =
+      australianMatch;
+
+    const date = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day)
+    );
+
+    if (
+      date.getFullYear() === Number(year) &&
+      date.getMonth() === Number(month) - 1 &&
+      date.getDate() === Number(day)
+    ) {
+      return date;
+    }
+
+    return null;
+  }
+
+  const parsed = new Date(value);
+
+  return Number.isNaN(parsed.getTime())
+    ? null
+    : parsed;
+}
 
 export function getWorkflowProgress(status) {
   const index = JOB_WORKFLOW.indexOf(status);
@@ -70,7 +115,9 @@ export function isCancelled(status) {
 }
 
 export function isOverdue(job) {
-  if (!job?.dueDate) return false;
+  const dueDate = parseJobDate(job?.dueDate);
+
+  if (!dueDate) return false;
 
   if (
     isCompleted(job.status) ||
@@ -80,7 +127,14 @@ export function isOverdue(job) {
     return false;
   }
 
-  return new Date(job.dueDate) < new Date();
+  const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  return dueDate < startOfToday;
 }
 
 export function needsAttention(job) {
@@ -98,52 +152,53 @@ export function needsAttention(job) {
 }
 
 export function isDueToday(job) {
-  if (!job?.dueDate) return false;
+  const dueDate = parseJobDate(job?.dueDate);
+
+  if (!dueDate) return false;
 
   const today = new Date();
-  const due = new Date(job.dueDate);
 
   return (
-    today.getFullYear() === due.getFullYear() &&
-    today.getMonth() === due.getMonth() &&
-    today.getDate() === due.getDate()
+    today.getFullYear() === dueDate.getFullYear() &&
+    today.getMonth() === dueDate.getMonth() &&
+    today.getDate() === dueDate.getDate()
   );
 }
 
 export function getNextAction(job) {
   switch (job.status) {
     case "Quote":
-  return "Book client";
+      return "Book client";
 
-case "Booked":
-  return "Take measurements";
+    case "Booked":
+      return "Take measurements";
 
-case "Measuring":
-  return "Draft pattern";
+    case "Measuring":
+      return "Draft pattern";
 
-case "Pattern":
-  return "Cut fabric";
+    case "Pattern":
+      return "Cut fabric";
 
-case "Cutting":
-  return "Begin sewing";
+    case "Cutting":
+      return "Begin sewing";
 
-case "Sewing":
-  return "Schedule fitting";
+    case "Sewing":
+      return "Schedule fitting";
 
-case "Fitting":
-  return "Complete alterations";
+    case "Fitting":
+      return "Complete alterations";
 
-case "Alterations":
-  return "Finish mending";
+    case "Alterations":
+      return "Finish mending";
 
-case "Mending":
-  return "Prepare for collection";
+    case "Mending":
+      return "Prepare for collection";
 
-case "Ready":
-  return "Await collection";
+    case "Ready":
+      return "Await collection";
 
-case "Collected":
-  return "Archive job";
+    case "Collected":
+      return "Archive job";
 
     default:
       return "";
