@@ -24,10 +24,14 @@ export default function DashboardPage({
   onSelectJob,
 }) {
   const allJobs = useMemo(() => {
+    if (jobs.length > 0) {
+      return jobs;
+    }
+
     return clients.flatMap(
       (client) => client.jobs ?? []
     );
-  }, [clients]);
+  }, [clients, jobs]);
 
   const dashboard = useMemo(() => {
     const today = new Date();
