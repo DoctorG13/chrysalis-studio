@@ -25,10 +25,10 @@ export default function CalendarPage({
   const [selectedDate, setSelectedDate] =
     useState(new Date());
 
-const {
-  openClient,
-  openJob,
-} = useChrysalis();
+  const {
+    openClient,
+    openJob,
+  } = useChrysalis();
 
   const today = new Date();
 
@@ -59,7 +59,6 @@ const {
     const now = new Date();
 
     setDisplayMonth(now);
-
     setSelectedDate(now);
   }
 
@@ -72,9 +71,7 @@ const {
           if (!appointment.date) return;
 
           const appointmentDate =
-            new Date(
-              appointment.date
-            );
+            new Date(appointment.date);
 
           if (
             sameDay(
@@ -83,15 +80,15 @@ const {
             )
           ) {
             events.push({
-  type: "appointment",
-  client,
-  appointment,
-  icon: "👤",
-  colour: "#1976D2",
-  label:
-    appointment.title ||
-    client.name,
-});
+              type: "appointment",
+              client,
+              appointment,
+              icon: "👤",
+              colour: "#1976D2",
+              label:
+                appointment.title ||
+                client.name,
+            });
           }
         }
       );
@@ -100,24 +97,23 @@ const {
     jobs.forEach((job) => {
       if (!job.dueDate) return;
 
-      const due =
-        new Date(job.dueDate);
+      const due = new Date(job.dueDate);
 
       if (sameDay(due, date)) {
         events.push({
-  type: "job",
-  client: clients.find(
-    (c) => c.id === job.clientId
-  ),
-  jobId: job.id,
-  job,
-  icon: "✂️",
-  colour: "#C62828",
-  label:
-    job.reference ||
-    job.title ||
-    "Job",
-});
+          type: "job",
+          client: clients.find(
+            (c) => c.id === job.clientId
+          ),
+          jobId: job.id,
+          job,
+          icon: "💼",
+          colour: "#C62828",
+          label:
+            job.reference ||
+            job.title ||
+            "Job",
+        });
       }
     });
 
@@ -127,9 +123,7 @@ const {
   return (
     <>
       <CalendarToolbar
-        monthLabel={monthLabel(
-          displayMonth
-        )}
+        monthLabel={monthLabel(displayMonth)}
         onPrevious={goPrevious}
         onToday={goToday}
         onNext={goNext}
@@ -141,16 +135,12 @@ const {
         monthEnd={monthEnd}
         today={today}
         selectedDate={selectedDate}
-        onSelectDate={
-          setSelectedDate
-        }
-        getEventsForDate={
-          getEventsForDate
-        }
+        onSelectDate={setSelectedDate}
+        getEventsForDate={getEventsForDate}
         sameDay={sameDay}
       />
 
-            <div
+      <div
         style={{
           marginTop: 30,
           background: "#FFFFFF",
@@ -195,42 +185,41 @@ const {
             No appointments or jobs scheduled.
           </p>
         ) : (
-  getEventsForDate(selectedDate).map(
-    (event, index) => (
-      <div
+          getEventsForDate(selectedDate).map(
+            (event, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  if (
+                    event.type === "appointment" &&
+                    event.client
+                  ) {
+                    openClient(event.client);
+                  }
 
-  key={index}
-  onClick={() => {
-    if (
-      event.type === "appointment" &&
-      event.client
-    ) {
-      openClient(event.client);
-    }
-
-    if (
-      event.type === "job" &&
-      event.client
-    ) {
-      openJob(
-        event.client,
-        event.jobId
-      );
-    }
-  }}
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "10px 12px",
-    marginBottom: 10,
-    borderLeft: `5px solid ${event.colour}`,
-    background: "#F8F8F8",
-    borderRadius: 8,
-    cursor: "pointer",
-    transition: "0.2s",
-  }}
->
+                  if (
+                    event.type === "job" &&
+                    event.client
+                  ) {
+                    openJob(
+                      event.client,
+                      event.jobId
+                    );
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "10px 12px",
+                  marginBottom: 10,
+                  borderLeft: `5px solid ${event.colour}`,
+                  background: "#F8F8F8",
+                  borderRadius: 8,
+                  cursor: "pointer",
+                  transition: "0.2s",
+                }}
+              >
                 <span
                   style={{
                     fontSize: 20,
@@ -254,7 +243,7 @@ const {
                       fontSize: 13,
                     }}
                   >
-                    {event.icon === "👤"
+                    {event.type === "appointment"
                       ? "Appointment"
                       : "Job Due"}
                   </div>
