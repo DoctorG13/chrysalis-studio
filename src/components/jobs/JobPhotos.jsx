@@ -4,6 +4,8 @@ export default function JobPhotos({
   job,
   onAddPhoto,
   onOpenPhoto,
+  onEditPhoto,
+  onDeletePhoto,
 }) {
   const photos = Array.isArray(job?.photos)
     ? job.photos
@@ -20,7 +22,6 @@ export default function JobPhotos({
           "0 2px 10px rgba(0,0,0,0.03)",
       }}
     >
-      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -93,7 +94,6 @@ export default function JobPhotos({
         </div>
       </div>
 
-      {/* Photo gallery */}
       {photos.length === 0 ? (
         <EmptyState
           onAddPhoto={onAddPhoto}
@@ -118,6 +118,12 @@ export default function JobPhotos({
                 onOpen={() =>
                   onOpenPhoto?.(photo)
                 }
+                onEdit={() =>
+                  onEditPhoto?.(photo)
+                }
+                onDelete={() =>
+                  onDeletePhoto?.(photo)
+                }
               />
             )
           )}
@@ -130,6 +136,8 @@ export default function JobPhotos({
 function PhotoCard({
   photo,
   onOpen,
+  onEdit,
+  onDelete,
 }) {
   const caption =
     photo?.caption ||
@@ -140,41 +148,23 @@ function PhotoCard({
 
   return (
     <div
-      onClick={onOpen}
       style={{
         background: "#FFFFFF",
         border: "1px solid #E5E7EB",
         borderRadius: 14,
         overflow: "hidden",
-        cursor: onOpen
-          ? "pointer"
-          : "default",
-        transition:
-          "transform .18s ease, box-shadow .18s ease",
-      }}
-      onMouseEnter={(event) => {
-        if (!onOpen) return;
-
-        event.currentTarget.style.transform =
-          "translateY(-2px)";
-
-        event.currentTarget.style.boxShadow =
-          "0 8px 20px rgba(0,0,0,0.08)";
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.transform =
-          "translateY(0)";
-
-        event.currentTarget.style.boxShadow =
-          "none";
       }}
     >
       <div
+        onClick={onOpen}
         style={{
           width: "100%",
           height: 220,
           background: "#F3F4F6",
           overflow: "hidden",
+          cursor: onOpen
+            ? "pointer"
+            : "default",
         }}
       >
         {photo?.url ? (
@@ -235,18 +225,44 @@ function PhotoCard({
           </div>
         )}
 
-        {onOpen && (
-          <div
-            style={{
-              marginTop: 10,
-              fontSize: 12,
-              fontWeight: 600,
-              color: "#8B1E3F",
-            }}
-          >
-            View photo →
-          </div>
-        )}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            marginTop: 12,
+          }}
+        >
+          {onOpen && (
+            <button
+              type="button"
+              onClick={onOpen}
+              style={secondaryButtonStyle}
+            >
+              View
+            </button>
+          )}
+
+          {onEdit && (
+            <button
+              type="button"
+              onClick={onEdit}
+              style={secondaryButtonStyle}
+            >
+              ✎ Edit
+            </button>
+          )}
+
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              style={deleteButtonStyle}
+            >
+              🗑 Delete
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -374,3 +390,23 @@ function formatDate(value) {
     }
   );
 }
+
+const secondaryButtonStyle = {
+  border:
+    "1px solid #D9DDE1",
+  background: "#FFFFFF",
+  color: "#2F3A3F",
+  borderRadius: 8,
+  padding: "7px 11px",
+  fontWeight: 700,
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+const deleteButtonStyle = {
+  ...secondaryButtonStyle,
+  border:
+    "1px solid #FCA5A5",
+  color: "#B91C1C",
+  background: "#FFF7F7",
+};

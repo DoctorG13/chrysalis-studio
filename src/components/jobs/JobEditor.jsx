@@ -35,6 +35,9 @@ export default function JobEditor({
   const [selectedPhoto, setSelectedPhoto] =
     useState(null);
 
+  const [editingPhoto, setEditingPhoto] =
+    useState(null);
+
   useEffect(() => {
     setEditedJob(job);
     setActiveTab("Overview");
@@ -42,6 +45,7 @@ export default function JobEditor({
     setEditingFitting(null);
     setShowPhotoForm(false);
     setSelectedPhoto(null);
+    setEditingPhoto(null);
   }, [job]);
 
   if (!editedJob) return null;
@@ -205,6 +209,69 @@ export default function JobEditor({
     setShowPhotoForm(false);
   }
 
+  function handleEditPhoto(photo) {
+    setEditingPhoto(photo);
+  }
+
+  function handleSavePhotoEdit(updatedPhoto) {
+    const photos = (editedJob.photos || []).map(
+      (photo) =>
+        photo.id === updatedPhoto.id
+          ? { ...photo, ...updatedPhoto }
+          : photo
+    );
+
+    const event = createTimelineEvent(
+      "photo",
+      "Photo Updated",
+      updatedPhoto.caption ||
+        "Job photo updated."
+    );
+
+    setEditedJob(
+      addTimelineEvent(
+        {
+          ...editedJob,
+          photos,
+        },
+        event
+      )
+    );
+
+    setEditingPhoto(null);
+  }
+
+  function handleDeletePhoto(photo) {
+    if (
+      !window.confirm(
+        `Delete "${photo.caption || "this photo"}"?`
+      )
+    ) {
+      return;
+    }
+
+    const photos = (editedJob.photos || []).filter(
+      (item) => item.id !== photo.id
+    );
+
+    const event = createTimelineEvent(
+      "photo",
+      "Photo Deleted",
+      photo.caption ||
+        "Job photo deleted."
+    );
+
+    setEditedJob(
+      addTimelineEvent(
+        {
+          ...editedJob,
+          photos,
+        },
+        event
+      )
+    );
+  }
+
   function renderTab() {
     switch (activeTab) {
       case "Overview":
@@ -261,6 +328,12 @@ export default function JobEditor({
             }
             onOpenPhoto={
               setSelectedPhoto
+            }
+            onEditPhoto={
+              handleEditPhoto
+            }
+            onDeletePhoto={
+              handleDeletePhoto
             }
           />
         );
@@ -479,6 +552,16 @@ export default function JobEditor({
           photo={selectedPhoto}
           onClose={() =>
             setSelectedPhoto(null)
+          }
+        />
+      )}
+
+      {editingPhoto && (
+        <PhotoEditModal
+          photo={editingPhoto}
+          onSave={handleSavePhotoEdit}
+          onClose={() =>
+            setEditingPhoto(null)
           }
         />
       )}
@@ -924,6 +1007,89 @@ function PhotoModal({
         <ModalActions
           onClose={onClose}
           submitLabel="Add Photo"
+        />
+      </form>
+    </Modal>
+  );
+}
+
+function PhotoEditModal({
+  photo,
+  onSave,
+  onClose,
+}) {
+  const [caption, setCaption] =
+    useState(photo?.caption || "");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+
+    onSave({
+      ...photo,
+      caption:
+        caption.trim() || "Untitled photo",
+    });
+  }
+
+  return (
+    <Modal
+      title="Edit Photo"
+      onClose={onClose}
+    >
+      <form onSubmit={handleSubmit}>
+        <div
+          style={{
+            border: "1px solid #E5E7EB",
+            borderRadius: 12,
+            overflow: "hidden",
+            marginBottom: 18,
+            background: "#F8F9FA",
+          }}
+        >
+          {photo?.url ? (
+            <img
+              src={photo.url}
+              alt={
+                photo.caption ||
+                "Job photo"
+              }
+              style={{
+                width: "100%",
+                maxHeight: 300,
+                objectFit: "contain",
+                display: "block",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                height: 180,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 42,
+              }}
+            >
+              📷
+            </div>
+          )}
+        </div>
+
+        <FormField label="Caption">
+          <input
+            autoFocus
+            value={caption}
+            onChange={(event) =>
+              setCaption(event.target.value)
+            }
+            placeholder="e.g. Front of garment"
+            style={inputStyle}
+          />
+        </FormField>
+
+        <ModalActions
+          onClose={onClose}
+          submitLabel="Save Changes"
         />
       </form>
     </Modal>
