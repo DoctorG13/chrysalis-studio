@@ -85,12 +85,7 @@ export default function DashboardPage({
 
       outstandingPayments: allJobs.reduce(
         (total, job) =>
-          total +
-          Number(
-            job.balance ??
-              job.outstanding ??
-              0
-          ),
+          total + getOutstanding(job),
         0
       ),
 
@@ -160,5 +155,20 @@ export default function DashboardPage({
         onNewClient={onNewClient}
       />
     </div>
+  );
+}
+
+function getOutstanding(job) {
+  const quote = Number(job.price || 0);
+
+  const totalPaid = (job.payments || []).reduce(
+    (total, payment) =>
+      total + Number(payment.amount || 0),
+    0
+  );
+
+  return Math.max(
+    quote - totalPaid,
+    0
   );
 }

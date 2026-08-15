@@ -153,6 +153,25 @@ export default function JobEditor({
     setEditingFitting(null);
   }
 
+  function handlePaymentsChange(
+    payments,
+    event
+  ) {
+    const nextJob = {
+      ...editedJob,
+      payments,
+    };
+
+    setEditedJob(
+      event
+        ? addTimelineEvent(
+            nextJob,
+            event
+          )
+        : nextJob
+    );
+  }
+
   function handleAddPhoto() {
     setShowPhotoForm(true);
   }
@@ -214,6 +233,9 @@ export default function JobEditor({
         return (
           <JobPayments
             job={editedJob}
+            onChange={
+              handlePaymentsChange
+            }
           />
         );
 

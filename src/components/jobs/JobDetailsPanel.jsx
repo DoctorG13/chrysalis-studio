@@ -205,14 +205,6 @@ export default function JobDetailsPanel({
             }
           />
         </div>
-
-        <MoneyField
-          label="Deposit"
-          value={job.deposit ?? ""}
-          onChange={(value) =>
-            update("deposit", value)
-          }
-        />
       </div>
 
       {/* Description */}

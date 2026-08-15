@@ -1,12 +1,24 @@
 export default function JobOverview({ job }) {
   const quote = Number(job.price || 0);
-  const deposit = Number(job.deposit || 0);
-  const balance = Math.max(quote - deposit, 0);
+
+  const totalPaid = (job.payments || []).reduce(
+    (total, payment) =>
+      total + Number(payment.amount || 0),
+    0
+  );
+
+  const balance = Math.max(
+    quote - totalPaid,
+    0
+  );
 
   const paymentPercent =
     quote > 0
       ? Math.min(
-          Math.max((deposit / quote) * 100, 0),
+          Math.max(
+            (totalPaid / quote) * 100,
+            0
+          ),
           100
         )
       : 0;
@@ -109,7 +121,6 @@ export default function JobOverview({ job }) {
           "0 2px 10px rgba(0,0,0,0.03)",
       }}
     >
-      {/* Overview heading */}
       <div
         style={{
           marginBottom: 20,
@@ -138,7 +149,6 @@ export default function JobOverview({ job }) {
         </div>
       </div>
 
-      {/* Job information */}
       <div
         style={{
           display: "grid",
@@ -170,7 +180,6 @@ export default function JobOverview({ job }) {
         />
       </div>
 
-      {/* Divider */}
       <div
         style={{
           borderTop:
@@ -179,7 +188,6 @@ export default function JobOverview({ job }) {
         }}
       />
 
-      {/* Financial summary */}
       <div>
         <div
           style={{
@@ -208,8 +216,8 @@ export default function JobOverview({ job }) {
           />
 
           <MoneyItem
-            label="Deposit"
-            value={deposit}
+            label="Total Paid"
+            value={totalPaid}
           />
 
           <MoneyItem
@@ -219,7 +227,6 @@ export default function JobOverview({ job }) {
           />
         </div>
 
-        {/* Payment progress */}
         <div
           style={{
             marginTop: 20,
@@ -237,7 +244,7 @@ export default function JobOverview({ job }) {
             }}
           >
             <span>
-              Deposit received
+              Payment progress
             </span>
 
             <strong
