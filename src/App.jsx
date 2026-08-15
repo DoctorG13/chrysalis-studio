@@ -7,6 +7,9 @@ import Header from "./components/layout/Header";
 import StudioPage from "./pages/StudioPage";
 import CalendarPage from "./pages/CalendarPage";
 
+import ClientWorkspace from "./components/clients/ClientWorkspace";
+import SlidePanel from "./components/common/SlidePanel";
+
 import { useChrysalis } from "./context/ChrysalisProvider";
 import { searchStudio } from "./utils/search";
 
@@ -21,6 +24,11 @@ export default function App() {
     clients,
     jobs,
     setClients,
+
+    showWorkspace,
+    selectedClient,
+    selectedJobId,
+    closeWorkspace,
   } = useChrysalis();
 
   const searchResults = useMemo(() => {
@@ -37,7 +45,6 @@ export default function App() {
 
   function renderPage() {
     switch (currentPage) {
-
       case "calendar":
         return (
           <CalendarPage
@@ -71,8 +78,7 @@ export default function App() {
           setCurrentPage={setCurrentPage}
         />
       }
-
-            header={
+      header={
         <Header
           title={
             currentPage === "calendar"
@@ -87,6 +93,19 @@ export default function App() {
       }
     >
       {renderPage()}
+
+      <SlidePanel
+        open={showWorkspace}
+        onClose={closeWorkspace}
+      >
+        <ClientWorkspace
+          client={selectedClient}
+          clients={clients}
+          setClients={setClients}
+          initialJobId={selectedJobId}
+          onClose={closeWorkspace}
+        />
+      </SlidePanel>
     </AppShell>
   );
 }

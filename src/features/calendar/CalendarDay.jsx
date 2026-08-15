@@ -6,9 +6,14 @@ export default function CalendarDay({
   events = [],
   onClick,
 }) {
+  function handleClick() {
+    onClick?.();
+  }
+
   return (
-    <div
-      onClick={onClick}
+    <button
+      type="button"
+      onClick={handleClick}
       style={{
         minHeight: 130,
         padding: 10,
@@ -23,20 +28,35 @@ export default function CalendarDay({
         display: "flex",
         flexDirection: "column",
         transition: "0.2s",
+        width: "100%",
+        textAlign: "left",
+        appearance: "none",
+        WebkitAppearance: "none",
+        fontFamily: "inherit",
+        color: "inherit",
+        boxSizing: "border-box",
       }}
     >
+      {/* DATE HEADER */}
+
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent:
+            "space-between",
           alignItems: "center",
+          width: "100%",
           marginBottom: 8,
         }}
       >
         <span
           style={{
-            fontWeight: isToday ? 700 : 500,
-            color: inMonth ? "#222" : "#AAAAAA",
+            fontWeight: isToday
+              ? 700
+              : 500,
+            color: inMonth
+              ? "#222"
+              : "#AAAAAA",
           }}
         >
           {date.getDate()}
@@ -58,11 +78,14 @@ export default function CalendarDay({
         )}
       </div>
 
+      {/* EVENTS */}
+
       <div
         style={{
           display: "flex",
           flexDirection: "column",
           gap: 4,
+          width: "100%",
         }}
       >
         {events.length === 0 && (
@@ -77,24 +100,40 @@ export default function CalendarDay({
           </span>
         )}
 
-        {events.map((event, index) => (
-          <div
-            key={index}
-            style={{
-              background: event.colour,
-              color: "#FFFFFF",
-              borderRadius: 6,
-              padding: "4px 6px",
-              fontSize: 11,
-              overflow: "hidden",
-              whiteSpace: "nowrap",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {event.icon} {event.label}
-          </div>
-        ))}
+        {events.map(
+          (event, index) => (
+            <div
+              key={
+                event.id ||
+                index
+              }
+              style={{
+                background:
+                  event.colour ||
+                  "#777777",
+                color: "#FFFFFF",
+                borderRadius: 6,
+                padding:
+                  "4px 6px",
+                fontSize: 11,
+                overflow: "hidden",
+                whiteSpace:
+                  "nowrap",
+                textOverflow:
+                  "ellipsis",
+                pointerEvents:
+                  "none",
+                width: "100%",
+                boxSizing:
+                  "border-box",
+              }}
+            >
+              {event.icon}{" "}
+              {event.label}
+            </div>
+          )
+        )}
       </div>
-    </div>
+    </button>
   );
 }

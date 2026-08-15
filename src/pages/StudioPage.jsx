@@ -4,7 +4,6 @@ import SlidePanel from "../components/common/SlidePanel";
 
 import ClientForm from "../components/clients/ClientForm";
 import ClientList from "../components/clients/ClientList";
-import ClientWorkspace from "../components/clients/ClientWorkspace";
 
 import DashboardPage from "../components/dashboard/DashboardPage";
 
@@ -25,16 +24,12 @@ export default function StudioPage({
     useState(false);
 
   const {
-  showWorkspace,
-  selectedClient,
-  selectedJobId,
-  openClient,
-  openJob,
-  closeWorkspace,
-} = useChrysalis();
+    openClient,
+    openJob,
+  } = useChrysalis();
 
   const [showJobsWorkspace, setShowJobsWorkspace] =
-  useState(false);
+    useState(false);
 
   const clientListRef = useRef(null);
 
@@ -44,13 +39,31 @@ export default function StudioPage({
   }
 
   function handleClientClick(client) {
-  openClient(client);
-}
+    openClient(client);
+  }
 
   function handleJobClick(client, jobId) {
-  openJob(client, jobId);
-}
+    openJob(client, jobId);
+  }
 
+  function handleDashboardJobClick(job) {
+    if (!job) return;
+
+    const client = clients.find(
+      (candidate) =>
+        candidate.id === job.clientId
+    );
+
+    if (!client) {
+      console.warn(
+        "Unable to open dashboard job: client not found",
+        job
+      );
+      return;
+    }
+
+    openJob(client, job.id);
+  }
 
   function handleClientsClick() {
     clientListRef.current?.scrollIntoView({
@@ -60,8 +73,8 @@ export default function StudioPage({
   }
 
   function handleJobsClick() {
-  setShowJobsWorkspace(true);
-}
+    setShowJobsWorkspace(true);
+  }
 
   function handleAppointmentsClick() {
     console.log("Appointments clicked");
@@ -76,21 +89,30 @@ export default function StudioPage({
       <DashboardPage
         clients={clients}
         jobs={jobs}
-        onNewClient={() => setShowClientPanel(true)}
+        onNewClient={() =>
+          setShowClientPanel(true)
+        }
         onClientsClick={handleClientsClick}
         onJobsClick={handleJobsClick}
-        onAppointmentsClick={handleAppointmentsClick}
-        onPaymentsClick={handlePaymentsClick}
+        onAppointmentsClick={
+          handleAppointmentsClick
+        }
+        onPaymentsClick={
+          handlePaymentsClick
+        }
+        onSelectJob={
+          handleDashboardJobClick
+        }
       />
 
       {searchQuery.trim() !== "" && (
         <SearchResultsOverlay
-  query={searchQuery}
-  results={searchResults}
-  onSelectClient={handleClientClick}
-  onSelectJob={handleJobClick}
-  onClose={onClearSearch}
-/>
+          query={searchQuery}
+          results={searchResults}
+          onSelectClient={handleClientClick}
+          onSelectJob={handleJobClick}
+          onClose={onClearSearch}
+        />
       )}
 
       <div ref={clientListRef}>
@@ -102,39 +124,33 @@ export default function StudioPage({
 
       <SlidePanel
         open={showClientPanel}
-        onClose={() => setShowClientPanel(false)}
+        onClose={() =>
+          setShowClientPanel(false)
+        }
       >
         <ClientForm
           onSave={handleSaveClient}
-          onCancel={() => setShowClientPanel(false)}
+          onCancel={() =>
+            setShowClientPanel(false)
+          }
         />
       </SlidePanel>
 
       <SlidePanel
-        open={showWorkspace}
-        onClose={closeWorkspace}
+        open={showJobsWorkspace}
+        onClose={() =>
+          setShowJobsWorkspace(false)
+        }
       >
-        <ClientWorkspace
-          client={selectedClient}
+        <JobsWorkspace
+          jobs={jobs}
           clients={clients}
           setClients={setClients}
-          initialJobId={selectedJobId}
-          onClose={closeWorkspace}
+          onClose={() =>
+            setShowJobsWorkspace(false)
+          }
         />
       </SlidePanel>
-
-      <SlidePanel
-  open={showJobsWorkspace}
-  onClose={() => setShowJobsWorkspace(false)}
->
-  <JobsWorkspace
-    jobs={jobs}
-    clients={clients}
-    setClients={setClients}
-    onClose={() => setShowJobsWorkspace(false)}
-  />
-</SlidePanel>
-
     </>
   );
 }
