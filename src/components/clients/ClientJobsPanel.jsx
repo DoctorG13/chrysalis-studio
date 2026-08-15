@@ -40,170 +40,173 @@ export default function ClientJobsPanel({
     null;
 
   function updateClient(updatedJobs) {
-  console.group("updateClient");
+    console.group("updateClient");
 
-  console.log("Current Client:", currentClient);
-  console.log("Jobs BEFORE:", jobs);
-  console.log("Jobs AFTER :", updatedJobs);
+    console.log("Current Client:", currentClient);
+    console.log("Jobs BEFORE:", jobs);
+    console.log("Jobs AFTER :", updatedJobs);
 
-  const updatedClient = {
-    ...currentClient,
-    jobs: updatedJobs,
-  };
+    const updatedClient = {
+      ...currentClient,
+      jobs: updatedJobs,
+    };
 
-  const updatedClients = clients.map((c) =>
-    c.id === currentClient.id ? updatedClient : c
-  );
+    const updatedClients = clients.map((c) =>
+      c.id === currentClient.id ? updatedClient : c
+    );
 
-  console.log("Updated Client:", updatedClient);
-  console.log("Updated Clients:", updatedClients);
+    console.log("Updated Client:", updatedClient);
+    console.log("Updated Clients:", updatedClients);
 
-  console.groupEnd();
+    console.groupEnd();
 
-  setClients(updatedClients);
-}
+    setClients(updatedClients);
+  }
 
-function createTimelineEvent(type, title, description = "") {
-  return {
-    id: crypto.randomUUID(),
+  function createTimelineEvent(
     type,
     title,
-    description,
-    date: new Date().toISOString(),
-  };
-}
+    description = ""
+  ) {
+    return {
+      id: crypto.randomUUID(),
+      type,
+      title,
+      description,
+      date: new Date().toISOString(),
+    };
+  }
 
   function handleCreateJob(job) {
+    const today = new Date();
 
-      const today = new Date();
+    const datePart =
+      String(today.getDate()).padStart(2, "0") +
+      String(today.getMonth() + 1).padStart(2, "0") +
+      today.getFullYear();
 
-  const datePart =
-    String(today.getDate()).padStart(2, "0") +
-    String(today.getMonth() + 1).padStart(2, "0") +
-    today.getFullYear();
+    const todaysJobs = jobs.filter((j) =>
+      j.reference?.startsWith(`CHR-${datePart}-`)
+    );
 
-  const todaysJobs = jobs.filter((j) =>
-    j.reference?.startsWith(`CHR-${datePart}-`)
-  );
+    const nextNumber = String(
+      todaysJobs.length + 1
+    ).padStart(3, "0");
 
-  const nextNumber = String(
-    todaysJobs.length + 1
-  ).padStart(3, "0");
+    job.reference = `CHR-${datePart}-${nextNumber}`;
 
-  job.reference = `CHR-${datePart}-${nextNumber}`;
+    job.timeline = [
+      createTimelineEvent(
+        "created",
+        "Job Created",
+        `Reference ${job.reference} created.`
+      ),
+    ];
 
-  job.timeline = [
-  createTimelineEvent(
-    "created",
-    "Job Created",
-    `Reference ${job.reference} created.`
-  ),
-];
+    console.group("CREATE JOB");
 
-  console.group("CREATE JOB");
+    console.log("Jobs before create:", jobs);
+    console.log("New Job:", job);
 
-  console.log("Jobs before create:", jobs);
-  console.log("New Job:", job);
+    const updatedJobs = [...jobs, job];
 
-  const updatedJobs = [...jobs, job];
+    console.log("Jobs after create:", updatedJobs);
 
-  console.log("Jobs after create:", updatedJobs);
+    updateClient(updatedJobs);
 
-  updateClient(updatedJobs);
+    setShowJobForm(false);
+    setSelectedJobId(job.id);
 
-  setShowJobForm(false);
-  setSelectedJobId(job.id);
+    console.groupEnd();
+  }
 
-  console.groupEnd();
-}
-
-function handleOpenJob(job) {
-  setSelectedJobId(job.id);
-}
-
+  function handleOpenJob(job) {
+    setSelectedJobId(job.id);
+  }
 
   function handleSaveJob(job) {
-    alert("handleSaveJob()");
-    
-  console.group("SAVE JOB");
+    console.group("SAVE JOB");
 
-  console.log("Jobs before save:", jobs);
-  console.log("Saving:", job);
+    console.log("Jobs before save:", jobs);
+    console.log("Saving:", job);
 
-  const updatedJobs = jobs.map((j) => {
-  if (j.id !== job.id) {
-    return j;
-  }
+    const updatedJobs = jobs.map((j) => {
+      if (j.id !== job.id) {
+        return j;
+      }
 
-  const timeline = [...(job.timeline || [])];
+      const timeline = [...(job.timeline || [])];
 
-  if (j.status !== job.status) {
-    timeline.push(
-      createTimelineEvent(
-        "status",
-        "Status Changed",
-        `${j.status || "Unknown"} → ${job.status}`
-      )
+      if (j.status !== job.status) {
+        timeline.push(
+          createTimelineEvent(
+            "status",
+            "Status Changed",
+            `${j.status || "Unknown"} → ${job.status}`
+          )
+        );
+      } else {
+        timeline.push(
+          createTimelineEvent(
+            "note",
+            "Job Updated",
+            "Job information updated."
+          )
+        );
+      }
+
+      return {
+        ...job,
+
+        updatedAt: new Date().toISOString(),
+
+        collectedAt:
+          job.status === "Collected"
+            ? (j.collectedAt ??
+              new Date().toISOString())
+            : j.collectedAt,
+
+        timeline,
+      };
+    });
+
+    console.log("Jobs after save:", updatedJobs);
+
+    const saved = updatedJobs.find(
+      (j) => j.id === job.id
     );
-  } else {
-    timeline.push(
-      createTimelineEvent(
-        "note",
-        "Job Updated",
-        "Job information updated."
-      )
-    );
+
+    console.log("Saved timestamps:", {
+      status: saved.status,
+      updatedAt: saved.updatedAt,
+      collectedAt: saved.collectedAt,
+    });
+
+    updateClient(updatedJobs);
+
+    setSelectedJobId(job.id);
+
+    console.groupEnd();
   }
-
-  return {
-  ...job,
-
-  updatedAt: new Date().toISOString(),
-
-  collectedAt:
-  job.status === "Collected"
-    ? (j.collectedAt ?? new Date().toISOString())
-    : j.collectedAt,
-
-  timeline,
-};
-});
-
-  console.log("Jobs after save:", updatedJobs);
-
-  const saved = updatedJobs.find(j => j.id === job.id);
-
-console.log("Saved timestamps:", {
-  status: saved.status,
-  updatedAt: saved.updatedAt,
-  collectedAt: saved.collectedAt,
-});
-
-  updateClient(updatedJobs);
-
-  setSelectedJobId(job.id);
-
-  console.groupEnd();
-}
 
   function handleDeleteJob(jobId) {
-  console.group("DELETE JOB");
+    console.group("DELETE JOB");
 
-  console.log("Jobs before delete:", jobs);
-  console.log("Deleting:", jobId);
+    console.log("Jobs before delete:", jobs);
+    console.log("Deleting:", jobId);
 
-  const updatedJobs = jobs.filter(
-    (job) => job.id !== jobId
-  );
+    const updatedJobs = jobs.filter(
+      (job) => job.id !== jobId
+    );
 
-  console.log("Jobs after delete:", updatedJobs);
+    console.log("Jobs after delete:", updatedJobs);
 
-  updateClient(updatedJobs);
+    updateClient(updatedJobs);
 
-  setSelectedJobId(null);
+    setSelectedJobId(null);
 
-  console.groupEnd();
-}
+    console.groupEnd();
+  }
 
   return (
     <>
