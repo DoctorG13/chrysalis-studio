@@ -4,6 +4,26 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Database Foundation
+
+### Added
+
+- Added a persistent SQLite database foundation for local business data.
+- Added schema version tracking and migration checksums.
+- Added automatic pre-migration database backups.
+- Added database inspection and backup CLI commands.
+- Added a local API health endpoint for database status.
+- Added a minimum Node.js requirement of 24.15.0 for the built-in SQLite runtime.
+- Protected the local `data/` directory from Git so client databases and backups are never committed.
+
+### Architecture
+
+- Established the application/database separation required for future client updates.
+- Database migrations are additive and versioned; an already-applied migration cannot be silently changed.
+- Existing client data will remain in the persistent database while application revisions are deployed independently.
+
+---
+
 ## Release 0.5
 
 ### 0.5.1
