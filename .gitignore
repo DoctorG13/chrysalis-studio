@@ -33,3 +33,7 @@ coverage/
 
 # Build
 build/
+
+# Chrysalis local business data
+# Never commit a client's database or backups.
+data/
