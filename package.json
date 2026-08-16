@@ -16,7 +16,8 @@
     "db:migrate": "node server/index.js db:migrate",
     "db:info": "node server/index.js db:info",
     "db:backup": "node server/index.js db:backup",
-    "db:import": "node scripts/import-legacy.js"
+    "db:import": "node scripts/import-legacy.js",
+    "db:audit": "node scripts/audit-database.js"
   },
   "dependencies": {
     "react": "^19.2.7",
