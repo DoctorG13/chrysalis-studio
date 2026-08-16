@@ -3,11 +3,19 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=24.15.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node server/index.js server",
+    "db:init": "node server/index.js db:init",
+    "db:migrate": "node server/index.js db:migrate",
+    "db:info": "node server/index.js db:info",
+    "db:backup": "node server/index.js db:backup"
   },
   "dependencies": {
     "react": "^19.2.7",
