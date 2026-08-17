@@ -9,6 +9,7 @@ import ClientWorkspaceHeader from "./ClientWorkspaceHeader";
 import MeasurementsSection from "../clients/MeasurementsSection";
 import AssetSection from "./AssetSection";
 import AppointmentsSection from "../appointments/AppointmentsSection";
+import TimelineSection from "../timeline/TimelineSection";
 
 export default function ClientWorkspace({ client, clients, jobs = [], setClients, createJob, updateJob, deleteJob, appointments = [], createAppointment, updateAppointment, deleteAppointment, initialJobId, onClose }) {
   const currentClient = useMemo(() => clients.find((c) => c.id === client?.id) ?? client, [clients, client]);
@@ -19,7 +20,7 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [measurements, setMeasurements] = useState({});
-  const [openSections, setOpenSections] = useState({ client: false, measurements: false, jobs: false, appointments: false, payments: false, notes: false, photos: false, documents: false });
+  const [openSections, setOpenSections] = useState({ client: false, measurements: false, jobs: false, appointments: false, payments: false, notes: false, photos: false, documents: false, timeline: false });
 
   useEffect(() => {
     if (!currentClient) return;
@@ -52,12 +53,14 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
     onClose();
   }
 
+  const allSectionKeys = Object.keys(openSections);
+
   return (
     <>
       <ClientWorkspaceHeader client={currentClient} />
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        <Button onClick={() => setOpenSections(Object.fromEntries(Object.keys(openSections).map((key) => [key, true])))}>Expand All</Button>
-        <Button onClick={() => setOpenSections(Object.fromEntries(Object.keys(openSections).map((key) => [key, false])))}>Collapse All</Button>
+        <Button onClick={() => setOpenSections(Object.fromEntries(allSectionKeys.map((key) => [key, true])))}>Expand All</Button>
+        <Button onClick={() => setOpenSections(Object.fromEntries(allSectionKeys.map((key) => [key, false])))}>Collapse All</Button>
       </div>
 
       <WorkspaceSection title="Client Details" icon="👤" isOpen={openSections.client} onToggle={() => toggleSection("client")}>
@@ -82,6 +85,10 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
 
       <WorkspaceSection title="Photos & Documents" icon="📎" isOpen={openSections.photos} onToggle={() => toggleSection("photos")}>
         <AssetSection clientId={currentClient.id} />
+      </WorkspaceSection>
+
+      <WorkspaceSection title="Timeline" icon="🕒" isOpen={openSections.timeline} onToggle={() => toggleSection("timeline")}>
+        <TimelineSection clientId={currentClient.id} />
       </WorkspaceSection>
 
       <hr />
