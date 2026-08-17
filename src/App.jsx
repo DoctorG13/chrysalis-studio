@@ -14,20 +14,20 @@ import { useChrysalis } from "./context/ChrysalisProvider";
 import { searchStudio } from "./utils/search";
 
 export default function App() {
-  const [currentPage, setCurrentPage] =
-    useState("studio");
-
-  const [searchQuery, setSearchQuery] =
-    useState("");
+  const [currentPage, setCurrentPage] = useState("studio");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const {
     clients,
     jobs,
+    appointments,
     setClients,
     createJob,
     updateJob,
     deleteJob,
-
+    createAppointment,
+    updateAppointment,
+    deleteAppointment,
     showWorkspace,
     selectedClient,
     selectedJobId,
@@ -35,16 +35,8 @@ export default function App() {
   } = useChrysalis();
 
   const searchResults = useMemo(() => {
-    return searchStudio(
-      searchQuery,
-      clients,
-      jobs
-    );
-  }, [
-    searchQuery,
-    clients,
-    jobs,
-  ]);
+    return searchStudio(searchQuery, clients, jobs);
+  }, [searchQuery, clients, jobs]);
 
   function renderPage() {
     switch (currentPage) {
@@ -68,9 +60,7 @@ export default function App() {
             deleteJob={deleteJob}
             searchQuery={searchQuery}
             searchResults={searchResults}
-            onClearSearch={() =>
-              setSearchQuery("")
-            }
+            onClearSearch={() => setSearchQuery("")}
           />
         );
     }
@@ -111,6 +101,10 @@ export default function App() {
           createJob={createJob}
           updateJob={updateJob}
           deleteJob={deleteJob}
+          appointments={appointments}
+          createAppointment={createAppointment}
+          updateAppointment={updateAppointment}
+          deleteAppointment={deleteAppointment}
           initialJobId={selectedJobId}
           onClose={closeWorkspace}
         />
