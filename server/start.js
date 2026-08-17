@@ -30,6 +30,13 @@ const SERVICES = [
     healthUrl: "http://127.0.0.1:4177/api/health",
     label: "Measurement API",
   },
+  {
+    name: "payments",
+    script: "server/payment-server.js",
+    args: [],
+    healthUrl: "http://127.0.0.1:4178/api/health",
+    label: "Payment API",
+  },
 ];
 
 const children = new Map();
