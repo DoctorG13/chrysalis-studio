@@ -7,12 +7,21 @@ const SERVICES = [
     script: "server/index.js",
     args: ["server"],
     healthUrl: "http://127.0.0.1:4174/api/health",
+    label: "Database API",
   },
   {
     name: "jobs",
     script: "server/job-server.js",
     args: [],
     healthUrl: "http://127.0.0.1:4175/api/health",
+    label: "Job API",
+  },
+  {
+    name: "appointments",
+    script: "server/appointment-server.js",
+    args: [],
+    healthUrl: "http://127.0.0.1:4176/api/health",
+    label: "Appointment API",
   },
 ];
 
@@ -127,23 +136,19 @@ async function main() {
 
   try {
     await Promise.all(
-      SERVICES.map((service) =>
-        checkHealth(service.healthUrl)
-      )
+      SERVICES.map((service) => checkHealth(service.healthUrl))
     );
   } catch (error) {
-    console.error(
-      "Chrysalis backend startup failed:",
-      error
-    );
+    console.error("Chrysalis backend startup failed:", error);
     shutdown(1);
     return;
   }
 
   console.log("");
   console.log("Chrysalis backend is ready.");
-  console.log("  Database API: http://127.0.0.1:4174");
-  console.log("  Job API:      http://127.0.0.1:4175");
+  for (const service of SERVICES) {
+    console.log(`  ${service.label}: ${service.healthUrl.replace("/api/health", "")}`);
+  }
   console.log("");
 }
 
