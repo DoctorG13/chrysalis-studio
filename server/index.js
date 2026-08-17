@@ -1,7 +1,6 @@
 import { createServer } from "node:http";
 import { existsSync, mkdirSync } from "node:fs";
-import { readFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { DatabaseSync, backup as sqliteBackup } from "node:sqlite";
 
@@ -9,6 +8,7 @@ const APP_VERSION = "0.0.0";
 const MIN_NODE_MAJOR = 24;
 const MIN_NODE_MINOR = 15;
 const DEFAULT_PORT = 4174;
+const MAX_REQUEST_BYTES = 2 * 1024 * 1024;
 
 const DATA_DIR = resolve(
   process.env.CHRYSALIS_DATA_DIR || join(process.cwd(), "data")
@@ -167,41 +167,18 @@ const MIGRATIONS = [
         FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
       );
 
-      CREATE INDEX IF NOT EXISTS idx_jobs_client_id
-        ON jobs(client_id);
-
-      CREATE INDEX IF NOT EXISTS idx_jobs_due_date
-        ON jobs(due_date);
-
-      CREATE INDEX IF NOT EXISTS idx_appointments_client_id
-        ON appointments(client_id);
-
-      CREATE INDEX IF NOT EXISTS idx_appointments_job_id
-        ON appointments(job_id);
-
-      CREATE INDEX IF NOT EXISTS idx_appointments_date
-        ON appointments(date);
-
-      CREATE INDEX IF NOT EXISTS idx_payments_job_id
-        ON payments(job_id);
-
-      CREATE INDEX IF NOT EXISTS idx_fittings_job_id
-        ON fittings(job_id);
-
-      CREATE INDEX IF NOT EXISTS idx_assets_job_id
-        ON assets(job_id);
-
-      CREATE INDEX IF NOT EXISTS idx_measurements_client_id
-        ON measurements(client_id);
-
-      CREATE INDEX IF NOT EXISTS idx_timeline_client_id
-        ON timeline_events(client_id);
-
-      CREATE INDEX IF NOT EXISTS idx_timeline_job_id
-        ON timeline_events(job_id);
-
-      CREATE INDEX IF NOT EXISTS idx_invoices_job_id
-        ON invoices(job_id);
+      CREATE INDEX IF NOT EXISTS idx_jobs_client_id ON jobs(client_id);
+      CREATE INDEX IF NOT EXISTS idx_jobs_due_date ON jobs(due_date);
+      CREATE INDEX IF NOT EXISTS idx_appointments_client_id ON appointments(client_id);
+      CREATE INDEX IF NOT EXISTS idx_appointments_job_id ON appointments(job_id);
+      CREATE INDEX IF NOT EXISTS idx_appointments_date ON appointments(date);
+      CREATE INDEX IF NOT EXISTS idx_payments_job_id ON payments(job_id);
+      CREATE INDEX IF NOT EXISTS idx_fittings_job_id ON fittings(job_id);
+      CREATE INDEX IF NOT EXISTS idx_assets_job_id ON assets(job_id);
+      CREATE INDEX IF NOT EXISTS idx_measurements_client_id ON measurements(client_id);
+      CREATE INDEX IF NOT EXISTS idx_timeline_client_id ON timeline_events(client_id);
+      CREATE INDEX IF NOT EXISTS idx_timeline_job_id ON timeline_events(job_id);
+      CREATE INDEX IF NOT EXISTS idx_invoices_job_id ON invoices(job_id);
 
       INSERT OR REPLACE INTO app_metadata (key, value)
         VALUES ('schema_name', 'chrysalis-business-data');
@@ -266,25 +243,19 @@ function checksumForMigration(migration) {
 async function backupDatabase(database, reason = "manual") {
   ensureDataDirectories();
 
-  if (!existsSync(DB_PATH)) {
-    return null;
-  }
+  if (!existsSync(DB_PATH)) return null;
 
   const safeReason = String(reason)
     .replace(/[^a-z0-9_-]+/gi, "-")
     .replace(/^-+|-+$/g, "") || "backup";
 
-  const timestamp = new Date()
-    .toISOString()
-    .replace(/[:.]/g, "-");
-
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const destination = join(
     BACKUP_DIR,
     `chrysalis-${timestamp}-${safeReason}.db`
   );
 
   await sqliteBackup(database, destination);
-
   return destination;
 }
 
@@ -297,9 +268,7 @@ async function runMigrations(database) {
     )
     .all();
 
-  const applied = new Map(
-    appliedRows.map((row) => [row.version, row])
-  );
+  const applied = new Map(appliedRows.map((row) => [row.version, row]));
 
   for (const migration of MIGRATIONS) {
     const expectedChecksum = checksumForMigration(migration);
@@ -312,37 +281,25 @@ async function runMigrations(database) {
             "Create a new migration instead of modifying an existing one."
         );
       }
-
       continue;
     }
 
     if (existsSync(DB_PATH)) {
-      await backupDatabase(
-        database,
-        `before-migration-${migration.version}`
-      );
+      await backupDatabase(database, `before-migration-${migration.version}`);
     }
 
     const appliedAt = new Date().toISOString();
-
     database.exec("BEGIN IMMEDIATE");
 
     try {
       database.exec(migration.sql);
-
       database
         .prepare(
           `INSERT INTO schema_migrations
              (version, name, checksum, applied_at)
            VALUES (?, ?, ?, ?)`
         )
-        .run(
-          migration.version,
-          migration.name,
-          expectedChecksum,
-          appliedAt
-        );
-
+        .run(migration.version, migration.name, expectedChecksum, appliedAt);
       database.exec("COMMIT");
     } catch (error) {
       database.exec("ROLLBACK");
@@ -364,10 +321,8 @@ function getDatabaseInfo(database) {
 
   const tableNames = database
     .prepare(
-      `SELECT name
-       FROM sqlite_master
-       WHERE type = 'table'
-         AND name NOT LIKE 'sqlite_%'
+      `SELECT name FROM sqlite_master
+       WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
        ORDER BY name`
     )
     .all()
@@ -377,16 +332,12 @@ function getDatabaseInfo(database) {
 
   for (const table of tableNames) {
     if (table === "schema_migrations") continue;
-
     counts[table] = database
       .prepare(`SELECT COUNT(*) AS count FROM "${table}"`)
       .get().count;
   }
 
-  const currentMigration =
-    migrations.length > 0
-      ? migrations[migrations.length - 1]
-      : null;
+  const currentMigration = migrations.at(-1) || null;
 
   return {
     applicationVersion: APP_VERSION,
@@ -407,11 +358,178 @@ function sendJson(response, statusCode, payload) {
     "Content-Length": Buffer.byteLength(body),
     "Cache-Control": "no-store",
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   });
 
   response.end(body);
+}
+
+function readJsonBody(request) {
+  return new Promise((resolveBody, reject) => {
+    let body = "";
+    let size = 0;
+
+    request.setEncoding("utf8");
+
+    request.on("data", (chunk) => {
+      size += Buffer.byteLength(chunk);
+
+      if (size > MAX_REQUEST_BYTES) {
+        reject(new Error("Request body is too large."));
+        request.destroy();
+        return;
+      }
+
+      body += chunk;
+    });
+
+    request.on("end", () => {
+      if (!body.trim()) {
+        resolveBody({});
+        return;
+      }
+
+      try {
+        resolveBody(JSON.parse(body));
+      } catch {
+        reject(new Error("Request body must contain valid JSON."));
+      }
+    });
+
+    request.on("error", reject);
+  });
+}
+
+function parseJson(value, fallback) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
+function clientFromRow(row) {
+  const stored = parseJson(row.data_json, {});
+
+  return {
+    ...stored,
+    id: row.id,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    phone: row.phone,
+    email: row.email,
+    notes: row.notes,
+    status: row.status,
+    created: row.created_at,
+    modified: row.modified_at,
+    measurements: parseJson(row.measurements_json, stored.measurements || {}),
+    preferences: parseJson(row.preferences_json, stored.preferences || {}),
+    tags: parseJson(row.tags_json, stored.tags || []),
+    reminders: parseJson(row.reminders_json, stored.reminders || []),
+    customFields: parseJson(row.custom_fields_json, stored.customFields || {}),
+    jobs: Array.isArray(stored.jobs) ? stored.jobs : [],
+    appointments: Array.isArray(stored.appointments) ? stored.appointments : [],
+    payments: Array.isArray(stored.payments) ? stored.payments : [],
+    invoices: Array.isArray(stored.invoices) ? stored.invoices : [],
+    timeline: Array.isArray(stored.timeline) ? stored.timeline : [],
+    photos: Array.isArray(stored.photos) ? stored.photos : [],
+    documents: Array.isArray(stored.documents) ? stored.documents : [],
+  };
+}
+
+function normalizeClient(input, existing = null) {
+  const now = new Date().toISOString();
+  const client = {
+    ...(existing || {}),
+    ...(input || {}),
+  };
+
+  const id = String(client.id || crypto.randomUUID());
+  const created = existing?.created || client.created || now;
+
+  return {
+    ...client,
+    id,
+    firstName: String(client.firstName || ""),
+    lastName: String(client.lastName || ""),
+    phone: String(client.phone || ""),
+    email: String(client.email || ""),
+    notes: String(client.notes || ""),
+    status: String(client.status || "Active"),
+    created,
+    modified: now,
+    measurements: client.measurements || {},
+    preferences: client.preferences || {},
+    tags: Array.isArray(client.tags) ? client.tags : [],
+    reminders: Array.isArray(client.reminders) ? client.reminders : [],
+    customFields: client.customFields || {},
+    jobs: Array.isArray(client.jobs) ? client.jobs : [],
+    appointments: Array.isArray(client.appointments) ? client.appointments : [],
+    payments: Array.isArray(client.payments) ? client.payments : [],
+    invoices: Array.isArray(client.invoices) ? client.invoices : [],
+    timeline: Array.isArray(client.timeline) ? client.timeline : [],
+    photos: Array.isArray(client.photos) ? client.photos : [],
+    documents: Array.isArray(client.documents) ? client.documents : [],
+  };
+}
+
+function saveClient(database, input, existing = null) {
+  const client = normalizeClient(input, existing);
+
+  database
+    .prepare(
+      `INSERT INTO clients (
+        id, first_name, last_name, phone, email, notes, status,
+        created_at, modified_at, measurements_json, preferences_json,
+        tags_json, reminders_json, custom_fields_json, data_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        first_name = excluded.first_name,
+        last_name = excluded.last_name,
+        phone = excluded.phone,
+        email = excluded.email,
+        notes = excluded.notes,
+        status = excluded.status,
+        modified_at = excluded.modified_at,
+        measurements_json = excluded.measurements_json,
+        preferences_json = excluded.preferences_json,
+        tags_json = excluded.tags_json,
+        reminders_json = excluded.reminders_json,
+        custom_fields_json = excluded.custom_fields_json,
+        data_json = excluded.data_json`
+    )
+    .run(
+      client.id,
+      client.firstName,
+      client.lastName,
+      client.phone,
+      client.email,
+      client.notes,
+      client.status,
+      client.created,
+      client.modified,
+      JSON.stringify(client.measurements),
+      JSON.stringify(client.preferences),
+      JSON.stringify(client.tags),
+      JSON.stringify(client.reminders),
+      JSON.stringify(client.customFields),
+      JSON.stringify(client)
+    );
+
+  return client;
+}
+
+function getAllClients(database) {
+  return database
+    .prepare("SELECT * FROM clients ORDER BY last_name COLLATE NOCASE, first_name COLLATE NOCASE")
+    .all()
+    .map(clientFromRow);
+}
+
+function getClient(database, id) {
+  const row = database.prepare("SELECT * FROM clients WHERE id = ?").get(id);
+  return row ? clientFromRow(row) : null;
 }
 
 function createApiServer(database) {
@@ -419,7 +537,7 @@ function createApiServer(database) {
     if (request.method === "OPTIONS") {
       response.writeHead(204, {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type",
       });
       response.end();
@@ -432,62 +550,98 @@ function createApiServer(database) {
     );
 
     try {
-      if (
-        request.method === "GET" &&
-        url.pathname === "/api/health"
-      ) {
-        sendJson(response, 200, {
-          ok: true,
-          ...getDatabaseInfo(database),
-        });
+      if (request.method === "GET" && url.pathname === "/api/health") {
+        sendJson(response, 200, { ok: true, ...getDatabaseInfo(database) });
         return;
       }
 
-      if (
-        request.method === "GET" &&
-        url.pathname === "/api/database/info"
-      ) {
+      if (request.method === "GET" && url.pathname === "/api/database/info") {
         sendJson(response, 200, getDatabaseInfo(database));
         return;
       }
 
-      if (
-        request.method === "POST" &&
-        url.pathname === "/api/database/migrate"
-      ) {
+      if (request.method === "POST" && url.pathname === "/api/database/migrate") {
         const info = await runMigrations(database);
-        sendJson(response, 200, {
-          ok: true,
-          ...info,
-        });
+        sendJson(response, 200, { ok: true, ...info });
         return;
       }
 
-      if (
-        request.method === "POST" &&
-        url.pathname === "/api/database/backup"
-      ) {
+      if (request.method === "POST" && url.pathname === "/api/database/backup") {
         const path = await backupDatabase(database, "manual");
-        sendJson(response, 200, {
-          ok: true,
-          path,
-        });
+        sendJson(response, 200, { ok: true, path });
         return;
       }
 
-      sendJson(response, 404, {
-        ok: false,
-        error: "Not found",
-      });
+      if (request.method === "GET" && url.pathname === "/api/clients") {
+        sendJson(response, 200, { ok: true, clients: getAllClients(database) });
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname.startsWith("/api/clients/")) {
+        const id = decodeURIComponent(url.pathname.slice("/api/clients/".length));
+        const client = getClient(database, id);
+
+        if (!client) {
+          sendJson(response, 404, { ok: false, error: "Client not found." });
+          return;
+        }
+
+        sendJson(response, 200, { ok: true, client });
+        return;
+      }
+
+      if (request.method === "POST" && url.pathname === "/api/clients") {
+        const payload = await readJsonBody(request);
+        const input = payload.client || payload;
+        const client = normalizeClient(input);
+
+        if (getClient(database, client.id)) {
+          sendJson(response, 409, { ok: false, error: "A client with this ID already exists." });
+          return;
+        }
+
+        saveClient(database, client);
+        sendJson(response, 201, { ok: true, client });
+        return;
+      }
+
+      if (request.method === "PUT" && url.pathname.startsWith("/api/clients/")) {
+        const id = decodeURIComponent(url.pathname.slice("/api/clients/".length));
+        const existing = getClient(database, id);
+
+        if (!existing) {
+          sendJson(response, 404, { ok: false, error: "Client not found." });
+          return;
+        }
+
+        const payload = await readJsonBody(request);
+        const input = payload.client || payload;
+        const client = saveClient(database, { ...input, id }, existing);
+
+        sendJson(response, 200, { ok: true, client });
+        return;
+      }
+
+      if (request.method === "DELETE" && url.pathname.startsWith("/api/clients/")) {
+        const id = decodeURIComponent(url.pathname.slice("/api/clients/".length));
+        const existing = getClient(database, id);
+
+        if (!existing) {
+          sendJson(response, 404, { ok: false, error: "Client not found." });
+          return;
+        }
+
+        database.prepare("DELETE FROM clients WHERE id = ?").run(id);
+        sendJson(response, 200, { ok: true, id });
+        return;
+      }
+
+      sendJson(response, 404, { ok: false, error: "Not found" });
     } catch (error) {
       console.error(error);
-
       sendJson(response, 500, {
         ok: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : String(error),
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   });
@@ -507,13 +661,7 @@ async function main() {
     }
 
     if (command === "db:info") {
-      console.log(
-        JSON.stringify(
-          getDatabaseInfo(database),
-          null,
-          2
-        )
-      );
+      console.log(JSON.stringify(getDatabaseInfo(database), null, 2));
       return;
     }
 
@@ -524,23 +672,16 @@ async function main() {
     }
 
     if (command !== "server") {
-      throw new Error(
-        `Unknown database command: ${command}`
-      );
+      throw new Error(`Unknown database command: ${command}`);
     }
 
     await runMigrations(database);
 
-    const port = Number(
-      process.env.CHRYSALIS_API_PORT || DEFAULT_PORT
-    );
-
+    const port = Number(process.env.CHRYSALIS_API_PORT || DEFAULT_PORT);
     const server = createApiServer(database);
 
     server.listen(port, "127.0.0.1", () => {
-      console.log(
-        `Chrysalis API listening on http://127.0.0.1:${port}`
-      );
+      console.log(`Chrysalis API listening on http://127.0.0.1:${port}`);
       console.log(`Database: ${DB_PATH}`);
     });
 
@@ -554,9 +695,7 @@ async function main() {
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);
   } finally {
-    if (command !== "server") {
-      database.close();
-    }
+    if (command !== "server") database.close();
   }
 }
 
