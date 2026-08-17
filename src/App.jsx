@@ -97,6 +97,7 @@ export default function App() {
         <ClientWorkspace
           client={selectedClient}
           clients={clients}
+          jobs={jobs}
           setClients={setClients}
           createJob={createJob}
           updateJob={updateJob}
