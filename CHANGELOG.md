@@ -117,3 +117,17 @@ Cancelled
 ### Added
 
 - Dashboard "Jobs Requiring Attention" widget.
+
+---
+
+## Invoice Print / PDF Layout
+
+### Added
+
+- Added a professional A4 invoice print layout.
+- Added Chrysalis invoice branding, client details and invoice metadata to the printable document.
+- Added line-item, subtotal, GST, total, paid and balance-owing sections.
+- Added linked Job Reference to the printable invoice when available.
+- Added invoice notes and customer thank-you text.
+- Added a `Print / PDF` action to Invoice Management.
+- Uses the browser's native print dialog so invoices can be printed or saved as PDF without adding a new PDF dependency.
