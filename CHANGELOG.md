@@ -43,6 +43,26 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## SQLite Job Integration
+
+### Added
+
+- Added a dedicated SQLite-backed Job API.
+- Added Job create, read, update and delete operations against the existing `jobs` table.
+- Added a React Job API service.
+- Changed `ChrysalisProvider` to load Jobs independently from Clients.
+- Changed Client Job creation, editing and deletion to persist directly to SQLite.
+- Kept Job data available to the existing Client Workspace and Jobs Workspace without changing the existing UI model.
+- Added a combined local server launcher for the Client API and Job API.
+
+### Architecture
+
+- Jobs now use `jobs.client_id` as the persistent relationship to their Client.
+- Client records no longer act as the authoritative storage location for Jobs.
+- Existing nested Job data remains available in the UI while the migration away from localStorage continues.
+
+---
+
 ## Release 0.5
 
 ### 0.5.1
