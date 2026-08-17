@@ -16,6 +16,10 @@ export default function ClientWorkspace({
   createJob,
   updateJob,
   deleteJob,
+  appointments = [],
+  createAppointment,
+  updateAppointment,
+  deleteAppointment,
   initialJobId,
   onClose,
 }) {
@@ -24,12 +28,19 @@ export default function ClientWorkspace({
     [clients, client]
   );
 
+  const clientAppointments = useMemo(
+    () =>
+      appointments.filter(
+        (appointment) => appointment.clientId === currentClient?.id
+      ),
+    [appointments, currentClient?.id]
+  );
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
-  const [appointments, setAppointments] = useState([]);
   const [measurements, setMeasurements] = useState({});
 
   const [openSections, setOpenSections] = useState({
@@ -51,7 +62,6 @@ export default function ClientWorkspace({
     setPhone(currentClient.phone || "");
     setEmail(currentClient.email || "");
     setNotes(currentClient.notes || "");
-    setAppointments(currentClient.appointments || []);
     setMeasurements(currentClient.measurements || {});
   }, [currentClient]);
 
@@ -82,7 +92,6 @@ export default function ClientWorkspace({
       email,
       notes,
       measurements,
-      appointments,
     };
 
     setClients(
@@ -197,8 +206,11 @@ export default function ClientWorkspace({
         onToggle={() => toggleSection("appointments")}
       >
         <AppointmentsSection
-          appointments={appointments}
-          setAppointments={setAppointments}
+          clientId={currentClient.id}
+          appointments={clientAppointments}
+          createAppointment={createAppointment}
+          updateAppointment={updateAppointment}
+          deleteAppointment={deleteAppointment}
         />
       </WorkspaceSection>
 
