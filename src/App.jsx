@@ -24,6 +24,9 @@ export default function App() {
     clients,
     jobs,
     setClients,
+    createJob,
+    updateJob,
+    deleteJob,
 
     showWorkspace,
     selectedClient,
@@ -60,6 +63,9 @@ export default function App() {
             clients={clients}
             jobs={jobs}
             setClients={setClients}
+            createJob={createJob}
+            updateJob={updateJob}
+            deleteJob={deleteJob}
             searchQuery={searchQuery}
             searchResults={searchResults}
             onClearSearch={() =>
@@ -102,6 +108,9 @@ export default function App() {
           client={selectedClient}
           clients={clients}
           setClients={setClients}
+          createJob={createJob}
+          updateJob={updateJob}
+          deleteJob={deleteJob}
           initialJobId={selectedJobId}
           onClose={closeWorkspace}
         />
