@@ -29,23 +29,37 @@ export async function getAssets({ clientId, jobId } = {}) {
 }
 
 export async function createAssetRecord(asset) {
+  const payload = {
+    ...asset,
+    url: asset.url || asset.dataUrl || "",
+    caption: asset.caption || asset.name || asset.title || asset.fileName || "Untitled asset",
+    kind: asset.kind || (asset.category === "Photo" ? "photo" : "file"),
+  };
+
   const result = await request("/api/assets", {
     method: "POST",
-    body: JSON.stringify(asset),
+    body: JSON.stringify(payload),
   });
   return result.asset;
 }
 
 export async function updateAssetRecord(asset) {
-  const result = await request(`/api/assets/${asset.id}`, {
+  const payload = {
+    ...asset,
+    url: asset.url || asset.dataUrl || "",
+    caption: asset.caption || asset.name || asset.title || asset.fileName || "Untitled asset",
+    kind: asset.kind || (asset.category === "Photo" ? "photo" : "file"),
+  };
+
+  const result = await request(`/api/assets/${encodeURIComponent(asset.id)}`, {
     method: "PUT",
-    body: JSON.stringify(asset),
+    body: JSON.stringify(payload),
   });
   return result.asset;
 }
 
 export async function deleteAssetRecord(assetId) {
-  await request(`/api/assets/${assetId}`, {
+  await request(`/api/assets/${encodeURIComponent(assetId)}`, {
     method: "DELETE",
   });
 }
