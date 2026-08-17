@@ -8,47 +8,36 @@ import JobEditor from "../jobs/JobEditor";
 
 export default function ClientJobsPanel({
   client,
-  clients,
+  jobs = [],
   createJob,
   updateJob,
   deleteJob,
   initialJobId,
 }) {
-  const currentClient =
-    clients.find((c) => c.id === client.id) || client;
+  const clientJobs = jobs.filter(
+    (job) => job.clientId === client?.id
+  );
 
-  const jobs = currentClient.jobs || [];
-
-  const [showJobForm, setShowJobForm] =
-    useState(false);
-
-  const [selectedJobId, setSelectedJobId] =
-    useState(null);
-
-  const [isSaving, setIsSaving] =
-    useState(false);
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!initialJobId) return;
 
-    const exists = jobs.some(
+    const exists = clientJobs.some(
       (job) => job.id === initialJobId
     );
 
     if (exists) {
       setSelectedJobId(initialJobId);
     }
-  }, [initialJobId, jobs]);
+  }, [initialJobId, clientJobs]);
 
   const selectedJob =
-    jobs.find((job) => job.id === selectedJobId) ||
-    null;
+    clientJobs.find((job) => job.id === selectedJobId) || null;
 
-  function createTimelineEvent(
-    type,
-    title,
-    description = ""
-  ) {
+  function createTimelineEvent(type, title, description = "") {
     return {
       id: crypto.randomUUID(),
       type,
@@ -66,25 +55,25 @@ export default function ClientJobsPanel({
       String(today.getMonth() + 1).padStart(2, "0") +
       today.getFullYear();
 
-    const todaysJobs = jobs.filter((job) =>
+    const todaysJobs = clientJobs.filter((job) =>
       job.reference?.startsWith(`CHR-${datePart}-`)
     );
 
-    return `CHR-${datePart}-${String(
-      todaysJobs.length + 1
-    ).padStart(3, "0")}`;
+    return `CHR-${datePart}-${String(todaysJobs.length + 1).padStart(3, "0")}`;
   }
 
   async function handleCreateJob(job) {
+    const reference = makeJobReference();
+
     const jobToSave = {
       ...job,
-      clientId: currentClient.id,
-      reference: makeJobReference(),
+      clientId: client.id,
+      reference,
       timeline: [
         createTimelineEvent(
           "created",
           "Job Created",
-          `Reference ${makeJobReference()} created.`
+          `Reference ${reference} created.`
         ),
       ],
     };
@@ -102,7 +91,7 @@ export default function ClientJobsPanel({
 
   async function handleSaveJob(job) {
     const existing =
-      jobs.find((item) => item.id === job.id) || job;
+      clientJobs.find((item) => item.id === job.id) || job;
 
     const timeline = [...(job.timeline || [])];
 
@@ -126,7 +115,7 @@ export default function ClientJobsPanel({
 
     const updatedJob = {
       ...job,
-      clientId: currentClient.id,
+      clientId: client.id,
       updatedAt: new Date().toISOString(),
       collectedAt:
         job.status === "Collected"
@@ -145,11 +134,7 @@ export default function ClientJobsPanel({
   }
 
   async function handleDeleteJob(jobId) {
-    if (
-      !window.confirm(
-        "Delete this job? This cannot be undone."
-      )
-    ) {
+    if (!window.confirm("Delete this job? This cannot be undone.")) {
       return;
     }
 
@@ -178,7 +163,7 @@ export default function ClientJobsPanel({
       )}
 
       <JobsSection
-        jobs={jobs}
+        jobs={clientJobs}
         onNewJob={() => setShowJobForm(true)}
         onOpenJob={(job) => setSelectedJobId(job.id)}
       />
