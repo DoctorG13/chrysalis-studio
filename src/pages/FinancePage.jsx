@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createInvoice, deleteInvoice, getInvoices, updateInvoice } from "../services/invoiceApi";
+import InvoicePrintView from "../components/invoices/InvoicePrintView";
+import "../components/invoices/invoicePrint.css";
 
 const EMPTY_LINE = { description: "", quantity: 1, rate: 0 };
 
@@ -51,11 +53,6 @@ export default function FinancePage({ clients = [], jobs = [] }) {
   }
 
   useEffect(() => { loadInvoices(); }, []);
-
-  const selectedInvoice = useMemo(
-    () => invoices.find((invoice) => invoice.id === selectedId) || null,
-    [invoices, selectedId]
-  );
 
   function startNew() {
     setSelectedId("");
@@ -214,6 +211,7 @@ export default function FinancePage({ clients = [], jobs = [] }) {
                   <h2 style={{ margin: "4px 0", color: "#2F3A3F" }}>{form.number}</h2>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => window.print()} style={secondaryButton} disabled={saving}>Print / PDF</button>
                   {form.id && <button onClick={removeInvoice} style={dangerButton} disabled={saving}>Delete</button>}
                   <button onClick={save} style={primaryButton} disabled={saving}>{saving ? "Saving…" : "Save Invoice"}</button>
                 </div>
@@ -246,6 +244,12 @@ export default function FinancePage({ clients = [], jobs = [] }) {
                   <SummaryRow label="Balance Owing" value={money(balance)} strong />
                 </div>
               </div>
+
+              <InvoicePrintView
+                invoice={{ ...form, subtotal, gst, total, amountPaid: paid, balance }}
+                client={clients.find((client) => client.id === form.clientId)}
+                job={selectedJob}
+              />
             </>
           )}
         </section>
