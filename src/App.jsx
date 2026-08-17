@@ -6,6 +6,7 @@ import Header from "./components/layout/Header";
 
 import StudioPage from "./pages/StudioPage";
 import CalendarPage from "./pages/CalendarPage";
+import FinancePage from "./pages/FinancePage";
 
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import SlidePanel from "./components/common/SlidePanel";
@@ -34,20 +35,14 @@ export default function App() {
     closeWorkspace,
   } = useChrysalis();
 
-  const searchResults = useMemo(() => {
-    return searchStudio(searchQuery, clients, jobs);
-  }, [searchQuery, clients, jobs]);
+  const searchResults = useMemo(() => searchStudio(searchQuery, clients, jobs), [searchQuery, clients, jobs]);
 
   function renderPage() {
     switch (currentPage) {
       case "calendar":
-        return (
-          <CalendarPage
-            clients={clients}
-            jobs={jobs}
-          />
-        );
-
+        return <CalendarPage clients={clients} jobs={jobs} />;
+      case "finance":
+        return <FinancePage clients={clients} jobs={jobs} />;
       case "studio":
       default:
         return (
@@ -66,34 +61,16 @@ export default function App() {
     }
   }
 
+  const pageTitle = currentPage === "calendar" ? "Calendar" : currentPage === "finance" ? "Finance" : "Chrysalis Studio";
+
   return (
     <AppShell
-      sidebar={
-        <Sidebar
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-        />
-      }
-      header={
-        <Header
-          title={
-            currentPage === "calendar"
-              ? "Calendar"
-              : "Chrysalis Studio"
-          }
-          user="Donna"
-          searchQuery={searchQuery}
-          searchResults={searchResults}
-          onSearch={setSearchQuery}
-        />
-      }
+      sidebar={<Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />}
+      header={<Header title={pageTitle} user="Donna" searchQuery={searchQuery} searchResults={searchResults} onSearch={setSearchQuery} />}
     >
       {renderPage()}
 
-      <SlidePanel
-        open={showWorkspace}
-        onClose={closeWorkspace}
-      >
+      <SlidePanel open={showWorkspace} onClose={closeWorkspace}>
         <ClientWorkspace
           client={selectedClient}
           clients={clients}
