@@ -9,7 +9,9 @@ import JobEditor from "../jobs/JobEditor";
 export default function ClientJobsPanel({
   client,
   clients,
-  setClients,
+  createJob,
+  updateJob,
+  deleteJob,
   initialJobId,
 }) {
   const currentClient =
@@ -22,6 +24,9 @@ export default function ClientJobsPanel({
 
   const [selectedJobId, setSelectedJobId] =
     useState(null);
+
+  const [isSaving, setIsSaving] =
+    useState(false);
 
   useEffect(() => {
     if (!initialJobId) return;
@@ -39,30 +44,6 @@ export default function ClientJobsPanel({
     jobs.find((job) => job.id === selectedJobId) ||
     null;
 
-  function updateClient(updatedJobs) {
-    console.group("updateClient");
-
-    console.log("Current Client:", currentClient);
-    console.log("Jobs BEFORE:", jobs);
-    console.log("Jobs AFTER :", updatedJobs);
-
-    const updatedClient = {
-      ...currentClient,
-      jobs: updatedJobs,
-    };
-
-    const updatedClients = clients.map((c) =>
-      c.id === currentClient.id ? updatedClient : c
-    );
-
-    console.log("Updated Client:", updatedClient);
-    console.log("Updated Clients:", updatedClients);
-
-    console.groupEnd();
-
-    setClients(updatedClients);
-  }
-
   function createTimelineEvent(
     type,
     title,
@@ -77,7 +58,7 @@ export default function ClientJobsPanel({
     };
   }
 
-  function handleCreateJob(job) {
+  function makeJobReference() {
     const today = new Date();
 
     const datePart =
@@ -85,167 +66,143 @@ export default function ClientJobsPanel({
       String(today.getMonth() + 1).padStart(2, "0") +
       today.getFullYear();
 
-    const todaysJobs = jobs.filter((j) =>
-      j.reference?.startsWith(`CHR-${datePart}-`)
+    const todaysJobs = jobs.filter((job) =>
+      job.reference?.startsWith(`CHR-${datePart}-`)
     );
 
-    const nextNumber = String(
+    return `CHR-${datePart}-${String(
       todaysJobs.length + 1
-    ).padStart(3, "0");
-
-    job.reference = `CHR-${datePart}-${nextNumber}`;
-
-    job.timeline = [
-      createTimelineEvent(
-        "created",
-        "Job Created",
-        `Reference ${job.reference} created.`
-      ),
-    ];
-
-    console.group("CREATE JOB");
-
-    console.log("Jobs before create:", jobs);
-    console.log("New Job:", job);
-
-    const updatedJobs = [...jobs, job];
-
-    console.log("Jobs after create:", updatedJobs);
-
-    updateClient(updatedJobs);
-
-    setShowJobForm(false);
-    setSelectedJobId(job.id);
-
-    console.groupEnd();
+    ).padStart(3, "0")}`;
   }
 
-  function handleOpenJob(job) {
-    setSelectedJobId(job.id);
+  async function handleCreateJob(job) {
+    const jobToSave = {
+      ...job,
+      clientId: currentClient.id,
+      reference: makeJobReference(),
+      timeline: [
+        createTimelineEvent(
+          "created",
+          "Job Created",
+          `Reference ${makeJobReference()} created.`
+        ),
+      ],
+    };
+
+    setIsSaving(true);
+
+    try {
+      const savedJob = await createJob(jobToSave);
+      setShowJobForm(false);
+      setSelectedJobId(savedJob.id);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function handleSaveJob(job) {
-    console.group("SAVE JOB");
+  async function handleSaveJob(job) {
+    const existing =
+      jobs.find((item) => item.id === job.id) || job;
 
-    console.log("Jobs before save:", jobs);
-    console.log("Saving:", job);
+    const timeline = [...(job.timeline || [])];
 
-    const updatedJobs = jobs.map((j) => {
-      if (j.id !== job.id) {
-        return j;
-      }
+    if (existing.status !== job.status) {
+      timeline.push(
+        createTimelineEvent(
+          "status",
+          "Status Changed",
+          `${existing.status || "Unknown"} → ${job.status}`
+        )
+      );
+    } else {
+      timeline.push(
+        createTimelineEvent(
+          "note",
+          "Job Updated",
+          "Job information updated."
+        )
+      );
+    }
 
-      const timeline = [...(job.timeline || [])];
+    const updatedJob = {
+      ...job,
+      clientId: currentClient.id,
+      updatedAt: new Date().toISOString(),
+      collectedAt:
+        job.status === "Collected"
+          ? (existing.collectedAt ?? new Date().toISOString())
+          : existing.collectedAt,
+      timeline,
+    };
 
-      if (j.status !== job.status) {
-        timeline.push(
-          createTimelineEvent(
-            "status",
-            "Status Changed",
-            `${j.status || "Unknown"} → ${job.status}`
-          )
-        );
-      } else {
-        timeline.push(
-          createTimelineEvent(
-            "note",
-            "Job Updated",
-            "Job information updated."
-          )
-        );
-      }
+    setIsSaving(true);
 
-      return {
-        ...job,
-
-        updatedAt: new Date().toISOString(),
-
-        collectedAt:
-          job.status === "Collected"
-            ? (j.collectedAt ??
-              new Date().toISOString())
-            : j.collectedAt,
-
-        timeline,
-      };
-    });
-
-    console.log("Jobs after save:", updatedJobs);
-
-    const saved = updatedJobs.find(
-      (j) => j.id === job.id
-    );
-
-    console.log("Saved timestamps:", {
-      status: saved.status,
-      updatedAt: saved.updatedAt,
-      collectedAt: saved.collectedAt,
-    });
-
-    updateClient(updatedJobs);
-
-    setSelectedJobId(job.id);
-
-    console.groupEnd();
+    try {
+      await updateJob(updatedJob);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function handleDeleteJob(jobId) {
-    console.group("DELETE JOB");
+  async function handleDeleteJob(jobId) {
+    if (
+      !window.confirm(
+        "Delete this job? This cannot be undone."
+      )
+    ) {
+      return;
+    }
 
-    console.log("Jobs before delete:", jobs);
-    console.log("Deleting:", jobId);
+    setIsSaving(true);
 
-    const updatedJobs = jobs.filter(
-      (job) => job.id !== jobId
-    );
-
-    console.log("Jobs after delete:", updatedJobs);
-
-    updateClient(updatedJobs);
-
-    setSelectedJobId(null);
-
-    console.groupEnd();
+    try {
+      await deleteJob(jobId);
+      setSelectedJobId(null);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   return (
     <>
+      {isSaving && (
+        <div
+          style={{
+            marginBottom: 12,
+            color: "#777",
+            fontSize: 13,
+          }}
+        >
+          Saving job…
+        </div>
+      )}
+
       <JobsSection
         jobs={jobs}
-        onNewJob={() =>
-          setShowJobForm(true)
-        }
-        onOpenJob={handleOpenJob}
+        onNewJob={() => setShowJobForm(true)}
+        onOpenJob={(job) => setSelectedJobId(job.id)}
       />
 
       <SlidePanel
         open={showJobForm}
-        onClose={() =>
-          setShowJobForm(false)
-        }
+        onClose={() => setShowJobForm(false)}
       >
         <JobForm
           onSave={handleCreateJob}
-          onCancel={() =>
-            setShowJobForm(false)
-          }
+          onCancel={() => setShowJobForm(false)}
         />
       </SlidePanel>
 
       <SlidePanel
         open={!!selectedJob}
-        onClose={() =>
-          setSelectedJobId(null)
-        }
+        onClose={() => setSelectedJobId(null)}
       >
         {selectedJob && (
           <JobEditor
             job={selectedJob}
             onSave={handleSaveJob}
             onDelete={handleDeleteJob}
-            onCancel={() =>
-              setSelectedJobId(null)
-            }
+            onCancel={() => setSelectedJobId(null)}
           />
         )}
       </SlidePanel>
