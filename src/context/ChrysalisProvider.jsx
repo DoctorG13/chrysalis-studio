@@ -14,54 +14,96 @@ import {
   getClients,
   updateClientRecord,
 } from "../services/clientApi";
+import {
+  createJobRecord,
+  deleteJobRecord,
+  getJobs,
+  updateJobRecord,
+} from "../services/jobApi";
 
 const ChrysalisContext = createContext(null);
 
 function clientSnapshot(client) {
-  return JSON.stringify(client);
+  const { jobs: _jobs, ...withoutJobs } = client || {};
+  return JSON.stringify(withoutJobs);
+}
+
+function clientForStorage(client) {
+  const { jobs: _jobs, ...withoutJobs } = client || {};
+  return withoutJobs;
 }
 
 export function ChrysalisProvider({ children }) {
-  const [clients, setClientsState] = useState([]);
+  const [storedClients, setStoredClients] = useState([]);
+  const [jobsState, setJobsState] = useState([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [clientDataError, setClientDataError] = useState("");
+  const [jobDataError, setJobDataError] = useState("");
 
   const [showWorkspace, setShowWorkspace] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedJobId, setSelectedJobId] = useState(null);
 
+  const clients = useMemo(() => {
+    return storedClients.map((client) => ({
+      ...client,
+      jobs: jobsState.filter(
+        (job) => job.clientId === client.id
+      ),
+    }));
+  }, [storedClients, jobsState]);
+
   useEffect(() => {
     let active = true;
 
-    async function loadClients() {
+    async function loadData() {
       setIsLoadingClients(true);
       setClientDataError("");
+      setJobDataError("");
 
-      try {
-        const storedClients = await getClients();
+      const [clientsResult, jobsResult] = await Promise.allSettled([
+        getClients(),
+        getJobs(),
+      ]);
 
-        if (!active) return;
+      if (!active) return;
 
-        setClientsState(storedClients);
-      } catch (error) {
-        console.error("Unable to load clients from SQLite.", error);
-
-        if (!active) return;
-
+      if (clientsResult.status === "fulfilled") {
+        setStoredClients(
+          clientsResult.value.map(client => clientForStorage(client))
+        );
+      } else {
+        console.error(
+          "Unable to load clients from SQLite.",
+          clientsResult.reason
+        );
         setClientDataError(
-          error instanceof Error
-            ? error.message
+          clientsResult.reason instanceof Error
+            ? clientsResult.reason.message
             : "Unable to load client data."
         );
-        setClientsState([]);
-      } finally {
-        if (active) {
-          setIsLoadingClients(false);
-        }
+        setStoredClients([]);
       }
+
+      if (jobsResult.status === "fulfilled") {
+        setJobsState(jobsResult.value);
+      } else {
+        console.error(
+          "Unable to load jobs from SQLite.",
+          jobsResult.reason
+        );
+        setJobDataError(
+          jobsResult.reason instanceof Error
+            ? jobsResult.reason.message
+            : "Unable to load job data."
+        );
+        setJobsState([]);
+      }
+
+      setIsLoadingClients(false);
     }
 
-    loadClients();
+    loadData();
 
     return () => {
       active = false;
@@ -71,17 +113,19 @@ export function ChrysalisProvider({ children }) {
   const persistClients = useCallback(
     async (nextClients) => {
       const previousById = new Map(
-        clients.map((client) => [client.id, client])
+        storedClients.map((client) => [client.id, client])
       );
+
+      const nextBaseClients = nextClients.map(clientForStorage);
       const nextById = new Map(
-        nextClients.map((client) => [client.id, client])
+        nextBaseClients.map((client) => [client.id, client])
       );
 
       const created = [];
       const updated = [];
       const deleted = [];
 
-      for (const client of nextClients) {
+      for (const client of nextBaseClients) {
         const previous = previousById.get(client.id);
 
         if (!previous) {
@@ -97,7 +141,7 @@ export function ChrysalisProvider({ children }) {
         }
       }
 
-      for (const client of clients) {
+      for (const client of storedClients) {
         if (!nextById.has(client.id)) {
           deleted.push(client);
         }
@@ -116,10 +160,13 @@ export function ChrysalisProvider({ children }) {
           await deleteClientRecord(client.id);
         }
 
-        setClientsState(nextClients);
+        setStoredClients(nextBaseClients);
         setClientDataError("");
       } catch (error) {
-        console.error("Unable to save client changes to SQLite.", error);
+        console.error(
+          "Unable to save client changes to SQLite.",
+          error
+        );
 
         setClientDataError(
           error instanceof Error
@@ -128,8 +175,10 @@ export function ChrysalisProvider({ children }) {
         );
 
         try {
-          const storedClients = await getClients();
-          setClientsState(storedClients);
+          const stored = await getClients();
+          setStoredClients(
+            stored.map(clientForStorage)
+          );
         } catch (reloadError) {
           console.error(
             "Unable to reload clients after a save error.",
@@ -138,8 +187,71 @@ export function ChrysalisProvider({ children }) {
         }
       }
     },
-    [clients]
+    [storedClients]
   );
+
+  const createJob = useCallback(async (job) => {
+    try {
+      const savedJob = await createJobRecord(job);
+      setJobsState((current) => [
+        ...current.filter(
+          (item) => item.id !== savedJob.id
+        ),
+        savedJob,
+      ]);
+      setJobDataError("");
+      return savedJob;
+    } catch (error) {
+      console.error("Unable to create job in SQLite.", error);
+      setJobDataError(
+        error instanceof Error
+          ? error.message
+          : "Unable to create job."
+      );
+      throw error;
+    }
+  }, []);
+
+  const updateJob = useCallback(async (job) => {
+    try {
+      const savedJob = await updateJobRecord(job);
+      setJobsState((current) =>
+        current.map((item) =>
+          item.id === savedJob.id
+            ? savedJob
+            : item
+        )
+      );
+      setJobDataError("");
+      return savedJob;
+    } catch (error) {
+      console.error("Unable to update job in SQLite.", error);
+      setJobDataError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update job."
+      );
+      throw error;
+    }
+  }, []);
+
+  const deleteJob = useCallback(async (jobId) => {
+    try {
+      await deleteJobRecord(jobId);
+      setJobsState((current) =>
+        current.filter((job) => job.id !== jobId)
+      );
+      setJobDataError("");
+    } catch (error) {
+      console.error("Unable to delete job from SQLite.", error);
+      setJobDataError(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete job."
+      );
+      throw error;
+    }
+  }, []);
 
   function openClient(client) {
     setSelectedClient(client);
@@ -160,30 +272,35 @@ export function ChrysalisProvider({ children }) {
   }
 
   const jobs = useMemo(() => {
-    return clients.flatMap((client) =>
-      (client.jobs ?? []).map((job) =>
-        enrichJob({
-          ...job,
-          clientId: client.id,
-          clientName: [
-            client.firstName,
-            client.lastName,
-          ]
-            .filter(Boolean)
-            .join(" "),
-        })
-      )
-    );
-  }, [clients]);
+    return jobsState.map((job) => {
+      const client = storedClients.find(
+        (candidate) => candidate.id === job.clientId
+      );
+
+      return enrichJob({
+        ...job,
+        clientName: [
+          client?.firstName,
+          client?.lastName,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      });
+    });
+  }, [jobsState, storedClients]);
 
   const value = useMemo(
     () => ({
       clients,
       jobs,
       setClients: persistClients,
+      createJob,
+      updateJob,
+      deleteJob,
 
       isLoadingClients,
       clientDataError,
+      jobDataError,
 
       showWorkspace,
       selectedClient,
@@ -197,8 +314,12 @@ export function ChrysalisProvider({ children }) {
       clients,
       jobs,
       persistClients,
+      createJob,
+      updateJob,
+      deleteJob,
       isLoadingClients,
       clientDataError,
+      jobDataError,
       showWorkspace,
       selectedClient,
       selectedJobId,
