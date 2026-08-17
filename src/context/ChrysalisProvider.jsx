@@ -127,7 +127,15 @@ export function ChrysalisProvider({ children }) {
             : "Unable to save client changes."
         );
 
-        throw error;
+        try {
+          const storedClients = await getClients();
+          setClientsState(storedClients);
+        } catch (reloadError) {
+          console.error(
+            "Unable to reload clients after a save error.",
+            reloadError
+          );
+        }
       }
     },
     [clients]
