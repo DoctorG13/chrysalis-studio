@@ -25,8 +25,11 @@ function createId() {
 }
 
 export default function AppointmentsSection({
+  clientId,
   appointments = [],
-  setAppointments,
+  createAppointment,
+  updateAppointment,
+  deleteAppointment,
 }) {
   const [type, setType] = useState("Initial Consultation");
   const [date, setDate] = useState("");
@@ -34,6 +37,7 @@ export default function AppointmentsSection({
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const editorRef = useRef(null);
 
@@ -66,7 +70,7 @@ export default function AppointmentsSection({
     setError("");
   }
 
-  function saveAppointment() {
+  async function saveAppointment() {
     setError("");
 
     if (!date) {
@@ -79,37 +83,67 @@ export default function AppointmentsSection({
       return;
     }
 
-    const nextAppointment = {
+    if (!clientId) {
+      setError("Unable to save appointment: client is missing.");
+      return;
+    }
+
+    const appointment = {
       id: editingId || createId(),
+      clientId,
       type,
       date,
       time,
       notes: notes.trim(),
+      duration: 60,
+      location: "",
+      status: "Scheduled",
+      jobId: "",
     };
 
-    const nextAppointments = editingId
-      ? appointments.map((appointment) =>
-          appointment.id === editingId
-            ? { ...appointment, ...nextAppointment }
-            : appointment
-        )
-      : [...appointments, nextAppointment];
+    setIsSaving(true);
 
-    setAppointments(nextAppointments);
-    resetForm();
+    try {
+      if (editingId) {
+        await updateAppointment(appointment);
+      } else {
+        await createAppointment(appointment);
+      }
+
+      resetForm();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Unable to save appointment."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   }
 
-  function deleteAppointment(id) {
+  async function handleDelete(id) {
     if (!window.confirm("Delete this appointment?")) {
       return;
     }
 
-    setAppointments(
-      appointments.filter((appointment) => appointment.id !== id)
-    );
+    setError("");
+    setIsSaving(true);
 
-    if (editingId === id) {
-      resetForm();
+    try {
+      await deleteAppointment(id);
+
+      if (editingId === id) {
+        resetForm();
+      }
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to delete appointment."
+      );
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -161,11 +195,17 @@ export default function AppointmentsSection({
                 marginTop: 12,
               }}
             >
-              <Button onClick={() => startEdit(appointment)}>
+              <Button
+                onClick={() => startEdit(appointment)}
+                disabled={isSaving}
+              >
                 ✎ Edit
               </Button>
 
-              <Button onClick={() => deleteAppointment(appointment.id)}>
+              <Button
+                onClick={() => handleDelete(appointment.id)}
+                disabled={isSaving}
+              >
                 🗑 Delete
               </Button>
             </div>
@@ -204,6 +244,7 @@ export default function AppointmentsSection({
             <select
               value={type}
               onChange={(event) => setType(event.target.value)}
+              disabled={isSaving}
               style={{
                 width: "100%",
                 padding: 10,
@@ -260,12 +301,16 @@ export default function AppointmentsSection({
               gap: 10,
             }}
           >
-            <Button onClick={saveAppointment}>
-              {editingId ? "💾 Save Changes" : "➕ Add Appointment"}
+            <Button onClick={saveAppointment} disabled={isSaving}>
+              {isSaving
+                ? "Saving..."
+                : editingId
+                  ? "💾 Save Changes"
+                  : "➕ Add Appointment"}
             </Button>
 
             {editingId && (
-              <Button onClick={resetForm}>
+              <Button onClick={resetForm} disabled={isSaving}>
                 Cancel Edit
               </Button>
             )}
