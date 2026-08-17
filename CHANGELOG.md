@@ -29,6 +29,20 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## SQLite Client Integration
+
+### Added
+
+- Added a local SQLite-backed Client API.
+- Added Client create, read, update and delete operations through the local API.
+- Added a React client API service for the SQLite-backed Client records.
+- Changed `ChrysalisProvider` to load Clients from SQLite on startup.
+- Changed existing Client save/delete flows to persist changes to SQLite.
+- Preserved the existing Client object shape while SQLite becomes the source of truth.
+- Kept the legacy localStorage data untouched during the transition.
+
+---
+
 ## Release 0.5
 
 ### 0.5.1
