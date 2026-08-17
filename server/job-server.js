@@ -91,8 +91,125 @@ function parseJson(value, fallback) {
   }
 }
 
-function rowToJob(row) {
+function fittingFromRow(row) {
   const stored = parseJson(row.data_json, {});
+
+  return {
+    ...stored,
+    id: row.id,
+    clientId: row.client_id,
+    jobId: row.job_id || "",
+    title: row.title,
+    date: row.date,
+    time: row.time,
+    status: row.status,
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getFittings(database, jobId) {
+  return database
+    .prepare(
+      `SELECT * FROM fittings
+       WHERE job_id = ?
+       ORDER BY date ASC, time ASC, created_at ASC, id ASC`
+    )
+    .all(jobId)
+    .map(fittingFromRow);
+}
+
+function normalizeFitting(input, job) {
+  const now = new Date().toISOString();
+  const source = input || {};
+
+  return {
+    ...source,
+    id: String(source.id || crypto.randomUUID()),
+    clientId: job.clientId,
+    jobId: job.id,
+    title: String(
+      source.title || source.name || source.type || "Fitting"
+    ),
+    date: String(
+      source.date || source.fittingDate || ""
+    ),
+    time: String(
+      source.time || source.fittingTime || ""
+    ),
+    status: String(source.status || "Scheduled"),
+    notes: String(
+      source.notes || source.description || ""
+    ),
+    createdAt: String(source.createdAt || now),
+    updatedAt: now,
+  };
+}
+
+function syncJobFittings(database, job) {
+  const incoming = Array.isArray(job.fittings)
+    ? job.fittings.map((fitting) =>
+        normalizeFitting(fitting, job)
+      )
+    : [];
+
+  const incomingIds = new Set(
+    incoming.map((fitting) => fitting.id)
+  );
+
+  const existingRows = database
+    .prepare(
+      `SELECT id FROM fittings
+       WHERE job_id = ?`
+    )
+    .all(job.id);
+
+  for (const row of existingRows) {
+    if (!incomingIds.has(row.id)) {
+      database
+        .prepare("DELETE FROM fittings WHERE id = ?")
+        .run(row.id);
+    }
+  }
+
+  for (const fitting of incoming) {
+    database
+      .prepare(
+        `INSERT INTO fittings (
+          id, client_id, job_id, title, date, time, status,
+          notes, created_at, updated_at, data_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          client_id = excluded.client_id,
+          job_id = excluded.job_id,
+          title = excluded.title,
+          date = excluded.date,
+          time = excluded.time,
+          status = excluded.status,
+          notes = excluded.notes,
+          updated_at = excluded.updated_at,
+          data_json = excluded.data_json`
+      )
+      .run(
+        fitting.id,
+        fitting.clientId,
+        fitting.jobId,
+        fitting.title,
+        fitting.date,
+        fitting.time,
+        fitting.status,
+        fitting.notes,
+        fitting.createdAt,
+        fitting.updatedAt,
+        JSON.stringify(fitting)
+      );
+  }
+}
+
+function rowToJob(row, database) {
+  const stored = parseJson(row.data_json, {});
+  const fittings = getFittings(database, row.id);
 
   return {
     ...stored,
@@ -111,7 +228,7 @@ function rowToJob(row) {
     updatedAt: row.modified_at,
     modified: row.modified_at,
     timeline: Array.isArray(stored.timeline) ? stored.timeline : [],
-    fittings: Array.isArray(stored.fittings) ? stored.fittings : [],
+    fittings,
     payments: Array.isArray(stored.payments) ? stored.payments : [],
     photos: Array.isArray(stored.photos) ? stored.photos : [],
     measurements: stored.measurements || {},
@@ -163,54 +280,67 @@ function saveJob(database, input, existing = null) {
     throw new Error(`Client not found: ${job.clientId}`);
   }
 
-  const data = JSON.stringify(job);
+  database.exec("BEGIN IMMEDIATE");
 
-  database
-    .prepare(
-      `INSERT INTO jobs (
-        id, client_id, reference, name, due_date, priority, status,
-        description, price, deposit, garment_type, created_at,
-        modified_at, data_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        client_id = excluded.client_id,
-        reference = excluded.reference,
-        name = excluded.name,
-        due_date = excluded.due_date,
-        priority = excluded.priority,
-        status = excluded.status,
-        description = excluded.description,
-        price = excluded.price,
-        deposit = excluded.deposit,
-        garment_type = excluded.garment_type,
-        modified_at = excluded.modified_at,
-        data_json = excluded.data_json`
-    )
-    .run(
-      job.id,
-      job.clientId,
-      job.reference,
-      job.name,
-      job.dueDate || null,
-      job.priority,
-      job.status,
-      job.description,
-      job.price,
-      job.deposit,
-      job.garmentType,
-      job.createdAt,
-      job.updatedAt,
-      data
-    );
+  try {
+    const data = JSON.stringify({
+      ...job,
+      fittings: [],
+    });
 
-  return job;
+    database
+      .prepare(
+        `INSERT INTO jobs (
+          id, client_id, reference, name, due_date, priority, status,
+          description, price, deposit, garment_type, created_at,
+          modified_at, data_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          client_id = excluded.client_id,
+          reference = excluded.reference,
+          name = excluded.name,
+          due_date = excluded.due_date,
+          priority = excluded.priority,
+          status = excluded.status,
+          description = excluded.description,
+          price = excluded.price,
+          deposit = excluded.deposit,
+          garment_type = excluded.garment_type,
+          modified_at = excluded.modified_at,
+          data_json = excluded.data_json`
+      )
+      .run(
+        job.id,
+        job.clientId,
+        job.reference,
+        job.name,
+        job.dueDate || null,
+        job.priority,
+        job.status,
+        job.description,
+        job.price,
+        job.deposit,
+        job.garmentType,
+        job.createdAt,
+        job.updatedAt,
+        data
+      );
+
+    syncJobFittings(database, job);
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getJob(database, job.id);
 }
 
 function getJobs(database) {
   return database
     .prepare("SELECT * FROM jobs ORDER BY created_at DESC, id DESC")
     .all()
-    .map(rowToJob);
+    .map((row) => rowToJob(row, database));
 }
 
 function getJob(database, id) {
@@ -218,7 +348,7 @@ function getJob(database, id) {
     .prepare("SELECT * FROM jobs WHERE id = ?")
     .get(id);
 
-  return row ? rowToJob(row) : null;
+  return row ? rowToJob(row, database) : null;
 }
 
 function deleteJob(database, id) {
