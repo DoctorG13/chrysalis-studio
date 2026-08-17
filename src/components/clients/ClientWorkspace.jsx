@@ -12,6 +12,7 @@ import AppointmentsSection from "../appointments/AppointmentsSection";
 export default function ClientWorkspace({
   client,
   clients,
+  jobs = [],
   setClients,
   createJob,
   updateJob,
@@ -132,10 +133,7 @@ export default function ClientWorkspace({
           onClick={() =>
             setOpenSections(
               Object.fromEntries(
-                Object.keys(openSections).map((key) => [
-                  key,
-                  true,
-                ])
+                Object.keys(openSections).map((key) => [key, true])
               )
             )
           }
@@ -146,10 +144,7 @@ export default function ClientWorkspace({
           onClick={() =>
             setOpenSections(
               Object.fromEntries(
-                Object.keys(openSections).map((key) => [
-                  key,
-                  false,
-                ])
+                Object.keys(openSections).map((key) => [key, false])
               )
             )
           }
@@ -191,7 +186,7 @@ export default function ClientWorkspace({
       >
         <ClientJobsPanel
           client={currentClient}
-          clients={clients}
+          jobs={jobs}
           createJob={createJob}
           updateJob={updateJob}
           deleteJob={deleteJob}
