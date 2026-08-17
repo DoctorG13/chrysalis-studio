@@ -16,6 +16,9 @@ export default function StudioPage({
   clients,
   jobs,
   setClients,
+  createJob,
+  updateJob,
+  deleteJob,
   searchQuery = "",
   searchResults = [],
   onClearSearch,
@@ -145,7 +148,9 @@ export default function StudioPage({
         <JobsWorkspace
           jobs={jobs}
           clients={clients}
-          setClients={setClients}
+          createJob={createJob}
+          updateJob={updateJob}
+          deleteJob={deleteJob}
           onClose={() =>
             setShowJobsWorkspace(false)
           }
