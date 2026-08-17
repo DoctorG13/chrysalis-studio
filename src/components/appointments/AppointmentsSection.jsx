@@ -21,31 +21,24 @@ function createId() {
     return crypto.randomUUID();
   }
 
-  return `${Date.now()}-${Math.random()
-    .toString(36)
-    .slice(2)}`;
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 export default function AppointmentsSection({
   appointments = [],
   setAppointments,
 }) {
-  const [type, setType] = useState(
-    "Initial Consultation"
-  );
+  const [type, setType] = useState("Initial Consultation");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
-  const [editingId, setEditingId] =
-    useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   const editorRef = useRef(null);
 
   useEffect(() => {
-    if (!editingId) {
-      return;
-    }
+    if (!editingId) return;
 
     requestAnimationFrame(() => {
       editorRef.current?.scrollIntoView({
@@ -66,10 +59,7 @@ export default function AppointmentsSection({
 
   function startEdit(appointment) {
     setEditingId(appointment.id);
-    setType(
-      appointment.type ||
-        "Initial Consultation"
-    );
+    setType(appointment.type || "Initial Consultation");
     setDate(appointment.date || "");
     setTime(appointment.time || "");
     setNotes(appointment.notes || "");
@@ -80,63 +70,42 @@ export default function AppointmentsSection({
     setError("");
 
     if (!date) {
-      setError(
-        "Please select an appointment date."
-      );
+      setError("Please select an appointment date.");
       return;
     }
 
     if (!time) {
-      setError(
-        "Please select an appointment time."
-      );
+      setError("Please select an appointment time.");
       return;
     }
 
-    if (editingId) {
-      setAppointments(
-        appointments.map((appointment) =>
+    const nextAppointment = {
+      id: editingId || createId(),
+      type,
+      date,
+      time,
+      notes: notes.trim(),
+    };
+
+    const nextAppointments = editingId
+      ? appointments.map((appointment) =>
           appointment.id === editingId
-            ? {
-                ...appointment,
-                type,
-                date,
-                time,
-                notes: notes.trim(),
-              }
+            ? { ...appointment, ...nextAppointment }
             : appointment
         )
-      );
-    } else {
-      setAppointments([
-        ...appointments,
-        {
-          id: createId(),
-          type,
-          date,
-          time,
-          notes: notes.trim(),
-        },
-      ]);
-    }
+      : [...appointments, nextAppointment];
 
+    setAppointments(nextAppointments);
     resetForm();
   }
 
   function deleteAppointment(id) {
-    if (
-      !window.confirm(
-        "Delete this appointment?"
-      )
-    ) {
+    if (!window.confirm("Delete this appointment?")) {
       return;
     }
 
     setAppointments(
-      appointments.filter(
-        (appointment) =>
-          appointment.id !== id
-      )
+      appointments.filter((appointment) => appointment.id !== id)
     );
 
     if (editingId === id) {
@@ -168,31 +137,19 @@ export default function AppointmentsSection({
           <div
             key={appointment.id}
             style={{
-              border:
-                "1px solid #E5E7EB",
+              border: "1px solid #E5E7EB",
               borderRadius: 10,
               padding: 14,
               background: "#FFFFFF",
             }}
           >
-            <strong>
-              {appointment.type}
-            </strong>
+            <strong>{appointment.type}</strong>
 
-            <div>
-              📅 {appointment.date}
-            </div>
-
-            <div>
-              🕒 {appointment.time}
-            </div>
+            <div>📅 {appointment.date}</div>
+            <div>🕒 {appointment.time}</div>
 
             {appointment.notes && (
-              <div
-                style={{
-                  marginTop: 4,
-                }}
-              >
+              <div style={{ marginTop: 4 }}>
                 {appointment.notes}
               </div>
             )}
@@ -204,21 +161,11 @@ export default function AppointmentsSection({
                 marginTop: 12,
               }}
             >
-              <Button
-                onClick={() =>
-                  startEdit(appointment)
-                }
-              >
+              <Button onClick={() => startEdit(appointment)}>
                 ✎ Edit
               </Button>
 
-              <Button
-                onClick={() =>
-                  deleteAppointment(
-                    appointment.id
-                  )
-                }
-              >
+              <Button onClick={() => deleteAppointment(appointment.id)}>
                 🗑 Delete
               </Button>
             </div>
@@ -229,8 +176,7 @@ export default function AppointmentsSection({
       <div
         ref={editorRef}
         style={{
-          borderTop:
-            "1px solid #E5E7EB",
+          borderTop: "1px solid #E5E7EB",
           paddingTop: 22,
           marginTop: 8,
           scrollMarginTop: 90,
@@ -243,9 +189,7 @@ export default function AppointmentsSection({
             marginBottom: 14,
           }}
         >
-          {editingId
-            ? "Edit Appointment"
-            : "Add Appointment"}
+          {editingId ? "Edit Appointment" : "Add Appointment"}
         </div>
 
         <div
@@ -259,25 +203,18 @@ export default function AppointmentsSection({
 
             <select
               value={type}
-              onChange={(event) =>
-                setType(event.target.value)
-              }
+              onChange={(event) => setType(event.target.value)}
               style={{
                 width: "100%",
                 padding: 10,
                 marginTop: 4,
               }}
             >
-              {appointmentTypes.map(
-                (item) => (
-                  <option
-                    key={item}
-                    value={item}
-                  >
-                    {item}
-                  </option>
-                )
-              )}
+              {appointmentTypes.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -308,8 +245,7 @@ export default function AppointmentsSection({
                 padding: "10px 12px",
                 borderRadius: 8,
                 background: "#FFF1F2",
-                border:
-                  "1px solid #FECDD3",
+                border: "1px solid #FECDD3",
                 color: "#9F1239",
                 fontSize: 14,
               }}
@@ -324,18 +260,12 @@ export default function AppointmentsSection({
               gap: 10,
             }}
           >
-            <Button
-              onClick={saveAppointment}
-            >
-              {editingId
-                ? "💾 Save Changes"
-                : "➕ Add Appointment"}
+            <Button onClick={saveAppointment}>
+              {editingId ? "💾 Save Changes" : "➕ Add Appointment"}
             </Button>
 
             {editingId && (
-              <Button
-                onClick={resetForm}
-              >
+              <Button onClick={resetForm}>
                 Cancel Edit
               </Button>
             )}
