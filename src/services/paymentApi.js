@@ -29,22 +29,22 @@ async function request(path, options = {}) {
 
 export async function getPayments(jobId) {
   const payload = await request(
-    `/payments/${encodeURIComponent(jobId)}`
+    `/payments/job/${encodeURIComponent(jobId)}`
   );
 
   return payload.payments || [];
 }
 
 export async function savePayment(payment) {
-  const identifier = payment.id || payment.jobId;
+  const hasId = Boolean(payment.id);
+  const path = hasId
+    ? `/payments/${encodeURIComponent(payment.id)}`
+    : "/payments";
 
-  const payload = await request(
-    `/payments/${encodeURIComponent(identifier)}`,
-    {
-      method: "PUT",
-      body: JSON.stringify({ payment }),
-    }
-  );
+  const payload = await request(path, {
+    method: hasId ? "PUT" : "POST",
+    body: JSON.stringify({ payment }),
+  });
 
   return payload.payment;
 }
