@@ -20,25 +20,41 @@ import {
   getJobs,
   updateJobRecord,
 } from "../services/jobApi";
+import {
+  createAppointmentRecord,
+  deleteAppointmentRecord,
+  getAppointments,
+  updateAppointmentRecord,
+} from "../services/appointmentApi";
 
 const ChrysalisContext = createContext(null);
 
 function clientSnapshot(client) {
-  const { jobs: _jobs, ...withoutJobs } = client || {};
-  return JSON.stringify(withoutJobs);
+  const {
+    jobs: _jobs,
+    appointments: _appointments,
+    ...withoutRelations
+  } = client || {};
+  return JSON.stringify(withoutRelations);
 }
 
 function clientForStorage(client) {
-  const { jobs: _jobs, ...withoutJobs } = client || {};
-  return withoutJobs;
+  const {
+    jobs: _jobs,
+    appointments: _appointments,
+    ...withoutRelations
+  } = client || {};
+  return withoutRelations;
 }
 
 export function ChrysalisProvider({ children }) {
   const [storedClients, setStoredClients] = useState([]);
   const [jobsState, setJobsState] = useState([]);
+  const [appointmentsState, setAppointmentsState] = useState([]);
   const [isLoadingClients, setIsLoadingClients] = useState(true);
   const [clientDataError, setClientDataError] = useState("");
   const [jobDataError, setJobDataError] = useState("");
+  const [appointmentDataError, setAppointmentDataError] = useState("");
 
   const [showWorkspace, setShowWorkspace] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -50,8 +66,11 @@ export function ChrysalisProvider({ children }) {
       jobs: jobsState.filter(
         (job) => job.clientId === client.id
       ),
+      appointments: appointmentsState.filter(
+        (appointment) => appointment.clientId === client.id
+      ),
     }));
-  }, [storedClients, jobsState]);
+  }, [storedClients, jobsState, appointmentsState]);
 
   useEffect(() => {
     let active = true;
@@ -60,17 +79,22 @@ export function ChrysalisProvider({ children }) {
       setIsLoadingClients(true);
       setClientDataError("");
       setJobDataError("");
+      setAppointmentDataError("");
 
-      const [clientsResult, jobsResult] = await Promise.allSettled([
-        getClients(),
-        getJobs(),
-      ]);
+      const [clientsResult, jobsResult, appointmentsResult] =
+        await Promise.allSettled([
+          getClients(),
+          getJobs(),
+          getAppointments(),
+        ]);
 
       if (!active) return;
 
       if (clientsResult.status === "fulfilled") {
         setStoredClients(
-          clientsResult.value.map(client => clientForStorage(client))
+          clientsResult.value.map((client) =>
+            clientForStorage(client)
+          )
         );
       } else {
         console.error(
@@ -98,6 +122,21 @@ export function ChrysalisProvider({ children }) {
             : "Unable to load job data."
         );
         setJobsState([]);
+      }
+
+      if (appointmentsResult.status === "fulfilled") {
+        setAppointmentsState(appointmentsResult.value);
+      } else {
+        console.error(
+          "Unable to load appointments from SQLite.",
+          appointmentsResult.reason
+        );
+        setAppointmentDataError(
+          appointmentsResult.reason instanceof Error
+            ? appointmentsResult.reason.message
+            : "Unable to load appointment data."
+        );
+        setAppointmentsState([]);
       }
 
       setIsLoadingClients(false);
@@ -133,10 +172,7 @@ export function ChrysalisProvider({ children }) {
           continue;
         }
 
-        if (
-          clientSnapshot(previous) !==
-          clientSnapshot(client)
-        ) {
+        if (clientSnapshot(previous) !== clientSnapshot(client)) {
           updated.push(client);
         }
       }
@@ -176,9 +212,7 @@ export function ChrysalisProvider({ children }) {
 
         try {
           const stored = await getClients();
-          setStoredClients(
-            stored.map(clientForStorage)
-          );
+          setStoredClients(stored.map(clientForStorage));
         } catch (reloadError) {
           console.error(
             "Unable to reload clients after a save error.",
@@ -194,9 +228,7 @@ export function ChrysalisProvider({ children }) {
     try {
       const savedJob = await createJobRecord(job);
       setJobsState((current) => [
-        ...current.filter(
-          (item) => item.id !== savedJob.id
-        ),
+        ...current.filter((item) => item.id !== savedJob.id),
         savedJob,
       ]);
       setJobDataError("");
@@ -217,9 +249,7 @@ export function ChrysalisProvider({ children }) {
       const savedJob = await updateJobRecord(job);
       setJobsState((current) =>
         current.map((item) =>
-          item.id === savedJob.id
-            ? savedJob
-            : item
+          item.id === savedJob.id ? savedJob : item
         )
       );
       setJobDataError("");
@@ -241,6 +271,7 @@ export function ChrysalisProvider({ children }) {
       setJobsState((current) =>
         current.filter((job) => job.id !== jobId)
       );
+      setAppointmentDataError("");
       setJobDataError("");
     } catch (error) {
       console.error("Unable to delete job from SQLite.", error);
@@ -248,6 +279,82 @@ export function ChrysalisProvider({ children }) {
         error instanceof Error
           ? error.message
           : "Unable to delete job."
+      );
+      throw error;
+    }
+  }, []);
+
+  const createAppointment = useCallback(async (appointment) => {
+    try {
+      const savedAppointment = await createAppointmentRecord(
+        appointment
+      );
+      setAppointmentsState((current) => [
+        ...current.filter(
+          (item) => item.id !== savedAppointment.id
+        ),
+        savedAppointment,
+      ]);
+      setAppointmentDataError("");
+      return savedAppointment;
+    } catch (error) {
+      console.error(
+        "Unable to create appointment in SQLite.",
+        error
+      );
+      setAppointmentDataError(
+        error instanceof Error
+          ? error.message
+          : "Unable to create appointment."
+      );
+      throw error;
+    }
+  }, []);
+
+  const updateAppointment = useCallback(async (appointment) => {
+    try {
+      const savedAppointment = await updateAppointmentRecord(
+        appointment
+      );
+      setAppointmentsState((current) =>
+        current.map((item) =>
+          item.id === savedAppointment.id
+            ? savedAppointment
+            : item
+        )
+      );
+      setAppointmentDataError("");
+      return savedAppointment;
+    } catch (error) {
+      console.error(
+        "Unable to update appointment in SQLite.",
+        error
+      );
+      setAppointmentDataError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update appointment."
+      );
+      throw error;
+    }
+  }, []);
+
+  const deleteAppointment = useCallback(async (appointmentId) => {
+    try {
+      await deleteAppointmentRecord(appointmentId);
+      setAppointmentsState((current) =>
+        current.filter((item) => item.id !== appointmentId)
+      );
+      setAppointmentDataError("");
+    } catch (error) {
+      console.error(
+        "Unable to delete appointment from SQLite.",
+        error
+      );
+      setAppointmentDataError(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete appointment."
       );
       throw error;
     }
@@ -279,10 +386,7 @@ export function ChrysalisProvider({ children }) {
 
       return enrichJob({
         ...job,
-        clientName: [
-          client?.firstName,
-          client?.lastName,
-        ]
+        clientName: [client?.firstName, client?.lastName]
           .filter(Boolean)
           .join(" "),
       });
@@ -293,14 +397,19 @@ export function ChrysalisProvider({ children }) {
     () => ({
       clients,
       jobs,
+      appointments: appointmentsState,
       setClients: persistClients,
       createJob,
       updateJob,
       deleteJob,
+      createAppointment,
+      updateAppointment,
+      deleteAppointment,
 
       isLoadingClients,
       clientDataError,
       jobDataError,
+      appointmentDataError,
 
       showWorkspace,
       selectedClient,
@@ -313,13 +422,18 @@ export function ChrysalisProvider({ children }) {
     [
       clients,
       jobs,
+      appointmentsState,
       persistClients,
       createJob,
       updateJob,
       deleteJob,
+      createAppointment,
+      updateAppointment,
+      deleteAppointment,
       isLoadingClients,
       clientDataError,
       jobDataError,
+      appointmentDataError,
       showWorkspace,
       selectedClient,
       selectedJobId,
