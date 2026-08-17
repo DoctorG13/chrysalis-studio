@@ -122,6 +122,14 @@ function getPayments(database, jobId) {
     .map(rowToPayment);
 }
 
+function getPayment(database, id) {
+  const row = database
+    .prepare("SELECT * FROM payments WHERE id = ?")
+    .get(id);
+
+  return row ? rowToPayment(row) : null;
+}
+
 function normalizePayment(input, existing = null) {
   const now = new Date().toISOString();
   const source = {
@@ -145,7 +153,7 @@ function normalizePayment(input, existing = null) {
     ...source,
     id: String(source.id || crypto.randomUUID()),
     clientId: String(source.clientId || ""),
-    jobId: source.jobId ? String(source.jobId) : "",
+    jobId: String(source.jobId || ""),
     amount: Math.round(amount * 100) / 100,
     date,
     method: String(source.method || ""),
@@ -155,9 +163,7 @@ function normalizePayment(input, existing = null) {
   };
 }
 
-function savePayment(database, input, existing = null) {
-  const payment = normalizePayment(input, existing);
-
+function validatePaymentRelationships(database, payment) {
   if (!payment.clientId) {
     throw new Error("A payment must have a clientId.");
   }
@@ -187,6 +193,11 @@ function savePayment(database, input, existing = null) {
   if (job.clientId !== payment.clientId) {
     throw new Error("The payment job must belong to the payment client.");
   }
+}
+
+function savePayment(database, input, existing = null) {
+  const payment = normalizePayment(input, existing);
+  validatePaymentRelationships(database, payment);
 
   database
     .prepare(
@@ -220,14 +231,6 @@ function savePayment(database, input, existing = null) {
   return payment;
 }
 
-function getPayment(database, id) {
-  const row = database
-    .prepare("SELECT * FROM payments WHERE id = ?")
-    .get(id);
-
-  return row ? rowToPayment(row) : null;
-}
-
 function deletePayment(database, id) {
   const result = database
     .prepare("DELETE FROM payments WHERE id = ?")
@@ -252,9 +255,18 @@ function createPaymentServer(database) {
       request.url || "/",
       `http://${request.headers.host || "localhost"}`
     );
-    const match = url.pathname.match(/^\/api\/payments(?:\/([^/]+))?$/);
-    const identifier = match?.[1]
-      ? decodeURIComponent(match[1])
+    const jobMatch = url.pathname.match(
+      /^\/api\/payments\/job\/([^/]+)$/
+    );
+    const paymentMatch = url.pathname.match(
+      /^\/api\/payments\/([^/]+)$/
+    );
+
+    const jobId = jobMatch?.[1]
+      ? decodeURIComponent(jobMatch[1])
+      : null;
+    const paymentId = paymentMatch?.[1]
+      ? decodeURIComponent(paymentMatch[1])
       : null;
 
     try {
@@ -267,37 +279,24 @@ function createPaymentServer(database) {
         return;
       }
 
-      if (request.method === "GET" && match && identifier) {
-        const payment = getPayment(database, identifier);
-
-        if (payment) {
-          sendJson(response, 200, {
-            ok: true,
-            payment,
-          });
-          return;
-        }
-
-        const payments = getPayments(database, identifier);
+      if (request.method === "GET" && jobMatch && jobId) {
         sendJson(response, 200, {
           ok: true,
-          payments,
+          payments: getPayments(database, jobId),
         });
         return;
       }
 
-      if (
-        (request.method === "POST" || request.method === "PUT") &&
-        match &&
-        identifier
-      ) {
-        const body = await readJsonBody(request);
-        const incoming = body.payment || body;
-        const existing = getPayment(database, identifier);
-        const payment = savePayment(database, {
-          ...incoming,
-          id: existing?.id || incoming.id || identifier,
-        }, existing);
+      if (request.method === "GET" && paymentMatch && paymentId) {
+        const payment = getPayment(database, paymentId);
+
+        if (!payment) {
+          sendJson(response, 404, {
+            ok: false,
+            error: `Payment not found: ${paymentId}`,
+          });
+          return;
+        }
 
         sendJson(response, 200, {
           ok: true,
@@ -306,8 +305,47 @@ function createPaymentServer(database) {
         return;
       }
 
-      if (request.method === "DELETE" && match && identifier) {
-        const deleted = deletePayment(database, identifier);
+      if (request.method === "POST" && url.pathname === "/api/payments") {
+        const body = await readJsonBody(request);
+        const payment = savePayment(database, body.payment || body);
+
+        sendJson(response, 201, {
+          ok: true,
+          payment,
+        });
+        return;
+      }
+
+      if (request.method === "PUT" && paymentMatch && paymentId) {
+        const existing = getPayment(database, paymentId);
+
+        if (!existing) {
+          sendJson(response, 404, {
+            ok: false,
+            error: `Payment not found: ${paymentId}`,
+          });
+          return;
+        }
+
+        const body = await readJsonBody(request);
+        const payment = savePayment(
+          database,
+          {
+            ...(body.payment || body),
+            id: paymentId,
+          },
+          existing
+        );
+
+        sendJson(response, 200, {
+          ok: true,
+          payment,
+        });
+        return;
+      }
+
+      if (request.method === "DELETE" && paymentMatch && paymentId) {
+        const deleted = deletePayment(database, paymentId);
         sendJson(response, 200, {
           ok: true,
           deleted,
