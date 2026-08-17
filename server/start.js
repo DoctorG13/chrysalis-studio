@@ -1,13 +1,28 @@
 import { spawn } from "node:child_process";
 import { request as httpRequest } from "node:http";
 
-const children = [];
+const SERVICES = [
+  {
+    name: "database",
+    script: "server/index.js",
+    args: ["server"],
+    healthUrl: "http://127.0.0.1:4174/api/health",
+  },
+  {
+    name: "jobs",
+    script: "server/job-server.js",
+    args: [],
+    healthUrl: "http://127.0.0.1:4175/api/health",
+  },
+];
+
+const children = new Map();
 let shuttingDown = false;
 
-function waitForClientApi(attempt = 0) {
+function checkHealth(url, attempt = 0) {
   return new Promise((resolve, reject) => {
     const request = httpRequest(
-      "http://127.0.0.1:4174/api/health",
+      url,
       { method: "GET" },
       (response) => {
         response.resume();
@@ -17,58 +32,74 @@ function waitForClientApi(attempt = 0) {
           return;
         }
 
-        retry(attempt, reject);
+        retryHealth(url, attempt, reject);
       }
     );
 
     request.setTimeout(1000, () => {
       request.destroy();
-      retry(attempt, reject);
+      retryHealth(url, attempt, reject);
     });
 
     request.on("error", () => {
-      retry(attempt, reject);
+      retryHealth(url, attempt, reject);
     });
 
     request.end();
   });
 }
 
-function retry(attempt, reject) {
+function retryHealth(url, attempt, reject) {
   if (attempt >= 30) {
     reject(
       new Error(
-        "The Chrysalis database API did not become ready within 30 seconds."
+        `Service did not become ready within 30 seconds: ${url}`
       )
     );
     return;
   }
 
   setTimeout(() => {
-    waitForClientApi(attempt + 1)
+    checkHealth(url, attempt + 1)
       .then(() => undefined)
       .catch(reject);
   }, 1000);
 }
 
-function spawnChild(script, args = []) {
-  const child = spawn(process.execPath, [script, ...args], {
+function spawnService(service) {
+  console.log(`Starting Chrysalis ${service.name} service...`);
+
+  const child = spawn(process.execPath, [service.script, ...service.args], {
     stdio: "inherit",
+    windowsHide: false,
   });
 
-  children.push(child);
+  children.set(service.name, child);
 
-  child.on("exit", (code, signal) => {
-    if (shuttingDown) return;
-
-    if (signal || code !== 0) {
-      shutdown(code || 1);
-    }
+  child.on("spawn", () => {
+    console.log(`Chrysalis ${service.name} process started.`);
   });
 
   child.on("error", (error) => {
-    console.error("Unable to start Chrysalis API process:", error);
+    console.error(
+      `Unable to start Chrysalis ${service.name} service:`,
+      error
+    );
+
     shutdown(1);
+  });
+
+  child.on("exit", (code, signal) => {
+    children.delete(service.name);
+
+    if (shuttingDown) return;
+
+    console.error(
+      `Chrysalis ${service.name} service stopped unexpectedly ` +
+        `(code=${code ?? "null"}, signal=${signal ?? "none"}).`
+    );
+
+    shutdown(code || 1);
   });
 
   return child;
@@ -78,35 +109,48 @@ function shutdown(code = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
 
-  for (const child of children) {
+  console.log("Stopping Chrysalis backend services...");
+
+  for (const child of children.values()) {
     if (!child.killed) {
       child.kill("SIGTERM");
     }
   }
 
-  setTimeout(() => process.exit(code), 250);
+  setTimeout(() => process.exit(code), 500);
 }
 
 async function main() {
-  const databaseApi = spawnChild("server/index.js", ["server"]);
-
-  try {
-    await waitForClientApi();
-  } catch (error) {
-    console.error(error);
-    if (!databaseApi.killed) {
-      databaseApi.kill("SIGTERM");
-    }
-    process.exit(1);
+  for (const service of SERVICES) {
+    spawnService(service);
   }
 
-  spawnChild("server/job-server.js");
+  try {
+    await Promise.all(
+      SERVICES.map((service) =>
+        checkHealth(service.healthUrl)
+      )
+    );
+  } catch (error) {
+    console.error(
+      "Chrysalis backend startup failed:",
+      error
+    );
+    shutdown(1);
+    return;
+  }
+
+  console.log("");
+  console.log("Chrysalis backend is ready.");
+  console.log("  Database API: http://127.0.0.1:4174");
+  console.log("  Job API:      http://127.0.0.1:4175");
+  console.log("");
 }
 
 process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
 main().catch((error) => {
-  console.error(error);
+  console.error("Chrysalis backend startup failed:", error);
   shutdown(1);
 });
