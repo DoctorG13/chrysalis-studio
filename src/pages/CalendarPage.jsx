@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import CalendarToolbar from "../features/calendar/CalendarToolbar";
 import CalendarGrid from "../features/calendar/CalendarGrid";
@@ -19,7 +19,9 @@ const HEADER_SCROLL_OFFSET = 110;
 export default function CalendarPage({ clients = [], jobs = [] }) {
   const [displayMonth, setDisplayMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const calendarToolbarRef = useRef(null);
   const resultsRef = useRef(null);
+  const shouldScrollToResults = useRef(false);
   const { openClient, openJob } = useChrysalis();
   const today = new Date();
 
@@ -35,32 +37,37 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     setDisplayMonth(nextMonth(displayMonth));
   }
 
-  function scrollToResults() {
+  function scrollToRef(ref) {
     window.requestAnimationFrame(() => {
-      const element = resultsRef.current;
+      const element = ref.current;
       if (!element) return;
       const top = element.getBoundingClientRect().top + window.scrollY - HEADER_SCROLL_OFFSET;
       window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
     });
   }
 
-  function scrollToCalendar() {
-    window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-  }
-
   function selectDate(date) {
     setSelectedDate(new Date(date));
-    scrollToResults();
+    shouldScrollToResults.current = true;
+  }
+
+  function scrollToCalendar() {
+    scrollToRef(calendarToolbarRef);
   }
 
   function goToday() {
     const now = new Date();
     setDisplayMonth(now);
     setSelectedDate(now);
+    shouldScrollToResults.current = false;
     scrollToCalendar();
   }
+
+  useEffect(() => {
+    if (!shouldScrollToResults.current) return;
+    shouldScrollToResults.current = false;
+    scrollToRef(resultsRef);
+  }, [selectedDate]);
 
   function parseCalendarDate(value) {
     if (!value) return null;
@@ -168,7 +175,7 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     <>
       <TodayView clients={clients} jobs={jobs} today={today} onOpenClient={openClient} onOpenJob={openJob} />
 
-      <div style={{ marginTop: 8, marginBottom: 16 }}>
+      <div ref={calendarToolbarRef} style={{ marginTop: 8, marginBottom: 16, scrollMarginTop: HEADER_SCROLL_OFFSET }}>
         <CalendarToolbar monthLabel={monthLabel(displayMonth)} onPrevious={goPrevious} onToday={goToday} onNext={goNext} />
       </div>
 
