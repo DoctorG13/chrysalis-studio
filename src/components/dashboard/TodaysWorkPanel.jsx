@@ -148,7 +148,7 @@ function AttentionSection({ priorities, clients, onSelectJob }) {
                 <strong style={attentionJobStyle}>{job.reference || job.name || job.title || "Job"}</strong>
                 <span style={attentionClientStyle}>{getClientName(client)}</span>
                 <span style={attentionActionStyle}>{job.nextAction || priority.label}</span>
-                <span style={{ ...attentionOpenStyle, color: priority.color }}>Open →</span>
+                <span style={{ ...attentionOpenStyle, color: priority.color, borderColor: priority.color }}>Open →</span>
               </button>
             );
           })}
@@ -266,8 +266,8 @@ const attentionHeaderStyle = { display: "flex", alignItems: "center", gap: 8, ma
 const attentionTitleStyle = { margin: 0, fontSize: 14, color: "#2F3A3F" };
 const attentionCountStyle = { minWidth: 20, padding: "3px 7px", borderRadius: 999, background: "#F3F4F6", color: "#555", fontSize: 11, fontWeight: 700, textAlign: "center" };
 const attentionEmptyStyle = { padding: "7px 0", color: "#777", fontSize: 12 };
-const attentionRowStyle = { display: "grid", gridTemplateColumns: "18px minmax(110px, 1.2fr) minmax(100px, 1fr) minmax(110px, 1fr) auto", alignItems: "center", gap: 8, width: "100%", minHeight: 44, padding: "8px 10px", border: "1px solid #E5E7EB", borderRadius: 7, background: "#FAFAFA", textAlign: "left", cursor: "pointer", font: "inherit" };
+const attentionRowStyle = { display: "grid", gridTemplateColumns: "18px minmax(110px, 1.2fr) minmax(100px, 1fr) minmax(110px, 1fr) auto", alignItems: "center", gap: 8, width: "100%", minHeight: 48, padding: "9px 11px", border: "1px solid #E5E7EB", borderRadius: 7, background: "#FAFAFA", textAlign: "left", cursor: "pointer", font: "inherit" };
 const attentionJobStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13 };
 const attentionClientStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#66727A", fontSize: 12 };
 const attentionActionStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#555", fontSize: 12 };
-const attentionOpenStyle = { whiteSpace: "nowrap", fontSize: 12, fontWeight: 700 };
+const attentionOpenStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 36, padding: "8px 15px", border: "1px solid currentColor", borderRadius: 999, background: "#FFFFFF", whiteSpace: "nowrap", fontSize: 13, fontWeight: 700 };
