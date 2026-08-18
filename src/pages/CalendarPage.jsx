@@ -33,6 +33,7 @@ function scrollToElement(element, offset = HEADER_SCROLL_OFFSET) {
 export default function CalendarPage({ clients = [], jobs = [] }) {
   const [displayMonth, setDisplayMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const todayRef = useRef(null);
   const calendarRef = useRef(null);
   const resultsRef = useRef(null);
   const { openClient, openJob } = useChrysalis();
@@ -61,6 +62,19 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
 
   function scrollToCalendar() {
     scrollToElement(calendarRef.current);
+  }
+
+  function scrollToTodayView() {
+    scrollToElement(todayRef.current);
+  }
+
+  function scrollToSelectedDay() {
+    scrollToElement(resultsRef.current);
+  }
+
+  function scrollToTop() {
+    const container = getScrollContainer(todayRef.current);
+    container.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function parseCalendarDate(value) {
@@ -140,11 +154,23 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
 
   return (
     <>
-      <TodayView clients={clients} jobs={jobs} today={today} onOpenClient={openClient} onOpenJob={openJob} />
+      <div style={navigationShellStyle} aria-label="Calendar section navigation">
+        <button type="button" onClick={scrollToTop} style={navigationButtonStyle}>↑ Top</button>
+        <button type="button" onClick={scrollToTodayView} style={navigationButtonStyle}>🦋 Today</button>
+        <button type="button" onClick={scrollToCalendar} style={navigationButtonStyle}>📅 Calendar</button>
+        <button type="button" onClick={scrollToSelectedDay} style={navigationButtonStyle}>📋 Selected Day</button>
+      </div>
+
+      <div ref={todayRef} style={{ scrollMarginTop: HEADER_SCROLL_OFFSET }}>
+        <TodayView clients={clients} jobs={jobs} today={today} onOpenClient={openClient} onOpenJob={openJob} />
+      </div>
+
       <div ref={calendarRef} style={{ marginTop: 8, marginBottom: 16, scrollMarginTop: HEADER_SCROLL_OFFSET }}>
         <CalendarToolbar monthLabel={monthLabel(displayMonth)} onPrevious={goPrevious} onToday={goToday} onNext={goNext} />
       </div>
+
       <CalendarGrid calendarDays={calendarDays} monthStart={monthStart} monthEnd={monthEnd} today={today} selectedDate={selectedDate} onSelectDate={selectDate} getEventsForDate={getEventsForDate} sameDay={sameDay} />
+
       <div ref={resultsRef} style={{ scrollMarginTop: HEADER_SCROLL_OFFSET, marginTop: 30, background: "#FFFFFF", border: "1px solid #DDDDDD", borderRadius: 12, padding: 20 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 12 }}><h3 style={{ margin: 0 }}>Selected Day</h3><button type="button" onClick={scrollToCalendar} style={{ border: "1px solid #D5D9DD", background: "#FFFFFF", color: "#2F3A3F", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>↑ Back to Calendar</button></div>
         <p style={{ color: "#666", marginBottom: 20 }}>{selectedDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
@@ -157,3 +183,31 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
 function DetailItem({ label, value, highlight = false }) {
   return <div style={{ background: highlight ? "#FFF7E6" : "#FFFFFF", border: highlight ? "1px solid #F3D38A" : "1px solid #E8EAED", borderRadius: 8, padding: "9px 10px" }}><div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{label}</div><div style={{ fontSize: 13, fontWeight: 700, color: highlight ? "#8A5A00" : "#2F3A3F" }}>{value}</div></div>;
 }
+
+const navigationShellStyle = {
+  position: "sticky",
+  top: 8,
+  zIndex: 20,
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 6,
+  padding: 7,
+  marginBottom: 12,
+  background: "rgba(255, 255, 255, 0.96)",
+  border: "1px solid #E1E4E7",
+  borderRadius: 10,
+  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+  backdropFilter: "blur(6px)",
+};
+
+const navigationButtonStyle = {
+  border: "1px solid #D8DDE1",
+  background: "#FFFFFF",
+  color: "#2F3A3F",
+  borderRadius: 7,
+  padding: "7px 11px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
