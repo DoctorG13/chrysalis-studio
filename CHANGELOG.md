@@ -131,3 +131,18 @@ Cancelled
 - Added invoice notes and customer thank-you text.
 - Added a `Print / PDF` action to Invoice Management.
 - Uses the browser's native print dialog so invoices can be printed or saved as PDF without adding a new PDF dependency.
+
+---
+
+## Calendar & Today View
+
+### Added
+
+- Added a dedicated Today View above the existing calendar grid.
+- Added today's appointment summary and clickable appointment list.
+- Added today's SQLite-backed fitting summary and clickable fitting list when fitting records are present on client data.
+- Added jobs due today and overdue production attention lists.
+- Added outstanding balance visibility on production jobs.
+- Added direct navigation from Today View items into the existing Client Workspace and Job Workspace.
+- Extended the existing calendar day events to surface fittings alongside appointments and job due dates.
+- Preserved the existing month navigation, date selection and selected-day detail workflow.
