@@ -1,5 +1,6 @@
 export default function ClientWorkspaceHeader({
   client,
+  onClose,
 }) {
   if (!client) return null;
 
@@ -25,14 +26,41 @@ export default function ClientWorkspaceHeader({
         marginBottom: 20,
       }}
     >
-      <h2
+      <div
         style={{
-          margin: 0,
-          marginBottom: 8,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 16,
+          marginBottom: 12,
         }}
       >
-        👤 {client.firstName} {client.lastName}
-      </h2>
+        <h2
+          style={{
+            margin: 0,
+          }}
+        >
+          👤 {client.firstName} {client.lastName}
+        </h2>
+
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            border: "1px solid #d9dde2",
+            background: "#ffffff",
+            color: "#2F3A3F",
+            borderRadius: 8,
+            padding: "8px 14px",
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          ✕ Close Client
+        </button>
+      </div>
 
       <div
         style={{
