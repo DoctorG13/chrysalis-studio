@@ -1,37 +1,27 @@
 import Card from "../common/Card";
 
-export default function TodaysWorkPanel({
-  clients = [],
-  jobs = [],
-  onSelectJob,
-}) {
-  const today = new Date();
-  const todayKey = toDateKey(today);
+export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }) {
+  const todayKey = toDateKey(new Date());
 
   const appointments = clients.flatMap((client) =>
     (client.appointments || [])
       .filter((appointment) => toDateKey(appointment.date) === todayKey)
-      .map((appointment) => ({
-        ...appointment,
-        client,
-        type: "appointment",
-      }))
+      .map((appointment) => ({ ...appointment, client }))
   );
 
   const fittings = [
     ...clients.flatMap((client) =>
       (client.fittings || [])
         .filter((fitting) => toDateKey(fitting.date) === todayKey)
-        .map((fitting) => ({ ...fitting, client, type: "fitting" }))
+        .map((fitting) => ({ ...fitting, client }))
     ),
     ...jobs.flatMap((job) =>
       (job.fittings || [])
         .filter((fitting) => toDateKey(fitting.date) === todayKey)
         .map((fitting) => ({
           ...fitting,
-          client: clients.find((candidate) => String(candidate.id) === String(job.clientId)),
           job,
-          type: "fitting",
+          client: clients.find((client) => String(client.id) === String(job.clientId)),
         }))
     ),
   ].filter((fitting, index, list) => {
@@ -57,184 +47,137 @@ export default function TodaysWorkPanel({
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 6);
 
-  const priorities = [...jobs]
+  const priorities = jobs
     .filter((job) => job.overdue || job.dueToday || job.needsAttention)
     .sort((a, b) => priorityScore(a) - priorityScore(b));
 
   const totalOutstanding = outstanding.reduce((total, item) => total + item.amount, 0);
-  const totalActive = activeJobs.length;
 
   return (
     <Card title="🌅 This Morning's View">
       <div style={summaryGridStyle}>
         <SummaryItem icon="📅" label="Appointments" value={appointments.length} />
         <SummaryItem icon="👗" label="Fittings" value={fittings.length} />
-        <SummaryItem icon="💼" label="Active Jobs" value={totalActive} />
+        <SummaryItem icon="💼" label="Active Jobs" value={activeJobs.length} />
         <SummaryItem icon="💰" label="Outstanding" value={formatCurrency(totalOutstanding)} />
       </div>
 
       <div style={sectionGridStyle}>
-        <MorningSection
-          title="📅 Today's Appointments"
-          empty="No appointments today."
-        >
+        <MorningSection title="📅 Today's Appointments" empty="No appointments today.">
           {appointments.map((appointment, index) => (
             <div key={appointment.id || index} style={itemStyle}>
               <div style={iconStyle}>📅</div>
               <div style={contentStyle}>
                 <strong>{appointment.title || appointment.type || "Appointment"}</strong>
                 <span>{getClientName(appointment.client)}</span>
-                {appointment.time && <span>{appointment.time}</span>}
+                {appointment.time && <small>{appointment.time}</small>}
               </div>
             </div>
           ))}
         </MorningSection>
 
-        <MorningSection
-          title="👗 Today's Fittings"
-          empty="No fittings today."
-        >
+        <MorningSection title="👗 Today's Fittings" empty="No fittings today.">
           {fittings.map((fitting, index) => (
             <div key={fitting.id || index} style={itemStyle}>
               <div style={iconStyle}>👗</div>
               <div style={contentStyle}>
                 <strong>{fitting.title || "Fitting"}</strong>
                 <span>{getClientName(fitting.client)}</span>
-                {fitting.time && <span>{fitting.time}</span>}
-                {fitting.status && <small>{fitting.status}</small>}
+                {fitting.time && <small>{fitting.time}</small>}
               </div>
             </div>
           ))}
         </MorningSection>
 
-        <MorningSection
-          title="💼 Active Jobs"
-          empty="No active jobs."
-        >
+        <MorningSection title="💼 Active Jobs" empty="No active jobs.">
           {activeJobs.map((job) => (
-            <button
+            <ActionRow
               key={job.id}
-              type="button"
+              icon="💼"
+              title={job.reference || job.name || job.title || "Job"}
+              subtitle={getClientName(clients.find((client) => String(client.id) === String(job.clientId)))}
+              meta={job.status || "Active"}
               onClick={() => onSelectJob?.(job)}
-              style={buttonItemStyle}
-            >
-              <div style={iconStyle}>💼</div>
-              <div style={contentStyle}>
-                <strong>{job.reference || job.name || job.title || "Job"}</strong>
-                <span>{job.name || job.garmentType || "Active job"}</span>
-                <span>{getClientName(clients.find((client) => String(client.id) === String(job.clientId)))}</span>
-              </div>
-              <StatusBadge value={job.status || "Active"} />
-            </button>
+            />
           ))}
         </MorningSection>
 
         <MorningSection
           title="💰 Outstanding Payments"
           empty="No outstanding payments."
-          footer={
-            totalOutstanding > 0
-              ? `Total outstanding: ${formatCurrency(totalOutstanding)}`
-              : null
-          }
+          footer={totalOutstanding > 0 ? `Total outstanding: ${formatCurrency(totalOutstanding)}` : null}
         >
           {outstanding.map(({ job, amount }) => (
-            <button
+            <ActionRow
               key={job.id}
-              type="button"
+              icon="💰"
+              title={job.reference || job.name || job.title || "Job"}
+              subtitle={getClientName(clients.find((client) => String(client.id) === String(job.clientId)))}
+              meta={formatCurrency(amount)}
               onClick={() => onSelectJob?.(job)}
-              style={buttonItemStyle}
-            >
-              <div style={iconStyle}>💰</div>
-              <div style={contentStyle}>
-                <strong>{job.reference || job.name || job.title || "Job"}</strong>
-                <span>{getClientName(clients.find((client) => String(client.id) === String(job.clientId)))}</span>
-              </div>
-              <strong style={{ color: "#8A5A00", whiteSpace: "nowrap" }}>
-                {formatCurrency(amount)}
-              </strong>
-            </button>
+              metaStyle={{ color: "#8A5A00", fontWeight: 700 }}
+            />
           ))}
         </MorningSection>
       </div>
 
-      <div style={priorityBlockStyle}>
-        <div style={priorityHeaderStyle}>
-          <div>
-            <h3 style={priorityTitleStyle}>🎯 What Needs Attention</h3>
-            <p style={prioritySubtitleStyle}>
-              The jobs that should get Donna's attention first today.
-            </p>
-          </div>
-          <div style={priorityCountStyle}>
-            {priorities.length}
-          </div>
-        </div>
-
-        {priorities.length === 0 ? (
-          <div style={priorityEmptyStyle}>
-            🎉 You're all caught up — no urgent job priorities today.
-          </div>
-        ) : (
-          <div style={priorityListStyle}>
-            {priorities.map((job) => (
-              <PriorityRow
-                key={job.id ?? job.reference ?? job.name}
-                job={job}
-                clients={clients}
-                onSelectJob={onSelectJob}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      <AttentionSection priorities={priorities} clients={clients} onSelectJob={onSelectJob} />
     </Card>
+  );
+}
+
+function AttentionSection({ priorities, clients, onSelectJob }) {
+  return (
+    <section style={attentionStyle}>
+      <div style={attentionHeaderStyle}>
+        <h3 style={attentionTitleStyle}>🔔 Needs Your Attention</h3>
+        {priorities.length > 0 && <span style={attentionCountStyle}>{priorities.length}</span>}
+      </div>
+
+      {priorities.length === 0 ? (
+        <div style={attentionEmptyStyle}>🎉 Nothing urgent today.</div>
+      ) : (
+        <div style={{ display: "grid", gap: 6 }}>
+          {priorities.map((job) => {
+            const priority = getPriority(job);
+            const client = clients.find((candidate) => String(candidate.id) === String(job.clientId));
+
+            return (
+              <button key={job.id ?? job.reference ?? job.name} type="button" onClick={() => onSelectJob?.(job)} style={attentionRowStyle}>
+                <span style={{ fontSize: 14 }}>{priority.icon}</span>
+                <strong style={attentionJobStyle}>{job.reference || job.name || job.title || "Job"}</strong>
+                <span style={attentionClientStyle}>{getClientName(client)}</span>
+                <span style={attentionActionStyle}>{job.nextAction || priority.label}</span>
+                <span style={{ ...attentionOpenStyle, color: priority.color }}>Open →</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }
 
 function MorningSection({ title, empty, children, footer }) {
   const hasItems = Array.isArray(children) ? children.length > 0 : Boolean(children);
-
   return (
     <section style={sectionStyle}>
       <h3 style={sectionTitleStyle}>{title}</h3>
-      {!hasItems ? (
-        <p style={emptyStyle}>{empty}</p>
-      ) : (
-        <div style={{ display: "grid", gap: 8 }}>{children}</div>
-      )}
+      {!hasItems ? <p style={emptyStyle}>{empty}</p> : <div style={{ display: "grid", gap: 6 }}>{children}</div>}
       {footer && <div style={footerStyle}>{footer}</div>}
     </section>
   );
 }
 
-function PriorityRow({ job, clients, onSelectJob }) {
-  const priority = getPriority(job);
-  const client = clients.find(
-    (candidate) => String(candidate.id) === String(job.clientId)
-  );
-
+function ActionRow({ icon, title, subtitle, meta, onClick, metaStyle }) {
   return (
-    <button
-      type="button"
-      onClick={() => onSelectJob?.(job)}
-      style={{
-        ...priorityRowStyle,
-        borderLeft: `5px solid ${priority.border}`,
-        background: priority.background,
-      }}
-    >
-      <div style={priorityIconStyle}>{priority.icon}</div>
-      <div style={contentStyle}>
-        <strong>{job.reference || job.name || job.title || "Job"}</strong>
-        <span>{getClientName(client)}</span>
-        <span>{job.status || "Active"}</span>
-        {job.nextAction && <small>Next: {job.nextAction}</small>}
-        {job.dueDate && <small>Due: {job.dueDate}</small>}
-      </div>
-      <span style={{ ...priorityBadgeStyle, color: priority.color }}>
-        {priority.label}
+    <button type="button" onClick={onClick} style={actionRowStyle}>
+      <span style={iconStyle}>{icon}</span>
+      <span style={contentStyle}>
+        <strong>{title}</strong>
+        <span>{subtitle}</span>
       </span>
+      <span style={{ ...actionMetaStyle, ...metaStyle }}>{meta}</span>
     </button>
   );
 }
@@ -242,31 +185,12 @@ function PriorityRow({ job, clients, onSelectJob }) {
 function SummaryItem({ icon, label, value }) {
   return (
     <div style={summaryItemStyle}>
-      <span style={{ fontSize: 20 }}>{icon}</span>
+      <span style={{ fontSize: 18 }}>{icon}</span>
       <div>
-        <strong style={{ display: "block", fontSize: 18 }}>{value}</strong>
-        <span style={{ color: "#777", fontSize: 12 }}>{label}</span>
+        <strong style={{ display: "block", fontSize: 17 }}>{value}</strong>
+        <span style={{ color: "#777", fontSize: 11 }}>{label}</span>
       </div>
     </div>
-  );
-}
-
-function StatusBadge({ value }) {
-  return (
-    <span
-      style={{
-        alignSelf: "flex-start",
-        padding: "4px 8px",
-        borderRadius: 999,
-        background: "#F1F4F6",
-        color: "#42515A",
-        fontSize: 11,
-        fontWeight: 700,
-        whiteSpace: "nowrap",
-      }}
-    >
-      {value}
-    </span>
   );
 }
 
@@ -277,47 +201,27 @@ function getClientName(client) {
 }
 
 function getOutstanding(job) {
-  if (job.balance !== undefined && job.balance !== null) {
-    return Math.max(Number(job.balance) || 0, 0);
-  }
-
-  if (job.outstanding !== undefined && job.outstanding !== null) {
-    return Math.max(Number(job.outstanding) || 0, 0);
-  }
-
+  if (job.balance !== undefined && job.balance !== null) return Math.max(Number(job.balance) || 0, 0);
+  if (job.outstanding !== undefined && job.outstanding !== null) return Math.max(Number(job.outstanding) || 0, 0);
   if (Array.isArray(job.invoices) && job.invoices.length > 0) {
-    return Math.max(
-      job.invoices.reduce(
-        (total, invoice) => total + Number(invoice.balance ?? 0),
-        0
-      ),
-      0
-    );
+    return Math.max(job.invoices.reduce((total, invoice) => total + Number(invoice.balance ?? 0), 0), 0);
   }
-
   const quote = Number(job.price || 0);
-  const paid = (job.payments || []).reduce(
-    (total, payment) => total + Number(payment.amount || 0),
-    0
-  );
-
+  const paid = (job.payments || []).reduce((total, payment) => total + Number(payment.amount || 0), 0);
   return Math.max(quote - paid, 0);
 }
 
 function toDateValue(value) {
   if (!value) return null;
   if (value instanceof Date) return value;
-
   if (typeof value === "string" && /^\d{2}\/\d{2}\/\d{4}/.test(value)) {
     const [day, month, year] = value.slice(0, 10).split("/").map(Number);
     return new Date(year, month - 1, day);
   }
-
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     const [year, month, day] = value.slice(0, 10).split("-").map(Number);
     return new Date(year, month - 1, day);
   }
-
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
@@ -336,207 +240,34 @@ function priorityScore(job) {
 }
 
 function getPriority(job) {
-  if (job.overdue) {
-    return {
-      label: "Overdue",
-      icon: "🔴",
-      border: "#DC2626",
-      background: "#FEF2F2",
-      color: "#B91C1C",
-    };
-  }
-
-  if (job.dueToday) {
-    return {
-      label: "Due Today",
-      icon: "🟠",
-      border: "#EA580C",
-      background: "#FFF7ED",
-      color: "#C2410C",
-    };
-  }
-
-  return {
-    label: "Needs Attention",
-    icon: "🟡",
-    border: "#CA8A04",
-    background: "#FEFCE8",
-    color: "#A16207",
-  };
+  if (job.overdue) return { label: "Overdue", icon: "🔴", color: "#B91C1C" };
+  if (job.dueToday) return { label: "Due today", icon: "🟠", color: "#C2410C" };
+  return { label: "Needs attention", icon: "🟡", color: "#A16207" };
 }
 
 function formatCurrency(value) {
-  return new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    minimumFractionDigits: 2,
-  }).format(value);
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 2 }).format(value);
 }
 
-const summaryGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: 10,
-  marginBottom: 18,
-};
-
-const summaryItemStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  padding: "11px 12px",
-  background: "#FAF9F6",
-  border: "1px solid #E5E7EB",
-  borderRadius: 9,
-};
-
-const sectionGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: 14,
-};
-
-const sectionStyle = {
-  border: "1px solid #E5E7EB",
-  borderRadius: 10,
-  padding: 14,
-  background: "#FFFFFF",
-  minWidth: 0,
-};
-
-const sectionTitleStyle = {
-  margin: "0 0 10px",
-  fontSize: 15,
-  color: "#2F3A3F",
-};
-
-const itemStyle = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: 10,
-  padding: "9px 10px",
-  borderRadius: 8,
-  background: "#FAFAFA",
-};
-
-const buttonItemStyle = {
-  ...itemStyle,
-  width: "100%",
-  border: "1px solid transparent",
-  textAlign: "left",
-  cursor: "pointer",
-  font: "inherit",
-};
-
-const iconStyle = {
-  flexShrink: 0,
-  fontSize: 18,
-};
-
-const contentStyle = {
-  minWidth: 0,
-  flex: 1,
-  display: "grid",
-  gap: 2,
-};
-
-const emptyStyle = {
-  margin: 0,
-  color: "#999",
-  fontStyle: "italic",
-  fontSize: 13,
-};
-
-const footerStyle = {
-  marginTop: 10,
-  paddingTop: 9,
-  borderTop: "1px solid #E5E7EB",
-  fontWeight: 700,
-  fontSize: 13,
-  color: "#8A5A00",
-};
-
-const priorityBlockStyle = {
-  marginTop: 18,
-  paddingTop: 18,
-  borderTop: "1px solid #E5E7EB",
-};
-
-const priorityHeaderStyle = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 16,
-  marginBottom: 12,
-};
-
-const priorityTitleStyle = {
-  margin: 0,
-  fontSize: 16,
-  color: "#2F3A3F",
-};
-
-const prioritySubtitleStyle = {
-  margin: "4px 0 0",
-  color: "#777",
-  fontSize: 12,
-};
-
-const priorityCountStyle = {
-  minWidth: 30,
-  height: 30,
-  padding: "0 9px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: 999,
-  background: "#F1F4F6",
-  color: "#42515A",
-  fontSize: 13,
-  fontWeight: 800,
-};
-
-const priorityListStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-  gap: 10,
-};
-
-const priorityRowStyle = {
-  width: "100%",
-  display: "flex",
-  alignItems: "flex-start",
-  gap: 10,
-  padding: "11px 12px",
-  borderTop: "none",
-  borderRight: "none",
-  borderBottom: "none",
-  borderRadius: 8,
-  textAlign: "left",
-  cursor: "pointer",
-  font: "inherit",
-};
-
-const priorityIconStyle = {
-  flexShrink: 0,
-  fontSize: 17,
-};
-
-const priorityBadgeStyle = {
-  alignSelf: "flex-start",
-  padding: "4px 8px",
-  borderRadius: 999,
-  background: "rgba(255,255,255,0.7)",
-  fontSize: 10,
-  fontWeight: 800,
-  whiteSpace: "nowrap",
-};
-
-const priorityEmptyStyle = {
-  padding: "12px 14px",
-  borderRadius: 9,
-  background: "#F0FDF4",
-  color: "#166534",
-  fontSize: 13,
-  fontWeight: 600,
-};
+const summaryGridStyle = { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8, marginBottom: 12 };
+const summaryItemStyle = { display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#FAF9F6", border: "1px solid #E5E7EB", borderRadius: 8 };
+const sectionGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 };
+const sectionStyle = { border: "1px solid #E5E7EB", borderRadius: 9, padding: 11, background: "#FFFFFF", minWidth: 0 };
+const sectionTitleStyle = { margin: "0 0 7px", fontSize: 14, color: "#2F3A3F" };
+const itemStyle = { display: "flex", alignItems: "flex-start", gap: 8, padding: "7px 8px", borderRadius: 7, background: "#FAFAFA" };
+const actionRowStyle = { ...itemStyle, width: "100%", border: "1px solid transparent", textAlign: "left", cursor: "pointer", font: "inherit" };
+const iconStyle = { flexShrink: 0, fontSize: 16 };
+const contentStyle = { minWidth: 0, flex: 1, display: "grid", gap: 1 };
+const actionMetaStyle = { whiteSpace: "nowrap", fontSize: 12, color: "#66727A" };
+const emptyStyle = { margin: 0, color: "#999", fontStyle: "italic", fontSize: 12 };
+const footerStyle = { marginTop: 8, paddingTop: 7, borderTop: "1px solid #E5E7EB", fontWeight: 700, fontSize: 12, color: "#8A5A00" };
+const attentionStyle = { marginTop: 12, paddingTop: 12, borderTop: "1px solid #E5E7EB" };
+const attentionHeaderStyle = { display: "flex", alignItems: "center", gap: 8, marginBottom: 7 };
+const attentionTitleStyle = { margin: 0, fontSize: 14, color: "#2F3A3F" };
+const attentionCountStyle = { minWidth: 20, padding: "2px 6px", borderRadius: 999, background: "#F3F4F6", color: "#555", fontSize: 11, fontWeight: 700, textAlign: "center" };
+const attentionEmptyStyle = { padding: "6px 0", color: "#777", fontSize: 12 };
+const attentionRowStyle = { display: "grid", gridTemplateColumns: "18px minmax(110px, 1.2fr) minmax(100px, 1fr) minmax(110px, 1fr) auto", alignItems: "center", gap: 8, width: "100%", padding: "7px 8px", border: "1px solid #E5E7EB", borderRadius: 7, background: "#FAFAFA", textAlign: "left", cursor: "pointer", font: "inherit" };
+const attentionJobStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13 };
+const attentionClientStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#66727A", fontSize: 12 };
+const attentionActionStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#555", fontSize: 12 };
+const attentionOpenStyle = { whiteSpace: "nowrap", fontSize: 11, fontWeight: 700 };
