@@ -2,7 +2,6 @@ import { useMemo } from "react";
 
 import WelcomeCard from "./WelcomeCard";
 import StatsGrid from "./StatsGrid";
-import TodaysPriorities from "./TodaysPriorities";
 import JobsDueThisWeek from "./JobsDueThisWeek";
 import QuickActions from "./QuickActions";
 import RecentActivity from "./RecentActivity";
@@ -103,12 +102,6 @@ export default function DashboardPage({
           gap: 24,
         }}
       >
-        <TodaysPriorities
-          clients={clients}
-          jobs={allJobs}
-          dashboard={dashboard}
-        />
-
         <JobsDueThisWeek
           clients={clients}
           jobs={allJobs}
