@@ -190,7 +190,8 @@ const activityRowStyle = {
   gridTemplateColumns: "minmax(0, 1fr) auto",
   alignItems: "center",
   gap: 12,
-  padding: "9px 12px",
+  padding: "10px 13px",
+  minHeight: 44,
   border: "1px solid #E5E7EB",
   borderRadius: 8,
   background: "#FFF",
@@ -220,11 +221,11 @@ const titleStyle = {
 };
 
 const countStyle = {
-  padding: "2px 6px",
+  padding: "3px 7px",
   borderRadius: 999,
   background: "#F3F4F6",
   color: "#66727A",
-  fontSize: 10,
+  fontSize: 11,
   fontWeight: 700,
 };
 
@@ -244,12 +245,13 @@ const dateStyle = {
 };
 
 const activityToggleStyle = {
-  padding: "6px 10px",
+  padding: "8px 13px",
+  minHeight: 36,
   border: "1px solid #D9DEE2",
   borderRadius: 999,
   background: "#FFF",
   color: "#8B1E3F",
-  fontSize: 11,
+  fontSize: 12,
   fontWeight: 700,
   cursor: "pointer",
   whiteSpace: "nowrap",
