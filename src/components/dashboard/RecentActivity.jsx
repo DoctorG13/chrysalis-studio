@@ -245,13 +245,16 @@ const dateStyle = {
 };
 
 const activityToggleStyle = {
-  padding: "8px 13px",
-  minHeight: 36,
-  border: "1px solid #D9DEE2",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "10px 17px",
+  minHeight: 42,
+  border: "1px solid #8B1E3F",
   borderRadius: 999,
   background: "#FFF",
   color: "#8B1E3F",
-  fontSize: 12,
+  fontSize: 13,
   fontWeight: 700,
   cursor: "pointer",
   whiteSpace: "nowrap",
