@@ -6,12 +6,28 @@ import TodayView from "../features/calendar/TodayView";
 import { useChrysalis } from "../context/ChrysalisProvider";
 import { buildCalendar, endOfMonth, monthLabel, nextMonth, previousMonth, sameDay, startOfMonth } from "../features/calendar/calendarUtils";
 
-const HEADER_SCROLL_OFFSET = 110;
+const HEADER_SCROLL_OFFSET = 20;
+
+function getScrollContainer(element) {
+  let current = element?.parentElement;
+  while (current) {
+    const style = window.getComputedStyle(current);
+    const canScroll = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight;
+    if (canScroll) return current;
+    current = current.parentElement;
+  }
+  return document.scrollingElement || document.documentElement;
+}
 
 function scrollToElement(element, offset = HEADER_SCROLL_OFFSET) {
   if (!element) return;
-  const top = element.getBoundingClientRect().top + window.scrollY - offset;
-  window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  const container = getScrollContainer(element);
+  const elementRect = element.getBoundingClientRect();
+  const containerRect = container === document.scrollingElement || container === document.documentElement
+    ? { top: 0 }
+    : container.getBoundingClientRect();
+  const targetTop = container.scrollTop + (elementRect.top - containerRect.top) - offset;
+  container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
 }
 
 export default function CalendarPage({ clients = [], jobs = [] }) {
@@ -44,7 +60,7 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
   }
 
   function scrollToCalendar() {
-    window.requestAnimationFrame(() => scrollToElement(calendarRef.current));
+    scrollToElement(calendarRef.current);
   }
 
   function parseCalendarDate(value) {
