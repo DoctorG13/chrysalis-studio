@@ -1,53 +1,75 @@
+import { useMemo, useState } from "react";
+
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 
 import { getRecentActivity } from "../../utils/dashboard";
 
 export default function RecentActivity({ clients = [], jobs = [] }) {
-  const rawActivity = [
-    ...getRecentActivity(clients),
-    ...jobs
-      .filter(
-        (job) =>
-          job.overdue ||
-          job.dueToday ||
-          job.status === "Completed" ||
-          job.status === "Collected" ||
-          job.status === "Ready"
-      )
-      .map((job) => ({
-        id: `job-${job.id ?? job.reference ?? job.name}`,
-        reference: job.reference,
-        client: job.clientName ?? job.client ?? "",
-        title: getTitle(job),
-        description: getDescription(job),
-        date:
-          job.updatedAt ??
-          job.completedAt ??
-          job.collectedAt ??
-          job.dueDate ??
-          new Date().toISOString(),
-      })),
-  ];
+  const [showAll, setShowAll] = useState(false);
 
-  const activity = groupActivity(rawActivity)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5);
+  const groupedActivity = useMemo(() => {
+    const rawActivity = [
+      ...getRecentActivity(clients),
+      ...jobs
+        .filter(
+          (job) =>
+            job.overdue ||
+            job.dueToday ||
+            job.status === "Completed" ||
+            job.status === "Collected" ||
+            job.status === "Ready"
+        )
+        .map((job) => ({
+          id: `job-${job.id ?? job.reference ?? job.name}`,
+          reference: job.reference,
+          client: job.clientName ?? job.client ?? "",
+          title: getTitle(job),
+          description: getDescription(job),
+          date:
+            job.updatedAt ??
+            job.completedAt ??
+            job.collectedAt ??
+            job.dueDate ??
+            new Date().toISOString(),
+        })),
+    ];
+
+    return groupActivity(rawActivity).sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    );
+  }, [clients, jobs]);
+
+  const activity = showAll ? groupedActivity : groupedActivity.slice(0, 5);
+  const hasMore = groupedActivity.length > 5;
 
   return (
     <Card title="Recent Activity">
-      {activity.length === 0 ? (
+      {groupedActivity.length === 0 ? (
         <EmptyState
           icon="📝"
           title="No Recent Activity"
           message="As you work throughout the day, activity will appear here."
         />
       ) : (
-        <div style={activityListStyle}>
-          {activity.map((item) => (
-            <ActivityRow key={item.id} item={item} />
-          ))}
-        </div>
+        <>
+          <div style={activityListStyle}>
+            {activity.map((item) => (
+              <ActivityRow key={item.id} item={item} />
+            ))}
+          </div>
+
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setShowAll((current) => !current)}
+              style={viewAllButtonStyle}
+            >
+              {showAll ? "Show less" : `View all activity (${groupedActivity.length})`}
+              <span aria-hidden="true">{showAll ? " ↑" : " →"}</span>
+            </button>
+          )}
+        </>
       )}
     </Card>
   );
@@ -197,4 +219,18 @@ const dateStyle = {
   fontSize: 11,
   color: "#999",
   whiteSpace: "nowrap",
+};
+
+const viewAllButtonStyle = {
+  display: "block",
+  width: "100%",
+  marginTop: 12,
+  padding: "9px 12px",
+  border: "1px solid #E5E7EB",
+  borderRadius: 8,
+  background: "#FFF",
+  color: "#8B1E3F",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
 };
