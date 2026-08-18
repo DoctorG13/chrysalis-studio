@@ -9,6 +9,7 @@ export default function DashboardPage({
   clients = [],
   jobs = [],
   onSelectJob,
+  onOpenCalendar,
 }) {
   const allJobs = useMemo(() => {
     if (jobs.length > 0) return jobs;
@@ -30,6 +31,7 @@ export default function DashboardPage({
         clients={clients}
         jobs={allJobs}
         onSelectJob={onSelectJob}
+        onOpenCalendar={onOpenCalendar}
       />
 
       <section style={sectionStackStyle}>
