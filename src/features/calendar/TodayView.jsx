@@ -8,35 +8,21 @@ import {
 
 function parseCalendarDate(value) {
   if (!value) return null;
-
   if (typeof value === "string" && /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(value)) {
     const [day, month, year] = value.split("/").map(Number);
     const date = new Date(year, month - 1, day);
-
-    return date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day
-      ? date
-      : null;
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
   }
-
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     const [year, month, day] = value.slice(0, 10).split("-").map(Number);
     return new Date(year, month - 1, day);
   }
-
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function sameDay(a, b) {
-  return Boolean(
-    a &&
-      b &&
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-  );
+  return Boolean(a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate());
 }
 
 function clientName(client) {
@@ -46,42 +32,25 @@ function clientName(client) {
 }
 
 function findClient(job, clients) {
-  return clients.find(
-    (client) => String(client.id) === String(job?.clientId)
-  );
+  return clients.find((client) => String(client.id) === String(job?.clientId));
 }
 
 function formatTime(value) {
   if (!value) return "Time not set";
-
   const text = String(value).trim();
   const match = text.match(/^(\d{1,2}):(\d{2})/);
-
   if (!match) return text;
-
   const hours = Number(match[1]);
-  const minutes = match[2];
-
-  if (hours < 0 || hours > 23) return text;
-
-  return `${hours % 12 || 12}:${minutes} ${hours >= 12 ? "PM" : "AM"}`;
+  return `${hours % 12 || 12}:${match[2]} ${hours >= 12 ? "PM" : "AM"}`;
 }
 
 function getOutstanding(job) {
-  if (job?.balance !== undefined && job?.balance !== null) {
-    return Number(job.balance) || 0;
-  }
-
-  if (job?.outstanding !== undefined && job?.outstanding !== null) {
-    return Number(job.outstanding) || 0;
-  }
-
+  if (job?.balance !== undefined && job?.balance !== null) return Math.max(Number(job.balance) || 0, 0);
+  if (job?.outstanding !== undefined && job?.outstanding !== null) return Math.max(Number(job.outstanding) || 0, 0);
+  const invoiceBalance = (job?.invoices || []).reduce((total, invoice) => total + Math.max(Number(invoice.balance) || 0, 0), 0);
+  if (invoiceBalance > 0) return invoiceBalance;
   const quote = Number(job?.price || 0);
-  const paid = (job?.payments || []).reduce(
-    (total, payment) => total + Number(payment.amount || 0),
-    0
-  );
-
+  const paid = (job?.payments || []).reduce((total, payment) => total + Number(payment.amount || 0), 0);
   return Math.max(quote - paid, 0);
 }
 
@@ -90,18 +59,11 @@ function jobReference(job) {
 }
 
 function jobTitle(job) {
-  return (
-    job?.name ||
-    job?.title ||
-    job?.garmentType ||
-    job?.garment ||
-    "Job"
-  );
+  return job?.name || job?.title || job?.garmentType || job?.garment || "Job";
 }
 
 function isActiveJob(job) {
   const status = String(job?.status || "").trim().toLowerCase();
-
   return !["collected", "cancelled", "completed"].includes(status);
 }
 
@@ -112,138 +74,81 @@ function getStatusColour(job) {
 
 function isOverdueJob(job, today) {
   if (job?.overdue === true) return true;
-
   const dueDate = parseJobDate(job?.dueDate);
   if (!dueDate || !isActiveJob(job)) return false;
-
-  const startOfToday = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
-
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   return dueDate < startOfToday;
 }
 
 function sortActiveJobs(a, b) {
-  if (a.overdue !== b.overdue) {
-    return a.overdue ? -1 : 1;
-  }
-
+  if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
   const aDate = parseJobDate(a.job.dueDate)?.getTime() ?? Number.POSITIVE_INFINITY;
   const bDate = parseJobDate(b.job.dueDate)?.getTime() ?? Number.POSITIVE_INFINITY;
-
   if (aDate !== bDate) return aDate - bDate;
-
   const aWorkflow = JOB_WORKFLOW.indexOf(a.job.status);
   const bWorkflow = JOB_WORKFLOW.indexOf(b.job.status);
-
-  if (aWorkflow !== bWorkflow) {
-    return (aWorkflow < 0 ? 999 : aWorkflow) - (bWorkflow < 0 ? 999 : bWorkflow);
-  }
-
+  if (aWorkflow !== bWorkflow) return (aWorkflow < 0 ? 999 : aWorkflow) - (bWorkflow < 0 ? 999 : bWorkflow);
   return jobReference(a.job).localeCompare(jobReference(b.job));
 }
 
 function collectAppointments(clients, today) {
   const appointments = [];
-
   clients.forEach((client) => {
     (client.appointments || []).forEach((appointment) => {
       const date = parseCalendarDate(appointment.date);
-
       if (!date || !sameDay(date, today)) return;
-
-      appointments.push({
-        ...appointment,
-        client,
-        clientName: clientName(client),
-      });
+      appointments.push({ ...appointment, client, clientName: clientName(client) });
     });
   });
-
-  appointments.sort((a, b) =>
-    String(a.time || "99:99").localeCompare(String(b.time || "99:99"))
-  );
-
-  return appointments;
+  return appointments.sort((a, b) => String(a.time || "99:99").localeCompare(String(b.time || "99:99")));
 }
 
 function collectFittings(clients, today) {
   const fittings = [];
-
   clients.forEach((client) => {
     (client.fittings || []).forEach((fitting) => {
       const date = parseCalendarDate(fitting.date);
-
       if (!date || !sameDay(date, today)) return;
-
-      fittings.push({
-        ...fitting,
-        client,
-        clientName: clientName(client),
-      });
+      fittings.push({ ...fitting, client, clientName: clientName(client) });
     });
   });
-
-  fittings.sort((a, b) =>
-    String(a.time || "99:99").localeCompare(String(b.time || "99:99"))
-  );
-
-  return fittings;
+  return fittings.sort((a, b) => String(a.time || "99:99").localeCompare(String(b.time || "99:99")));
 }
 
-export default function TodayView({
-  clients = [],
-  jobs = [],
-  today = new Date(),
-  onOpenClient,
-  onOpenJob,
-}) {
+function collectOutstandingPayments(jobs, clients) {
+  return jobs
+    .filter(isActiveJob)
+    .map((job) => ({ job, client: findClient(job, clients), outstanding: getOutstanding(job) }))
+    .filter(({ outstanding }) => outstanding > 0)
+    .sort((a, b) => b.outstanding - a.outstanding);
+}
+
+export default function TodayView({ clients = [], jobs = [], today = new Date(), onOpenClient, onOpenJob }) {
   const todayData = useMemo(() => {
     const appointments = collectAppointments(clients, today);
     const fittings = collectFittings(clients, today);
-
     const activeJobs = jobs
       .filter(isActiveJob)
-      .map((job) => ({
-        job,
-        client: findClient(job, clients),
-        overdue: isOverdueJob(job, today),
-      }))
+      .map((job) => ({ job, client: findClient(job, clients), overdue: isOverdueJob(job, today) }))
       .sort(sortActiveJobs);
-
     const dueJobs = activeJobs.filter(({ job }) => {
       const dueDate = parseCalendarDate(job.dueDate);
       return dueDate && sameDay(dueDate, today);
     });
-
     const overdueJobs = activeJobs.filter(({ overdue }) => overdue);
-
-    return {
-      appointments,
-      fittings,
-      activeJobs,
-      dueJobs,
-      overdueJobs,
-    };
+    const outstandingPayments = collectOutstandingPayments(jobs, clients);
+    const outstandingTotal = outstandingPayments.reduce((total, item) => total + item.outstanding, 0);
+    return { appointments, fittings, activeJobs, dueJobs, overdueJobs, outstandingPayments, outstandingTotal };
   }, [clients, jobs, today]);
 
-  const dateLabel = today.toLocaleDateString("en-AU", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  const dateLabel = today.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 
   return (
     <section style={sectionStyle}>
       <div style={{ marginBottom: 18 }}>
         <div style={eyebrowStyle}>Today View</div>
         <h2 style={headingStyle}>{dateLabel}</h2>
-        <p style={subheadingStyle}>
-          What needs attention in the studio today.
-        </p>
+        <p style={subheadingStyle}>What needs attention in the studio today.</p>
       </div>
 
       <div style={summaryGridStyle}>
@@ -255,81 +160,30 @@ export default function TodayView({
 
       <div style={panelGridStyle}>
         <TodayPanel title="Today's Schedule" icon="📅">
-          {todayData.appointments.length === 0 ? (
-            <EmptyState text="No appointments scheduled for today." />
-          ) : (
-            todayData.appointments.map((appointment) => (
-              <button
-                key={appointment.id}
-                type="button"
-                onClick={() => onOpenClient?.(appointment.client)}
-                style={itemButtonStyle}
-              >
-                <div style={itemIconStyle}>👤</div>
-                <div style={flexItemStyle}>
-                  <div style={itemTitleStyle}>
-                    {appointment.title || appointment.type || "Appointment"}
-                  </div>
-                  <div style={itemMetaStyle}>
-                    {formatTime(appointment.time)}
-                    {appointment.clientName ? ` • ${appointment.clientName}` : ""}
-                  </div>
-                </div>
-                <span style={arrowStyle}>›</span>
-              </button>
-            ))
-          )}
+          {todayData.appointments.length === 0 ? <EmptyState text="No appointments scheduled for today." /> : todayData.appointments.map((appointment) => (
+            <button key={appointment.id} type="button" onClick={() => onOpenClient?.(appointment.client)} style={itemButtonStyle}>
+              <div style={itemIconStyle}>👤</div>
+              <div style={flexItemStyle}><div style={itemTitleStyle}>{appointment.title || appointment.type || "Appointment"}</div><div style={itemMetaStyle}>{formatTime(appointment.time)}{appointment.clientName ? ` • ${appointment.clientName}` : ""}</div></div>
+              <span style={arrowStyle}>›</span>
+            </button>
+          ))}
         </TodayPanel>
 
         <TodayPanel title="Today's Fittings" icon="👗">
-          {todayData.fittings.length === 0 ? (
-            <EmptyState text="No fittings recorded for today." />
-          ) : (
-            todayData.fittings.map((fitting) => (
-              <button
-                key={fitting.id}
-                type="button"
-                onClick={() => onOpenClient?.(fitting.client)}
-                style={itemButtonStyle}
-              >
-                <div style={itemIconStyle}>👗</div>
-                <div style={flexItemStyle}>
-                  <div style={itemTitleStyle}>{fitting.title || "Fitting"}</div>
-                  <div style={itemMetaStyle}>
-                    {formatTime(fitting.time)}
-                    {fitting.clientName ? ` • ${fitting.clientName}` : ""}
-                  </div>
-                </div>
-                <span style={arrowStyle}>›</span>
-              </button>
-            ))
-          )}
+          {todayData.fittings.length === 0 ? <EmptyState text="No fittings recorded for today." /> : todayData.fittings.map((fitting) => (
+            <button key={fitting.id} type="button" onClick={() => onOpenClient?.(fitting.client)} style={itemButtonStyle}>
+              <div style={itemIconStyle}>👗</div>
+              <div style={flexItemStyle}><div style={itemTitleStyle}>{fitting.title || "Fitting"}</div><div style={itemMetaStyle}>{formatTime(fitting.time)}{fitting.clientName ? ` • ${fitting.clientName}` : ""}</div></div>
+              <span style={arrowStyle}>›</span>
+            </button>
+          ))}
         </TodayPanel>
 
         <TodayPanel title="Production Attention" icon="💼">
-          {todayData.dueJobs.length === 0 && todayData.overdueJobs.length === 0 ? (
-            <EmptyState text="No jobs due or overdue today." />
-          ) : (
-            <>
-              {todayData.overdueJobs.map(({ job, client }) => (
-                <JobItem
-                  key={`overdue-${job.id}`}
-                  job={job}
-                  client={client}
-                  overdue
-                  onClick={() => client && onOpenJob?.(client, job.id)}
-                />
-              ))}
-              {todayData.dueJobs.map(({ job, client }) => (
-                <JobItem
-                  key={`due-${job.id}`}
-                  job={job}
-                  client={client}
-                  onClick={() => client && onOpenJob?.(client, job.id)}
-                />
-              ))}
-            </>
-          )}
+          {todayData.dueJobs.length === 0 && todayData.overdueJobs.length === 0 ? <EmptyState text="No jobs due or overdue today." /> : <>
+            {todayData.overdueJobs.map(({ job, client }) => <JobItem key={`overdue-${job.id}`} job={job} client={client} overdue onClick={() => client && onOpenJob?.(client, job.id)} />)}
+            {todayData.dueJobs.map(({ job, client }) => <JobItem key={`due-${job.id}`} job={job} client={client} onClick={() => client && onOpenJob?.(client, job.id)} />)}
+          </>}
         </TodayPanel>
 
         <TodayPanel title="Today at a Glance" icon="🦋">
@@ -339,27 +193,28 @@ export default function TodayView({
             <GlanceRow label="Active jobs" value={todayData.activeJobs.length} />
             <GlanceRow label="Jobs due" value={todayData.dueJobs.length} />
             <GlanceRow label="Overdue jobs" value={todayData.overdueJobs.length} warning={todayData.overdueJobs.length > 0} />
+            <GlanceRow label="Outstanding" value={`$${todayData.outstandingTotal.toFixed(2)}`} warning={todayData.outstandingTotal > 0} />
           </div>
         </TodayPanel>
       </div>
 
       <div style={{ marginTop: 14 }}>
         <TodayPanel title="Active Jobs" icon="💼">
-          {todayData.activeJobs.length === 0 ? (
-            <EmptyState text="No active jobs at the moment." />
-          ) : (
-            <div style={{ display: "grid", gap: 7 }}>
-              {todayData.activeJobs.map(({ job, client, overdue }) => (
-                <ActiveJobItem
-                  key={job.id}
-                  job={job}
-                  client={client}
-                  overdue={overdue}
-                  onClick={() => client && onOpenJob?.(client, job.id)}
-                />
-              ))}
-            </div>
-          )}
+          {todayData.activeJobs.length === 0 ? <EmptyState text="No active jobs at the moment." /> : <div style={{ display: "grid", gap: 7 }}>
+            {todayData.activeJobs.map(({ job, client, overdue }) => <ActiveJobItem key={job.id} job={job} client={client} overdue={overdue} onClick={() => client && onOpenJob?.(client, job.id)} />)}
+          </div>}
+        </TodayPanel>
+      </div>
+
+      <div style={{ marginTop: 14 }}>
+        <TodayPanel title="Outstanding Payments" icon="💰">
+          <div style={paymentSummaryStyle}>
+            <div><div style={paymentTotalLabelStyle}>Total outstanding</div><div style={paymentTotalStyle}>${todayData.outstandingTotal.toFixed(2)}</div></div>
+            <div style={paymentCountStyle}>{todayData.outstandingPayments.length} {todayData.outstandingPayments.length === 1 ? "job" : "jobs"}</div>
+          </div>
+          {todayData.outstandingPayments.length === 0 ? <EmptyState text="No outstanding payments." /> : <div style={{ display: "grid", gap: 7 }}>
+            {todayData.outstandingPayments.map(({ job, client, outstanding }) => <PaymentItem key={job.id} job={job} client={client} outstanding={outstanding} onClick={() => client && onOpenJob?.(client, job.id)} />)}
+          </div>}
         </TodayPanel>
       </div>
     </section>
@@ -367,58 +222,18 @@ export default function TodayView({
 }
 
 function SummaryCard({ icon, label, value, accent = false, warning = false }) {
-  return (
-    <div style={{ padding: 13, border: warning ? "1px solid #E7B5B5" : accent ? "1px solid #E6C9D4" : "1px solid #E8EAED", borderRadius: 9, background: warning ? "#FFF7F7" : accent ? "#FFF9FB" : "#FAFAFA" }}>
-      <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
-      <div style={{ fontSize: 22, lineHeight: 1, fontWeight: 800, color: warning ? "#A62B2B" : "#2F3A3F" }}>{value}</div>
-      <div style={{ marginTop: 5, fontSize: 11, fontWeight: 700, color: "#777" }}>{label}</div>
-    </div>
-  );
+  return <div style={{ padding: 13, border: warning ? "1px solid #E7B5B5" : accent ? "1px solid #E6C9D4" : "1px solid #E8EAED", borderRadius: 9, background: warning ? "#FFF7F7" : accent ? "#FFF9FB" : "#FAFAFA" }}><div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div><div style={{ fontSize: 22, lineHeight: 1, fontWeight: 800, color: warning ? "#A62B2B" : "#2F3A3F" }}>{value}</div><div style={{ marginTop: 5, fontSize: 11, fontWeight: 700, color: "#777" }}>{label}</div></div>;
 }
 
 function TodayPanel({ title, icon, children }) {
-  return (
-    <div style={panelStyle}>
-      <div style={panelHeadingStyle}>
-        <span>{icon}</span>
-        <span>{title}</span>
-      </div>
-      {children}
-    </div>
-  );
+  return <div style={panelStyle}><div style={panelHeadingStyle}><span>{icon}</span><span>{title}</span></div>{children}</div>;
 }
 
-function EmptyState({ text }) {
-  return <div style={emptyStateStyle}>{text}</div>;
-}
+function EmptyState({ text }) { return <div style={emptyStateStyle}>{text}</div>; }
 
 function JobItem({ job, client, overdue = false, onClick }) {
   const outstanding = getOutstanding(job);
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!client}
-      style={{
-        ...itemButtonStyle,
-        borderLeft: overdue ? "4px solid #C62828" : "4px solid #8B1E3F",
-        cursor: client ? "pointer" : "default",
-        opacity: client ? 1 : 0.75,
-      }}
-    >
-      <div style={itemIconStyle}>💼</div>
-      <div style={flexItemStyle}>
-        <div style={itemTitleStyle}>{jobReference(job)}</div>
-        <div style={itemMetaStyle}>
-          {clientName(client) || "Client unavailable"}
-          {overdue ? " • OVERDUE" : " • Due today"}
-        </div>
-      </div>
-      {outstanding > 0 && <span style={balanceStyle}>${outstanding.toFixed(2)}</span>}
-      {client && <span style={arrowStyle}>›</span>}
-    </button>
-  );
+  return <button type="button" onClick={onClick} disabled={!client} style={{ ...itemButtonStyle, borderLeft: overdue ? "4px solid #C62828" : "4px solid #8B1E3F", cursor: client ? "pointer" : "default", opacity: client ? 1 : 0.75 }}><div style={itemIconStyle}>💼</div><div style={flexItemStyle}><div style={itemTitleStyle}>{jobReference(job)}</div><div style={itemMetaStyle}>{clientName(client) || "Client unavailable"}{overdue ? " • OVERDUE" : " • Due today"}</div></div>{outstanding > 0 && <span style={balanceStyle}>${outstanding.toFixed(2)}</span>}{client && <span style={arrowStyle}>›</span>}</button>;
 }
 
 function ActiveJobItem({ job, client, overdue, onClick }) {
@@ -426,245 +241,46 @@ function ActiveJobItem({ job, client, overdue, onClick }) {
   const statusColour = getStatusColour(job);
   const outstanding = getOutstanding(job);
   const dueDate = parseJobDate(job?.dueDate);
-  const dueLabel = dueDate
-    ? dueDate.toLocaleDateString("en-AU", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })
-    : "No due date";
+  const dueLabel = dueDate ? dueDate.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : "No due date";
+  return <button type="button" onClick={onClick} disabled={!client} style={{ ...activeJobButtonStyle, cursor: client ? "pointer" : "default", opacity: client ? 1 : 0.75, borderLeft: overdue ? "4px solid #C62828" : "4px solid #8B1E3F" }}><div style={{ ...statusDotStyle, background: statusColour }} /><div style={flexItemStyle}><div style={activeJobTitleRowStyle}><span style={referenceStyle}>{jobReference(job)}</span><span style={jobNameStyle}>{jobTitle(job)}</span></div><div style={activeJobMetaStyle}>{clientName(client) || "Client unavailable"}{" • Due "}{dueLabel}{overdue && <span style={overdueStyle}> • OVERDUE</span>}</div></div><span style={{ ...statusStyle, borderColor: statusColour, color: statusColour }}>{status}</span>{outstanding > 0 && <span style={balanceStyle}>${outstanding.toFixed(2)}</span>}{client && <span style={arrowStyle}>›</span>}</button>;
+}
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!client}
-      style={{
-        ...activeJobButtonStyle,
-        cursor: client ? "pointer" : "default",
-        opacity: client ? 1 : 0.75,
-        borderLeft: overdue ? "4px solid #C62828" : "4px solid #8B1E3F",
-      }}
-    >
-      <div style={{ ...statusDotStyle, background: statusColour }} />
-      <div style={flexItemStyle}>
-        <div style={activeJobTitleRowStyle}>
-          <span style={referenceStyle}>{jobReference(job)}</span>
-          <span style={jobNameStyle}>{jobTitle(job)}</span>
-        </div>
-        <div style={activeJobMetaStyle}>
-          {clientName(client) || "Client unavailable"}
-          {" • Due "}
-          {dueLabel}
-          {overdue && <span style={overdueStyle}> • OVERDUE</span>}
-        </div>
-      </div>
-      <span style={{ ...statusStyle, borderColor: statusColour, color: statusColour }}>
-        {status}
-      </span>
-      {outstanding > 0 && <span style={balanceStyle}>${outstanding.toFixed(2)}</span>}
-      {client && <span style={arrowStyle}>›</span>}
-    </button>
-  );
+function PaymentItem({ job, client, outstanding, onClick }) {
+  const status = String(job?.status || "Active").trim() || "Active";
+  const statusColour = getStatusColour(job);
+  return <button type="button" onClick={onClick} disabled={!client} style={{ ...activeJobButtonStyle, cursor: client ? "pointer" : "default", opacity: client ? 1 : 0.75, borderLeft: "4px solid #C58A00" }}><div style={{ ...statusDotStyle, background: statusColour }} /><div style={flexItemStyle}><div style={activeJobTitleRowStyle}><span style={referenceStyle}>{jobReference(job)}</span><span style={jobNameStyle}>{jobTitle(job)}</span></div><div style={activeJobMetaStyle}>{clientName(client) || "Client unavailable"}{job?.dueDate ? ` • Due ${parseCalendarDate(job.dueDate)?.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) || job.dueDate}` : " • No due date"}</div></div><span style={{ ...statusStyle, borderColor: statusColour, color: statusColour }}>{status}</span><span style={paymentAmountStyle}>${outstanding.toFixed(2)}</span>{client && <span style={arrowStyle}>›</span>}</button>;
 }
 
 function GlanceRow({ label, value, warning = false }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 10px", borderRadius: 7, background: warning ? "#FFF7F7" : "#F8F8F8" }}>
-      <span style={{ fontSize: 12, color: "#666" }}>{label}</span>
-      <strong style={{ color: warning ? "#A62B2B" : "#2F3A3F" }}>{value}</strong>
-    </div>
-  );
+  return <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 10px", borderRadius: 7, background: warning ? "#FFF7F7" : "#F8F8F8" }}><span style={{ fontSize: 12, color: "#666" }}>{label}</span><strong style={{ color: warning ? "#A62B2B" : "#2F3A3F" }}>{value}</strong></div>;
 }
 
-const sectionStyle = {
-  marginBottom: 24,
-  padding: 20,
-  border: "1px solid #DDDDDD",
-  borderRadius: 12,
-  background: "#FFFFFF",
-};
-
-const eyebrowStyle = {
-  color: "#8B1E3F",
-  fontSize: 12,
-  fontWeight: 800,
-  letterSpacing: 0.5,
-  textTransform: "uppercase",
-};
-
-const headingStyle = {
-  margin: "4px 0 3px",
-  fontSize: 21,
-  color: "#2F3A3F",
-};
-
-const subheadingStyle = {
-  margin: 0,
-  color: "#777",
-  fontSize: 13,
-};
-
-const summaryGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  gap: 10,
-  marginBottom: 18,
-};
-
-const panelGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: 14,
-};
-
-const panelStyle = {
-  border: "1px solid #E8EAED",
-  borderRadius: 10,
-  padding: 14,
-  minWidth: 0,
-};
-
-const panelHeadingStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  marginBottom: 10,
-  fontWeight: 800,
-  color: "#2F3A3F",
-};
-
-const emptyStateStyle = {
-  padding: "14px 10px",
-  color: "#999",
-  fontSize: 13,
-  fontStyle: "italic",
-};
-
-const itemButtonStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  width: "100%",
-  padding: "10px 8px",
-  marginBottom: 6,
-  border: "1px solid #ECEEEF",
-  borderRadius: 8,
-  background: "#FFFFFF",
-  textAlign: "left",
-  fontFamily: "inherit",
-  color: "inherit",
-  cursor: "pointer",
-  boxSizing: "border-box",
-};
-
-const activeJobButtonStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  width: "100%",
-  padding: "11px 10px",
-  border: "1px solid #ECEEEF",
-  borderRadius: 8,
-  background: "#FFFFFF",
-  textAlign: "left",
-  fontFamily: "inherit",
-  color: "inherit",
-  boxSizing: "border-box",
-  cursor: "pointer",
-};
-
-const flexItemStyle = {
-  minWidth: 0,
-  flex: 1,
-};
-
-const itemIconStyle = {
-  width: 28,
-  height: 28,
-  display: "grid",
-  placeItems: "center",
-  flexShrink: 0,
-  borderRadius: 7,
-  background: "#F4F5F6",
-  fontSize: 15,
-};
-
-const itemTitleStyle = {
-  fontSize: 13,
-  fontWeight: 800,
-  color: "#2F3A3F",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const itemMetaStyle = {
-  marginTop: 3,
-  color: "#777",
-  fontSize: 11,
-};
-
-const activeJobTitleRowStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  minWidth: 0,
-};
-
-const referenceStyle = {
-  fontSize: 13,
-  fontWeight: 800,
-  color: "#2F3A3F",
-  whiteSpace: "nowrap",
-};
-
-const jobNameStyle = {
-  minWidth: 0,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-  color: "#666",
-  fontSize: 12,
-};
-
-const activeJobMetaStyle = {
-  marginTop: 4,
-  color: "#777",
-  fontSize: 11,
-};
-
-const statusDotStyle = {
-  width: 9,
-  height: 9,
-  borderRadius: "50%",
-  flexShrink: 0,
-};
-
-const statusStyle = {
-  padding: "4px 8px",
-  border: "1px solid",
-  borderRadius: 999,
-  fontSize: 10,
-  fontWeight: 800,
-  whiteSpace: "nowrap",
-};
-
-const balanceStyle = {
-  color: "#8A5A00",
-  fontSize: 12,
-  fontWeight: 800,
-  whiteSpace: "nowrap",
-};
-
-const overdueStyle = {
-  color: "#A62B2B",
-  fontWeight: 800,
-};
-
-const arrowStyle = {
-  color: "#999",
-  fontSize: 20,
-  lineHeight: 1,
-  flexShrink: 0,
-};
+const sectionStyle = { marginBottom: 24, padding: 20, border: "1px solid #DDDDDD", borderRadius: 12, background: "#FFFFFF" };
+const eyebrowStyle = { color: "#8B1E3F", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" };
+const headingStyle = { margin: "4px 0 3px", fontSize: 21, color: "#2F3A3F" };
+const subheadingStyle = { margin: 0, color: "#777", fontSize: 13 };
+const summaryGridStyle = { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 18 };
+const panelGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 };
+const panelStyle = { border: "1px solid #E8EAED", borderRadius: 10, padding: 14, minWidth: 0 };
+const panelHeadingStyle = { display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontWeight: 800, color: "#2F3A3F" };
+const emptyStateStyle = { padding: "14px 10px", color: "#999", fontSize: 13, fontStyle: "italic" };
+const itemButtonStyle = { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 8px", marginBottom: 6, border: "1px solid #ECEEEF", borderRadius: 8, background: "#FFFFFF", textAlign: "left", fontFamily: "inherit", color: "inherit", cursor: "pointer", boxSizing: "border-box" };
+const activeJobButtonStyle = { display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "11px 10px", border: "1px solid #ECEEEF", borderRadius: 8, background: "#FFFFFF", textAlign: "left", fontFamily: "inherit", color: "inherit", boxSizing: "border-box", cursor: "pointer" };
+const flexItemStyle = { minWidth: 0, flex: 1 };
+const itemIconStyle = { width: 28, height: 28, display: "grid", placeItems: "center", flexShrink: 0, borderRadius: 7, background: "#F4F5F6", fontSize: 15 };
+const itemTitleStyle = { fontSize: 13, fontWeight: 800, color: "#2F3A3F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const itemMetaStyle = { marginTop: 3, color: "#777", fontSize: 11 };
+const activeJobTitleRowStyle = { display: "flex", alignItems: "center", gap: 8, minWidth: 0 };
+const referenceStyle = { fontSize: 13, fontWeight: 800, color: "#2F3A3F", whiteSpace: "nowrap" };
+const jobNameStyle = { minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#666", fontSize: 12 };
+const activeJobMetaStyle = { marginTop: 4, color: "#777", fontSize: 11 };
+const statusDotStyle = { width: 9, height: 9, borderRadius: "50%", flexShrink: 0 };
+const statusStyle = { padding: "4px 8px", border: "1px solid", borderRadius: 999, fontSize: 10, fontWeight: 800, whiteSpace: "nowrap" };
+const balanceStyle = { color: "#8A5A00", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap" };
+const paymentAmountStyle = { color: "#8A5A00", fontSize: 14, fontWeight: 900, whiteSpace: "nowrap" };
+const paymentSummaryStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "10px 12px", marginBottom: 10, borderRadius: 8, background: "#FFF9EA", border: "1px solid #F0D79A" };
+const paymentTotalLabelStyle = { fontSize: 11, color: "#8A5A00", fontWeight: 700 };
+const paymentTotalStyle = { marginTop: 2, fontSize: 20, color: "#8A5A00", fontWeight: 900 };
+const paymentCountStyle = { fontSize: 12, color: "#8A5A00", fontWeight: 800 };
+const overdueStyle = { color: "#A62B2B", fontWeight: 800 };
+const arrowStyle = { color: "#999", fontSize: 20, lineHeight: 1, flexShrink: 0 };
