@@ -147,7 +147,7 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
       const due = parseCalendarDate(job.dueDate);
       if (!due || !sameDay(due, date)) return;
 
-      const client = clients.find((candidate) => candidate.id === job.clientId);
+      const client = clients.find((candidate) => String(candidate.id) === String(job.clientId));
 
       events.push({
         id: job.id,
@@ -224,7 +224,16 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
         <CalendarToolbar monthLabel={monthLabel(displayMonth)} onPrevious={goPrevious} onToday={goToday} onNext={goNext} />
       </div>
 
-      <TodayView clients={clients} jobs={jobs} today={today} onOpenClient={openClient} onOpenJob={openJob} />
+      <div
+        style={{
+          margin: "0 0 24px",
+          padding: "0 0 2px",
+          minHeight: 1,
+        }}
+        aria-label="Today View"
+      >
+        <TodayView clients={clients} jobs={jobs} today={today} onOpenClient={openClient} onOpenJob={openJob} />
+      </div>
 
       <CalendarGrid
         calendarDays={calendarDays}
