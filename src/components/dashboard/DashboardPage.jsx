@@ -1,9 +1,7 @@
 import { useMemo } from "react";
 
 import WelcomeCard from "./WelcomeCard";
-import StatsGrid from "./StatsGrid";
 import JobsDueThisWeek from "./JobsDueThisWeek";
-import QuickActions from "./QuickActions";
 import RecentActivity from "./RecentActivity";
 import TodaysWorkPanel from "./TodaysWorkPanel";
 
@@ -12,8 +10,6 @@ import { parseJobDate } from "../../constants/jobWorkflow";
 export default function DashboardPage({
   clients = [],
   jobs = [],
-
-  onNewClient,
 
   onClientsClick,
   onJobsClick,
@@ -75,11 +71,11 @@ export default function DashboardPage({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 30,
-        marginBottom: 40,
+        gap: 18,
+        marginBottom: 28,
       }}
     >
-      <WelcomeCard clients={clients} dashboard={dashboard} />
+      <WelcomeCard />
 
       <TodaysWorkPanel
         clients={clients}
@@ -87,19 +83,11 @@ export default function DashboardPage({
         onSelectJob={onSelectJob}
       />
 
-      <StatsGrid
-        dashboard={dashboard}
-        onClientsClick={onClientsClick}
-        onJobsClick={onJobsClick}
-        onAppointmentsClick={onAppointmentsClick}
-        onPaymentsClick={onPaymentsClick}
-      />
-
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit,minmax(420px,1fr))",
-          gap: 24,
+          gap: 18,
         }}
       >
         <JobsDueThisWeek
@@ -114,8 +102,6 @@ export default function DashboardPage({
           dashboard={dashboard}
         />
       </div>
-
-      <QuickActions onNewClient={onNewClient} />
     </div>
   );
 }
