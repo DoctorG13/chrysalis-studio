@@ -487,7 +487,7 @@ export default function JobEditor({
 
           <div style={{ flex: 1 }}>
             <Button onClick={onCancel}>
-              ✕ Cancel
+              ✕ Close
             </Button>
           </div>
 
