@@ -4,7 +4,7 @@ import EmptyState from "../common/EmptyState";
 import { getRecentActivity } from "../../utils/dashboard";
 
 export default function RecentActivity({ clients = [], jobs = [] }) {
-  const activity = [
+  const rawActivity = [
     ...getRecentActivity(clients),
     ...jobs
       .filter(
@@ -28,7 +28,9 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
           job.dueDate ??
           new Date().toISOString(),
       })),
-  ]
+  ];
+
+  const activity = groupActivity(rawActivity)
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 5);
 
@@ -41,7 +43,7 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
           message="As you work throughout the day, activity will appear here."
         />
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        <div style={activityListStyle}>
           {activity.map((item) => (
             <ActivityRow key={item.id} item={item} />
           ))}
@@ -51,50 +53,59 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
   );
 }
 
+function groupActivity(items) {
+  const groups = new Map();
+
+  items.forEach((item) => {
+    const key = [
+      item.reference || "",
+      item.client || "",
+      item.title || "",
+      item.description || "",
+    ].join("|");
+
+    const existing = groups.get(key);
+
+    if (!existing) {
+      groups.set(key, {
+        ...item,
+        id: `activity-${key}`,
+        count: 1,
+      });
+      return;
+    }
+
+    existing.count += 1;
+
+    if (new Date(item.date) > new Date(existing.date)) {
+      existing.date = item.date;
+    }
+  });
+
+  return Array.from(groups.values());
+}
+
 function ActivityRow({ item }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) auto",
-        alignItems: "center",
-        gap: 12,
-        padding: "9px 12px",
-        border: "1px solid #E5E7EB",
-        borderRadius: 8,
-        background: "#FFF",
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+    <div style={activityRowStyle}>
+      <div style={activityContentStyle}>
+        <div style={activityTitleLineStyle}>
           {item.reference && (
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                color: "#8B1E3F",
-                letterSpacing: 0.6,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {item.reference}
-            </span>
+            <span style={referenceStyle}>{item.reference}</span>
           )}
-          <span style={{ fontWeight: 600 }}>{item.title}</span>
+          <span style={titleStyle}>{item.title}</span>
+          {item.count > 1 && (
+            <span style={countStyle}>{item.count} updates</span>
+          )}
         </div>
-        {item.client && (
-          <span style={{ fontSize: 12, color: "#777" }}>{item.client}</span>
-        )}
-        {item.description && (
-          <span style={{ fontSize: 12, color: "#666", marginLeft: 8 }}>
-            · {item.description}
-          </span>
-        )}
+
+        <div style={activityMetaStyle}>
+          {item.client && <span>{item.client}</span>}
+          {item.description && <span> · {item.description}</span>}
+        </div>
       </div>
 
-      <div style={{ fontSize: 11, color: "#999", whiteSpace: "nowrap" }}>
-        {formatActivityDate(item.date)}
-      </div>
+      <span style={dateStyle}>{formatActivityDate(item.date)}</span>
     </div>
   );
 }
@@ -123,3 +134,67 @@ function formatActivityDate(value) {
   if (Number.isNaN(date.getTime())) return "Unknown date";
   return date.toLocaleDateString("en-AU");
 }
+
+const activityListStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
+};
+
+const activityRowStyle = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: 12,
+  padding: "9px 12px",
+  border: "1px solid #E5E7EB",
+  borderRadius: 8,
+  background: "#FFF",
+};
+
+const activityContentStyle = {
+  minWidth: 0,
+};
+
+const activityTitleLineStyle = {
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: 7,
+};
+
+const referenceStyle = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: "#8B1E3F",
+  letterSpacing: 0.6,
+  whiteSpace: "nowrap",
+};
+
+const titleStyle = {
+  fontWeight: 600,
+};
+
+const countStyle = {
+  padding: "2px 6px",
+  borderRadius: 999,
+  background: "#F3F4F6",
+  color: "#66727A",
+  fontSize: 10,
+  fontWeight: 700,
+};
+
+const activityMetaStyle = {
+  marginTop: 2,
+  color: "#777",
+  fontSize: 12,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
+
+const dateStyle = {
+  fontSize: 11,
+  color: "#999",
+  whiteSpace: "nowrap",
+};
