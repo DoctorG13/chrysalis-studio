@@ -35,13 +35,18 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
 
   useEffect(() => {
     if (!initialJobId) return;
-    setOpenSections((prev) => ({ ...prev, jobs: true }));
+    setOpenSections((prev) => ({ ...Object.fromEntries(Object.keys(prev).map((key) => [key, false])), jobs: true }));
   }, [initialJobId]);
 
   if (!currentClient) return null;
 
   function toggleSection(section) {
-    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+    setOpenSections((prev) => {
+      const isCurrentlyOpen = prev[section];
+      return Object.fromEntries(
+        Object.keys(prev).map((key) => [key, key === section ? !isCurrentlyOpen : false])
+      );
+    });
   }
 
   function handleSave() {
@@ -115,7 +120,7 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
           <Button onClick={handleSave}>💾 Save</Button>
         </div>
         <div style={{ flex: 1 }}>
-          <Button onClick={onClose}>✕ Cancel</Button>
+          <Button onClick={onClose}>✕ Close</Button>
         </div>
         <div style={{ flex: 1 }}>
           <Button onClick={handleDelete}>🗑 Delete</Button>
