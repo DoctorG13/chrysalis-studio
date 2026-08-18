@@ -214,7 +214,13 @@ export default function JobPayments({ job, onChange }) {
               />
               <span>%</span>
             </label>
-            <button type="button" onClick={() => openNewPayment("Deposit")} style={primaryButtonStyle}>
+            <button
+              type="button"
+              onClick={() => openNewPayment("Deposit")}
+              style={{ ...primaryButtonStyle, ...(outstanding <= 0 ? disabledButtonStyle : {}) }}
+              disabled={outstanding <= 0}
+              title={outstanding <= 0 ? "This job is fully paid." : "Record a deposit"}
+            >
               + Record Deposit
             </button>
           </div>
@@ -259,7 +265,13 @@ export default function JobPayments({ job, onChange }) {
                 💳 Pay Outstanding {formatCurrency(outstanding)}
               </button>
             )}
-            <button type="button" onClick={() => openNewPayment("Payment")} style={secondaryButtonStyle}>
+            <button
+              type="button"
+              onClick={() => openNewPayment("Payment")}
+              style={{ ...secondaryButtonStyle, ...(outstanding <= 0 ? disabledButtonStyle : {}) }}
+              disabled={outstanding <= 0}
+              title={outstanding <= 0 ? "This job is fully paid." : "Record a payment"}
+            >
               + Record Payment
             </button>
           </div>
@@ -291,6 +303,7 @@ export default function JobPayments({ job, onChange }) {
           payment={editingPayment.id ? editingPayment : null}
           initialPaymentType={editingPayment.paymentType || "Payment"}
           initialAmount={editingPayment.amount || ""}
+          maxAmount={getEditableOutstanding()}
           onSave={handleSavePayment}
           onClose={() => setEditingPayment(null)}
         />
@@ -357,7 +370,7 @@ function PaymentRow({ payment, onEdit, onDelete }) {
   );
 }
 
-function PaymentModal({ payment, initialPaymentType, initialAmount, onSave, onClose }) {
+function PaymentModal({ payment, initialPaymentType, initialAmount, maxAmount, onSave, onClose }) {
   const [amount, setAmount] = useState(payment?.amount != null ? String(payment.amount) : String(initialAmount || ""));
   const [date, setDate] = useState(formatDateForInput(payment?.date || ""));
   const [method, setMethod] = useState(payment?.method || "");
@@ -365,12 +378,45 @@ function PaymentModal({ payment, initialPaymentType, initialAmount, onSave, onCl
   const [paymentType, setPaymentType] = useState(payment?.paymentType || initialPaymentType || "Payment");
   const [error, setError] = useState("");
 
+  const numericAmount = Number(amount);
+  const hasValidAmount = Number.isFinite(numericAmount) && numericAmount > 0;
+  const exceedsMaximum = maxAmount !== null && maxAmount !== undefined && hasValidAmount && numericAmount > Number(maxAmount) + 0.005;
+  const maximumLabel = formatCurrency(Number(maxAmount || 0));
+
+  function handleAmountChange(event) {
+    const nextAmount = event.target.value;
+    setAmount(nextAmount);
+
+    const nextNumericAmount = Number(nextAmount);
+
+    if (nextAmount === "") {
+      setError("");
+      return;
+    }
+
+    if (!Number.isFinite(nextNumericAmount) || nextNumericAmount <= 0) {
+      setError("Please enter a payment amount greater than $0.");
+      return;
+    }
+
+    if (maxAmount !== null && maxAmount !== undefined && nextNumericAmount > Number(maxAmount) + 0.005) {
+      setError(`That amount is too much. The maximum payment for this job is ${maximumLabel}.`);
+      return;
+    }
+
+    setError("");
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
-    const numericAmount = Number(amount);
 
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    if (!hasValidAmount) {
       setError("Please enter a payment amount greater than $0.");
+      return;
+    }
+
+    if (exceedsMaximum) {
+      setError(`That amount is too much. The maximum payment for this job is ${maximumLabel}.`);
       return;
     }
 
@@ -388,6 +434,8 @@ function PaymentModal({ payment, initialPaymentType, initialAmount, onSave, onCl
     });
   }
 
+  const saveDisabled = !hasValidAmount || exceedsMaximum || Number(maxAmount || 0) <= 0;
+
   return (
     <Modal title={payment ? "Edit Payment" : paymentType === "Deposit" ? "Record Deposit" : "Record Payment"} onClose={onClose}>
       <form onSubmit={handleSubmit}>
@@ -399,7 +447,26 @@ function PaymentModal({ payment, initialPaymentType, initialAmount, onSave, onCl
         </FormField>
 
         <FormField label="Amount">
-          <input autoFocus type="number" min="0.01" step="0.01" value={amount} onChange={(event) => { setAmount(event.target.value); setError(""); }} placeholder="0.00" style={inputStyle} />
+          <input
+            autoFocus
+            type="number"
+            min="0.01"
+            max={maxAmount > 0 ? Number(maxAmount).toFixed(2) : undefined}
+            step="0.01"
+            value={amount}
+            onChange={handleAmountChange}
+            placeholder="0.00"
+            style={{ ...inputStyle, ...(exceedsMaximum ? invalidInputStyle : {}) }}
+            aria-invalid={exceedsMaximum}
+            aria-describedby={error ? "payment-amount-error" : undefined}
+          />
+          {maxAmount > 0 && (
+            <div style={amountHintStyle}>Maximum available: <strong>{maximumLabel}</strong></div>
+          )}
+          {maxAmount <= 0 && (
+            <div style={amountHintErrorStyle}>This job has no outstanding balance. No further payment can be recorded.</div>
+          )}
+          {error && <div id="payment-amount-error" style={inlineErrorStyle}>{error}</div>}
         </FormField>
 
         <FormField label="Payment Date">
@@ -422,11 +489,11 @@ function PaymentModal({ payment, initialPaymentType, initialAmount, onSave, onCl
           <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder={paymentType === "Deposit" ? "e.g. Initial deposit" : "e.g. Final payment"} style={inputStyle} />
         </FormField>
 
-        {error && <div style={errorStyle}>{error}</div>}
-
         <div style={modalActionsStyle}>
           <button type="button" onClick={onClose} style={secondaryButtonStyle}>Cancel</button>
-          <button type="submit" style={primaryButtonStyle}>💾 Save {paymentType}</button>
+          <button type="submit" disabled={saveDisabled} style={{ ...primaryButtonStyle, ...(saveDisabled ? disabledButtonStyle : {}) }}>
+            💾 Save {paymentType}
+          </button>
         </div>
       </form>
     </Modal>
@@ -535,6 +602,11 @@ const paymentActionsStyle = { display: "flex", gap: 8, marginTop: 10, paddingTop
 const depositBadgeStyle = { padding: "3px 7px", borderRadius: 999, background: "#F4C33F", color: "#24344A", fontSize: 9, fontWeight: 800, letterSpacing: 0.5 };
 const emptyStateStyle = { marginTop: 12, padding: 20, borderRadius: 12, background: "#F8F9FA", border: "1px solid #E8EAED", textAlign: "center", color: "#888", fontSize: 13 };
 const errorStyle = { marginTop: 16, padding: 12, borderRadius: 10, background: "#FEE2E2", color: "#991B1B", fontSize: 13, fontWeight: 600 };
+const inlineErrorStyle = { marginTop: 7, padding: "8px 10px", borderRadius: 8, background: "#FEE2E2", color: "#991B1B", fontSize: 12, fontWeight: 700 };
+const amountHintStyle = { marginTop: 6, fontSize: 11, color: "#777" };
+const amountHintErrorStyle = { marginTop: 6, padding: "8px 10px", borderRadius: 8, background: "#FEF2F2", color: "#991B1B", fontSize: 11, fontWeight: 700 };
+const invalidInputStyle = { borderColor: "#DC2626", background: "#FFF7F7", boxShadow: "0 0 0 1px #DC2626" };
+const disabledButtonStyle = { opacity: 0.5, cursor: "not-allowed" };
 const successStyle = { marginTop: 16, padding: 12, borderRadius: 10, background: "#DCFCE7", color: "#166534", fontSize: 13, fontWeight: 600 };
 const inputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #D9DDE1", borderRadius: 9, background: "#FFFFFF", padding: "10px 11px", fontSize: 14, color: "#2F3A3F", outline: "none" };
 const primaryButtonStyle = { border: "none", background: "#F4C33F", color: "#24344A", borderRadius: 10, padding: "11px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer" };
