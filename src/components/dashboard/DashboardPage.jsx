@@ -10,25 +10,15 @@ import { parseJobDate } from "../../constants/jobWorkflow";
 export default function DashboardPage({
   clients = [],
   jobs = [],
-
-  onClientsClick,
-  onJobsClick,
-  onAppointmentsClick,
-  onPaymentsClick,
-
   onSelectJob,
 }) {
   const allJobs = useMemo(() => {
-    if (jobs.length > 0) {
-      return jobs;
-    }
-
+    if (jobs.length > 0) return jobs;
     return clients.flatMap((client) => client.jobs ?? []);
   }, [clients, jobs]);
 
   const dashboard = useMemo(() => {
     const today = new Date();
-
     const startOfToday = new Date(
       today.getFullYear(),
       today.getMonth(),
@@ -71,8 +61,8 @@ export default function DashboardPage({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 18,
-        marginBottom: 28,
+        gap: 16,
+        marginBottom: 24,
       }}
     >
       <WelcomeCard />
@@ -87,20 +77,12 @@ export default function DashboardPage({
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit,minmax(420px,1fr))",
-          gap: 18,
+          gap: 16,
+          alignItems: "start",
         }}
       >
-        <JobsDueThisWeek
-          clients={clients}
-          jobs={allJobs}
-          dashboard={dashboard}
-        />
-
-        <RecentActivity
-          clients={clients}
-          jobs={allJobs}
-          dashboard={dashboard}
-        />
+        <JobsDueThisWeek jobs={allJobs} />
+        <RecentActivity clients={clients} jobs={allJobs} />
       </div>
     </div>
   );
