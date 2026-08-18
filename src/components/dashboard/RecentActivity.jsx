@@ -8,8 +8,8 @@ import { getRecentActivity } from "../../utils/dashboard";
 export default function RecentActivity({ clients = [], jobs = [] }) {
   const [showAll, setShowAll] = useState(false);
 
-  const groupedActivity = useMemo(() => {
-    const rawActivity = [
+  const rawActivity = useMemo(
+    () => [
       ...getRecentActivity(clients),
       ...jobs
         .filter(
@@ -33,19 +33,33 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
             job.dueDate ??
             new Date().toISOString(),
         })),
-    ];
+    ],
+    [clients, jobs]
+  );
 
-    return groupActivity(rawActivity).sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
-    );
-  }, [clients, jobs]);
+  const groupedActivity = useMemo(
+    () =>
+      groupActivity(rawActivity).sort(
+        (a, b) => new Date(b.date) - new Date(a.date)
+      ),
+    [rawActivity]
+  );
 
-  const activity = showAll ? groupedActivity : groupedActivity.slice(0, 5);
-  const hasMore = groupedActivity.length > 5;
+  const sortedRawActivity = useMemo(
+    () =>
+      [...rawActivity].sort(
+        (a, b) => new Date(b.date) - new Date(a.date)
+      ),
+    [rawActivity]
+  );
+
+  const compactActivity = groupedActivity.slice(0, 5);
+  const visibleActivity = showAll ? sortedRawActivity : compactActivity;
+  const hasMore = rawActivity.length > compactActivity.length || groupedActivity.length > 5;
 
   return (
     <Card title="Recent Activity">
-      {groupedActivity.length === 0 ? (
+      {rawActivity.length === 0 ? (
         <EmptyState
           icon="📝"
           title="No Recent Activity"
@@ -54,9 +68,16 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
       ) : (
         <>
           <div style={activityListStyle}>
-            {activity.map((item) => (
-              <ActivityRow key={item.id} item={item} />
-            ))}
+            {showAll
+              ? visibleActivity.map((item, index) => (
+                  <ActivityRow
+                    key={`${item.id ?? "activity"}-${index}`}
+                    item={item}
+                  />
+                ))
+              : visibleActivity.map((item) => (
+                  <ActivityRow key={item.id} item={item} />
+                ))}
           </div>
 
           {hasMore && (
@@ -65,7 +86,9 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
               onClick={() => setShowAll((current) => !current)}
               style={viewAllButtonStyle}
             >
-              {showAll ? "Show less" : `View all activity (${groupedActivity.length})`}
+              {showAll
+                ? "Show less"
+                : `View all activity (${rawActivity.length})`}
               <span aria-hidden="true">{showAll ? " ↑" : " →"}</span>
             </button>
           )}
