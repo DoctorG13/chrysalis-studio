@@ -137,14 +137,14 @@ function AttentionSection({ priorities, clients, onSelectJob }) {
       {priorities.length === 0 ? (
         <div style={attentionEmptyStyle}>🎉 Nothing urgent today.</div>
       ) : (
-        <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "grid", gap: 7 }}>
           {priorities.map((job) => {
             const priority = getPriority(job);
             const client = clients.find((candidate) => String(candidate.id) === String(job.clientId));
 
             return (
               <button key={job.id ?? job.reference ?? job.name} type="button" onClick={() => onSelectJob?.(job)} style={attentionRowStyle}>
-                <span style={{ fontSize: 14 }}>{priority.icon}</span>
+                <span style={{ fontSize: 15 }}>{priority.icon}</span>
                 <strong style={attentionJobStyle}>{job.reference || job.name || job.title || "Job"}</strong>
                 <span style={attentionClientStyle}>{getClientName(client)}</span>
                 <span style={attentionActionStyle}>{job.nextAction || priority.label}</span>
@@ -163,7 +163,7 @@ function MorningSection({ title, empty, children, footer }) {
   return (
     <section style={sectionStyle}>
       <h3 style={sectionTitleStyle}>{title}</h3>
-      {!hasItems ? <p style={emptyStyle}>{empty}</p> : <div style={{ display: "grid", gap: 6 }}>{children}</div>}
+      {!hasItems ? <p style={emptyStyle}>{empty}</p> : <div style={{ display: "grid", gap: 7 }}>{children}</div>}
       {footer && <div style={footerStyle}>{footer}</div>}
     </section>
   );
@@ -250,24 +250,24 @@ function formatCurrency(value) {
 }
 
 const summaryGridStyle = { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8, marginBottom: 12 };
-const summaryItemStyle = { display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#FAF9F6", border: "1px solid #E5E7EB", borderRadius: 8 };
+const summaryItemStyle = { display: "flex", alignItems: "center", gap: 8, padding: "9px 11px", background: "#FAF9F6", border: "1px solid #E5E7EB", borderRadius: 8 };
 const sectionGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 };
 const sectionStyle = { border: "1px solid #E5E7EB", borderRadius: 9, padding: 11, background: "#FFFFFF", minWidth: 0 };
 const sectionTitleStyle = { margin: "0 0 7px", fontSize: 14, color: "#2F3A3F" };
-const itemStyle = { display: "flex", alignItems: "flex-start", gap: 8, padding: "7px 8px", borderRadius: 7, background: "#FAFAFA" };
-const actionRowStyle = { ...itemStyle, width: "100%", border: "1px solid transparent", textAlign: "left", cursor: "pointer", font: "inherit" };
+const itemStyle = { display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 9px", borderRadius: 7, background: "#FAFAFA" };
+const actionRowStyle = { ...itemStyle, width: "100%", minHeight: 42, border: "1px solid #E5E7EB", textAlign: "left", cursor: "pointer", font: "inherit", background: "#FAFAFA" };
 const iconStyle = { flexShrink: 0, fontSize: 16 };
 const contentStyle = { minWidth: 0, flex: 1, display: "grid", gap: 1 };
-const actionMetaStyle = { whiteSpace: "nowrap", fontSize: 12, color: "#66727A" };
+const actionMetaStyle = { whiteSpace: "nowrap", fontSize: 13, color: "#66727A" };
 const emptyStyle = { margin: 0, color: "#999", fontStyle: "italic", fontSize: 12 };
 const footerStyle = { marginTop: 8, paddingTop: 7, borderTop: "1px solid #E5E7EB", fontWeight: 700, fontSize: 12, color: "#8A5A00" };
 const attentionStyle = { marginTop: 12, paddingTop: 12, borderTop: "1px solid #E5E7EB" };
 const attentionHeaderStyle = { display: "flex", alignItems: "center", gap: 8, marginBottom: 7 };
 const attentionTitleStyle = { margin: 0, fontSize: 14, color: "#2F3A3F" };
-const attentionCountStyle = { minWidth: 20, padding: "2px 6px", borderRadius: 999, background: "#F3F4F6", color: "#555", fontSize: 11, fontWeight: 700, textAlign: "center" };
-const attentionEmptyStyle = { padding: "6px 0", color: "#777", fontSize: 12 };
-const attentionRowStyle = { display: "grid", gridTemplateColumns: "18px minmax(110px, 1.2fr) minmax(100px, 1fr) minmax(110px, 1fr) auto", alignItems: "center", gap: 8, width: "100%", padding: "7px 8px", border: "1px solid #E5E7EB", borderRadius: 7, background: "#FAFAFA", textAlign: "left", cursor: "pointer", font: "inherit" };
+const attentionCountStyle = { minWidth: 20, padding: "3px 7px", borderRadius: 999, background: "#F3F4F6", color: "#555", fontSize: 11, fontWeight: 700, textAlign: "center" };
+const attentionEmptyStyle = { padding: "7px 0", color: "#777", fontSize: 12 };
+const attentionRowStyle = { display: "grid", gridTemplateColumns: "18px minmax(110px, 1.2fr) minmax(100px, 1fr) minmax(110px, 1fr) auto", alignItems: "center", gap: 8, width: "100%", minHeight: 44, padding: "8px 10px", border: "1px solid #E5E7EB", borderRadius: 7, background: "#FAFAFA", textAlign: "left", cursor: "pointer", font: "inherit" };
 const attentionJobStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 13 };
 const attentionClientStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#66727A", fontSize: 12 };
 const attentionActionStyle = { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#555", fontSize: 12 };
-const attentionOpenStyle = { whiteSpace: "nowrap", fontSize: 11, fontWeight: 700 };
+const attentionOpenStyle = { whiteSpace: "nowrap", fontSize: 12, fontWeight: 700 };
