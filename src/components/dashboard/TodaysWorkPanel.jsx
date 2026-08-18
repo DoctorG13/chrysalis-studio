@@ -6,14 +6,18 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
   const appointments = clients.flatMap((client) =>
     (client.appointments || [])
       .filter((appointment) => toDateKey(appointment.date) === todayKey)
-      .map((appointment) => ({ ...appointment, client }))
+      .map((appointment) => ({
+        ...appointment,
+        client,
+        job: findJobForAppointment(appointment, jobs),
+      }))
   );
 
   const fittings = [
     ...clients.flatMap((client) =>
       (client.fittings || [])
         .filter((fitting) => toDateKey(fitting.date) === todayKey)
-        .map((fitting) => ({ ...fitting, client }))
+        .map((fitting) => ({ ...fitting, client, job: findJobForFitting(fitting, jobs) }))
     ),
     ...jobs.flatMap((job) =>
       (job.fittings || [])
@@ -64,29 +68,35 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
 
       <div style={sectionGridStyle}>
         <MorningSection title="📅 Today's Appointments" empty="No appointments today.">
-          {appointments.map((appointment, index) => (
-            <div key={appointment.id || index} style={itemStyle}>
-              <div style={iconStyle}>📅</div>
-              <div style={contentStyle}>
-                <strong>{appointment.title || appointment.type || "Appointment"}</strong>
-                <span>{getClientName(appointment.client)}</span>
-                {appointment.time && <small>{appointment.time}</small>}
-              </div>
-            </div>
-          ))}
+          {appointments
+            .sort((a, b) => timeSortValue(a.time) - timeSortValue(b.time))
+            .map((appointment, index) => (
+              <ScheduleRow
+                key={appointment.id || index}
+                icon="📅"
+                time={appointment.time}
+                title={appointment.title || appointment.type || "Appointment"}
+                client={getClientName(appointment.client)}
+                reference={appointment.job?.reference}
+                onClick={appointment.job ? () => onSelectJob?.(appointment.job) : undefined}
+              />
+            ))}
         </MorningSection>
 
         <MorningSection title="👗 Today's Fittings" empty="No fittings today.">
-          {fittings.map((fitting, index) => (
-            <div key={fitting.id || index} style={itemStyle}>
-              <div style={iconStyle}>👗</div>
-              <div style={contentStyle}>
-                <strong>{fitting.title || "Fitting"}</strong>
-                <span>{getClientName(fitting.client)}</span>
-                {fitting.time && <small>{fitting.time}</small>}
-              </div>
-            </div>
-          ))}
+          {fittings
+            .sort((a, b) => timeSortValue(a.time) - timeSortValue(b.time))
+            .map((fitting, index) => (
+              <ScheduleRow
+                key={fitting.id || index}
+                icon="👗"
+                time={fitting.time}
+                title={fitting.title || "Fitting"}
+                client={getClientName(fitting.client)}
+                reference={fitting.job?.reference}
+                onClick={fitting.job ? () => onSelectJob?.(fitting.job) : undefined}
+              />
+            ))}
         </MorningSection>
 
         <MorningSection title="💼 Active Jobs" empty="No active jobs.">
@@ -169,6 +179,31 @@ function MorningSection({ title, empty, children, footer }) {
   );
 }
 
+function ScheduleRow({ icon, time, title, client, reference, onClick }) {
+  const content = (
+    <>
+      <span style={scheduleTimeStyle}>{formatTime(time)}</span>
+      <span style={scheduleIconStyle}>{icon}</span>
+      <span style={scheduleContentStyle}>
+        <strong>{title}</strong>
+        <span>{client}</span>
+      </span>
+      {reference ? <span style={scheduleReferenceStyle}>{reference}</span> : <span style={scheduleReferenceSpacer} />}
+      {onClick ? <span style={scheduleOpenStyle}>Open →</span> : null}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} style={scheduleRowButtonStyle}>
+        {content}
+      </button>
+    );
+  }
+
+  return <div style={scheduleRowStyle}>{content}</div>;
+}
+
 function ActionRow({ icon, title, subtitle, meta, onClick, metaStyle }) {
   return (
     <button type="button" onClick={onClick} style={actionRowStyle}>
@@ -198,6 +233,34 @@ function getClientName(client) {
   if (!client) return "Unknown client";
   if (client.name) return client.name;
   return [client.firstName, client.lastName].filter(Boolean).join(" ") || "Unknown client";
+}
+
+function findJobForAppointment(appointment, jobs) {
+  if (!appointment.jobId) return null;
+  return jobs.find((job) => String(job.id) === String(appointment.jobId)) || null;
+}
+
+function findJobForFitting(fitting, jobs) {
+  if (!fitting.jobId) return null;
+  return jobs.find((job) => String(job.id) === String(fitting.jobId)) || null;
+}
+
+function formatTime(value) {
+  if (!value) return "—";
+  const match = String(value).match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return value;
+  const hour = Number(match[1]);
+  const minute = match[2];
+  const suffix = hour >= 12 ? "pm" : "am";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minute} ${suffix}`;
+}
+
+function timeSortValue(value) {
+  if (!value) return 9999;
+  const match = String(value).match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return 9999;
+  return Number(match[1]) * 60 + Number(match[2]);
 }
 
 function getOutstanding(job) {
@@ -254,8 +317,15 @@ const summaryItemStyle = { display: "flex", alignItems: "center", gap: 8, paddin
 const sectionGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10 };
 const sectionStyle = { border: "1px solid #E5E7EB", borderRadius: 9, padding: 11, background: "#FFFFFF", minWidth: 0 };
 const sectionTitleStyle = { margin: "0 0 7px", fontSize: 14, color: "#2F3A3F" };
-const itemStyle = { display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 9px", borderRadius: 7, background: "#FAFAFA" };
-const actionRowStyle = { ...itemStyle, width: "100%", minHeight: 42, border: "1px solid #E5E7EB", textAlign: "left", cursor: "pointer", font: "inherit", background: "#FAFAFA" };
+const scheduleRowStyle = { display: "grid", gridTemplateColumns: "58px 22px minmax(0, 1fr) auto 1px", alignItems: "center", gap: 7, minHeight: 44, padding: "7px 9px", borderRadius: 7, background: "#FAFAFA" };
+const scheduleRowButtonStyle = { ...scheduleRowStyle, width: "100%", border: "1px solid #E5E7EB", textAlign: "left", cursor: "pointer", font: "inherit", background: "#FAFAFA" };
+const scheduleTimeStyle = { fontSize: 12, fontWeight: 700, color: "#8A5A00", whiteSpace: "nowrap" };
+const scheduleIconStyle = { fontSize: 16, flexShrink: 0 };
+const scheduleContentStyle = { minWidth: 0, display: "grid", gap: 1 };
+const scheduleReferenceStyle = { color: "#8A1C3A", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
+const scheduleReferenceSpacer = { width: 1 };
+const scheduleOpenStyle = { minHeight: 32, padding: "6px 11px", display: "inline-flex", alignItems: "center", justifyContent: "center", border: "1px solid #8A1C3A", borderRadius: 999, color: "#8A1C3A", background: "#FFFFFF", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" };
+const actionRowStyle = { display: "flex", alignItems: "center", gap: 8, width: "100%", minHeight: 42, padding: "8px 9px", border: "1px solid #E5E7EB", borderRadius: 7, textAlign: "left", cursor: "pointer", font: "inherit", background: "#FAFAFA" };
 const iconStyle = { flexShrink: 0, fontSize: 16 };
 const contentStyle = { minWidth: 0, flex: 1, display: "grid", gap: 1 };
 const actionMetaStyle = { whiteSpace: "nowrap", fontSize: 13, color: "#66727A" };
