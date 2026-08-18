@@ -1,15 +1,10 @@
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 
-export default function JobsDueThisWeek({
-  jobs = [],
-}) {
+export default function JobsDueThisWeek({ jobs = [] }) {
   const dueJobs = [...jobs]
     .filter((job) => job.dueDate)
-    .sort(
-      (a, b) =>
-        new Date(a.dueDate) - new Date(b.dueDate)
-    )
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
     .slice(0, 7);
 
   return (
@@ -21,20 +16,10 @@ export default function JobsDueThisWeek({
           message="No garments are due this week."
         />
       ) : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {dueJobs.map((job) => (
             <JobRow
-              key={
-                job.id ??
-                job.reference ??
-                `${job.name}-${job.dueDate}`
-              }
+              key={job.id ?? job.reference ?? `${job.name}-${job.dueDate}`}
               job={job}
             />
           ))}
@@ -52,106 +37,42 @@ function JobRow({ job }) {
       : "#16A34A";
 
   const badge = job.overdue
-    ? "🔴 Overdue"
+    ? "Overdue"
     : job.dueToday
-      ? "🟠 Due Today"
-      : "🟢 Scheduled";
+      ? "Due Today"
+      : "Scheduled";
 
   return (
     <div
       style={{
-        display: "flex",
-        justifyContent: "space-between",
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) auto",
         alignItems: "center",
-        padding: 16,
-        borderRadius: 10,
+        gap: 16,
+        padding: "10px 12px",
+        borderRadius: 8,
         background: "#FFFFFF",
-        border: `2px solid ${borderColour}`,
+        borderLeft: `3px solid ${borderColour}`,
+        borderTop: "1px solid #E5E7EB",
+        borderRight: "1px solid #E5E7EB",
+        borderBottom: "1px solid #E5E7EB",
       }}
     >
-      <div
-        style={{
-          flex: 1,
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 700,
-            marginBottom: 6,
-          }}
-        >
-          {job.name}
-        </div>
-
-        <div
-          style={{
-            fontSize: 13,
-            color: "#666",
-            marginBottom: 4,
-          }}
-        >
-          {job.status}
-        </div>
-
-        <div
-          style={{
-            fontSize: 13,
-            color: "#666",
-            marginBottom: 8,
-          }}
-        >
-          Next: {job.nextAction || "-"}
-        </div>
-
-        <div
-          style={{
-            width: "100%",
-            maxWidth: 220,
-            height: 8,
-            background: "#E5E7EB",
-            borderRadius: 999,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: `${job.progress ?? 0}%`,
-              height: "100%",
-              background: borderColour,
-            }}
-          />
-        </div>
-
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: 12,
-            color: "#666",
-          }}
-        >
-          {job.progress ?? 0}% Complete
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontWeight: 700, marginBottom: 2 }}>{job.name}</div>
+        <div style={{ fontSize: 12, color: "#777" }}>
+          {job.status} · Next: {job.nextAction || "-"}
+          {job.progress !== undefined ? ` · ${job.progress}%` : ""}
         </div>
       </div>
 
-      <div
-        style={{
-          textAlign: "right",
-          marginLeft: 20,
-        }}
-      >
+      <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+        <div style={{ fontWeight: 700, fontSize: 13 }}>{job.dueDate}</div>
         <div
           style={{
+            marginTop: 2,
+            fontSize: 11,
             fontWeight: 700,
-          }}
-        >
-          {job.dueDate}
-        </div>
-
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: 12,
-            fontWeight: 600,
             color: borderColour,
           }}
         >
