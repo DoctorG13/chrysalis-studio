@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import TextInput from "../common/TextInput";
 import Button from "../common/Button";
@@ -14,6 +14,9 @@ import TimelineSection from "../timeline/TimelineSection";
 export default function ClientWorkspace({ client, clients, jobs = [], setClients, createJob, updateJob, deleteJob, appointments = [], createAppointment, updateAppointment, deleteAppointment, initialJobId, onClose }) {
   const currentClient = useMemo(() => clients.find((c) => c.id === client?.id) ?? client, [clients, client]);
   const clientAppointments = useMemo(() => appointments.filter((appointment) => appointment.clientId === currentClient?.id), [appointments, currentClient?.id]);
+  const actionsRef = useRef(null);
+  const wasDirtyRef = useRef(false);
+
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -30,12 +33,44 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
     setEmail(currentClient.email || "");
     setNotes(currentClient.notes || "");
     setMeasurements(currentClient.measurements || {});
+    wasDirtyRef.current = false;
   }, [currentClient]);
 
   useEffect(() => {
     if (!initialJobId) return;
     setOpenSections((prev) => ({ ...prev, jobs: true }));
   }, [initialJobId]);
+
+  const isDirty = useMemo(() => {
+    if (!currentClient) return false;
+
+    return (
+      firstName !== (currentClient.firstName || "") ||
+      lastName !== (currentClient.lastName || "") ||
+      phone !== (currentClient.phone || "") ||
+      email !== (currentClient.email || "") ||
+      notes !== (currentClient.notes || "") ||
+      JSON.stringify(measurements || {}) !== JSON.stringify(currentClient.measurements || {})
+    );
+  }, [currentClient, firstName, lastName, phone, email, notes, measurements]);
+
+  useEffect(() => {
+    if (!isDirty) {
+      wasDirtyRef.current = false;
+      return;
+    }
+
+    if (wasDirtyRef.current) return;
+
+    wasDirtyRef.current = true;
+
+    window.requestAnimationFrame(() => {
+      actionsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+  }, [isDirty]);
 
   if (!currentClient) return null;
 
@@ -92,10 +127,18 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
       </WorkspaceSection>
 
       <hr />
-      <div style={{ display: "flex", gap: 10 }}>
+      <div
+        ref={actionsRef}
+        style={{
+          display: "flex",
+          gap: 10,
+          padding: "12px 0 4px",
+          scrollMarginTop: 24,
+        }}
+      >
         <Button onClick={handleSave}>💾 Save</Button>
         <Button onClick={handleDelete}>🗑 Delete</Button>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>✕ Close</Button>
       </div>
     </>
   );
