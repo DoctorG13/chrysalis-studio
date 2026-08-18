@@ -59,7 +59,12 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
   }
 
   function scrollToCalendar() {
-    scrollToElement(calendarTopRef);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    });
   }
 
   function selectDate(date) {
@@ -224,14 +229,7 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
         <CalendarToolbar monthLabel={monthLabel(displayMonth)} onPrevious={goPrevious} onToday={goToday} onNext={goNext} />
       </div>
 
-      <div
-        style={{
-          margin: "0 0 24px",
-          padding: "0 0 2px",
-          minHeight: 1,
-        }}
-        aria-label="Today View"
-      >
+      <div style={{ margin: "0 0 24px", padding: "0 0 2px", minHeight: 1 }} aria-label="Today View">
         <TodayView clients={clients} jobs={jobs} today={today} onOpenClient={openClient} onOpenJob={openJob} />
       </div>
 
