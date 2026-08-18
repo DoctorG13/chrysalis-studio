@@ -55,10 +55,24 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
 
   const compactActivity = groupedActivity.slice(0, 5);
   const visibleActivity = showAll ? sortedRawActivity : compactActivity;
-  const hasMore = rawActivity.length > compactActivity.length || groupedActivity.length > 5;
+  const hasMore =
+    rawActivity.length > compactActivity.length || groupedActivity.length > 5;
+
+  const activityToggle = hasMore ? (
+    <button
+      type="button"
+      onClick={() => setShowAll((current) => !current)}
+      style={activityToggleStyle}
+      aria-expanded={showAll}
+    >
+      {showAll
+        ? "Show less ↑"
+        : `View all activity (${rawActivity.length}) →`}
+    </button>
+  ) : null;
 
   return (
-    <Card title="Recent Activity">
+    <Card title="Recent Activity" actions={activityToggle}>
       {rawActivity.length === 0 ? (
         <EmptyState
           icon="📝"
@@ -66,33 +80,18 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
           message="As you work throughout the day, activity will appear here."
         />
       ) : (
-        <>
-          <div style={activityListStyle}>
-            {showAll
-              ? visibleActivity.map((item, index) => (
-                  <ActivityRow
-                    key={`${item.id ?? "activity"}-${index}`}
-                    item={item}
-                  />
-                ))
-              : visibleActivity.map((item) => (
-                  <ActivityRow key={item.id} item={item} />
-                ))}
-          </div>
-
-          {hasMore && (
-            <button
-              type="button"
-              onClick={() => setShowAll((current) => !current)}
-              style={viewAllButtonStyle}
-            >
-              {showAll
-                ? "Show less"
-                : `View all activity (${rawActivity.length})`}
-              <span aria-hidden="true">{showAll ? " ↑" : " →"}</span>
-            </button>
-          )}
-        </>
+        <div style={activityListStyle}>
+          {showAll
+            ? visibleActivity.map((item, index) => (
+                <ActivityRow
+                  key={`${item.id ?? "activity"}-${index}`}
+                  item={item}
+                />
+              ))
+            : visibleActivity.map((item) => (
+                <ActivityRow key={item.id} item={item} />
+              ))}
+        </div>
       )}
     </Card>
   );
@@ -244,16 +243,14 @@ const dateStyle = {
   whiteSpace: "nowrap",
 };
 
-const viewAllButtonStyle = {
-  display: "block",
-  width: "100%",
-  marginTop: 12,
-  padding: "9px 12px",
-  border: "1px solid #E5E7EB",
-  borderRadius: 8,
+const activityToggleStyle = {
+  padding: "6px 10px",
+  border: "1px solid #D9DEE2",
+  borderRadius: 999,
   background: "#FFF",
   color: "#8B1E3F",
-  fontSize: 12,
+  fontSize: 11,
   fontWeight: 700,
   cursor: "pointer",
+  whiteSpace: "nowrap",
 };
