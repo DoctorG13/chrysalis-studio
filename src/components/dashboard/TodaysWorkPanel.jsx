@@ -57,6 +57,10 @@ export default function TodaysWorkPanel({
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 6);
 
+  const priorities = [...jobs]
+    .filter((job) => job.overdue || job.dueToday || job.needsAttention)
+    .sort((a, b) => priorityScore(a) - priorityScore(b));
+
   const totalOutstanding = outstanding.reduce((total, item) => total + item.amount, 0);
   const totalActive = activeJobs.length;
 
@@ -153,6 +157,37 @@ export default function TodaysWorkPanel({
           ))}
         </MorningSection>
       </div>
+
+      <div style={priorityBlockStyle}>
+        <div style={priorityHeaderStyle}>
+          <div>
+            <h3 style={priorityTitleStyle}>🎯 What Needs Attention</h3>
+            <p style={prioritySubtitleStyle}>
+              The jobs that should get Donna's attention first today.
+            </p>
+          </div>
+          <div style={priorityCountStyle}>
+            {priorities.length}
+          </div>
+        </div>
+
+        {priorities.length === 0 ? (
+          <div style={priorityEmptyStyle}>
+            🎉 You're all caught up — no urgent job priorities today.
+          </div>
+        ) : (
+          <div style={priorityListStyle}>
+            {priorities.map((job) => (
+              <PriorityRow
+                key={job.id ?? job.reference ?? job.name}
+                job={job}
+                clients={clients}
+                onSelectJob={onSelectJob}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
@@ -170,6 +205,37 @@ function MorningSection({ title, empty, children, footer }) {
       )}
       {footer && <div style={footerStyle}>{footer}</div>}
     </section>
+  );
+}
+
+function PriorityRow({ job, clients, onSelectJob }) {
+  const priority = getPriority(job);
+  const client = clients.find(
+    (candidate) => String(candidate.id) === String(job.clientId)
+  );
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelectJob?.(job)}
+      style={{
+        ...priorityRowStyle,
+        borderLeft: `5px solid ${priority.border}`,
+        background: priority.background,
+      }}
+    >
+      <div style={priorityIconStyle}>{priority.icon}</div>
+      <div style={contentStyle}>
+        <strong>{job.reference || job.name || job.title || "Job"}</strong>
+        <span>{getClientName(client)}</span>
+        <span>{job.status || "Active"}</span>
+        {job.nextAction && <small>Next: {job.nextAction}</small>}
+        {job.dueDate && <small>Due: {job.dueDate}</small>}
+      </div>
+      <span style={{ ...priorityBadgeStyle, color: priority.color }}>
+        {priority.label}
+      </span>
+    </button>
   );
 }
 
@@ -262,6 +328,43 @@ function toDateKey(value) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function priorityScore(job) {
+  if (job.overdue) return 1;
+  if (job.dueToday) return 2;
+  if (job.needsAttention) return 3;
+  return 99;
+}
+
+function getPriority(job) {
+  if (job.overdue) {
+    return {
+      label: "Overdue",
+      icon: "🔴",
+      border: "#DC2626",
+      background: "#FEF2F2",
+      color: "#B91C1C",
+    };
+  }
+
+  if (job.dueToday) {
+    return {
+      label: "Due Today",
+      icon: "🟠",
+      border: "#EA580C",
+      background: "#FFF7ED",
+      color: "#C2410C",
+    };
+  }
+
+  return {
+    label: "Needs Attention",
+    icon: "🟡",
+    border: "#CA8A04",
+    background: "#FEFCE8",
+    color: "#A16207",
+  };
+}
+
 function formatCurrency(value) {
   return new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -351,4 +454,89 @@ const footerStyle = {
   fontWeight: 700,
   fontSize: 13,
   color: "#8A5A00",
+};
+
+const priorityBlockStyle = {
+  marginTop: 18,
+  paddingTop: 18,
+  borderTop: "1px solid #E5E7EB",
+};
+
+const priorityHeaderStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  marginBottom: 12,
+};
+
+const priorityTitleStyle = {
+  margin: 0,
+  fontSize: 16,
+  color: "#2F3A3F",
+};
+
+const prioritySubtitleStyle = {
+  margin: "4px 0 0",
+  color: "#777",
+  fontSize: 12,
+};
+
+const priorityCountStyle = {
+  minWidth: 30,
+  height: 30,
+  padding: "0 9px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 999,
+  background: "#F1F4F6",
+  color: "#42515A",
+  fontSize: 13,
+  fontWeight: 800,
+};
+
+const priorityListStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+  gap: 10,
+};
+
+const priorityRowStyle = {
+  width: "100%",
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 10,
+  padding: "11px 12px",
+  borderTop: "none",
+  borderRight: "none",
+  borderBottom: "none",
+  borderRadius: 8,
+  textAlign: "left",
+  cursor: "pointer",
+  font: "inherit",
+};
+
+const priorityIconStyle = {
+  flexShrink: 0,
+  fontSize: 17,
+};
+
+const priorityBadgeStyle = {
+  alignSelf: "flex-start",
+  padding: "4px 8px",
+  borderRadius: 999,
+  background: "rgba(255,255,255,0.7)",
+  fontSize: 10,
+  fontWeight: 800,
+  whiteSpace: "nowrap",
+};
+
+const priorityEmptyStyle = {
+  padding: "12px 14px",
+  borderRadius: 9,
+  background: "#F0FDF4",
+  color: "#166534",
+  fontSize: 13,
+  fontWeight: 600,
 };
