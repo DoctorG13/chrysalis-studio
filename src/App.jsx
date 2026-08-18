@@ -35,7 +35,10 @@ export default function App() {
     closeWorkspace,
   } = useChrysalis();
 
-  const searchResults = useMemo(() => searchStudio(searchQuery, clients, jobs), [searchQuery, clients, jobs]);
+  const searchResults = useMemo(
+    () => searchStudio(searchQuery, clients, jobs),
+    [searchQuery, clients, jobs]
+  );
 
   function renderPage() {
     switch (currentPage) {
@@ -56,17 +59,31 @@ export default function App() {
             searchQuery={searchQuery}
             searchResults={searchResults}
             onClearSearch={() => setSearchQuery("")}
+            onOpenCalendar={() => setCurrentPage("calendar")}
           />
         );
     }
   }
 
-  const pageTitle = currentPage === "calendar" ? "Calendar" : currentPage === "finance" ? "Finance" : "Chrysalis Studio";
+  const pageTitle =
+    currentPage === "calendar"
+      ? "Calendar"
+      : currentPage === "finance"
+        ? "Finance"
+        : "Chrysalis Studio";
 
   return (
     <AppShell
       sidebar={<Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} />}
-      header={<Header title={pageTitle} user="Donna" searchQuery={searchQuery} searchResults={searchResults} onSearch={setSearchQuery} />}
+      header={
+        <Header
+          title={pageTitle}
+          user="Donna"
+          searchQuery={searchQuery}
+          searchResults={searchResults}
+          onSearch={setSearchQuery}
+        />
+      }
     >
       {renderPage()}
 
