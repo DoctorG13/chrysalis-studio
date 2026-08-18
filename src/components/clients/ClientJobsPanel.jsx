@@ -13,6 +13,7 @@ export default function ClientJobsPanel({
   updateJob,
   deleteJob,
   initialJobId,
+  onClose,
 }) {
   const clientJobs = jobs.filter(
     (job) => job.clientId === client?.id
@@ -25,14 +26,12 @@ export default function ClientJobsPanel({
   useEffect(() => {
     if (!initialJobId) return;
 
-    const exists = clientJobs.some(
-      (job) => job.id === initialJobId
+    const exists = jobs.some(
+      (job) => job.id === initialJobId && job.clientId === client?.id
     );
 
-    if (exists) {
-      setSelectedJobId(initialJobId);
-    }
-  }, [initialJobId, clientJobs]);
+    setSelectedJobId(exists ? initialJobId : null);
+  }, [initialJobId]);
 
   const selectedJob =
     clientJobs.find((job) => job.id === selectedJobId) || null;
@@ -148,6 +147,10 @@ export default function ClientJobsPanel({
     }
   }
 
+  function closeJobEditor() {
+    setSelectedJobId(null);
+  }
+
   return (
     <>
       {isSaving && (
@@ -180,14 +183,14 @@ export default function ClientJobsPanel({
 
       <SlidePanel
         open={!!selectedJob}
-        onClose={() => setSelectedJobId(null)}
+        onClose={closeJobEditor}
       >
         {selectedJob && (
           <JobEditor
             job={selectedJob}
             onSave={handleSaveJob}
             onDelete={handleDeleteJob}
-            onCancel={() => setSelectedJobId(null)}
+            onCancel={closeJobEditor}
           />
         )}
       </SlidePanel>
