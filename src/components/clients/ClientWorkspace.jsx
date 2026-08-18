@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import TextInput from "../common/TextInput";
 import Button from "../common/Button";
@@ -14,8 +14,6 @@ import TimelineSection from "../timeline/TimelineSection";
 export default function ClientWorkspace({ client, clients, jobs = [], setClients, createJob, updateJob, deleteJob, appointments = [], createAppointment, updateAppointment, deleteAppointment, initialJobId, onClose }) {
   const currentClient = useMemo(() => clients.find((c) => c.id === client?.id) ?? client, [clients, client]);
   const clientAppointments = useMemo(() => appointments.filter((appointment) => appointment.clientId === currentClient?.id), [appointments, currentClient?.id]);
-  const actionsRef = useRef(null);
-  const wasDirtyRef = useRef(false);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -33,7 +31,6 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
     setEmail(currentClient.email || "");
     setNotes(currentClient.notes || "");
     setMeasurements(currentClient.measurements || {});
-    wasDirtyRef.current = false;
   }, [currentClient]);
 
   useEffect(() => {
@@ -41,40 +38,11 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
     setOpenSections((prev) => ({ ...prev, jobs: true }));
   }, [initialJobId]);
 
-  const isDirty = useMemo(() => {
-    if (!currentClient) return false;
-
-    return (
-      firstName !== (currentClient.firstName || "") ||
-      lastName !== (currentClient.lastName || "") ||
-      phone !== (currentClient.phone || "") ||
-      email !== (currentClient.email || "") ||
-      notes !== (currentClient.notes || "") ||
-      JSON.stringify(measurements || {}) !== JSON.stringify(currentClient.measurements || {})
-    );
-  }, [currentClient, firstName, lastName, phone, email, notes, measurements]);
-
-  useEffect(() => {
-    if (!isDirty) {
-      wasDirtyRef.current = false;
-      return;
-    }
-
-    if (wasDirtyRef.current) return;
-
-    wasDirtyRef.current = true;
-
-    window.requestAnimationFrame(() => {
-      actionsRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    });
-  }, [isDirty]);
-
   if (!currentClient) return null;
 
-  function toggleSection(section) { setOpenSections((prev) => ({ ...prev, [section]: !prev[section] })); }
+  function toggleSection(section) {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  }
 
   function handleSave() {
     const updatedClient = { ...currentClient, firstName, lastName, phone, email, notes, measurements };
@@ -91,8 +59,9 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
   const allSectionKeys = Object.keys(openSections);
 
   return (
-    <>
+    <div style={{ paddingBottom: 82 }}>
       <ClientWorkspaceHeader client={currentClient} />
+
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
         <Button onClick={() => setOpenSections(Object.fromEntries(allSectionKeys.map((key) => [key, true])))}>Expand All</Button>
         <Button onClick={() => setOpenSections(Object.fromEntries(allSectionKeys.map((key) => [key, false])))}>Collapse All</Button>
@@ -126,20 +95,32 @@ export default function ClientWorkspace({ client, clients, jobs = [], setClients
         <TimelineSection clientId={currentClient.id} />
       </WorkspaceSection>
 
-      <hr />
       <div
-        ref={actionsRef}
         style={{
+          position: "sticky",
+          bottom: 0,
+          zIndex: 20,
           display: "flex",
           gap: 10,
-          padding: "12px 0 4px",
-          scrollMarginTop: 24,
+          alignItems: "center",
+          padding: "12px 0",
+          marginTop: 20,
+          borderTop: "1px solid #E6E8EC",
+          background: "rgba(255,255,255,0.97)",
+          backdropFilter: "blur(8px)",
+          boxShadow: "0 -6px 18px rgba(0,0,0,0.06)",
         }}
       >
-        <Button onClick={handleSave}>💾 Save</Button>
-        <Button onClick={handleDelete}>🗑 Delete</Button>
-        <Button onClick={onClose}>✕ Close</Button>
+        <div style={{ flex: 1 }}>
+          <Button onClick={handleSave}>💾 Save</Button>
+        </div>
+        <div style={{ flex: 1 }}>
+          <Button onClick={onClose}>✕ Cancel</Button>
+        </div>
+        <div style={{ flex: 1 }}>
+          <Button onClick={handleDelete}>🗑 Delete</Button>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
