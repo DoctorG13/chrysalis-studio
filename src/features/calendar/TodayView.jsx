@@ -3,28 +3,15 @@ import { useMemo } from "react";
 function parseCalendarDate(value) {
   if (!value) return null;
 
-  if (
-    typeof value === "string" &&
-    /^\d{2}\/\d{2}\/\d{4}$/.test(value)
-  ) {
+  if (typeof value === "string" && /^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
     const [day, month, year] = value.split("/").map(Number);
     const date = new Date(year, month - 1, day);
-
-    if (
-      date.getFullYear() === year &&
-      date.getMonth() === month - 1 &&
-      date.getDate() === day
-    ) {
-      return date;
-    }
-
-    return null;
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day
+      ? date
+      : null;
   }
 
-  if (
-    typeof value === "string" &&
-    /^\d{4}-\d{2}-\d{2}/.test(value)
-  ) {
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) {
     const [year, month, day] = value.slice(0, 10).split("-").map(Number);
     return new Date(year, month - 1, day);
   }
@@ -34,150 +21,106 @@ function parseCalendarDate(value) {
 }
 
 function sameDay(a, b) {
-  return (
-    a &&
-    b &&
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 function clientName(client) {
   if (!client) return "";
   if (client.name) return client.name;
-
-  return [client.firstName, client.lastName]
-    .filter(Boolean)
-    .join(" ");
+  return [client.firstName, client.lastName].filter(Boolean).join(" ");
 }
 
 function isFittingAppointment(appointment) {
-  const type = String(
-    appointment?.type || appointment?.title || ""
-  ).toLowerCase();
-
+  const type = String(appointment?.type || appointment?.title || "").toLowerCase();
   return type.includes("fitting");
 }
 
 function formatTime(value) {
   if (!value) return "Time not set";
-
   const text = String(value).trim();
   const match = text.match(/^(\d{1,2}):(\d{2})/);
-
   if (!match) return text;
-
   const hours = Number(match[1]);
   const minutes = match[2];
-
   if (hours < 0 || hours > 23) return text;
-
-  const suffix = hours >= 12 ? "PM" : "AM";
-  const displayHour = hours % 12 || 12;
-
-  return `${displayHour}:${minutes} ${suffix}`;
+  return `${hours % 12 || 12}:${minutes} ${hours >= 12 ? "PM" : "AM"}`;
 }
 
 function getOutstanding(job) {
-  if (job?.balance !== undefined && job?.balance !== null) {
-    return Number(job.balance) || 0;
-  }
-
-  if (job?.outstanding !== undefined && job?.outstanding !== null) {
-    return Number(job.outstanding) || 0;
-  }
-
+  if (job?.balance !== undefined && job?.balance !== null) return Number(job.balance) || 0;
+  if (job?.outstanding !== undefined && job?.outstanding !== null) return Number(job.outstanding) || 0;
   const quote = Number(job?.price || 0);
-  const paid = (job?.payments || []).reduce(
-    (total, payment) => total + Number(payment.amount || 0),
-    0
-  );
-
+  const paid = (job?.payments || []).reduce((total, payment) => total + Number(payment.amount || 0), 0);
   return Math.max(quote - paid, 0);
 }
 
 function jobTitle(job) {
-  return (
-    job?.reference ||
-    job?.name ||
-    job?.title ||
-    job?.garmentType ||
-    job?.garment ||
-    "Job"
-  );
+  return job?.reference || job?.name || job?.title || job?.garmentType || job?.garment || "Job";
 }
 
 function getJobClient(job, clients) {
   return clients.find((client) => client.id === job?.clientId);
 }
 
-export default function TodayView({
-  clients = [],
-  jobs = [],
-  today = new Date(),
-  onOpenClient,
-  onOpenJob,
-}) {
+function collectFittings(clients, today) {
+  const fittings = [];
+
+  clients.forEach((client) => {
+    (client.fittings || []).forEach((fitting) => {
+      const date = parseCalendarDate(fitting.date);
+      if (!date || !sameDay(date, today)) return;
+
+      fittings.push({
+        ...fitting,
+        client,
+        clientName: clientName(client),
+      });
+    });
+  });
+
+  fittings.sort((a, b) => String(a.time || "99:99").localeCompare(String(b.time || "99:99")));
+  return fittings;
+}
+
+export default function TodayView({ clients = [], jobs = [], today = new Date(), onOpenClient, onOpenJob }) {
   const todayData = useMemo(() => {
     const appointments = [];
 
     clients.forEach((client) => {
       (client.appointments || []).forEach((appointment) => {
         const date = parseCalendarDate(appointment.date);
-
         if (!date || !sameDay(date, today)) return;
-
-        appointments.push({
-          ...appointment,
-          client,
-          clientName: clientName(client),
-        });
+        appointments.push({ ...appointment, client, clientName: clientName(client) });
       });
     });
 
-    appointments.sort((a, b) => {
-      const aTime = String(a.time || "99:99");
-      const bTime = String(b.time || "99:99");
-      return aTime.localeCompare(bTime);
-    });
+    appointments.sort((a, b) => String(a.time || "99:99").localeCompare(String(b.time || "99:99")));
 
-    const fittings = appointments.filter(isFittingAppointment);
+    const fittings = collectFittings(clients, today);
+    const fittingAppointmentIds = new Set(
+      appointments.filter(isFittingAppointment).map((appointment) => appointment.id)
+    );
 
     const dueJobs = jobs
       .filter((job) => {
         const dueDate = parseCalendarDate(job.dueDate);
         return dueDate && sameDay(dueDate, today);
       })
-      .map((job) => ({
-        job,
-        client: getJobClient(job, clients),
-      }));
+      .map((job) => ({ job, client: getJobClient(job, clients) }));
 
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const overdueJobs = jobs
       .filter((job) => {
         const dueDate = parseCalendarDate(job.dueDate);
-        return dueDate && dueDate < new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          today.getDate()
-        );
+        return dueDate && dueDate < startOfToday;
       })
-      .map((job) => ({
-        job,
-        client: getJobClient(job, clients),
-      }))
+      .map((job) => ({ job, client: getJobClient(job, clients) }))
       .filter(({ job }) => {
         const status = String(job.status || "").toLowerCase();
         return !["collected", "completed", "cancelled"].includes(status);
       });
 
-    return {
-      appointments,
-      fittings,
-      dueJobs,
-      overdueJobs,
-    };
+    return { appointments, fittings, fittingAppointmentIds, dueJobs, overdueJobs };
   }, [clients, jobs, today]);
 
   const dateLabel = today.toLocaleDateString("en-AU", {
@@ -188,119 +131,52 @@ export default function TodayView({
   });
 
   return (
-    <section
-      style={{
-        marginBottom: 24,
-        padding: 20,
-        border: "1px solid #DDDDDD",
-        borderRadius: 12,
-        background: "#FFFFFF",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 16,
-          marginBottom: 18,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              color: "#8B1E3F",
-              fontSize: 12,
-              fontWeight: 800,
-              letterSpacing: 0.5,
-              textTransform: "uppercase",
-            }}
-          >
-            Today View
-          </div>
-          <h2
-            style={{
-              margin: "4px 0 3px",
-              fontSize: 21,
-              color: "#2F3A3F",
-            }}
-          >
-            {dateLabel}
-          </h2>
-          <p
-            style={{
-              margin: 0,
-              color: "#777",
-              fontSize: 13,
-            }}
-          >
-            What needs attention in the studio today.
-          </p>
+    <section style={{ marginBottom: 24, padding: 20, border: "1px solid #DDDDDD", borderRadius: 12, background: "#FFFFFF" }}>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ color: "#8B1E3F", fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>
+          Today View
         </div>
+        <h2 style={{ margin: "4px 0 3px", fontSize: 21, color: "#2F3A3F" }}>{dateLabel}</h2>
+        <p style={{ margin: 0, color: "#777", fontSize: 13 }}>What needs attention in the studio today.</p>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-          gap: 10,
-          marginBottom: 18,
-        }}
-      >
-        <SummaryCard
-          icon="📅"
-          label="Appointments"
-          value={todayData.appointments.length}
-        />
-        <SummaryCard
-          icon="👗"
-          label="Fittings"
-          value={todayData.fittings.length}
-          accent={todayData.fittings.length > 0}
-        />
-        <SummaryCard
-          icon="💼"
-          label="Jobs Due"
-          value={todayData.dueJobs.length}
-          accent={todayData.dueJobs.length > 0}
-        />
-        <SummaryCard
-          icon="⚠️"
-          label="Overdue"
-          value={todayData.overdueJobs.length}
-          warning={todayData.overdueJobs.length > 0}
-        />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginBottom: 18 }}>
+        <SummaryCard icon="📅" label="Appointments" value={todayData.appointments.length} />
+        <SummaryCard icon="👗" label="Fittings" value={todayData.fittings.length} accent={todayData.fittings.length > 0} />
+        <SummaryCard icon="💼" label="Jobs Due" value={todayData.dueJobs.length} accent={todayData.dueJobs.length > 0} />
+        <SummaryCard icon="⚠️" label="Overdue" value={todayData.overdueJobs.length} warning={todayData.overdueJobs.length > 0} />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-          gap: 14,
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
         <TodayPanel title="Today's Schedule" icon="📅">
           {todayData.appointments.length === 0 ? (
             <EmptyState text="No appointments scheduled for today." />
           ) : (
             todayData.appointments.map((appointment) => (
-              <button
-                key={appointment.id}
-                type="button"
-                onClick={() => onOpenClient?.(appointment.client)}
-                style={itemButtonStyle}
-              >
-                <div style={itemIconStyle}>
-                  {isFittingAppointment(appointment) ? "👗" : "👤"}
-                </div>
+              <button key={appointment.id} type="button" onClick={() => onOpenClient?.(appointment.client)} style={itemButtonStyle}>
+                <div style={itemIconStyle}>{isFittingAppointment(appointment) ? "👗" : "👤"}</div>
                 <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={itemTitleStyle}>
-                    {appointment.title || appointment.type || "Appointment"}
-                  </div>
+                  <div style={itemTitleStyle}>{appointment.title || appointment.type || "Appointment"}</div>
                   <div style={itemMetaStyle}>
-                    {formatTime(appointment.time)}
-                    {appointment.clientName ? ` • ${appointment.clientName}` : ""}
+                    {formatTime(appointment.time)}{appointment.clientName ? ` • ${appointment.clientName}` : ""}
                   </div>
+                </div>
+                <span style={arrowStyle}>›</span>
+              </button>
+            ))
+          )}
+        </TodayPanel>
+
+        <TodayPanel title="Today's Fittings" icon="👗">
+          {todayData.fittings.length === 0 ? (
+            <EmptyState text="No fittings recorded for today." />
+          ) : (
+            todayData.fittings.map((fitting) => (
+              <button key={fitting.id} type="button" onClick={() => onOpenClient?.(fitting.client)} style={itemButtonStyle}>
+                <div style={itemIconStyle}>👗</div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={itemTitleStyle}>{fitting.title || "Fitting"}</div>
+                  <div style={itemMetaStyle}>{formatTime(fitting.time)}{fitting.clientName ? ` • ${fitting.clientName}` : ""}</div>
                 </div>
                 <span style={arrowStyle}>›</span>
               </button>
@@ -314,102 +190,43 @@ export default function TodayView({
           ) : (
             <>
               {todayData.overdueJobs.map(({ job, client }) => (
-                <JobItem
-                  key={`overdue-${job.id}`}
-                  job={job}
-                  client={client}
-                  overdue
-                  onClick={() => client && onOpenJob?.(client, job.id)}
-                />
+                <JobItem key={`overdue-${job.id}`} job={job} client={client} overdue onClick={() => client && onOpenJob?.(client, job.id)} />
               ))}
-
               {todayData.dueJobs.map(({ job, client }) => (
-                <JobItem
-                  key={`due-${job.id}`}
-                  job={job}
-                  client={client}
-                  onClick={() => client && onOpenJob?.(client, job.id)}
-                />
+                <JobItem key={`due-${job.id}`} job={job} client={client} onClick={() => client && onOpenJob?.(client, job.id)} />
               ))}
             </>
           )}
+        </TodayPanel>
+
+        <TodayPanel title="Today at a Glance" icon="🦋">
+          <div style={{ display: "grid", gap: 8 }}>
+            <GlanceRow label="Appointments" value={todayData.appointments.length} />
+            <GlanceRow label="Fittings" value={todayData.fittings.length} />
+            <GlanceRow label="Jobs due" value={todayData.dueJobs.length} />
+            <GlanceRow label="Overdue jobs" value={todayData.overdueJobs.length} warning={todayData.overdueJobs.length > 0} />
+          </div>
         </TodayPanel>
       </div>
     </section>
   );
 }
 
-function SummaryCard({
-  icon,
-  label,
-  value,
-  accent = false,
-  warning = false,
-}) {
+function SummaryCard({ icon, label, value, accent = false, warning = false }) {
   return (
-    <div
-      style={{
-        padding: 13,
-        border: warning
-          ? "1px solid #E7B5B5"
-          : accent
-            ? "1px solid #E6C9D4"
-            : "1px solid #E8EAED",
-        borderRadius: 9,
-        background: warning
-          ? "#FFF7F7"
-          : accent
-            ? "#FFF9FB"
-            : "#FAFAFA",
-      }}
-    >
+    <div style={{ padding: 13, border: warning ? "1px solid #E7B5B5" : accent ? "1px solid #E6C9D4" : "1px solid #E8EAED", borderRadius: 9, background: warning ? "#FFF7F7" : accent ? "#FFF9FB" : "#FAFAFA" }}>
       <div style={{ fontSize: 18, marginBottom: 4 }}>{icon}</div>
-      <div
-        style={{
-          fontSize: 22,
-          lineHeight: 1,
-          fontWeight: 800,
-          color: warning ? "#A62B2B" : "#2F3A3F",
-        }}
-      >
-        {value}
-      </div>
-      <div
-        style={{
-          marginTop: 5,
-          fontSize: 11,
-          fontWeight: 700,
-          color: "#777",
-        }}
-      >
-        {label}
-      </div>
+      <div style={{ fontSize: 22, lineHeight: 1, fontWeight: 800, color: warning ? "#A62B2B" : "#2F3A3F" }}>{value}</div>
+      <div style={{ marginTop: 5, fontSize: 11, fontWeight: 700, color: "#777" }}>{label}</div>
     </div>
   );
 }
 
 function TodayPanel({ title, icon, children }) {
   return (
-    <div
-      style={{
-        border: "1px solid #E8EAED",
-        borderRadius: 10,
-        padding: 14,
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          marginBottom: 10,
-          fontWeight: 800,
-          color: "#2F3A3F",
-        }}
-      >
-        <span>{icon}</span>
-        <span>{title}</span>
+    <div style={{ border: "1px solid #E8EAED", borderRadius: 10, padding: 14, minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, fontWeight: 800, color: "#2F3A3F" }}>
+        <span>{icon}</span><span>{title}</span>
       </div>
       {children}
     </div>
@@ -417,108 +234,46 @@ function TodayPanel({ title, icon, children }) {
 }
 
 function EmptyState({ text }) {
-  return (
-    <div
-      style={{
-        padding: "14px 10px",
-        color: "#999",
-        fontSize: 13,
-        fontStyle: "italic",
-      }}
-    >
-      {text}
-    </div>
-  );
+  return <div style={{ padding: "14px 10px", color: "#999", fontSize: 13, fontStyle: "italic" }}>{text}</div>;
 }
 
 function JobItem({ job, client, overdue = false, onClick }) {
   const outstanding = getOutstanding(job);
-
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={!client}
-      style={{
-        ...itemButtonStyle,
-        borderLeft: overdue
-          ? "4px solid #C62828"
-          : "4px solid #8B1E3F",
-        cursor: client ? "pointer" : "default",
-        opacity: client ? 1 : 0.75,
-      }}
-    >
+    <button type="button" onClick={onClick} disabled={!client} style={{ ...itemButtonStyle, borderLeft: overdue ? "4px solid #C62828" : "4px solid #8B1E3F", cursor: client ? "pointer" : "default", opacity: client ? 1 : 0.75 }}>
       <div style={itemIconStyle}>💼</div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={itemTitleStyle}>{jobTitle(job)}</div>
-        <div style={itemMetaStyle}>
-          {clientName(client) || "Client unavailable"}
-          {overdue ? " • OVERDUE" : " • Due today"}
-        </div>
+        <div style={itemMetaStyle}>{clientName(client) || "Client unavailable"}{overdue ? " • OVERDUE" : " • Due today"}</div>
       </div>
-      {outstanding > 0 && (
-        <span
-          style={{
-            color: "#8A5A00",
-            fontSize: 12,
-            fontWeight: 800,
-            whiteSpace: "nowrap",
-          }}
-        >
-          ${outstanding.toFixed(2)}
-        </span>
-      )}
+      {outstanding > 0 && <span style={{ color: "#8A5A00", fontSize: 12, fontWeight: 800, whiteSpace: "nowrap" }}>${outstanding.toFixed(2)}</span>}
       {client && <span style={arrowStyle}>›</span>}
     </button>
   );
 }
 
+function GlanceRow({ label, value, warning = false }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 10px", borderRadius: 7, background: warning ? "#FFF7F7" : "#F8F8F8" }}>
+      <span style={{ fontSize: 12, color: "#666" }}>{label}</span>
+      <strong style={{ color: warning ? "#A62B2B" : "#2F3A3F" }}>{value}</strong>
+    </div>
+  );
+}
+
 const itemButtonStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
-  width: "100%",
-  padding: "10px 8px",
-  marginBottom: 6,
-  border: "1px solid #ECEEEF",
-  borderRadius: 8,
-  background: "#FFFFFF",
-  textAlign: "left",
-  fontFamily: "inherit",
-  color: "inherit",
-  cursor: "pointer",
-  boxSizing: "border-box",
+  display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "10px 8px", marginBottom: 6,
+  border: "1px solid #ECEEEF", borderRadius: 8, background: "#FFFFFF", textAlign: "left", fontFamily: "inherit",
+  color: "inherit", cursor: "pointer", boxSizing: "border-box",
 };
 
 const itemIconStyle = {
-  width: 28,
-  height: 28,
-  display: "grid",
-  placeItems: "center",
-  flexShrink: 0,
-  borderRadius: 7,
-  background: "#F4F5F6",
-  fontSize: 15,
+  width: 28, height: 28, display: "grid", placeItems: "center", flexShrink: 0, borderRadius: 7, background: "#F4F5F6", fontSize: 15,
 };
 
 const itemTitleStyle = {
-  fontSize: 13,
-  fontWeight: 800,
-  color: "#2F3A3F",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
+  fontSize: 13, fontWeight: 800, color: "#2F3A3F", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
 };
 
-const itemMetaStyle = {
-  marginTop: 3,
-  color: "#777",
-  fontSize: 11,
-};
-
-const arrowStyle = {
-  color: "#999",
-  fontSize: 20,
-  lineHeight: 1,
-  flexShrink: 0,
-};
+const itemMetaStyle = { marginTop: 3, color: "#777", fontSize: 11 };
+const arrowStyle = { color: "#999", fontSize: 20, lineHeight: 1, flexShrink: 0 };
