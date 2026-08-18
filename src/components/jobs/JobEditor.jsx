@@ -453,58 +453,6 @@ export default function JobEditor({
               </div>
             )}
           </div>
-
-          <hr
-            style={{
-              border: "none",
-              borderTop:
-                "1px solid #ECECEC",
-              margin:
-                "24px 0 20px",
-            }}
-          />
-
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              width: "100%",
-            }}
-          >
-            <div
-              style={{ flex: 1 }}
-            >
-              <Button
-                onClick={
-                  handleSave
-                }
-              >
-                💾 Save
-              </Button>
-            </div>
-
-            <div
-              style={{ flex: 1 }}
-            >
-              <Button
-                onClick={onCancel}
-              >
-                ✕ Close
-              </Button>
-            </div>
-
-            <div
-              style={{ flex: 1 }}
-            >
-              <Button
-                onClick={
-                  handleDelete
-                }
-              >
-                🗑 Delete
-              </Button>
-            </div>
-          </div>
         </div>
 
         <JobTabs
@@ -513,6 +461,42 @@ export default function JobEditor({
         />
 
         {renderTab()}
+
+        {/* Sticky Job Actions */}
+        <div
+          style={{
+            position: "sticky",
+            bottom: 0,
+            zIndex: 20,
+            display: "flex",
+            gap: 10,
+            width: "100%",
+            padding: "14px 0",
+            marginTop: 4,
+            background: "rgba(255,255,255,0.98)",
+            borderTop: "1px solid #E6E8EC",
+            boxShadow: "0 -6px 18px rgba(0,0,0,0.06)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div style={{ flex: 1 }}>
+            <Button onClick={handleSave}>
+              💾 Save
+            </Button>
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <Button onClick={onCancel}>
+              ✕ Cancel
+            </Button>
+          </div>
+
+          <div style={{ flex: 1 }}>
+            <Button onClick={handleDelete}>
+              🗑 Delete
+            </Button>
+          </div>
+        </div>
       </div>
 
       {showFittingForm && (
