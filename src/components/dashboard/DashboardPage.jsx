@@ -28,9 +28,7 @@ export default function DashboardPage({
       return jobs;
     }
 
-    return clients.flatMap(
-      (client) => client.jobs ?? []
-    );
+    return clients.flatMap((client) => client.jobs ?? []);
   }, [clients, jobs]);
 
   const dashboard = useMemo(() => {
@@ -47,7 +45,6 @@ export default function DashboardPage({
 
     const dueThisWeek = allJobs.filter((job) => {
       const due = parseJobDate(job.dueDate);
-
       if (!due) return false;
 
       const dueDay = new Date(
@@ -56,39 +53,20 @@ export default function DashboardPage({
         due.getDate()
       );
 
-      return (
-        dueDay >= startOfToday &&
-        dueDay <= endOfWeek
-      );
+      return dueDay >= startOfToday && dueDay <= endOfWeek;
     });
 
     return {
       totalClients: clients.length,
-
       totalJobs: allJobs.length,
-
-      overdueJobs: allJobs.filter(
-        (j) => j.overdue
-      ).length,
-
-      dueToday: allJobs.filter(
-        (j) => j.dueToday
-      ).length,
-
-      readyForCollection: allJobs.filter(
-        (j) => j.status === "Ready"
-      ).length,
-
-      needsAttention: allJobs.filter(
-        (j) => j.needsAttention
-      ).length,
-
+      overdueJobs: allJobs.filter((j) => j.overdue).length,
+      dueToday: allJobs.filter((j) => j.dueToday).length,
+      readyForCollection: allJobs.filter((j) => j.status === "Ready").length,
+      needsAttention: allJobs.filter((j) => j.needsAttention).length,
       outstandingPayments: allJobs.reduce(
-        (total, job) =>
-          total + getOutstanding(job),
+        (total, job) => total + getOutstanding(job),
         0
       ),
-
       jobsDueThisWeek: dueThisWeek.length,
     };
   }, [clients, allJobs]);
@@ -102,12 +80,10 @@ export default function DashboardPage({
         marginBottom: 40,
       }}
     >
-      <WelcomeCard
-        clients={clients}
-        dashboard={dashboard}
-      />
+      <WelcomeCard clients={clients} dashboard={dashboard} />
 
       <TodaysWorkPanel
+        clients={clients}
         jobs={allJobs}
         onSelectJob={onSelectJob}
       />
@@ -116,19 +92,14 @@ export default function DashboardPage({
         dashboard={dashboard}
         onClientsClick={onClientsClick}
         onJobsClick={onJobsClick}
-        onAppointmentsClick={
-          onAppointmentsClick
-        }
-        onPaymentsClick={
-          onPaymentsClick
-        }
+        onAppointmentsClick={onAppointmentsClick}
+        onPaymentsClick={onPaymentsClick}
       />
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(420px,1fr))",
+          gridTemplateColumns: "repeat(auto-fit,minmax(420px,1fr))",
           gap: 24,
         }}
       >
@@ -151,24 +122,35 @@ export default function DashboardPage({
         />
       </div>
 
-      <QuickActions
-        onNewClient={onNewClient}
-      />
+      <QuickActions onNewClient={onNewClient} />
     </div>
   );
 }
 
 function getOutstanding(job) {
+  if (job.balance !== undefined && job.balance !== null) {
+    return Math.max(Number(job.balance) || 0, 0);
+  }
+
+  if (job.outstanding !== undefined && job.outstanding !== null) {
+    return Math.max(Number(job.outstanding) || 0, 0);
+  }
+
+  if (Array.isArray(job.invoices) && job.invoices.length > 0) {
+    return Math.max(
+      job.invoices.reduce(
+        (total, invoice) => total + Number(invoice.balance ?? 0),
+        0
+      ),
+      0
+    );
+  }
+
   const quote = Number(job.price || 0);
-
   const totalPaid = (job.payments || []).reduce(
-    (total, payment) =>
-      total + Number(payment.amount || 0),
+    (total, payment) => total + Number(payment.amount || 0),
     0
   );
 
-  return Math.max(
-    quote - totalPaid,
-    0
-  );
+  return Math.max(quote - totalPaid, 0);
 }
