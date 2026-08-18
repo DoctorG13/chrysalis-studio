@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import SlidePanel from "../components/common/SlidePanel";
 
@@ -32,6 +32,14 @@ export default function StudioPage({
 
   const clientListRef = useRef(null);
 
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "smooth",
+    });
+  }, []);
+
   function handleSaveClient(client) {
     setClients([...clients, client]);
     setShowClientPanel(false);
@@ -53,7 +61,10 @@ export default function StudioPage({
     );
 
     if (!client) {
-      console.warn("Unable to open dashboard job: client not found", job);
+      console.warn(
+        "Unable to open dashboard job: client not found",
+        job
+      );
       return;
     }
 
@@ -94,7 +105,10 @@ export default function StudioPage({
       )}
 
       <div ref={clientListRef}>
-        <ClientList clients={clients} onClientClick={handleClientClick} />
+        <ClientList
+          clients={clients}
+          onClientClick={handleClientClick}
+        />
       </div>
 
       <SlidePanel
