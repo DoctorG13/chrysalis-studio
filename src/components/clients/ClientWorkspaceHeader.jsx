@@ -1,7 +1,10 @@
+import { useChrysalis } from "../../context/ChrysalisProvider";
+
 export default function ClientWorkspaceHeader({
   client,
-  onClose,
 }) {
+  const { closeWorkspace } = useChrysalis();
+
   if (!client) return null;
 
   const activeJobs = client.jobs?.length || 0;
@@ -45,7 +48,7 @@ export default function ClientWorkspaceHeader({
 
         <button
           type="button"
-          onClick={onClose}
+          onClick={closeWorkspace}
           style={{
             border: "1px solid #d9dde2",
             background: "#ffffff",
