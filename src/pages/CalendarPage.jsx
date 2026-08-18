@@ -1,12 +1,21 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import CalendarToolbar from "../features/calendar/CalendarToolbar";
 import CalendarGrid from "../features/calendar/CalendarGrid";
 import TodayView from "../features/calendar/TodayView";
 import { useChrysalis } from "../context/ChrysalisProvider";
-import { buildCalendar, endOfMonth, monthLabel, nextMonth, previousMonth, sameDay, startOfMonth } from "../features/calendar/calendarUtils";
+import {
+  buildCalendar,
+  endOfMonth,
+  monthLabel,
+  nextMonth,
+  previousMonth,
+  sameDay,
+  startOfMonth,
+} from "../features/calendar/calendarUtils";
 
-const HEADER_SCROLL_OFFSET = 20;
+const NAV_HEIGHT = 54;
+const NAV_GAP = 12;
 
 function getScrollContainer(element) {
   let current = element?.parentElement;
@@ -19,13 +28,11 @@ function getScrollContainer(element) {
   return document.scrollingElement || document.documentElement;
 }
 
-function scrollToElement(element, offset = HEADER_SCROLL_OFFSET) {
+function scrollToElement(element, offset = NAV_HEIGHT + NAV_GAP) {
   if (!element) return;
   const container = getScrollContainer(element);
   const elementRect = element.getBoundingClientRect();
-  const containerRect = container === document.scrollingElement || container === document.documentElement
-    ? { top: 0 }
-    : container.getBoundingClientRect();
+  const containerRect = container === document.scrollingElement || container === document.documentElement ? { top: 0 } : container.getBoundingClientRect();
   const targetTop = container.scrollTop + (elementRect.top - containerRect.top) - offset;
   container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
 }
@@ -33,9 +40,12 @@ function scrollToElement(element, offset = HEADER_SCROLL_OFFSET) {
 export default function CalendarPage({ clients = [], jobs = [] }) {
   const [displayMonth, setDisplayMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isScrolled, setIsScrolled] = useState(false);
+  const pageRef = useRef(null);
   const todayRef = useRef(null);
   const calendarRef = useRef(null);
   const resultsRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const { openClient, openJob } = useChrysalis();
   const today = new Date();
 
@@ -43,14 +53,21 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
   const monthStart = startOfMonth(displayMonth);
   const monthEnd = endOfMonth(displayMonth);
 
+  useEffect(() => {
+    const container = getScrollContainer(pageRef.current);
+    scrollContainerRef.current = container;
+    const handleScroll = () => setIsScrolled(container.scrollTop > 160);
+    handleScroll();
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
+  }, []);
+
   function goPrevious() { setDisplayMonth(previousMonth(displayMonth)); }
   function goNext() { setDisplayMonth(nextMonth(displayMonth)); }
 
   function selectDate(date) {
     setSelectedDate(new Date(date));
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => scrollToElement(resultsRef.current));
-    });
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => scrollToElement(resultsRef.current)));
   }
 
   function goToday() {
@@ -60,20 +77,12 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     window.requestAnimationFrame(() => scrollToElement(calendarRef.current));
   }
 
-  function scrollToCalendar() {
-    scrollToElement(calendarRef.current);
-  }
-
-  function scrollToTodayView() {
-    scrollToElement(todayRef.current);
-  }
-
-  function scrollToSelectedDay() {
-    scrollToElement(resultsRef.current);
-  }
+  function scrollToToday() { scrollToElement(todayRef.current); }
+  function scrollToCalendar() { scrollToElement(calendarRef.current); }
+  function scrollToSelectedDay() { scrollToElement(resultsRef.current); }
 
   function scrollToTop() {
-    const container = getScrollContainer(todayRef.current);
+    const container = scrollContainerRef.current || getScrollContainer(pageRef.current);
     container.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -153,31 +162,37 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
   const selectedEvents = getEventsForDate(selectedDate);
 
   return (
-    <>
+    <div ref={pageRef} style={{ position: "relative" }}>
       <div style={navigationShellStyle} aria-label="Calendar section navigation">
-        <button type="button" onClick={scrollToTop} style={navigationButtonStyle}>↑ Top</button>
-        <button type="button" onClick={scrollToTodayView} style={navigationButtonStyle}>🦋 Today</button>
-        <button type="button" onClick={scrollToCalendar} style={navigationButtonStyle}>📅 Calendar</button>
-        <button type="button" onClick={scrollToSelectedDay} style={navigationButtonStyle}>📋 Selected Day</button>
+        <NavButton label="↑ Top" onClick={scrollToTop} />
+        <NavButton label="🦋 Today" onClick={scrollToToday} />
+        <NavButton label="📅 Calendar" onClick={scrollToCalendar} />
+        <NavButton label="📋 Selected Day" onClick={scrollToSelectedDay} />
       </div>
 
-      <div ref={todayRef} style={{ scrollMarginTop: HEADER_SCROLL_OFFSET }}>
+      <div ref={todayRef} style={{ scrollMarginTop: NAV_HEIGHT + NAV_GAP }}>
         <TodayView clients={clients} jobs={jobs} today={today} onOpenClient={openClient} onOpenJob={openJob} />
       </div>
 
-      <div ref={calendarRef} style={{ marginTop: 8, marginBottom: 16, scrollMarginTop: HEADER_SCROLL_OFFSET }}>
+      <div ref={calendarRef} style={{ marginTop: 8, marginBottom: 16, scrollMarginTop: NAV_HEIGHT + NAV_GAP }}>
         <CalendarToolbar monthLabel={monthLabel(displayMonth)} onPrevious={goPrevious} onToday={goToday} onNext={goNext} />
       </div>
 
       <CalendarGrid calendarDays={calendarDays} monthStart={monthStart} monthEnd={monthEnd} today={today} selectedDate={selectedDate} onSelectDate={selectDate} getEventsForDate={getEventsForDate} sameDay={sameDay} />
 
-      <div ref={resultsRef} style={{ scrollMarginTop: HEADER_SCROLL_OFFSET, marginTop: 30, background: "#FFFFFF", border: "1px solid #DDDDDD", borderRadius: 12, padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 12 }}><h3 style={{ margin: 0 }}>Selected Day</h3><button type="button" onClick={scrollToCalendar} style={{ border: "1px solid #D5D9DD", background: "#FFFFFF", color: "#2F3A3F", borderRadius: 8, padding: "7px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>↑ Back to Calendar</button></div>
+      <div ref={resultsRef} style={{ scrollMarginTop: NAV_HEIGHT + NAV_GAP, marginTop: 30, background: "#FFFFFF", border: "1px solid #DDDDDD", borderRadius: 12, padding: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 12 }}><h3 style={{ margin: 0 }}>Selected Day</h3><button type="button" onClick={scrollToCalendar} style={backButtonStyle}>↑ Back to Calendar</button></div>
         <p style={{ color: "#666", marginBottom: 20 }}>{selectedDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
         {selectedEvents.length === 0 ? <p style={{ color: "#999999", fontStyle: "italic" }}>No appointments, fittings or jobs scheduled.</p> : selectedEvents.map((event, index) => <div key={event.id || event.jobId || event.appointment?.id || event.fitting?.id || index} onClick={() => { if ((event.type === "appointment" || event.type === "fitting") && event.client) openClient(event.client); if (event.type === "job" && event.client) openJob(event.client, event.jobId); }} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", marginBottom: 10, borderLeft: `5px solid ${event.colour}`, background: "#F8F8F8", borderRadius: 8, cursor: "pointer", transition: "0.2s" }}>{event.type === "job" ? renderJobDetails(event) : <><span style={{ fontSize: 20 }}>{event.icon}</span><div><div style={{ fontWeight: 600 }}>{event.label}</div><div style={{ color: "#666", fontSize: 13, marginTop: 3 }}>{event.type === "fitting" ? "Fitting" : "Appointment"}</div></div></>}</div>)}
       </div>
-    </>
+
+      {isScrolled && <button type="button" onClick={scrollToTop} style={floatingTopStyle}>↑ Back to Top</button>}
+    </div>
   );
+}
+
+function NavButton({ label, onClick }) {
+  return <button type="button" onClick={onClick} style={navigationButtonStyle}>{label}</button>;
 }
 
 function DetailItem({ label, value, highlight = false }) {
@@ -186,18 +201,17 @@ function DetailItem({ label, value, highlight = false }) {
 
 const navigationShellStyle = {
   position: "sticky",
-  top: 8,
-  zIndex: 20,
+  top: 0,
+  zIndex: 50,
   display: "flex",
   flexWrap: "wrap",
   gap: 6,
   padding: 7,
-  marginBottom: 12,
-  background: "rgba(255, 255, 255, 0.96)",
+  marginBottom: 18,
+  background: "#FFFFFF",
   border: "1px solid #E1E4E7",
   borderRadius: 10,
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  backdropFilter: "blur(6px)",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
 };
 
 const navigationButtonStyle = {
@@ -210,4 +224,32 @@ const navigationButtonStyle = {
   fontWeight: 700,
   cursor: "pointer",
   whiteSpace: "nowrap",
+};
+
+const backButtonStyle = {
+  border: "1px solid #D5D9DD",
+  background: "#FFFFFF",
+  color: "#2F3A3F",
+  borderRadius: 8,
+  padding: "7px 12px",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
+const floatingTopStyle = {
+  position: "fixed",
+  right: 30,
+  bottom: 24,
+  zIndex: 100,
+  border: "1px solid #D5D9DD",
+  background: "#FFFFFF",
+  color: "#2F3A3F",
+  borderRadius: 999,
+  padding: "10px 15px",
+  fontSize: 12,
+  fontWeight: 800,
+  cursor: "pointer",
+  boxShadow: "0 4px 14px rgba(47,58,63,0.15)",
 };
