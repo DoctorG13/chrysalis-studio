@@ -1,19 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-
 import CalendarToolbar from "../features/calendar/CalendarToolbar";
 import CalendarGrid from "../features/calendar/CalendarGrid";
 import TodayView from "../features/calendar/TodayView";
 import ChrysalisActionButton from "../features/calendar/ChrysalisActionButton";
 import { useChrysalis } from "../context/ChrysalisProvider";
-import {
-  buildCalendar,
-  endOfMonth,
-  monthLabel,
-  nextMonth,
-  previousMonth,
-  sameDay,
-  startOfMonth,
-} from "../features/calendar/calendarUtils";
+import { buildCalendar, endOfMonth, monthLabel, nextMonth, previousMonth, sameDay, startOfMonth } from "../features/calendar/calendarUtils";
 
 const NAV_HEIGHT = 54;
 const NAV_GAP = 12;
@@ -22,8 +13,7 @@ function getScrollContainer(element) {
   let current = element?.parentElement;
   while (current) {
     const style = window.getComputedStyle(current);
-    const canScroll = /(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight;
-    if (canScroll) return current;
+    if (/(auto|scroll)/.test(style.overflowY) && current.scrollHeight > current.clientHeight) return current;
     current = current.parentElement;
   }
   return document.scrollingElement || document.documentElement;
@@ -33,9 +23,7 @@ function scrollToElement(element, offset = NAV_HEIGHT + NAV_GAP) {
   if (!element) return;
   const container = getScrollContainer(element);
   const elementRect = element.getBoundingClientRect();
-  const containerRect = container === document.scrollingElement || container === document.documentElement
-    ? { top: 0 }
-    : container.getBoundingClientRect();
+  const containerRect = container === document.scrollingElement || container === document.documentElement ? { top: 0 } : container.getBoundingClientRect();
   const targetTop = container.scrollTop + (elementRect.top - containerRect.top) - offset;
   container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
 }
@@ -51,7 +39,6 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
   const scrollContainerRef = useRef(null);
   const { openClient, openJob } = useChrysalis();
   const today = new Date();
-
   const calendarDays = useMemo(() => buildCalendar(displayMonth), [displayMonth]);
   const monthStart = startOfMonth(displayMonth);
   const monthEnd = endOfMonth(displayMonth);
@@ -67,23 +54,19 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
 
   function goPrevious() { setDisplayMonth(previousMonth(displayMonth)); }
   function goNext() { setDisplayMonth(nextMonth(displayMonth)); }
-
   function selectDate(date) {
     setSelectedDate(new Date(date));
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => scrollToElement(resultsRef.current)));
   }
-
   function goToday() {
     const now = new Date();
     setDisplayMonth(now);
     setSelectedDate(now);
     window.requestAnimationFrame(() => scrollToElement(calendarRef.current));
   }
-
   function scrollToToday() { scrollToElement(todayRef.current); }
   function scrollToCalendar() { scrollToElement(calendarRef.current); }
   function scrollToSelectedDay() { scrollToElement(resultsRef.current); }
-
   function scrollToTop() {
     const container = scrollContainerRef.current || getScrollContainer(pageRef.current);
     container.scrollTo({ top: 0, behavior: "smooth" });
@@ -123,15 +106,11 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     clients.forEach((client) => {
       (client.appointments || []).forEach((appointment) => {
         const appointmentDate = parseCalendarDate(appointment.date);
-        if (appointmentDate && sameDay(appointmentDate, date)) {
-          events.push({ id: appointment.id, type: "appointment", client, appointment, icon: "👤", colour: "#1976D2", label: appointment.title || appointment.type || getClientName(client) || "Appointment" });
-        }
+        if (appointmentDate && sameDay(appointmentDate, date)) events.push({ id: appointment.id, type: "appointment", client, appointment, icon: "👤", colour: "#1976D2", label: appointment.title || appointment.type || getClientName(client) || "Appointment" });
       });
       (client.fittings || []).forEach((fitting) => {
         const fittingDate = parseCalendarDate(fitting.date);
-        if (fittingDate && sameDay(fittingDate, date)) {
-          events.push({ id: fitting.id, type: "fitting", client, fitting, icon: "👗", colour: "#8B1E3F", label: fitting.title || "Fitting" });
-        }
+        if (fittingDate && sameDay(fittingDate, date)) events.push({ id: fitting.id, type: "fitting", client, fitting, icon: "👗", colour: "#8B1E3F", label: fitting.title || "Fitting" });
       });
     });
     jobs.forEach((job) => {
@@ -142,46 +121,6 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
       events.push({ id: job.id, type: "job", client, jobId: job.id, job, icon: "💼", colour: "#C62828", label: job.reference || job.title || job.name || "Job" });
     });
     return events.slice(0, 4);
-  }
-
-  function formatJobDate(value) {
-    const date = parseCalendarDate(value);
-    if (!date) return value || "-";
-    return date.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
-  }
-
-  function renderJobDetails(event) {
-    const job = event.job;
-    const clientName = getClientName(event.client);
-    const outstanding = getOutstanding(job);
-    const garment = job.garmentType || job.garment || job.garments?.[0]?.type || "General Job";
-    const progress = typeof job.progress === "number" ? job.progress : null;
-    const jobName = job.name || job.title || job.garmentType || job.garment || "Job";
-    return (
-      <div style={{ width: "100%" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
-          <span style={{ fontSize: 24, flexShrink: 0 }}>💼</span>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: 17, fontWeight: 700, color: "#2F3A3F" }}>{jobName}</div>
-            {job.reference && <div style={{ marginTop: 3, color: "#777", fontSize: 12, fontWeight: 600 }}>{job.reference}</div>}
-            {clientName && <div style={{ marginTop: 3, color: "#666", fontSize: 13 }}>👤 {clientName}</div>}
-          </div>
-          {job.status && <span style={{ background: "#E8EEF7", color: "#334E68", padding: "5px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>{job.status}</span>}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
-          <DetailItem label="Garment" value={garment} />
-          <DetailItem label="Due" value={formatJobDate(job.dueDate)} />
-          <DetailItem label="Outstanding" value={`$${outstanding.toFixed(2)}`} highlight={outstanding > 0} />
-          {job.nextAction && <DetailItem label="Next" value={job.nextAction} />}
-        </div>
-        {progress !== null && (
-          <div style={{ marginTop: 4 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, color: "#777" }}><span>Workflow</span><strong>{progress}%</strong></div>
-            <div style={{ height: 7, background: "#E5E7EB", borderRadius: 999, overflow: "hidden" }}><div style={{ width: `${Math.min(Math.max(progress, 0), 100)}%`, height: "100%", background: "#8B1E3F", borderRadius: 999 }} /></div>
-          </div>
-        )}
-      </div>
-    );
   }
 
   const selectedEvents = getEventsForDate(selectedDate);
@@ -211,9 +150,7 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
           <ChrysalisActionButton onClick={scrollToCalendar}>↑ Back to Calendar</ChrysalisActionButton>
         </div>
         <p style={{ color: "#666", marginBottom: 20 }}>{selectedDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
-        {selectedEvents.length === 0 ? (
-          <p style={{ color: "#999999", fontStyle: "italic" }}>No appointments, fittings or jobs scheduled.</p>
-        ) : selectedEvents.map((event, index) => (
+        {selectedEvents.length === 0 ? <p style={{ color: "#999999", fontStyle: "italic" }}>No appointments, fittings or jobs scheduled.</p> : selectedEvents.map((event, index) => (
           <div
             key={event.id || event.jobId || event.appointment?.id || event.fitting?.id || index}
             onClick={() => {
@@ -223,60 +160,48 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
             role="button"
             tabIndex={event.client ? 0 : -1}
             onKeyDown={(keyboardEvent) => {
-              if (event.client && (keyboardEvent.key === "Enter" || keyboardEvent.key === " ")) {
-                keyboardEvent.preventDefault();
-                if (event.type === "job") openJob(event.client, event.jobId);
-                else openClient(event.client);
-              }
+              if (!event.client || !["Enter", " "].includes(keyboardEvent.key)) return;
+              keyboardEvent.preventDefault();
+              if (event.type === "job") openJob(event.client, event.jobId);
+              else openClient(event.client);
             }}
             style={eventCardStyle}
+            onMouseEnter={(eventTarget) => {
+              eventTarget.currentTarget.style.background = "#FFF9FB";
+              eventTarget.currentTarget.style.boxShadow = "0 3px 10px rgba(139,30,63,0.10)";
+              eventTarget.currentTarget.style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(eventTarget) => {
+              eventTarget.currentTarget.style.background = "#F8F8F8";
+              eventTarget.currentTarget.style.boxShadow = "none";
+              eventTarget.currentTarget.style.transform = "translateY(0)";
+            }}
           >
-            {event.type === "job" ? renderJobDetails(event) : (
-              <><span style={{ fontSize: 20 }}>{event.icon}</span><div><div style={{ fontWeight: 600 }}>{event.label}</div><div style={{ color: "#666", fontSize: 13, marginTop: 3 }}>{event.type === "fitting" ? "Fitting" : "Appointment"}</div></div><span style={eventArrowStyle}>→</span></n>
-            )}
+            <span style={{ fontSize: 20 }}>{event.icon}</span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontWeight: 700 }}>{event.label}</div>
+              <div style={{ color: "#666", fontSize: 13, marginTop: 3 }}>{event.type === "fitting" ? "Fitting" : event.type === "job" ? "Job due" : "Appointment"}</div>
+            </div>
+            <span style={eventArrowStyle}>→</span>
           </div>
         ))}
       </div>
 
-      {isScrolled && (
-        <div style={{ position: "fixed", right: 30, bottom: 24, zIndex: 100 }}>
-          <ChrysalisActionButton onClick={scrollToTop}>↑ Back to Top</ChrysalisActionButton>
-        </div>
-      )}
+      {isScrolled && <div style={{ position: "fixed", right: 30, bottom: 24, zIndex: 100 }}><ChrysalisActionButton onClick={scrollToTop}>↑ Back to Top</ChrysalisActionButton></div>}
     </div>
   );
 }
 
-function DetailItem({ label, value, highlight = false }) {
-  return <div style={{ background: highlight ? "#FFF7E6" : "#FFFFFF", border: highlight ? "1px solid #F3D38A" : "1px solid #E8EAED", borderRadius: 8, padding: "9px 10px" }}><div style={{ fontSize: 11, color: "#888", marginBottom: 4 }}>{label}</div><div style={{ fontSize: 13, fontWeight: 700, color: highlight ? "#8A5A00" : "#2F3A3F" }}>{value}</div></div>;
-}
-
 const navigationShellStyle = {
-  position: "sticky",
-  top: -30,
-  zIndex: 50,
-  display: "flex",
-  flexWrap: "wrap",
-  gap: 6,
-  padding: 7,
-  marginBottom: 18,
-  background: "#FFFFFF",
-  border: "1px solid #E1E4E7",
-  borderRadius: 10,
-  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  position: "sticky", top: -30, zIndex: 50, display: "flex", flexWrap: "wrap", gap: 6,
+  padding: 7, marginBottom: 18, background: "#FFFFFF", border: "1px solid #E1E4E7",
+  borderRadius: 10, boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
 };
 
 const eventCardStyle = {
-  display: "flex",
-  alignItems: "flex-start",
-  gap: 12,
-  padding: "14px 16px",
-  marginBottom: 10,
-  borderLeft: "5px solid #8B1E3F",
-  background: "#F8F8F8",
-  borderRadius: 8,
-  cursor: "pointer",
-  transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease",
+  display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", marginBottom: 10,
+  borderLeft: "5px solid #8B1E3F", background: "#F8F8F8", borderRadius: 8, cursor: "pointer",
+  transition: "transform 160ms ease, box-shadow 160ms ease, background 160ms ease",
 };
 
 const eventArrowStyle = { marginLeft: "auto", color: "#8B1E3F", fontWeight: 800, fontSize: 18 };
