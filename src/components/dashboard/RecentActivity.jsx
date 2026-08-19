@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 import { getRecentActivity } from "../../utils/dashboard";
 
@@ -8,30 +7,51 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
 
   const rawActivity = useMemo(() => [
     ...getRecentActivity(clients),
-    ...jobs.filter((job) => job.overdue || job.dueToday || ["Completed", "Collected", "Ready"].includes(job.status)).map((job) => ({
-      id: `job-${job.id ?? job.reference ?? job.name}`,
-      reference: job.reference,
-      client: job.clientName ?? job.client ?? "",
-      title: getTitle(job),
-      description: getDescription(job),
-      date: job.updatedAt ?? job.completedAt ?? job.collectedAt ?? job.dueDate ?? new Date().toISOString(),
-    })),
+    ...jobs
+      .filter((job) => job.overdue || job.dueToday || ["Completed", "Collected", "Ready"].includes(job.status))
+      .map((job) => ({
+        id: `job-${job.id ?? job.reference ?? job.name}`,
+        reference: job.reference,
+        client: job.clientName ?? job.client ?? "",
+        title: getTitle(job),
+        description: getDescription(job),
+        date: job.updatedAt ?? job.completedAt ?? job.collectedAt ?? job.dueDate ?? new Date().toISOString(),
+      })),
   ], [clients, jobs]);
 
-  const groupedActivity = useMemo(() => groupActivity(rawActivity).sort((a, b) => new Date(b.date) - new Date(a.date)), [rawActivity]);
-  const sortedRawActivity = useMemo(() => [...rawActivity].sort((a, b) => new Date(b.date) - new Date(a.date)), [rawActivity]);
-  const compactActivity = groupedActivity.slice(0, 5);
+  const groupedActivity = useMemo(
+    () => groupActivity(rawActivity).sort((a, b) => new Date(b.date) - new Date(a.date)),
+    [rawActivity]
+  );
+  const sortedRawActivity = useMemo(
+    () => [...rawActivity].sort((a, b) => new Date(b.date) - new Date(a.date)),
+    [rawActivity]
+  );
+  const compactActivity = groupedActivity.slice(0, 4);
   const visibleActivity = showAll ? sortedRawActivity : compactActivity;
-  const hasMore = rawActivity.length > compactActivity.length || groupedActivity.length > 5;
+  const hasMore = rawActivity.length > compactActivity.length || groupedActivity.length > 4;
 
   return (
-    <Card title="Recent Activity" actions={hasMore ? <button type="button" onClick={() => setShowAll((value) => !value)} style={viewAllStyle}>{showAll ? "Show less ↑" : "View all activity →"}</button> : null}>
-      {rawActivity.length === 0 ? <EmptyState icon="📝" title="No Recent Activity" message="As you work throughout the day, activity will appear here." /> : (
+    <section style={sectionStyle}>
+      <div style={headerStyle}>
+        <h2 style={titleStyle}>Recent Activity</h2>
+        {hasMore && (
+          <button type="button" onClick={() => setShowAll((value) => !value)} style={viewAllStyle}>
+            {showAll ? "Show less ↑" : "View all activity →"}
+          </button>
+        )}
+      </div>
+
+      {rawActivity.length === 0 ? (
+        <div style={emptyStyle}>
+          <EmptyState icon="📝" title="No Recent Activity" message="Activity will appear here as you work." />
+        </div>
+      ) : (
         <div style={listStyle}>
           {visibleActivity.map((item, index) => <ActivityRow key={`${item.id ?? "activity"}-${index}`} item={item} />)}
         </div>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -40,7 +60,10 @@ function groupActivity(items) {
   items.forEach((item) => {
     const key = [item.reference || "", item.client || "", item.title || "", item.description || ""].join("|");
     const existing = groups.get(key);
-    if (!existing) { groups.set(key, { ...item, id: `activity-${key}`, count: 1 }); return; }
+    if (!existing) {
+      groups.set(key, { ...item, id: `activity-${key}`, count: 1 });
+      return;
+    }
     existing.count += 1;
     if (new Date(item.date) > new Date(existing.date)) existing.date = item.date;
   });
@@ -54,18 +77,24 @@ function ActivityRow({ item }) {
       <div style={contentStyle}>
         <div style={titleLineStyle}>
           {item.reference && <span style={referenceStyle}>{item.reference}</span>}
-          <strong>{item.title.replace(/^[^ ]+\s/, "")}</strong>
+          <strong>{cleanTitle(item.title)}</strong>
           {item.count > 1 && <span style={countStyle}>{item.count} updates</span>}
         </div>
-        <div style={metaStyle}>{item.client}{item.description ? ` · ${item.description}` : ""}</div>
+        <div style={metaStyle}>
+          {item.client}{item.description ? ` · ${item.description}` : ""}
+        </div>
       </div>
       <span style={dateStyle}>{formatActivityDate(item.date)}</span>
     </div>
   );
 }
 
+function cleanTitle(title = "") {
+  return title.replace(/^[^ ]+\s/, "");
+}
+
 function getActivityIcon(item) {
-  if (item.title.includes("overdue")) return "●";
+  if (item.title.includes("overdue")) return "🔴";
   if (item.title.includes("Fitting")) return "👗";
   if (item.title.includes("Payment")) return "💰";
   if (item.title.includes("Appointment")) return "📅";
@@ -97,13 +126,63 @@ function formatActivityDate(value) {
   return date.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
-const listStyle = { display: "flex", flexDirection: "column" };
-const rowStyle = { display: "grid", gridTemplateColumns: "30px minmax(0,1fr) auto", alignItems: "center", gap: 10, minHeight: 58, padding: "0 4px", borderBottom: "1px solid #ECEEEF" };
-const iconStyle = { width: 28, textAlign: "center", fontSize: 17 };
+const sectionStyle = {
+  background: "#FFFFFF",
+  border: "1px solid #DEE2E6",
+  borderRadius: 10,
+  overflow: "hidden",
+  boxShadow: "0 2px 8px rgba(31,41,51,.035)",
+};
+
+const headerStyle = {
+  minHeight: 61,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  padding: "0 20px",
+  borderBottom: "1px solid #E4E7EA",
+};
+
+const titleStyle = {
+  margin: 0,
+  color: "#20262B",
+  fontSize: 19,
+  lineHeight: 1.2,
+};
+
+const viewAllStyle = {
+  border: 0,
+  background: "transparent",
+  color: "#9A2348",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  padding: 0,
+};
+
+const listStyle = { padding: "0 16px" };
+
+const rowStyle = {
+  display: "grid",
+  gridTemplateColumns: "30px minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: 10,
+  minHeight: 65,
+  padding: "0 8px",
+  borderBottom: "1px solid #ECEEEF",
+};
+
+const iconStyle = {
+  width: 28,
+  textAlign: "center",
+  fontSize: 17,
+};
+
 const contentStyle = { minWidth: 0 };
 const titleLineStyle = { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 7 };
-const referenceStyle = { color: "#9A2348", fontSize: 10, fontWeight: 800, letterSpacing: .4 };
+const referenceStyle = { color: "#9A2348", fontSize: 10, fontWeight: 800, letterSpacing: .35 };
 const countStyle = { padding: "2px 6px", borderRadius: 999, background: "#F3F4F6", color: "#687178", fontSize: 10, fontWeight: 700 };
 const metaStyle = { marginTop: 3, color: "#707980", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const dateStyle = { color: "#8A9298", fontSize: 10, whiteSpace: "nowrap" };
-const viewAllStyle = { border: 0, background: "transparent", color: "#9A2348", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 };
+const emptyStyle = { padding: 18 };
