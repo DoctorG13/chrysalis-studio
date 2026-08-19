@@ -176,11 +176,11 @@ function uniqueById(item, index, list) {
   return list.findIndex((candidate) => (candidate.id || `${candidate.client?.id}-${candidate.title}-${candidate.time}`) === key) === index;
 }
 
-const panelStyle = { padding: "0 16px" };
+const panelStyle = { padding: "0 14px" };
 const todayListStyle = { display: "flex", flexDirection: "column" };
-const todayRowStyle = { display: "flex", alignItems: "center", gap: 14, minHeight: 58, padding: "6px 0", borderBottom: "1px solid #E8EAED" };
-const todayIconStyle = { width: 34, textAlign: "center", fontSize: 22, lineHeight: 1, flexShrink: 0 };
+const todayRowStyle = { display: "flex", alignItems: "center", gap: 12, minHeight: 56, padding: "5px 0", borderBottom: "1px solid #D9DEE2" };
+const todayIconStyle = { width: 32, textAlign: "center", fontSize: 22, lineHeight: 1, flexShrink: 0 };
 const rowContentStyle = { display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 };
-const rowTitleStyle = { color: "#20262B", fontSize: 14, lineHeight: 1.2 };
-const rowSubtitleStyle = { color: "#707980", fontSize: 11, lineHeight: 1.2 };
-const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flexShrink: 0, minWidth: 98, height: 38, padding: "0 16px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 13, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.04)", transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
+const rowTitleStyle = { color: "#20262B", fontSize: 14, lineHeight: 1.15 };
+const rowSubtitleStyle = { color: "#707980", fontSize: 11, lineHeight: 1.15 };
+const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flexShrink: 0, minWidth: 94, height: 36, padding: "0 15px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 13, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.035)", transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
