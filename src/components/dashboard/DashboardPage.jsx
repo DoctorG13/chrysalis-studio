@@ -17,69 +17,93 @@ export default function DashboardPage({
   }, [clients, jobs]);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 16,
-        marginBottom: 24,
-      }}
-    >
+    <main style={dashboardStyle}>
       <WelcomeCard />
 
-      <div style={todayViewWrapperStyle}>
-        {onOpenCalendar && (
-          <button
-            type="button"
-            onClick={onOpenCalendar}
-            style={calendarButtonStyle}
-          >
-            📅 Open Calendar →
-          </button>
-        )}
+      <section style={todayShellStyle}>
+        <div style={todayHeaderStyle}>
+          <div>
+            <div style={eyebrowStyle}>Today</div>
+            <h2 style={todayTitleStyle}>This Morning's View</h2>
+          </div>
+
+          {onOpenCalendar && (
+            <button type="button" onClick={onOpenCalendar} style={calendarButtonStyle}>
+              📅 Calendar
+            </button>
+          )}
+        </div>
 
         <TodaysWorkPanel
           clients={clients}
           jobs={allJobs}
           onSelectJob={onSelectJob}
         />
-      </div>
+      </section>
 
-      <section style={sectionStackStyle}>
+      <div style={lowerGridStyle}>
         <JobsDueThisWeek jobs={allJobs} />
         <RecentActivity clients={clients} jobs={allJobs} />
-      </section>
-    </div>
+      </div>
+    </main>
   );
 }
 
-const todayViewWrapperStyle = {
-  position: "relative",
+const dashboardStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 14,
+  marginBottom: 24,
+};
+
+const todayShellStyle = {
+  background: "#FFFFFF",
+  border: "1px solid #E5E7EB",
+  borderRadius: 14,
+  boxShadow: "0 2px 8px rgba(47,58,63,0.045)",
+  overflow: "hidden",
+};
+
+const todayHeaderStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  padding: "14px 18px",
+  background: "#F7F8F9",
+  borderBottom: "1px solid #E7E9EB",
+};
+
+const eyebrowStyle = {
+  fontSize: 10,
+  fontWeight: 800,
+  letterSpacing: 1.2,
+  textTransform: "uppercase",
+  color: "#8B1E3F",
+  marginBottom: 2,
+};
+
+const todayTitleStyle = {
+  margin: 0,
+  color: "#2F3A3F",
+  fontSize: 18,
+  lineHeight: 1.2,
 };
 
 const calendarButtonStyle = {
-  position: "absolute",
-  top: 12,
-  right: 12,
-  zIndex: 5,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  minHeight: 38,
-  padding: "8px 15px",
-  border: "1px solid #8B1E3F",
-  borderRadius: 999,
+  border: "1px solid #D8DDE0",
+  borderRadius: 9,
   background: "#FFFFFF",
-  color: "#8B1E3F",
-  whiteSpace: "nowrap",
-  fontSize: 13,
+  color: "#2F3A3F",
+  padding: "8px 13px",
+  fontSize: 12,
   fontWeight: 700,
   cursor: "pointer",
-  boxShadow: "0 1px 4px rgba(47,58,63,0.08)",
+  whiteSpace: "nowrap",
 };
 
-const sectionStackStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 12,
+const lowerGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 14,
 };
