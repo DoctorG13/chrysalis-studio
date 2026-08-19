@@ -30,7 +30,6 @@ export default function DashboardPage({
     (count, client) => count + (client.fittings || []).filter((item) => new Date(item.date).toDateString() === todayKey).length,
     0
   );
-
   const attentionJobs = allJobs.filter((job) => job.overdue || job.dueToday || job.needsAttention);
 
   return (
@@ -85,7 +84,9 @@ function Metric({ icon, label, value, action, onClick }) {
 function NeedsAttention({ jobs, clients, onSelectJob }) {
   return (
     <section style={attentionStyle}>
-      <SectionHeader title="Needs Attention" icon="⚠️" tone="alert" />
+      <div style={attentionHeaderStyle}>
+        <h2 style={attentionTitleStyle}>⚠️ <span>Needs Attention</span></h2>
+      </div>
       <div style={attentionBodyStyle}>
         {jobs.slice(0, 3).map((job) => {
           const client = clients.find((item) => String(item.id) === String(job.clientId));
@@ -105,13 +106,10 @@ function NeedsAttention({ jobs, clients, onSelectJob }) {
   );
 }
 
-function SectionHeader({ title, icon, tone }) {
+function SectionHeader({ title }) {
   return (
-    <div style={{ ...sectionHeaderStyle, ...(tone === "alert" ? attentionHeaderStyle : {}) }}>
-      <h2 style={sectionTitleStyle}>
-        {icon ? <span style={sectionHeaderIconStyle}>{icon}</span> : null}
-        {title}
-      </h2>
+    <div style={sectionHeaderStyle}>
+      <h2 style={sectionTitleStyle}>{title}</h2>
     </div>
   );
 }
@@ -168,32 +166,32 @@ function formatCurrency(value) {
 const dashboardStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 22,
-  marginBottom: 30,
+  gap: 14,
+  marginBottom: 22,
 };
 
 const metricsStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   background: "#FFFFFF",
-  borderTop: "1px solid #E4E7EA",
-  borderBottom: "1px solid #E4E7EA",
+  borderTop: "1px solid #E1E4E7",
+  borderBottom: "1px solid #E1E4E7",
 };
 
 const metricStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 17,
+  gap: 14,
   minWidth: 0,
-  minHeight: 108,
-  padding: "18px 26px",
-  borderRight: "1px solid #E4E7EA",
+  minHeight: 88,
+  padding: "13px 22px",
+  borderRight: "1px solid #E1E4E7",
 };
 
 const metricIconStyle = {
-  width: 40,
+  width: 38,
   textAlign: "center",
-  fontSize: 29,
+  fontSize: 27,
   lineHeight: 1,
   flexShrink: 0,
 };
@@ -201,32 +199,33 @@ const metricIconStyle = {
 const metricContentStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 3,
+  gap: 2,
   minWidth: 0,
 };
 
 const metricLabelStyle = {
   color: "#687178",
-  fontSize: 11,
+  fontSize: 10,
   fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: 0.25,
+  letterSpacing: 0.2,
+  whiteSpace: "nowrap",
 };
 
 const metricValueStyle = {
   color: "#171D22",
   fontSize: 25,
-  lineHeight: 1.05,
+  lineHeight: 1.02,
 };
 
 const metricActionStyle = {
   alignSelf: "flex-start",
-  margin: "3px 0 0",
+  margin: "2px 0 0",
   padding: 0,
   border: 0,
   background: "transparent",
   color: "#9A2348",
-  fontSize: 12,
+  fontSize: 11,
   fontWeight: 700,
   cursor: "pointer",
 };
@@ -234,62 +233,69 @@ const metricActionStyle = {
 const mainGridStyle = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1.08fr) minmax(360px, .92fr)",
-  gap: 20,
+  gap: 18,
   alignItems: "start",
 };
 
 const leftColumnStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 20,
+  gap: 14,
   minWidth: 0,
 };
 
 const rightColumnStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 20,
+  gap: 14,
   minWidth: 0,
 };
 
 const sectionStyle = {
   background: "#FFFFFF",
   border: "1px solid #DEE2E6",
-  borderRadius: 10,
+  borderRadius: 9,
   overflow: "hidden",
-  boxShadow: "0 2px 8px rgba(31,41,51,.035)",
+  boxShadow: "0 1px 5px rgba(31,41,51,.035)",
 };
 
 const sectionHeaderStyle = {
-  minHeight: 61,
+  minHeight: 54,
   display: "flex",
   alignItems: "center",
-  padding: "0 20px",
+  padding: "0 18px",
   borderBottom: "1px solid #E4E7EA",
 };
 
 const sectionTitleStyle = {
   margin: 0,
-  display: "flex",
-  alignItems: "center",
-  gap: 10,
   color: "#20262B",
-  fontSize: 19,
+  fontSize: 18,
   lineHeight: 1.2,
 };
 
-const sectionHeaderIconStyle = { fontSize: 17 };
-
 const attentionStyle = {
-  background: "#FFF8FA",
+  background: "#FFF9FB",
   border: "1px solid #E8C7CF",
-  borderRadius: 10,
+  borderRadius: 9,
   overflow: "hidden",
 };
 
 const attentionHeaderStyle = {
+  minHeight: 50,
+  display: "flex",
+  alignItems: "center",
+  padding: "0 18px",
+  borderBottom: "1px solid #F0DCE1",
+};
+
+const attentionTitleStyle = {
+  margin: 0,
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
   color: "#8B1E3F",
-  borderBottomColor: "#F0DCE1",
+  fontSize: 16,
 };
 
 const attentionBodyStyle = { padding: "0 18px" };
@@ -297,13 +303,13 @@ const attentionBodyStyle = { padding: "0 18px" };
 const attentionRowStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
-  minHeight: 70,
+  gap: 9,
+  minHeight: 68,
   borderBottom: "1px solid #F0DCE1",
 };
 
-const attentionDotStyle = { fontSize: 23, lineHeight: 1 };
-const attentionContentStyle = { display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 };
+const attentionDotStyle = { fontSize: 22, lineHeight: 1 };
+const attentionContentStyle = { display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 };
 
 const openButtonStyle = {
   display: "inline-flex",
@@ -312,8 +318,8 @@ const openButtonStyle = {
   gap: 6,
   flexShrink: 0,
   minWidth: 100,
-  height: 42,
-  padding: "0 18px",
+  height: 40,
+  padding: "0 17px",
   border: "1px solid #C96A83",
   borderRadius: 999,
   background: "#FFFFFF",
