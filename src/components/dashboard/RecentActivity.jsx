@@ -9,24 +9,14 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
     () => [
       ...getRecentActivity(clients),
       ...jobs
-        .filter(
-          (job) =>
-            job.overdue ||
-            job.dueToday ||
-            ["Completed", "Collected", "Ready"].includes(job.status)
-        )
+        .filter((job) => job.overdue || job.dueToday || ["Completed", "Collected", "Ready"].includes(job.status))
         .map((job) => ({
           id: `job-${job.id ?? job.reference ?? job.name}`,
           reference: job.reference,
           client: job.clientName ?? job.client ?? "",
           title: getTitle(job),
           description: getDescription(job),
-          date:
-            job.updatedAt ??
-            job.completedAt ??
-            job.collectedAt ??
-            job.dueDate ??
-            new Date().toISOString(),
+          date: job.updatedAt ?? job.completedAt ?? job.collectedAt ?? job.dueDate ?? new Date().toISOString(),
         })),
     ],
     [clients, jobs]
@@ -53,28 +43,34 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
             type="button"
             onClick={() => setShowAll((value) => !value)}
             style={viewAllStyle}
+            onMouseEnter={(event) => {
+              event.currentTarget.style.background = "#8B1E3F";
+              event.currentTarget.style.color = "#FFFFFF";
+              event.currentTarget.style.borderColor = "#8B1E3F";
+              event.currentTarget.style.transform = "translateY(-1px)";
+              event.currentTarget.style.boxShadow = "0 3px 8px rgba(139,30,63,.14)";
+            }}
+            onMouseLeave={(event) => {
+              event.currentTarget.style.background = "#FFFFFF";
+              event.currentTarget.style.color = "#8B1E3F";
+              event.currentTarget.style.borderColor = "#C96A83";
+              event.currentTarget.style.transform = "translateY(0)";
+              event.currentTarget.style.boxShadow = "0 1px 2px rgba(31,41,51,.035)";
+            }}
           >
-            {showAll ? "Show less ↑" : "View all"}
+            {showAll ? "Show less ↑" : "View all →"}
           </button>
         )}
       </div>
 
       {rawActivity.length === 0 ? (
         <div style={emptyStyle}>
-          <EmptyState
-            icon="📝"
-            title="No Recent Activity"
-            message="Activity will appear here as you work."
-          />
+          <EmptyState icon="📝" title="No Recent Activity" message="Activity will appear here as you work." />
         </div>
       ) : (
         <div style={listStyle}>
           {visibleActivity.map((item, index) => (
-            <ActivityRow
-              key={`${item.id ?? "activity"}-${index}`}
-              item={item}
-              isLast={index === visibleActivity.length - 1}
-            />
+            <ActivityRow key={`${item.id ?? "activity"}-${index}`} item={item} isLast={index === visibleActivity.length - 1} />
           ))}
         </div>
       )}
@@ -85,12 +81,7 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
 function groupActivity(items) {
   const groups = new Map();
   items.forEach((item) => {
-    const key = [
-      item.reference || "",
-      item.client || "",
-      item.title || "",
-      item.description || "",
-    ].join("|");
+    const key = [item.reference || "", item.client || "", item.title || "", item.description || ""].join("|");
     const existing = groups.get(key);
     if (!existing) {
       groups.set(key, { ...item, id: `activity-${key}`, count: 1 });
@@ -104,12 +95,7 @@ function groupActivity(items) {
 
 function ActivityRow({ item, isLast }) {
   return (
-    <div
-      style={{
-        ...rowStyle,
-        borderBottom: isLast ? 0 : "1px solid #D9DEE2",
-      }}
-    >
+    <div style={{ ...rowStyle, borderBottom: isLast ? 0 : "1px solid #D9DEE2" }}>
       <div style={iconStyle}>{getActivityIcon(item)}</div>
       <div style={contentStyle}>
         <div style={titleLineStyle}>
@@ -164,104 +150,22 @@ function formatActivityDate(value) {
   const now = new Date();
   const sameDay = date.toDateString() === now.toDateString();
   if (sameDay) {
-    return `Today, ${date.toLocaleTimeString("en-AU", {
-      hour: "numeric",
-      minute: "2-digit",
-    })}`;
+    return `Today, ${date.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })}`;
   }
   return date.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
-const sectionStyle = {
-  background: "#FFFFFF",
-  border: "1px solid #D9DEE2",
-  borderRadius: 8,
-  overflow: "hidden",
-  boxShadow: "0 1px 4px rgba(31,41,51,.025)",
-};
-
-const headerStyle = {
-  minHeight: 50,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 12,
-  padding: "0 20px",
-  borderBottom: "1px solid #D9DEE2",
-};
-
-const titleStyle = {
-  margin: 0,
-  color: "#20262B",
-  fontSize: 18,
-  lineHeight: 1.2,
-};
-
-const viewAllStyle = {
-  border: 0,
-  background: "transparent",
-  color: "#9A2348",
-  fontSize: 12,
-  fontWeight: 700,
-  cursor: "pointer",
-  padding: 0,
-};
-
+const sectionStyle = { background: "#FFFFFF", border: "1px solid #D9DEE2", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 4px rgba(31,41,51,.025)" };
+const headerStyle = { minHeight: 50, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 20px", borderBottom: "1px solid #D9DEE2" };
+const titleStyle = { margin: 0, color: "#20262B", fontSize: 18, lineHeight: 1.2 };
+const viewAllStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, minHeight: 29, padding: "0 10px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 11, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.035)", transition: "background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
 const listStyle = { padding: "0 12px" };
-
-const rowStyle = {
-  display: "grid",
-  gridTemplateColumns: "34px minmax(0, 1fr) auto",
-  alignItems: "center",
-  gap: 12,
-  minHeight: 72,
-  padding: "0 4px",
-};
-
-const iconStyle = {
-  width: 32,
-  textAlign: "center",
-  fontSize: 19,
-};
-
+const rowStyle = { display: "grid", gridTemplateColumns: "34px minmax(0, 1fr) auto", alignItems: "center", gap: 12, minHeight: 72, padding: "0 4px" };
+const iconStyle = { width: 32, textAlign: "center", fontSize: 19 };
 const contentStyle = { minWidth: 0 };
-const titleLineStyle = {
-  display: "flex",
-  alignItems: "center",
-  flexWrap: "wrap",
-  gap: 6,
-};
-
-const referenceStyle = {
-  color: "#9A2348",
-  fontSize: 10,
-  fontWeight: 800,
-  letterSpacing: 0.35,
-};
-
-const countStyle = {
-  padding: "2px 6px",
-  borderRadius: 999,
-  background: "#F3F4F6",
-  color: "#687178",
-  fontSize: 10,
-  fontWeight: 700,
-};
-
-const metaStyle = {
-  marginTop: 4,
-  color: "#707980",
-  fontSize: 11,
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-
-const dateStyle = {
-  color: "#687178",
-  fontSize: 11,
-  whiteSpace: "nowrap",
-  textAlign: "right",
-};
-
+const titleLineStyle = { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 };
+const referenceStyle = { color: "#9A2348", fontSize: 10, fontWeight: 800, letterSpacing: 0.35 };
+const countStyle = { padding: "2px 6px", borderRadius: 999, background: "#F3F4F6", color: "#687178", fontSize: 10, fontWeight: 700 };
+const metaStyle = { marginTop: 4, color: "#707980", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const dateStyle = { color: "#687178", fontSize: 11, whiteSpace: "nowrap", textAlign: "right" };
 const emptyStyle = { padding: 16 };
