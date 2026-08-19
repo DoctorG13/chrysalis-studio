@@ -1,26 +1,39 @@
 export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }) {
   const todayKey = toDateKey(new Date());
   const appointments = clients
-    .flatMap((client) => (client.appointments || [])
-      .filter((item) => toDateKey(item.date) === todayKey)
-      .map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) })))
+    .flatMap((client) =>
+      (client.appointments || [])
+        .filter((item) => toDateKey(item.date) === todayKey)
+        .map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) }))
+    )
     .sort(compareScheduleItems);
 
   const fittings = [
-    ...clients.flatMap((client) => (client.fittings || [])
-      .filter((item) => toDateKey(item.date) === todayKey)
-      .map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) }))),
-    ...jobs.flatMap((job) => (job.fittings || [])
-      .filter((item) => toDateKey(item.date) === todayKey)
-      .map((item) => ({
-        ...item,
-        job,
-        client: clients.find((client) => String(client.id) === String(job.clientId)),
-      }))),
-  ].filter(uniqueById).sort(compareScheduleItems);
+    ...clients.flatMap((client) =>
+      (client.fittings || [])
+        .filter((item) => toDateKey(item.date) === todayKey)
+        .map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) }))
+    ),
+    ...jobs.flatMap((job) =>
+      (job.fittings || [])
+        .filter((item) => toDateKey(item.date) === todayKey)
+        .map((item) => ({
+          ...item,
+          job,
+          client: clients.find((client) => String(client.id) === String(job.clientId)),
+        }))
+    ),
+  ]
+    .filter(uniqueById)
+    .sort(compareScheduleItems);
 
   const activeJobs = jobs
-    .filter((job) => !["Completed", "Cancelled", "Archived"].includes(String(job.status || "").trim()))
+    .filter(
+      (job) =>
+        !["Completed", "Cancelled", "Archived"].includes(
+          String(job.status || "").trim()
+        )
+    )
     .sort((a, b) => compareDates(a.dueDate, b.dueDate));
 
   const outstanding = jobs
@@ -31,24 +44,70 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
   return (
     <div style={panelStyle}>
       <div style={todayListStyle}>
-        <TodayRow icon="📅" title="Appointments" subtitle={appointments.length ? `Next: ${formatTime(appointments[0].time)} — ${getClientName(appointments[0].client)}` : "No appointments today"} onClick={appointments[0]?.job ? () => onSelectJob?.(appointments[0].job) : undefined} />
-        <TodayRow icon="👗" title="Fittings" subtitle={fittings.length ? `Next: ${formatTime(fittings[0].time)} — ${getClientName(fittings[0].client)}` : "No fittings today"} onClick={fittings[0]?.job ? () => onSelectJob?.(fittings[0].job) : undefined} />
-        <TodayRow icon="💼" title="Active Jobs" subtitle={`${activeJobs.length} ${activeJobs.length === 1 ? "job" : "jobs"} in progress`} onClick={activeJobs[0] ? () => onSelectJob?.(activeJobs[0]) : undefined} />
-        <TodayRow icon="💰" title="Outstanding Payments" subtitle={`${formatCurrency(outstanding.reduce((sum, item) => sum + item.amount, 0))} across ${outstanding.length} ${outstanding.length === 1 ? "job" : "jobs"}`} onClick={outstanding[0] ? () => onSelectJob?.(outstanding[0].job) : undefined} />
+        <TodayRow
+          icon="📅"
+          title="Appointments"
+          subtitle={
+            appointments.length
+              ? `Next: ${formatTime(appointments[0].time)} — ${getClientName(appointments[0].client)}`
+              : "No appointments today"
+          }
+          onClick={
+            appointments[0]?.job
+              ? () => onSelectJob?.(appointments[0].job)
+              : undefined
+          }
+        />
+        <TodayRow
+          icon="👗"
+          title="Fittings"
+          subtitle={
+            fittings.length
+              ? `Next: ${formatTime(fittings[0].time)} — ${getClientName(fittings[0].client)}`
+              : "No fittings today"
+          }
+          onClick={
+            fittings[0]?.job
+              ? () => onSelectJob?.(fittings[0].job)
+              : undefined
+          }
+        />
+        <TodayRow
+          icon="💼"
+          title="Active Jobs"
+          subtitle={`${activeJobs.length} ${activeJobs.length === 1 ? "job" : "jobs"} in progress`}
+          onClick={activeJobs[0] ? () => onSelectJob?.(activeJobs[0]) : undefined}
+        />
+        <TodayRow
+          icon="💰"
+          title="Outstanding Payments"
+          subtitle={`${formatCurrency(outstanding.reduce((sum, item) => sum + item.amount, 0))} across ${outstanding.length} ${outstanding.length === 1 ? "job" : "jobs"}`}
+          onClick={
+            outstanding[0]
+              ? () => onSelectJob?.(outstanding[0].job)
+              : undefined
+          }
+          last
+        />
       </div>
     </div>
   );
 }
 
-function TodayRow({ icon, title, subtitle, onClick }) {
+function TodayRow({ icon, title, subtitle, onClick, last = false }) {
   return (
-    <div style={todayRowStyle}>
+    <div
+      style={{
+        ...todayRowStyle,
+        borderBottom: last ? 0 : "1px solid #D9DEE2",
+      }}
+    >
       <span style={todayIconStyle}>{icon}</span>
       <div style={rowContentStyle}>
         <strong style={rowTitleStyle}>{title}</strong>
         <small style={rowSubtitleStyle}>{subtitle}</small>
       </div>
-      {onClick && <OpenButton onClick={onClick} />}
+      {onClick ? <OpenButton onClick={onClick} /> : <span style={buttonPlaceholderStyle} />}
     </div>
   );
 }
@@ -109,7 +168,12 @@ function getOutstanding(job) {
 }
 
 function formatCurrency(value) {
-  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value) || 0);
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
 }
 
 function toDateValue(value) {
@@ -173,14 +237,63 @@ function formatTime(value) {
 
 function uniqueById(item, index, list) {
   const key = item.id || `${item.client?.id}-${item.title}-${item.time}`;
-  return list.findIndex((candidate) => (candidate.id || `${candidate.client?.id}-${candidate.title}-${candidate.time}`) === key) === index;
+  return list.findIndex(
+    (candidate) =>
+      (candidate.id || `${candidate.client?.id}-${candidate.title}-${candidate.time}`) === key
+  ) === index;
 }
 
-const panelStyle = { padding: "0 14px" };
+const panelStyle = { padding: "0 20px" };
 const todayListStyle = { display: "flex", flexDirection: "column" };
-const todayRowStyle = { display: "flex", alignItems: "center", gap: 12, minHeight: 56, padding: "5px 0", borderBottom: "1px solid #D9DEE2" };
-const todayIconStyle = { width: 32, textAlign: "center", fontSize: 22, lineHeight: 1, flexShrink: 0 };
-const rowContentStyle = { display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 };
-const rowTitleStyle = { color: "#20262B", fontSize: 14, lineHeight: 1.15 };
-const rowSubtitleStyle = { color: "#707980", fontSize: 11, lineHeight: 1.15 };
-const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flexShrink: 0, minWidth: 94, height: 36, padding: "0 15px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 13, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.035)", transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
+const todayRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 16,
+  minHeight: 92,
+  padding: "10px 6px",
+};
+const todayIconStyle = {
+  width: 38,
+  textAlign: "center",
+  fontSize: 29,
+  lineHeight: 1,
+  flexShrink: 0,
+};
+const rowContentStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
+  minWidth: 0,
+  flex: 1,
+};
+const rowTitleStyle = {
+  color: "#20262B",
+  fontSize: 15,
+  lineHeight: 1.15,
+};
+const rowSubtitleStyle = {
+  color: "#707980",
+  fontSize: 12,
+  lineHeight: 1.2,
+};
+const buttonPlaceholderStyle = { width: 88, flexShrink: 0 };
+const openButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  flexShrink: 0,
+  minWidth: 88,
+  height: 38,
+  padding: "0 15px",
+  border: "1px solid #C96A83",
+  borderRadius: 999,
+  background: "#FFFFFF",
+  color: "#8B1E3F",
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: 1,
+  cursor: "pointer",
+  boxShadow: "0 1px 2px rgba(31,41,51,.035)",
+  transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+};
