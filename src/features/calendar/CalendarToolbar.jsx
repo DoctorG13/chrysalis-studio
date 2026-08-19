@@ -5,6 +5,7 @@ export default function CalendarToolbar({
   onPrevious,
   onToday,
   onNext,
+  onAddAppointment,
 }) {
   return (
     <div
@@ -30,6 +31,7 @@ export default function CalendarToolbar({
         <ChrysalisActionButton onClick={onPrevious} ariaLabel="Previous month" title="Previous month">←</ChrysalisActionButton>
         <ChrysalisActionButton onClick={onToday} variant="accent">Today</ChrysalisActionButton>
         <ChrysalisActionButton onClick={onNext} ariaLabel="Next month" title="Next month">→</ChrysalisActionButton>
+        <ChrysalisActionButton onClick={onAddAppointment} variant="accent">＋ Appointment</ChrysalisActionButton>
       </div>
 
       <strong style={{ minWidth: 155, textAlign: "right", color: "#30383D", fontSize: 17, whiteSpace: "nowrap" }}>
