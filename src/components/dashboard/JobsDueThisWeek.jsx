@@ -23,11 +23,11 @@ export default function JobsDueThisWeek({ jobs = [], onSelectJob }) {
         </div>
       ) : (
         <div style={listStyle}>
-          {dueJobs.map((job) => (
+          {dueJobs.map((job, index) => (
             <button
               type="button"
               key={job.id ?? job.reference ?? `${job.name}-${job.dueDate}`}
-              style={rowStyle}
+              style={{ ...rowStyle, borderBottom: index === dueJobs.length - 1 ? "0" : "1px solid #D9DEE2" }}
               onClick={() => onSelectJob?.(job)}
               onMouseEnter={(event) => { event.currentTarget.style.background = "#FFF8FA"; }}
               onMouseLeave={(event) => { event.currentTarget.style.background = "#FFFFFF"; }}
@@ -51,16 +51,16 @@ function formatDate(value) {
 
 const sectionStyle = {
   background: "#FFFFFF",
-  border: "1px solid #DEE2E6",
-  borderRadius: 9,
+  border: "1px solid #D9DEE2",
+  borderRadius: 8,
   overflow: "hidden",
-  boxShadow: "0 1px 5px rgba(31,41,51,.035)",
+  boxShadow: "0 1px 4px rgba(31,41,51,.025)",
 };
-const headerStyle = { minHeight: 54, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 18px", borderBottom: "1px solid #E4E7EA" };
-const titleStyle = { margin: 0, color: "#20262B", fontSize: 18, lineHeight: 1.2 };
+const headerStyle = { minHeight: 44, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 15px", borderBottom: "1px solid #D9DEE2" };
+const titleStyle = { margin: 0, color: "#20262B", fontSize: 17, lineHeight: 1.2 };
 const viewAllStyle = { border: 0, background: "transparent", color: "#9A2348", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 };
-const listStyle = { padding: "0 12px" };
-const rowStyle = { width: "100%", display: "grid", gridTemplateColumns: "minmax(145px, 1.15fr) minmax(100px, .85fr) 56px", alignItems: "center", gap: 10, minHeight: 50, padding: "0 4px", border: 0, borderBottom: "1px solid #ECEEEF", background: "#FFFFFF", textAlign: "left", cursor: "pointer", transition: "background 140ms ease" };
+const listStyle = { padding: "0 10px" };
+const rowStyle = { width: "100%", display: "grid", gridTemplateColumns: "minmax(145px, 1.15fr) minmax(100px, .85fr) 72px", alignItems: "center", gap: 10, minHeight: 48, padding: "0 4px", border: 0, background: "#FFFFFF", textAlign: "left", cursor: "pointer", transition: "background 140ms ease" };
 const referenceStyle = { color: "#20262B", fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
 const clientStyle = { color: "#707980", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
 const dateStyle = { color: "#9A2348", fontSize: 12, fontWeight: 700, textAlign: "right", whiteSpace: "nowrap" };
