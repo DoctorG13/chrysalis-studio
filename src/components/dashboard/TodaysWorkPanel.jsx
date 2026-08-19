@@ -1,10 +1,9 @@
 export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }) {
   const todayKey = toDateKey(new Date());
 
-  const appointments = clients
-    .flatMap((client) => (client.appointments || [])
-      .filter((item) => toDateKey(item.date) === todayKey)
-      .map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) })))
+  const appointments = clients.flatMap((client) => (client.appointments || [])
+    .filter((item) => toDateKey(item.date) === todayKey)
+    .map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) })))
     .sort(compareScheduleItems);
 
   const fittings = [
@@ -13,11 +12,7 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
       .map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) }))),
     ...jobs.flatMap((job) => (job.fittings || [])
       .filter((item) => toDateKey(item.date) === todayKey)
-      .map((item) => ({
-        ...item,
-        job,
-        client: clients.find((client) => String(client.id) === String(job.clientId)),
-      }))),
+      .map((item) => ({ ...item, job, client: clients.find((client) => String(client.id) === String(job.clientId)) }))),
   ].filter(uniqueById).sort(compareScheduleItems);
 
   const activeJobs = jobs
@@ -31,10 +26,8 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 4);
 
-  const priorities = jobs
-    .filter((job) => job.overdue || job.dueToday || job.needsAttention)
+  const priorities = jobs.filter((job) => job.overdue || job.dueToday || job.needsAttention)
     .sort((a, b) => priorityScore(a) - priorityScore(b));
-
   const totalOutstanding = outstanding.reduce((sum, item) => sum + item.amount, 0);
 
   return (
@@ -49,20 +42,17 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
       {priorities.length > 0 && (
         <section style={attentionStyle}>
           <div style={attentionHeadingStyle}>
-            <span>🔔 Needs attention</span>
-            <strong>{priorities.length}</strong>
+            <span>🔔 Needs attention</span><strong>{priorities.length}</strong>
           </div>
           {priorities.map((job) => {
             const priority = getPriority(job);
             const client = clients.find((item) => String(item.id) === String(job.clientId));
             return (
               <button key={job.id ?? job.reference ?? job.name} type="button" onClick={() => onSelectJob?.(job)} style={attentionRowStyle}>
-                <span style={{ color: priority.color, fontSize: 13 }}>●</span>
+                <span style={{ color: priority.color, fontSize: 11 }}>●</span>
                 <strong>{job.reference || job.name || job.title || "Job"}</strong>
-                <span>{getClientName(client)}</span>
-                <span style={{ marginLeft: "auto", color: priority.color, fontWeight: 700 }}>
-                  {job.nextAction || priority.label} →
-                </span>
+                <span style={mutedTextStyle}>{getClientName(client)}</span>
+                <span style={{ marginLeft: "auto", color: priority.color, fontWeight: 700 }}>{job.nextAction || priority.label} →</span>
               </button>
             );
           })}
@@ -75,19 +65,16 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
             <ScheduleRow key={item.id || index} time={item.time} title={item.title || item.type || "Appointment"} client={getClientName(item.client)} onClick={item.job ? () => onSelectJob?.(item.job) : undefined} />
           ))}
         </CompactSection>
-
         <CompactSection title="👗 Today's Fittings" empty="No fittings today.">
           {fittings.map((item, index) => (
             <ScheduleRow key={item.id || index} time={item.time} title={item.title || "Fitting"} client={getClientName(item.client)} onClick={item.job ? () => onSelectJob?.(item.job) : undefined} />
           ))}
         </CompactSection>
-
         <CompactSection title="💼 Active Jobs" empty="No active jobs.">
           {activeJobs.map((job) => (
             <ActionRow key={job.id} title={job.reference || job.name || job.title || "Job"} subtitle={getClientName(clients.find((client) => String(client.id) === String(job.clientId)))} meta={job.status || "Active"} onClick={() => onSelectJob?.(job)} />
           ))}
         </CompactSection>
-
         <CompactSection title="💰 Outstanding Payments" empty="No outstanding payments.">
           {outstanding.map(({ job, amount }) => (
             <ActionRow key={job.id} title={job.reference || job.name || job.title || "Job"} subtitle={getClientName(clients.find((client) => String(client.id) === String(job.clientId)))} meta={formatCurrency(amount)} metaStyle={{ color: "#8A5A00" }} onClick={() => onSelectJob?.(job)} />
@@ -99,7 +86,7 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
 }
 
 function Metric({ icon, value, label }) {
-  return <div style={metricStyle}><span style={{ fontSize: 17 }}>{icon}</span><div><strong>{value}</strong><span>{label}</span></div></div>;
+  return <div style={metricStyle}><span>{icon}</span><div><strong>{value}</strong><span>{label}</span></div></div>;
 }
 
 function CompactSection({ title, empty, children }) {
@@ -140,6 +127,7 @@ function getClientName(client) {
 function getOutstanding(job) {
   if (job.balance !== undefined && job.balance !== null) return Math.max(Number(job.balance) || 0, 0);
   if (job.outstanding !== undefined && job.outstanding !== null) return Math.max(Number(job.outstanding) || 0, 0);
+  if (Array.isArray(job.invoices) && job.invoices.length) return Math.max(job.invoices.reduce((sum, invoice) => sum + Number(invoice.balance ?? 0), 0), 0);
   const quote = Number(job.price || 0);
   const paid = (job.payments || []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   return Math.max(quote - paid, 0);
@@ -167,20 +155,14 @@ function toDateKey(value) {
 }
 
 function compareDates(a, b) {
-  const da = toDateValue(a);
-  const db = toDateValue(b);
-  if (!da && !db) return 0;
-  if (!da) return 1;
-  if (!db) return -1;
+  const da = toDateValue(a); const db = toDateValue(b);
+  if (!da && !db) return 0; if (!da) return 1; if (!db) return -1;
   return da - db;
 }
 
 function compareScheduleItems(a, b) {
-  const am = timeToMinutes(a.time);
-  const bm = timeToMinutes(b.time);
-  if (am === null && bm === null) return 0;
-  if (am === null) return 1;
-  if (bm === null) return -1;
+  const am = timeToMinutes(a.time); const bm = timeToMinutes(b.time);
+  if (am === null && bm === null) return 0; if (am === null) return 1; if (bm === null) return -1;
   return am - bm;
 }
 
@@ -188,9 +170,7 @@ function timeToMinutes(value) {
   if (!value) return null;
   const match = String(value).trim().match(/^(\d{1,2}):(\d{2})(?:\s*([ap]m))?$/i);
   if (!match) return null;
-  let hour = Number(match[1]);
-  const minute = Number(match[2]);
-  const meridiem = match[3]?.toLowerCase();
+  let hour = Number(match[1]); const minute = Number(match[2]); const meridiem = match[3]?.toLowerCase();
   if (meridiem === "pm" && hour < 12) hour += 12;
   if (meridiem === "am" && hour === 12) hour = 0;
   return hour * 60 + minute;
@@ -199,16 +179,12 @@ function timeToMinutes(value) {
 function formatTime(value) {
   const minutes = timeToMinutes(value);
   if (minutes === null) return value || "Time TBC";
-  const hour = Math.floor(minutes / 60);
-  const minute = minutes % 60;
+  const hour = Math.floor(minutes / 60); const minute = minutes % 60;
   return `${hour % 12 || 12}:${String(minute).padStart(2, "0")} ${hour >= 12 ? "pm" : "am"}`;
 }
 
 function priorityScore(job) {
-  if (job.overdue) return 1;
-  if (job.dueToday) return 2;
-  if (job.needsAttention) return 3;
-  return 99;
+  if (job.overdue) return 1; if (job.dueToday) return 2; if (job.needsAttention) return 3; return 99;
 }
 
 function getPriority(job) {
@@ -226,20 +202,21 @@ function uniqueById(item, index, list) {
   return list.findIndex((candidate) => (candidate.id || `${candidate.client?.id}-${candidate.title}-${candidate.time}`) === key) === index;
 }
 
-const panelStyle = { padding: "14px 18px 18px" };
-const metricsStyle = { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8, marginBottom: 12 };
-const metricStyle = { display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", border: "1px solid #E5E7EB", borderRadius: 8, background: "#FAF9F6" };
+const panelStyle = { padding: "0 2px 2px" };
+const metricsStyle = { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 2, marginBottom: 13, borderBottom: "1px solid #E8EAED" };
+const metricStyle = { display: "flex", alignItems: "center", gap: 7, padding: "8px 11px 10px", background: "transparent", border: 0, borderRadius: 0, minWidth: 0 };
 const sectionStyle = { minWidth: 0 };
-const sectionTitleStyle = { margin: "0 0 7px", color: "#2F3A3F", fontSize: 13, fontWeight: 800 };
-const rowsStyle = { display: "grid", gap: 6 };
-const emptyStyle = { color: "#8A9094", fontSize: 12 };
-const contentGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 };
-const rowStyle = { display: "flex", alignItems: "center", gap: 9, minHeight: 38, padding: "6px 9px", border: "1px solid #E8EAED", borderRadius: 7, background: "#FAFAFA" };
+const sectionTitleStyle = { margin: "0 0 6px", color: "#2F3A3F", fontSize: 12, fontWeight: 800 };
+const rowsStyle = { display: "grid", gap: 4 };
+const emptyStyle = { color: "#8A9094", fontSize: 11 };
+const contentGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: 22, rowGap: 14 };
+const rowStyle = { display: "flex", alignItems: "center", gap: 8, minHeight: 34, padding: "5px 2px", borderBottom: "1px solid #ECEEEF", background: "transparent" };
 const rowButtonStyle = { ...rowStyle, width: "100%", textAlign: "left", font: "inherit", cursor: "pointer" };
-const timeStyle = { minWidth: 58, color: "#8B1E3F", fontSize: 11, fontWeight: 800 };
+const timeStyle = { minWidth: 55, color: "#8B1E3F", fontSize: 10, fontWeight: 800 };
 const rowContentStyle = { display: "flex", flexDirection: "column", gap: 1, minWidth: 0, flex: 1 };
-const metaStyleBase = { color: "#687178", fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
+const metaStyleBase = { color: "#687178", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" };
 const arrowStyle = { color: "#8B1E3F", fontWeight: 800 };
-const attentionStyle = { marginBottom: 12, border: "1px solid #F0D3D8", borderRadius: 8, overflow: "hidden", background: "#FFF9FA" };
-const attentionHeadingStyle = { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "7px 10px", color: "#8B1E3F", fontSize: 12, fontWeight: 800 };
-const attentionRowStyle = { width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "8px 10px", border: 0, borderTop: "1px solid #F0D3D8", background: "transparent", color: "#3D454A", textAlign: "left", font: "inherit", cursor: "pointer", fontSize: 12 };
+const mutedTextStyle = { color: "#737B80", fontSize: 11 };
+const attentionStyle = { marginBottom: 13, borderBottom: "1px solid #E8D8DC", paddingBottom: 8 };
+const attentionHeadingStyle = { display: "flex", alignItems: "center", gap: 8, padding: "0 0 6px", color: "#8B1E3F", fontSize: 12, fontWeight: 800 };
+const attentionRowStyle = { width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "6px 2px", border: 0, borderTop: "1px solid #F0E7E9", background: "transparent", color: "#3D454A", textAlign: "left", font: "inherit", cursor: "pointer", fontSize: 11 };
