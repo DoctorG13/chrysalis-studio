@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CalendarToolbar from "../features/calendar/CalendarToolbar";
 import CalendarGrid from "../features/calendar/CalendarGrid";
 import TodayView from "../features/calendar/TodayView";
+import ChrysalisActionButton from "../features/calendar/ChrysalisActionButton";
 import { useChrysalis } from "../context/ChrysalisProvider";
 import {
   buildCalendar,
@@ -16,7 +17,6 @@ import {
 
 const NAV_HEIGHT = 54;
 const NAV_GAP = 12;
-const APP_CONTENT_PADDING = 30;
 
 function getScrollContainer(element) {
   let current = element?.parentElement;
@@ -33,7 +33,9 @@ function scrollToElement(element, offset = NAV_HEIGHT + NAV_GAP) {
   if (!element) return;
   const container = getScrollContainer(element);
   const elementRect = element.getBoundingClientRect();
-  const containerRect = container === document.scrollingElement || container === document.documentElement ? { top: 0 } : container.getBoundingClientRect();
+  const containerRect = container === document.scrollingElement || container === document.documentElement
+    ? { top: 0 }
+    : container.getBoundingClientRect();
   const targetTop = container.scrollTop + (elementRect.top - containerRect.top) - offset;
   container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
 }
@@ -121,11 +123,15 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     clients.forEach((client) => {
       (client.appointments || []).forEach((appointment) => {
         const appointmentDate = parseCalendarDate(appointment.date);
-        if (appointmentDate && sameDay(appointmentDate, date)) events.push({ id: appointment.id, type: "appointment", client, appointment, icon: "👤", colour: "#1976D2", label: appointment.title || appointment.type || getClientName(client) || "Appointment" });
+        if (appointmentDate && sameDay(appointmentDate, date)) {
+          events.push({ id: appointment.id, type: "appointment", client, appointment, icon: "👤", colour: "#1976D2", label: appointment.title || appointment.type || getClientName(client) || "Appointment" });
+        }
       });
       (client.fittings || []).forEach((fitting) => {
         const fittingDate = parseCalendarDate(fitting.date);
-        if (fittingDate && sameDay(fittingDate, date)) events.push({ id: fitting.id, type: "fitting", client, fitting, icon: "👗", colour: "#8B1E3F", label: fitting.title || "Fitting" });
+        if (fittingDate && sameDay(fittingDate, date)) {
+          events.push({ id: fitting.id, type: "fitting", client, fitting, icon: "👗", colour: "#8B1E3F", label: fitting.title || "Fitting" });
+        }
       });
     });
     jobs.forEach((job) => {
@@ -153,9 +159,27 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     const jobName = job.name || job.title || job.garmentType || job.garment || "Job";
     return (
       <div style={{ width: "100%" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}><span style={{ fontSize: 24, flexShrink: 0 }}>💼</span><div style={{ minWidth: 0, flex: 1 }}><div style={{ fontSize: 17, fontWeight: 700, color: "#2F3A3F" }}>{jobName}</div>{job.reference && <div style={{ marginTop: 3, color: "#777", fontSize: 12, fontWeight: 600 }}>{job.reference}</div>}{clientName && <div style={{ marginTop: 3, color: "#666", fontSize: 13 }}>👤 {clientName}</div>}</div>{job.status && <span style={{ background: "#E8EEF7", color: "#334E68", padding: "5px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>{job.status}</span>}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}><DetailItem label="Garment" value={garment} /><DetailItem label="Due" value={formatJobDate(job.dueDate)} /><DetailItem label="Outstanding" value={`$${outstanding.toFixed(2)}`} highlight={outstanding > 0} />{job.nextAction && <DetailItem label="Next" value={job.nextAction} />}</div>
-        {progress !== null && <div style={{ marginTop: 4 }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, color: "#777" }}><span>Workflow</span><strong>{progress}%</strong></div><div style={{ height: 7, background: "#E5E7EB", borderRadius: 999, overflow: "hidden" }}><div style={{ width: `${Math.min(Math.max(progress, 0), 100)}%`, height: "100%", background: "#8B1E3F", borderRadius: 999 }} /></div></div>}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+          <span style={{ fontSize: 24, flexShrink: 0 }}>💼</span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "#2F3A3F" }}>{jobName}</div>
+            {job.reference && <div style={{ marginTop: 3, color: "#777", fontSize: 12, fontWeight: 600 }}>{job.reference}</div>}
+            {clientName && <div style={{ marginTop: 3, color: "#666", fontSize: 13 }}>👤 {clientName}</div>}
+          </div>
+          {job.status && <span style={{ background: "#E8EEF7", color: "#334E68", padding: "5px 10px", borderRadius: 999, fontSize: 12, fontWeight: 700, whiteSpace: "nowrap" }}>{job.status}</span>}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 14 }}>
+          <DetailItem label="Garment" value={garment} />
+          <DetailItem label="Due" value={formatJobDate(job.dueDate)} />
+          <DetailItem label="Outstanding" value={`$${outstanding.toFixed(2)}`} highlight={outstanding > 0} />
+          {job.nextAction && <DetailItem label="Next" value={job.nextAction} />}
+        </div>
+        {progress !== null && (
+          <div style={{ marginTop: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 12, color: "#777" }}><span>Workflow</span><strong>{progress}%</strong></div>
+            <div style={{ height: 7, background: "#E5E7EB", borderRadius: 999, overflow: "hidden" }}><div style={{ width: `${Math.min(Math.max(progress, 0), 100)}%`, height: "100%", background: "#8B1E3F", borderRadius: 999 }} /></div>
+          </div>
+        )}
       </div>
     );
   }
@@ -165,10 +189,10 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
   return (
     <div ref={pageRef} style={{ position: "relative" }}>
       <div style={navigationShellStyle} aria-label="Calendar section navigation">
-        <NavButton label="↑ Top" onClick={scrollToTop} />
-        <NavButton label="🦋 Today" onClick={scrollToToday} />
-        <NavButton label="📅 Calendar" onClick={scrollToCalendar} />
-        <NavButton label="📋 Selected Day" onClick={scrollToSelectedDay} />
+        <ChrysalisActionButton onClick={scrollToTop}>↑ Top</ChrysalisActionButton>
+        <ChrysalisActionButton onClick={scrollToToday} variant="accent">🦋 Today</ChrysalisActionButton>
+        <ChrysalisActionButton onClick={scrollToCalendar}>📅 Calendar</ChrysalisActionButton>
+        <ChrysalisActionButton onClick={scrollToSelectedDay}>📋 Selected Day</ChrysalisActionButton>
       </div>
 
       <div ref={todayRef} style={{ scrollMarginTop: NAV_HEIGHT + NAV_GAP }}>
@@ -182,18 +206,45 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
       <CalendarGrid calendarDays={calendarDays} monthStart={monthStart} monthEnd={monthEnd} today={today} selectedDate={selectedDate} onSelectDate={selectDate} getEventsForDate={getEventsForDate} sameDay={sameDay} />
 
       <div ref={resultsRef} style={{ scrollMarginTop: NAV_HEIGHT + NAV_GAP, marginTop: 30, background: "#FFFFFF", border: "1px solid #DDDDDD", borderRadius: 12, padding: 20 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 12 }}><h3 style={{ margin: 0 }}>Selected Day</h3><button type="button" onClick={scrollToCalendar} style={backButtonStyle}>↑ Back to Calendar</button></div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 12 }}>
+          <h3 style={{ margin: 0 }}>Selected Day</h3>
+          <ChrysalisActionButton onClick={scrollToCalendar}>↑ Back to Calendar</ChrysalisActionButton>
+        </div>
         <p style={{ color: "#666", marginBottom: 20 }}>{selectedDate.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
-        {selectedEvents.length === 0 ? <p style={{ color: "#999999", fontStyle: "italic" }}>No appointments, fittings or jobs scheduled.</p> : selectedEvents.map((event, index) => <div key={event.id || event.jobId || event.appointment?.id || event.fitting?.id || index} onClick={() => { if ((event.type === "appointment" || event.type === "fitting") && event.client) openClient(event.client); if (event.type === "job" && event.client) openJob(event.client, event.jobId); }} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", marginBottom: 10, borderLeft: `5px solid ${event.colour}`, background: "#F8F8F8", borderRadius: 8, cursor: "pointer", transition: "0.2s" }}>{event.type === "job" ? renderJobDetails(event) : <><span style={{ fontSize: 20 }}>{event.icon}</span><div><div style={{ fontWeight: 600 }}>{event.label}</div><div style={{ color: "#666", fontSize: 13, marginTop: 3 }}>{event.type === "fitting" ? "Fitting" : "Appointment"}</div></div></>}</div>)}
+        {selectedEvents.length === 0 ? (
+          <p style={{ color: "#999999", fontStyle: "italic" }}>No appointments, fittings or jobs scheduled.</p>
+        ) : selectedEvents.map((event, index) => (
+          <div
+            key={event.id || event.jobId || event.appointment?.id || event.fitting?.id || index}
+            onClick={() => {
+              if ((event.type === "appointment" || event.type === "fitting") && event.client) openClient(event.client);
+              if (event.type === "job" && event.client) openJob(event.client, event.jobId);
+            }}
+            role="button"
+            tabIndex={event.client ? 0 : -1}
+            onKeyDown={(keyboardEvent) => {
+              if (event.client && (keyboardEvent.key === "Enter" || keyboardEvent.key === " ")) {
+                keyboardEvent.preventDefault();
+                if (event.type === "job") openJob(event.client, event.jobId);
+                else openClient(event.client);
+              }
+            }}
+            style={eventCardStyle}
+          >
+            {event.type === "job" ? renderJobDetails(event) : (
+              <><span style={{ fontSize: 20 }}>{event.icon}</span><div><div style={{ fontWeight: 600 }}>{event.label}</div><div style={{ color: "#666", fontSize: 13, marginTop: 3 }}>{event.type === "fitting" ? "Fitting" : "Appointment"}</div></div><span style={eventArrowStyle}>→</span></n>
+            )}
+          </div>
+        ))}
       </div>
 
-      {isScrolled && <button type="button" onClick={scrollToTop} style={floatingTopStyle}>↑ Back to Top</button>}
+      {isScrolled && (
+        <div style={{ position: "fixed", right: 30, bottom: 24, zIndex: 100 }}>
+          <ChrysalisActionButton onClick={scrollToTop}>↑ Back to Top</ChrysalisActionButton>
+        </div>
+      )}
     </div>
   );
-}
-
-function NavButton({ label, onClick }) {
-  return <button type="button" onClick={onClick} style={navigationButtonStyle}>{label}</button>;
 }
 
 function DetailItem({ label, value, highlight = false }) {
@@ -215,42 +266,17 @@ const navigationShellStyle = {
   boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
 };
 
-const navigationButtonStyle = {
-  border: "1px solid #D8DDE1",
-  background: "#FFFFFF",
-  color: "#2F3A3F",
-  borderRadius: 7,
-  padding: "7px 11px",
-  fontSize: 12,
-  fontWeight: 700,
-  cursor: "pointer",
-  whiteSpace: "nowrap",
-};
-
-const backButtonStyle = {
-  border: "1px solid #D5D9DD",
-  background: "#FFFFFF",
-  color: "#2F3A3F",
+const eventCardStyle = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 12,
+  padding: "14px 16px",
+  marginBottom: 10,
+  borderLeft: "5px solid #8B1E3F",
+  background: "#F8F8F8",
   borderRadius: 8,
-  padding: "7px 12px",
-  fontSize: 12,
-  fontWeight: 700,
   cursor: "pointer",
-  whiteSpace: "nowrap",
+  transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background 160ms ease",
 };
 
-const floatingTopStyle = {
-  position: "fixed",
-  right: 30,
-  bottom: 24,
-  zIndex: 100,
-  border: "1px solid #D5D9DD",
-  background: "#FFFFFF",
-  color: "#2F3A3F",
-  borderRadius: 999,
-  padding: "10px 15px",
-  fontSize: 12,
-  fontWeight: 800,
-  cursor: "pointer",
-  boxShadow: "0 4px 14px rgba(47,58,63,0.15)",
-};
+const eventArrowStyle = { marginLeft: "auto", color: "#8B1E3F", fontWeight: 800, fontSize: 18 };
