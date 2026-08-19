@@ -203,18 +203,18 @@ function uniqueById(item, index, list) {
   return list.findIndex((candidate) => (candidate.id || `${candidate.client?.id}-${candidate.title}-${candidate.time}`) === key) === index;
 }
 
-const panelStyle = { padding: "0 20px 2px" };
+const panelStyle = { padding: "0 18px 1px" };
 const todayListStyle = { display: "flex", flexDirection: "column" };
 const todayRowStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 17,
-  minHeight: 78,
-  padding: "12px 0",
+  gap: 15,
+  minHeight: 68,
+  padding: "9px 0",
   borderBottom: "1px solid #E8EAED",
 };
-const todayIconStyle = { width: 36, textAlign: "center", fontSize: 25, lineHeight: 1, flexShrink: 0 };
-const rowContentStyle = { display: "flex", flexDirection: "column", gap: 4, minWidth: 0, flex: 1 };
+const todayIconStyle = { width: 34, textAlign: "center", fontSize: 23, lineHeight: 1, flexShrink: 0 };
+const rowContentStyle = { display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 };
 const openButtonStyle = {
   display: "inline-flex",
   alignItems: "center",
@@ -222,8 +222,8 @@ const openButtonStyle = {
   gap: 6,
   flexShrink: 0,
   minWidth: 100,
-  height: 42,
-  padding: "0 18px",
+  height: 40,
+  padding: "0 17px",
   border: "1px solid #C96A83",
   borderRadius: 999,
   background: "#FFFFFF",
