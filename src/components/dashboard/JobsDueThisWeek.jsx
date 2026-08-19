@@ -1,84 +1,48 @@
 import Card from "../common/Card";
 import EmptyState from "../common/EmptyState";
 
-export default function JobsDueThisWeek({ jobs = [] }) {
-  const dueJobs = [...jobs]
-    .filter((job) => job.dueDate)
-    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-    .slice(0, 7);
+export default function JobsDueThisWeek({ jobs = [], onSelectJob }) {
+  const dueJobs = [...jobs].filter((job) => job.dueDate).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 7);
 
   return (
-    <Card title="Jobs Due This Week">
-      {dueJobs.length === 0 ? (
-        <EmptyState
-          icon="🧵"
-          title="Nothing Due"
-          message="No garments are due this week."
-        />
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {dueJobs.map((job) => (
-            <JobRow
-              key={job.id ?? job.reference ?? `${job.name}-${job.dueDate}`}
-              job={job}
-            />
-          ))}
+    <Card title="Jobs Due This Week" actions={dueJobs.length ? <button type="button" style={viewAllStyle}>View all</button> : null}>
+      {dueJobs.length === 0 ? <EmptyState icon="🧵" title="Nothing Due" message="No garments are due this week." /> : (
+        <div style={listStyle}>
+          {dueJobs.map((job) => <JobRow key={job.id ?? job.reference ?? `${job.name}-${job.dueDate}`} job={job} onSelectJob={onSelectJob} />)}
         </div>
       )}
     </Card>
   );
 }
 
-function JobRow({ job }) {
-  const borderColour = job.overdue
-    ? "#DC2626"
-    : job.dueToday
-      ? "#EA580C"
-      : "#16A34A";
-
-  const badge = job.overdue
-    ? "Overdue"
-    : job.dueToday
-      ? "Due Today"
-      : "Scheduled";
-
+function JobRow({ job, onSelectJob }) {
+  const colour = job.overdue ? "#B42318" : job.dueToday ? "#B54708" : "#9A2348";
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) auto",
-        alignItems: "center",
-        gap: 16,
-        padding: "10px 12px",
-        borderRadius: 8,
-        background: "#FFFFFF",
-        borderLeft: `3px solid ${borderColour}`,
-        borderTop: "1px solid #E5E7EB",
-        borderRight: "1px solid #E5E7EB",
-        borderBottom: "1px solid #E5E7EB",
-      }}
-    >
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontWeight: 700, marginBottom: 2 }}>{job.name}</div>
-        <div style={{ fontSize: 12, color: "#777" }}>
-          {job.status} · Next: {job.nextAction || "-"}
-          {job.progress !== undefined ? ` · ${job.progress}%` : ""}
-        </div>
+    <div style={rowStyle}>
+      <div style={jobInfoStyle}>
+        <strong>{job.reference || job.name || job.title || "Job"}</strong>
+        <span>{job.clientName || job.client || ""}</span>
       </div>
-
-      <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-        <div style={{ fontWeight: 700, fontSize: 13 }}>{job.dueDate}</div>
-        <div
-          style={{
-            marginTop: 2,
-            fontSize: 11,
-            fontWeight: 700,
-            color: borderColour,
-          }}
-        >
-          {badge}
-        </div>
-      </div>
+      <span style={dateStyle}>{formatDate(job.dueDate)}</span>
+      <span style={{ ...statusStyle, color: colour }}>{job.overdue ? "Overdue" : formatStatus(job)}</span>
     </div>
   );
 }
+
+function formatDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value || "—";
+  return date.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+}
+
+function formatStatus(job) {
+  if (job.dueToday) return "Due today";
+  return job.status || "Scheduled";
+}
+
+const listStyle = { display: "flex", flexDirection: "column" };
+const rowStyle = { display: "grid", gridTemplateColumns: "minmax(0,1fr) 74px 82px", alignItems: "center", gap: 12, minHeight: 51, padding: "0 4px", borderBottom: "1px solid #ECEEEF" };
+const jobInfoStyle = { display: "flex", flexDirection: "column", gap: 3, minWidth: 0 };
+const dateStyle = { color: "#8B1E3F", fontSize: 12, fontWeight: 700, textAlign: "right" };
+const statusStyle = { fontSize: 11, fontWeight: 700, textAlign: "right" };
+const viewAllStyle = { border: 0, background: "transparent", color: "#9A2348", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 };
