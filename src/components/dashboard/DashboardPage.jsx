@@ -20,14 +20,7 @@ export default function DashboardPage({
     (job) => !["Completed", "Cancelled", "Archived"].includes(String(job.status || "").trim())
   );
 
-  const outstanding = allJobs.reduce((sum, job) => {
-    if (job.balance !== undefined && job.balance !== null) return sum + Math.max(Number(job.balance) || 0, 0);
-    if (job.outstanding !== undefined && job.outstanding !== null) return sum + Math.max(Number(job.outstanding) || 0, 0);
-    const price = Number(job.price || 0);
-    const paid = (job.payments || []).reduce((total, payment) => total + Number(payment.amount || 0), 0);
-    return sum + Math.max(price - paid, 0);
-  }, 0);
-
+  const outstanding = allJobs.reduce((sum, job) => sum + getOutstanding(job), 0);
   const todayKey = new Date().toDateString();
   const appointmentCount = clients.reduce(
     (count, client) => count + (client.appointments || []).filter((item) => new Date(item.date).toDateString() === todayKey).length,
@@ -38,30 +31,35 @@ export default function DashboardPage({
     0
   );
 
+  const attentionJobs = allJobs.filter((job) => job.overdue || job.dueToday || job.needsAttention);
+
   return (
     <main style={dashboardStyle}>
       <WelcomeCard />
 
       <section style={metricsStyle} aria-label="Dashboard summary">
-        <Metric icon="📅" label="Today's Appointments" value={appointmentCount} action={onOpenCalendar ? "View today" : null} onClick={onOpenCalendar} />
-        <Metric icon="👗" label="Today's Fittings" value={fittingCount} action={onOpenCalendar ? "View today" : null} onClick={onOpenCalendar} />
+        <Metric icon="📅" label="Today's Appointments" value={appointmentCount} action="View today" onClick={onOpenCalendar} />
+        <Metric icon="👗" label="Today's Fittings" value={fittingCount} action="View today" onClick={onOpenCalendar} />
         <Metric icon="💼" label="Active Jobs" value={activeJobs.length} action={activeJobs.length ? "View all" : null} onClick={activeJobs.length ? () => onSelectJob?.(activeJobs[0]) : undefined} />
         <Metric icon="💰" label="Outstanding Payments" value={formatCurrency(outstanding)} action={outstanding > 0 ? "View payments" : null} onClick={outstanding > 0 ? () => onSelectJob?.(allJobs.find((job) => getOutstanding(job) > 0)) : undefined} />
       </section>
 
       <div style={mainGridStyle}>
         <div style={leftColumnStyle}>
-          <section style={todayCardStyle}>
-            <div style={sectionHeaderStyle}>
-              <h2 style={sectionTitleStyle}>Today</h2>
-            </div>
+          <section style={sectionStyle}>
+            <SectionHeader title="Today" />
             <TodaysWorkPanel clients={clients} jobs={allJobs} onSelectJob={onSelectJob} />
           </section>
 
-          <JobsDueThisWeek jobs={allJobs} onSelectJob={onSelectJob} />
+          {attentionJobs.length > 0 && (
+            <NeedsAttention jobs={attentionJobs} clients={clients} onSelectJob={onSelectJob} />
+          )}
         </div>
 
-        <RecentActivity clients={clients} jobs={allJobs} />
+        <div style={rightColumnStyle}>
+          <JobsDueThisWeek jobs={allJobs} onSelectJob={onSelectJob} />
+          <RecentActivity clients={clients} jobs={allJobs} />
+        </div>
       </div>
     </main>
   );
@@ -75,16 +73,84 @@ function Metric({ icon, label, value, action, onClick }) {
         <span style={metricLabelStyle}>{label}</span>
         <strong style={metricValueStyle}>{value}</strong>
         {action && onClick ? (
-          <button type="button" onClick={onClick} style={metricActionStyle}>{action}</button>
+          <button type="button" onClick={onClick} style={metricActionStyle}>
+            {action}
+          </button>
         ) : null}
       </div>
     </div>
   );
 }
 
+function NeedsAttention({ jobs, clients, onSelectJob }) {
+  return (
+    <section style={attentionStyle}>
+      <SectionHeader title="Needs Attention" icon="⚠️" tone="alert" />
+      <div style={attentionBodyStyle}>
+        {jobs.slice(0, 3).map((job) => {
+          const client = clients.find((item) => String(item.id) === String(job.clientId));
+          return (
+            <div key={job.id ?? job.reference ?? job.name} style={attentionRowStyle}>
+              <span style={{ ...attentionDotStyle, color: job.overdue ? "#C5304D" : "#B54708" }}>•</span>
+              <div style={attentionContentStyle}>
+                <strong>{job.reference || job.name || job.title || "Job"}</strong>
+                <span>{getClientName(client)} · {job.nextAction || (job.overdue ? "Overdue" : "Needs attention")}</span>
+              </div>
+              <OpenButton onClick={() => onSelectJob?.(job)} />
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function SectionHeader({ title, icon, tone }) {
+  return (
+    <div style={{ ...sectionHeaderStyle, ...(tone === "alert" ? attentionHeaderStyle : {}) }}>
+      <h2 style={sectionTitleStyle}>
+        {icon ? <span style={sectionHeaderIconStyle}>{icon}</span> : null}
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+function OpenButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={openButtonStyle}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.background = "#8B1E3F";
+        event.currentTarget.style.color = "#FFFFFF";
+        event.currentTarget.style.boxShadow = "0 3px 8px rgba(139,30,63,.18)";
+        event.currentTarget.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.background = "#FFFFFF";
+        event.currentTarget.style.color = "#8B1E3F";
+        event.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,.04)";
+        event.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      Open <span aria-hidden="true">→</span>
+    </button>
+  );
+}
+
+function getClientName(client) {
+  if (!client) return "Unknown client";
+  return client.name || [client.firstName, client.lastName].filter(Boolean).join(" ") || "Unknown client";
+}
+
 function getOutstanding(job) {
   if (job.balance !== undefined && job.balance !== null) return Math.max(Number(job.balance) || 0, 0);
   if (job.outstanding !== undefined && job.outstanding !== null) return Math.max(Number(job.outstanding) || 0, 0);
+  if (Array.isArray(job.invoices) && job.invoices.length) {
+    return Math.max(job.invoices.reduce((sum, invoice) => sum + Number(invoice.balance ?? 0), 0), 0);
+  }
   const price = Number(job.price || 0);
   const paid = (job.payments || []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   return Math.max(price - paid, 0);
@@ -95,7 +161,8 @@ function formatCurrency(value) {
     style: "currency",
     currency: "AUD",
     minimumFractionDigits: 2,
-  }).format(value);
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
 }
 
 const dashboardStyle = {
@@ -108,24 +175,27 @@ const dashboardStyle = {
 const metricsStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-  borderTop: "1px solid #E5E7EB",
-  borderBottom: "1px solid #E5E7EB",
-  background: "#FFF",
+  background: "#FFFFFF",
+  borderTop: "1px solid #E4E7EA",
+  borderBottom: "1px solid #E4E7EA",
 };
 
 const metricStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 16,
+  gap: 17,
   minWidth: 0,
+  minHeight: 108,
   padding: "18px 26px",
-  borderRight: "1px solid #E5E7EB",
+  borderRight: "1px solid #E4E7EA",
 };
 
 const metricIconStyle = {
-  fontSize: 28,
+  width: 40,
+  textAlign: "center",
+  fontSize: 29,
   lineHeight: 1,
-  filter: "saturate(.8)",
+  flexShrink: 0,
 };
 
 const metricContentStyle = {
@@ -136,61 +206,122 @@ const metricContentStyle = {
 };
 
 const metricLabelStyle = {
-  color: "#697178",
+  color: "#687178",
   fontSize: 11,
   fontWeight: 700,
   textTransform: "uppercase",
-  letterSpacing: 0.35,
+  letterSpacing: 0.25,
 };
 
 const metricValueStyle = {
-  color: "#1F2933",
-  fontSize: 24,
+  color: "#171D22",
+  fontSize: 25,
   lineHeight: 1.05,
 };
 
 const metricActionStyle = {
   alignSelf: "flex-start",
-  margin: "2px 0 0",
+  margin: "3px 0 0",
   padding: 0,
   border: 0,
   background: "transparent",
   color: "#9A2348",
-  fontSize: 11,
+  fontSize: 12,
   fontWeight: 700,
   cursor: "pointer",
 };
 
 const mainGridStyle = {
   display: "grid",
-  gridTemplateColumns: "minmax(0, 1.12fr) minmax(340px, .88fr)",
-  gap: 18,
+  gridTemplateColumns: "minmax(0, 1.08fr) minmax(360px, .92fr)",
+  gap: 20,
   alignItems: "start",
 };
 
 const leftColumnStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 18,
+  gap: 20,
   minWidth: 0,
 };
 
-const todayCardStyle = {
-  background: "#FFF",
-  border: "1px solid #E1E4E7",
+const rightColumnStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 20,
+  minWidth: 0,
+};
+
+const sectionStyle = {
+  background: "#FFFFFF",
+  border: "1px solid #DEE2E6",
   borderRadius: 10,
   overflow: "hidden",
   boxShadow: "0 2px 8px rgba(31,41,51,.035)",
 };
 
 const sectionHeaderStyle = {
-  padding: "18px 20px 15px",
-  borderBottom: "1px solid #E8EAED",
+  minHeight: 61,
+  display: "flex",
+  alignItems: "center",
+  padding: "0 20px",
+  borderBottom: "1px solid #E4E7EA",
 };
 
 const sectionTitleStyle = {
   margin: 0,
-  color: "#1F2933",
-  fontSize: 18,
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  color: "#20262B",
+  fontSize: 19,
   lineHeight: 1.2,
+};
+
+const sectionHeaderIconStyle = { fontSize: 17 };
+
+const attentionStyle = {
+  background: "#FFF8FA",
+  border: "1px solid #E8C7CF",
+  borderRadius: 10,
+  overflow: "hidden",
+};
+
+const attentionHeaderStyle = {
+  color: "#8B1E3F",
+  borderBottomColor: "#F0DCE1",
+};
+
+const attentionBodyStyle = { padding: "0 18px" };
+
+const attentionRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  minHeight: 70,
+  borderBottom: "1px solid #F0DCE1",
+};
+
+const attentionDotStyle = { fontSize: 23, lineHeight: 1 };
+const attentionContentStyle = { display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 };
+
+const openButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  flexShrink: 0,
+  minWidth: 100,
+  height: 42,
+  padding: "0 18px",
+  border: "1px solid #C96A83",
+  borderRadius: 999,
+  background: "#FFFFFF",
+  color: "#8B1E3F",
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: 1,
+  cursor: "pointer",
+  boxShadow: "0 1px 2px rgba(31,41,51,.04)",
+  transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
 };
