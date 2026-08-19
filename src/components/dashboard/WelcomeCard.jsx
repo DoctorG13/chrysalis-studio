@@ -1,5 +1,3 @@
-import Card from "../common/Card";
-
 export default function WelcomeCard() {
   const now = new Date();
   const hour = now.getHours();
@@ -19,15 +17,13 @@ export default function WelcomeCard() {
   });
 
   return (
-    <Card>
-      <div style={welcomeStyle}>
-        <div style={greetingStyle}>
-          <span aria-hidden="true">☀️</span>
-          <strong>{greeting}, Donna</strong>
-        </div>
-        <span style={dateStyle}>{formattedDate}</span>
+    <header style={welcomeStyle}>
+      <div style={greetingStyle}>
+        <span aria-hidden="true">☀️</span>
+        <strong>{greeting}, Donna</strong>
       </div>
-    </Card>
+      <span style={dateStyle}>{formattedDate}</span>
+    </header>
   );
 }
 
@@ -36,18 +32,21 @@ const welcomeStyle = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 16,
-  flexWrap: "wrap",
+  minHeight: 58,
+  padding: "0 4px",
 };
 
 const greetingStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 8,
+  gap: 9,
   color: "#2F3A3F",
-  fontSize: 20,
+  fontSize: 21,
+  letterSpacing: "-0.2px",
 };
 
 const dateStyle = {
   color: "#6B7280",
   fontSize: 13,
+  whiteSpace: "nowrap",
 };
