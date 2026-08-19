@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }) {
   const todayKey = toDateKey(new Date());
   const appointments = clients.flatMap((client) => (client.appointments || []).filter((item) => toDateKey(item.date) === todayKey).map((item) => ({ ...item, client, job: findRelatedJob(item, jobs, client) }))).sort(compareScheduleItems);
@@ -48,16 +50,16 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
 function Metric({ icon, value, label }) { return <div style={metricStyle}><span>{icon}</span><div style={metricContentStyle}><strong style={metricValueStyle}>{value}</strong><span style={metricLabelStyle}>{label}</span></div></div>; }
 
 function OpenButton({ onClick }) {
-  return <button type="button" onClick={(event) => { event.stopPropagation(); onClick(); }} style={openButtonStyle}>Open</button>;
+  const [hovered, setHovered] = useState(false);
+  return <button type="button" aria-label="Open" onClick={(event) => { event.stopPropagation(); onClick(); }} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} style={{ ...openButtonStyle, ...(hovered ? openButtonHoverStyle : {}) }}>
+    <span>Open</span><span aria-hidden="true">→</span>
+  </button>;
 }
 
 function CompactSection({ title, empty, children }) { const hasItems = Array.isArray(children) ? children.length > 0 : Boolean(children); return <section style={sectionStyle}><h3 style={sectionTitleStyle}>{title}</h3>{hasItems ? <div style={rowsStyle}>{children}</div> : <span style={emptyStyle}>{empty}</span>}</section>; }
 
 function ScheduleRow({ time, title, client, onClick }) {
-  return <div style={rowStyle}>
-    <span style={timeStyle}>{formatTime(time)}</span><span style={rowContentStyle}><strong>{title}</strong><small>{client}</small></span>
-    {onClick && <OpenButton onClick={onClick} />}
-  </div>;
+  return <div style={rowStyle}><span style={timeStyle}>{formatTime(time)}</span><span style={rowContentStyle}><strong>{title}</strong><small>{client}</small></span>{onClick && <OpenButton onClick={onClick} />}</div>;
 }
 
 function ActionRow({ title, subtitle, meta, metaStyle, onClick }) {
@@ -95,7 +97,7 @@ const sectionTitleStyle = { margin: "0 0 6px", color: "#2F3A3F", fontSize: 12, f
 const rowsStyle = { display: "grid", gap: 4 };
 const emptyStyle = { color: "#8A9094", fontSize: 11 };
 const contentGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", columnGap: 22, rowGap: 14 };
-const rowStyle = { display: "flex", alignItems: "center", gap: 8, minHeight: 34, padding: "5px 2px", borderBottom: "1px solid #ECEEEF", background: "transparent" };
+const rowStyle = { display: "flex", alignItems: "center", gap: 8, minHeight: 38, padding: "6px 2px", borderBottom: "1px solid #ECEEEF", background: "transparent" };
 const timeStyle = { minWidth: 55, color: "#8B1E3F", fontSize: 10, fontWeight: 800 };
 const rowContentStyle = { display: "flex", flexDirection: "column", gap: 1, minWidth: 0, flex: 1 };
 const metaStyleBase = { color: "#687178", fontSize: 10, fontWeight: 700, whiteSpace: "nowrap" };
@@ -103,4 +105,5 @@ const mutedTextStyle = { color: "#737B80", fontSize: 11 };
 const attentionStyle = { marginBottom: 13, borderBottom: "1px solid #E8D8DC", paddingBottom: 8 };
 const attentionHeadingStyle = { display: "flex", alignItems: "center", gap: 8, padding: "0 0 6px", color: "#8B1E3F", fontSize: 12, fontWeight: 800 };
 const attentionRowStyle = { width: "100%", display: "flex", alignItems: "center", gap: 9, padding: "6px 2px", border: 0, borderTop: "1px solid #F0E7E9", background: "transparent", color: "#3D454A", textAlign: "left", font: "inherit", cursor: "pointer", fontSize: 11 };
-const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, minWidth: 62, height: 30, padding: "0 13px", border: "1px solid #8B1E3F", borderRadius: 7, background: "#8B1E3F", color: "#FFFFFF", fontSize: 11, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.08)" };
+const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flexShrink: 0, minWidth: 94, height: 36, padding: "0 16px", border: "1.5px solid #8B1E3F", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 12, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(0,0,0,0.04)", transition: "background 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease" };
+const openButtonHoverStyle = { background: "#8B1E3F", color: "#FFFFFF", boxShadow: "0 3px 8px rgba(139,30,63,0.18)", transform: "translateY(-1px)" };
