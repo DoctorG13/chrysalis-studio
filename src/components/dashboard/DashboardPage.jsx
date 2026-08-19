@@ -5,12 +5,7 @@ import JobsDueThisWeek from "./JobsDueThisWeek";
 import RecentActivity from "./RecentActivity";
 import TodaysWorkPanel from "./TodaysWorkPanel";
 
-export default function DashboardPage({
-  clients = [],
-  jobs = [],
-  onSelectJob,
-  onOpenCalendar,
-}) {
+export default function DashboardPage({ clients = [], jobs = [], onSelectJob, onOpenCalendar }) {
   const allJobs = useMemo(() => {
     if (jobs.length > 0) return jobs;
     return clients.flatMap((client) => client.jobs ?? []);
@@ -26,19 +21,13 @@ export default function DashboardPage({
             <div style={eyebrowStyle}>Today</div>
             <h2 style={todayTitleStyle}>This Morning's View</h2>
           </div>
-
           {onOpenCalendar && (
             <button type="button" onClick={onOpenCalendar} style={calendarButtonStyle}>
-              📅 Calendar
+              📅 Calendar →
             </button>
           )}
         </div>
-
-        <TodaysWorkPanel
-          clients={clients}
-          jobs={allJobs}
-          onSelectJob={onSelectJob}
-        />
+        <TodaysWorkPanel clients={clients} jobs={allJobs} onSelectJob={onSelectJob} />
       </section>
 
       <div style={lowerGridStyle}>
@@ -52,16 +41,16 @@ export default function DashboardPage({
 const dashboardStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 14,
-  marginBottom: 24,
+  gap: 12,
+  marginBottom: 20,
 };
 
 const todayShellStyle = {
-  background: "#FFFFFF",
-  border: "1px solid #E5E7EB",
-  borderRadius: 14,
-  boxShadow: "0 2px 8px rgba(47,58,63,0.045)",
-  overflow: "hidden",
+  background: "transparent",
+  border: 0,
+  borderRadius: 0,
+  boxShadow: "none",
+  overflow: "visible",
 };
 
 const todayHeaderStyle = {
@@ -69,33 +58,31 @@ const todayHeaderStyle = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: 16,
-  padding: "14px 18px",
-  background: "#F7F8F9",
-  borderBottom: "1px solid #E7E9EB",
+  padding: "5px 2px 9px",
 };
 
 const eyebrowStyle = {
   fontSize: 10,
   fontWeight: 800,
-  letterSpacing: 1.2,
+  letterSpacing: 1.3,
   textTransform: "uppercase",
   color: "#8B1E3F",
-  marginBottom: 2,
+  marginBottom: 1,
 };
 
 const todayTitleStyle = {
   margin: 0,
   color: "#2F3A3F",
-  fontSize: 18,
+  fontSize: 17,
   lineHeight: 1.2,
 };
 
 const calendarButtonStyle = {
   border: "1px solid #D8DDE0",
-  borderRadius: 9,
+  borderRadius: 8,
   background: "#FFFFFF",
   color: "#2F3A3F",
-  padding: "8px 13px",
+  padding: "7px 11px",
   fontSize: 12,
   fontWeight: 700,
   cursor: "pointer",
@@ -105,5 +92,5 @@ const calendarButtonStyle = {
 const lowerGridStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: 14,
+  gap: 12,
 };
