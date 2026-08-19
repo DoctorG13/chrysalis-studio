@@ -31,30 +31,10 @@ export default function TodaysWorkPanel({ clients = [], jobs = [], onSelectJob }
   return (
     <div style={panelStyle}>
       <div style={todayListStyle}>
-        <TodayRow
-          icon="📅"
-          title="Appointments"
-          subtitle={appointments.length ? `Next: ${formatTime(appointments[0].time)} — ${getClientName(appointments[0].client)}` : "No appointments today"}
-          onClick={appointments[0]?.job ? () => onSelectJob?.(appointments[0].job) : undefined}
-        />
-        <TodayRow
-          icon="👗"
-          title="Fittings"
-          subtitle={fittings.length ? `Next: ${formatTime(fittings[0].time)} — ${getClientName(fittings[0].client)}` : "No fittings today"}
-          onClick={fittings[0]?.job ? () => onSelectJob?.(fittings[0].job) : undefined}
-        />
-        <TodayRow
-          icon="💼"
-          title="Active Jobs"
-          subtitle={`${activeJobs.length} ${activeJobs.length === 1 ? "job" : "jobs"} in progress`}
-          onClick={activeJobs[0] ? () => onSelectJob?.(activeJobs[0]) : undefined}
-        />
-        <TodayRow
-          icon="💰"
-          title="Outstanding Payments"
-          subtitle={`${formatCurrency(outstanding.reduce((sum, item) => sum + item.amount, 0))} across ${outstanding.length} ${outstanding.length === 1 ? "job" : "jobs"}`}
-          onClick={outstanding[0] ? () => onSelectJob?.(outstanding[0].job) : undefined}
-        />
+        <TodayRow icon="📅" title="Appointments" subtitle={appointments.length ? `Next: ${formatTime(appointments[0].time)} — ${getClientName(appointments[0].client)}` : "No appointments today"} onClick={appointments[0]?.job ? () => onSelectJob?.(appointments[0].job) : undefined} />
+        <TodayRow icon="👗" title="Fittings" subtitle={fittings.length ? `Next: ${formatTime(fittings[0].time)} — ${getClientName(fittings[0].client)}` : "No fittings today"} onClick={fittings[0]?.job ? () => onSelectJob?.(fittings[0].job) : undefined} />
+        <TodayRow icon="💼" title="Active Jobs" subtitle={`${activeJobs.length} ${activeJobs.length === 1 ? "job" : "jobs"} in progress`} onClick={activeJobs[0] ? () => onSelectJob?.(activeJobs[0]) : undefined} />
+        <TodayRow icon="💰" title="Outstanding Payments" subtitle={`${formatCurrency(outstanding.reduce((sum, item) => sum + item.amount, 0))} across ${outstanding.length} ${outstanding.length === 1 ? "job" : "jobs"}`} onClick={outstanding[0] ? () => onSelectJob?.(outstanding[0].job) : undefined} />
       </div>
     </div>
   );
@@ -65,8 +45,8 @@ function TodayRow({ icon, title, subtitle, onClick }) {
     <div style={todayRowStyle}>
       <span style={todayIconStyle}>{icon}</span>
       <div style={rowContentStyle}>
-        <strong>{title}</strong>
-        <small>{subtitle}</small>
+        <strong style={rowTitleStyle}>{title}</strong>
+        <small style={rowSubtitleStyle}>{subtitle}</small>
       </div>
       {onClick && <OpenButton onClick={onClick} />}
     </div>
@@ -122,21 +102,14 @@ function getClientName(client) {
 function getOutstanding(job) {
   if (job.balance !== undefined && job.balance !== null) return Math.max(Number(job.balance) || 0, 0);
   if (job.outstanding !== undefined && job.outstanding !== null) return Math.max(Number(job.outstanding) || 0, 0);
-  if (Array.isArray(job.invoices) && job.invoices.length) {
-    return Math.max(job.invoices.reduce((sum, invoice) => sum + Number(invoice.balance ?? 0), 0), 0);
-  }
+  if (Array.isArray(job.invoices) && job.invoices.length) return Math.max(job.invoices.reduce((sum, invoice) => sum + Number(invoice.balance ?? 0), 0), 0);
   const quote = Number(job.price || 0);
   const paid = (job.payments || []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   return Math.max(quote - paid, 0);
 }
 
 function formatCurrency(value) {
-  return new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value) || 0);
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value) || 0);
 }
 
 function toDateValue(value) {
@@ -203,35 +176,11 @@ function uniqueById(item, index, list) {
   return list.findIndex((candidate) => (candidate.id || `${candidate.client?.id}-${candidate.title}-${candidate.time}`) === key) === index;
 }
 
-const panelStyle = { padding: "0 18px 1px" };
+const panelStyle = { padding: "0 16px" };
 const todayListStyle = { display: "flex", flexDirection: "column" };
-const todayRowStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: 15,
-  minHeight: 68,
-  padding: "9px 0",
-  borderBottom: "1px solid #E8EAED",
-};
-const todayIconStyle = { width: 34, textAlign: "center", fontSize: 23, lineHeight: 1, flexShrink: 0 };
-const rowContentStyle = { display: "flex", flexDirection: "column", gap: 3, minWidth: 0, flex: 1 };
-const openButtonStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 6,
-  flexShrink: 0,
-  minWidth: 100,
-  height: 40,
-  padding: "0 17px",
-  border: "1px solid #C96A83",
-  borderRadius: 999,
-  background: "#FFFFFF",
-  color: "#8B1E3F",
-  fontSize: 13,
-  fontWeight: 700,
-  lineHeight: 1,
-  cursor: "pointer",
-  boxShadow: "0 1px 2px rgba(31,41,51,.04)",
-  transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
-};
+const todayRowStyle = { display: "flex", alignItems: "center", gap: 14, minHeight: 58, padding: "6px 0", borderBottom: "1px solid #E8EAED" };
+const todayIconStyle = { width: 34, textAlign: "center", fontSize: 22, lineHeight: 1, flexShrink: 0 };
+const rowContentStyle = { display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 };
+const rowTitleStyle = { color: "#20262B", fontSize: 14, lineHeight: 1.2 };
+const rowSubtitleStyle = { color: "#707980", fontSize: 11, lineHeight: 1.2 };
+const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flexShrink: 0, minWidth: 98, height: 38, padding: "0 16px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 13, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.04)", transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
