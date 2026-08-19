@@ -14,7 +14,7 @@ export default function WelcomeCard() {
       <div>
         <div style={greetingStyle}>
           <span aria-hidden="true" style={sunStyle}>☀</span>
-          <h1>{greeting}, Donna</h1>
+          <h1 style={titleStyle}>{greeting}, Donna</h1>
         </div>
         <div style={dateStyle}>{formattedDate}</div>
       </div>
@@ -25,26 +25,32 @@ export default function WelcomeCard() {
 const welcomeStyle = {
   display: "flex",
   alignItems: "center",
-  minHeight: 76,
-  padding: "4px 2px 0",
+  minHeight: 58,
+  padding: 0,
 };
 
 const greetingStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 12,
+  gap: 10,
 };
 
 const sunStyle = {
   color: "#9A2348",
-  fontSize: 30,
+  fontSize: 27,
   lineHeight: 1,
 };
 
-const greetingStyleTitle = {};
+const titleStyle = {
+  margin: 0,
+  color: "#171D22",
+  fontSize: 30,
+  lineHeight: 1.05,
+};
 
 const dateStyle = {
-  marginTop: 5,
+  marginTop: 3,
   color: "#697178",
-  fontSize: 13,
+  fontSize: 12,
+  lineHeight: 1.2,
 };
