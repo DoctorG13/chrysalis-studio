@@ -164,48 +164,50 @@ function formatCurrency(value) {
 const dashboardStyle = {
   display: "flex",
   flexDirection: "column",
-  gap: 10,
-  marginBottom: 16,
+  gap: 8,
+  marginBottom: 12,
 };
 
 const metricsStyle = {
   display: "grid",
   gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
   background: "#FFFFFF",
-  borderTop: "1px solid #E1E4E7",
-  borderBottom: "1px solid #E1E4E7",
+  border: "1px solid #D9DEE2",
+  borderRadius: 8,
+  overflow: "hidden",
+  boxShadow: "0 1px 3px rgba(31,41,51,.025)",
 };
 
 const metricStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 12,
+  gap: 11,
   minWidth: 0,
-  minHeight: 76,
-  padding: "10px 20px",
-  borderRight: "1px solid #E1E4E7",
+  minHeight: 70,
+  padding: "8px 18px",
+  borderRight: "1px solid #D9DEE2",
 };
 
-const metricIconStyle = { width: 34, textAlign: "center", fontSize: 25, lineHeight: 1, flexShrink: 0 };
+const metricIconStyle = { width: 32, textAlign: "center", fontSize: 24, lineHeight: 1, flexShrink: 0 };
 const metricContentStyle = { display: "flex", flexDirection: "column", gap: 1, minWidth: 0 };
 const metricLabelStyle = { color: "#687178", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: .2, whiteSpace: "nowrap" };
-const metricValueStyle = { color: "#171D22", fontSize: 23, lineHeight: 1.02 };
+const metricValueStyle = { color: "#171D22", fontSize: 22, lineHeight: 1.02 };
 const metricActionStyle = { alignSelf: "flex-start", margin: "2px 0 0", padding: 0, border: 0, background: "transparent", color: "#9A2348", fontSize: 11, fontWeight: 700, cursor: "pointer" };
 
-const mainGridStyle = { display: "grid", gridTemplateColumns: "minmax(0, 1.08fr) minmax(360px, .92fr)", gap: 14, alignItems: "start" };
-const leftColumnStyle = { display: "flex", flexDirection: "column", gap: 12, minWidth: 0 };
-const rightColumnStyle = { display: "flex", flexDirection: "column", gap: 12, minWidth: 0 };
+const mainGridStyle = { display: "grid", gridTemplateColumns: "minmax(0, 1.08fr) minmax(360px, .92fr)", gap: 10, alignItems: "start" };
+const leftColumnStyle = { display: "flex", flexDirection: "column", gap: 10, minWidth: 0 };
+const rightColumnStyle = { display: "flex", flexDirection: "column", gap: 10, minWidth: 0 };
 
-const sectionStyle = { background: "#FFFFFF", border: "1px solid #DEE2E6", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 4px rgba(31,41,51,.03)" };
-const sectionHeaderStyle = { minHeight: 46, display: "flex", alignItems: "center", padding: "0 16px", borderBottom: "1px solid #E4E7EA" };
+const sectionStyle = { background: "#FFFFFF", border: "1px solid #D9DEE2", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 4px rgba(31,41,51,.025)" };
+const sectionHeaderStyle = { minHeight: 44, display: "flex", alignItems: "center", padding: "0 15px", borderBottom: "1px solid #D9DEE2" };
 const sectionTitleStyle = { margin: 0, color: "#20262B", fontSize: 17, lineHeight: 1.2 };
 
-const attentionStyle = { background: "#FFF9FB", border: "1px solid #E8C7CF", borderRadius: 8, overflow: "hidden" };
-const attentionHeaderStyle = { minHeight: 44, display: "flex", alignItems: "center", padding: "0 16px", borderBottom: "1px solid #F0DCE1" };
+const attentionStyle = { background: "#FFF9FB", border: "1px solid #E3C3CB", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 3px rgba(31,41,51,.02)" };
+const attentionHeaderStyle = { minHeight: 42, display: "flex", alignItems: "center", padding: "0 15px", borderBottom: "1px solid #E8D5DA" };
 const attentionTitleStyle = { margin: 0, display: "flex", alignItems: "center", gap: 7, color: "#8B1E3F", fontSize: 15 };
-const attentionBodyStyle = { padding: "0 16px" };
-const attentionRowStyle = { display: "flex", alignItems: "center", gap: 8, minHeight: 60, borderBottom: "1px solid #F0DCE1" };
+const attentionBodyStyle = { padding: "0 15px" };
+const attentionRowStyle = { display: "flex", alignItems: "center", gap: 8, minHeight: 56, borderBottom: "1px solid #E8D5DA" };
 const attentionDotStyle = { fontSize: 20, lineHeight: 1 };
 const attentionContentStyle = { display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 };
 
-const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flexShrink: 0, minWidth: 98, height: 38, padding: "0 16px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 13, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.04)", transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
+const openButtonStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, flexShrink: 0, minWidth: 94, height: 36, padding: "0 15px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 13, fontWeight: 700, lineHeight: 1, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.035)", transition: "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
