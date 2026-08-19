@@ -11,7 +11,7 @@ export default function SlidePanel({
           position: "fixed",
           inset: 0,
           background: "rgba(47,58,63,0.35)",
-          backdropFilter: "blur(3px)",
+          backdropFilter: "blur(2px)",
           opacity: open ? 1 : 0,
           pointerEvents: open ? "auto" : "none",
           transition: "opacity .3s ease",
@@ -25,14 +25,13 @@ export default function SlidePanel({
           position: "fixed",
           top: 0,
           right: 0,
-          width: "min(1700px, 94vw)",
-          maxWidth: "calc(100vw - 12px)",
-          minWidth: 720,
+          width: 640,
+          maxWidth: "100%",
           height: "100vh",
           background: "#FFF",
           transform: open ? "translateX(0)" : "translateX(100%)",
           transition: "transform .35s ease",
-          boxShadow: "-12px 0 40px rgba(0,0,0,.18)",
+          boxShadow: "-10px 0 35px rgba(0,0,0,.15)",
           display: "flex",
           flexDirection: "column",
           zIndex: 1000,
@@ -40,11 +39,10 @@ export default function SlidePanel({
       >
         <div
           style={{
-            padding: 34,
+            padding: 30,
             flex: 1,
             minWidth: 0,
             overflowY: "auto",
-            overflowX: "hidden",
           }}
         >
           {open ? children : null}

@@ -3,13 +3,33 @@ import { useEffect, useRef, useState } from "react";
 import Button from "../common/Button";
 
 import JobTabs from "./JobTabs";
-import JobOverview from "./JobOverview";
 import JobDetailsPanel from "./JobDetailsPanel";
 import JobMeasurements from "./JobMeasurements";
 import JobPayments from "./JobPayments";
 import JobTimeline from "./JobTimeline";
 import JobFittings from "./JobFittings";
 import JobPhotos from "./JobPhotos";
+
+const WORKFLOW_STAGES = [
+  "New",
+  "Measuring",
+  "Cutting",
+  "Sewing",
+  "Fitting",
+  "Alterations",
+  "Ready",
+  "Collected",
+];
+
+const CHECKLIST_ITEMS = [
+  ["measurements", "Measurements confirmed"],
+  ["materials", "Fabric / materials ready"],
+  ["cutting", "Pattern / cutting complete"],
+  ["construction", "Construction complete"],
+  ["fitting", "Fitting complete"],
+  ["alterations", "Final alterations complete"],
+  ["ready", "Ready for collection"],
+];
 
 export default function JobEditor({
   job,
@@ -79,16 +99,43 @@ export default function JobEditor({
   }
 
   function addTimelineEvent(
-    job,
+    currentJob,
     event
   ) {
     return {
-      ...job,
+      ...currentJob,
       timeline: [
         event,
-        ...(job.timeline || []),
+        ...(currentJob.timeline || []),
       ],
     };
+  }
+
+  function updateJobField(
+    field,
+    value
+  ) {
+    setEditedJob((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function handleWorkflowStage(stage) {
+    updateJobField("status", stage);
+  }
+
+  function handleChecklistToggle(key) {
+    setEditedJob((current) => ({
+      ...current,
+      workflowChecklist: {
+        ...(current.workflowChecklist || {}),
+        [key]: !(
+          current.workflowChecklist?.[key] ||
+          false
+        ),
+      },
+    }));
   }
 
   function handleAddFitting() {
@@ -133,15 +180,16 @@ export default function JobEditor({
             fitting,
           ];
 
-    const event = createTimelineEvent(
-      "fitting",
-      editingFitting
-        ? "Fitting Updated"
-        : "Fitting Added",
-      fitting.title ||
-        fitting.type ||
-        "Fitting"
-    );
+    const event =
+      createTimelineEvent(
+        "fitting",
+        editingFitting
+          ? "Fitting Updated"
+          : "Fitting Added",
+        fitting.title ||
+          fitting.type ||
+          "Fitting"
+      );
 
     setEditedJob(
       addTimelineEvent(
@@ -209,24 +257,34 @@ export default function JobEditor({
     setShowPhotoForm(false);
   }
 
-  function handleEditPhoto(photo) {
+  function handleEditPhoto(
+    photo
+  ) {
     setEditingPhoto(photo);
   }
 
-  function handleSavePhotoEdit(updatedPhoto) {
-    const photos = (editedJob.photos || []).map(
-      (photo) =>
-        photo.id === updatedPhoto.id
-          ? { ...photo, ...updatedPhoto }
-          : photo
-    );
+  function handleSavePhotoEdit(
+    updatedPhoto
+  ) {
+    const photos =
+      (editedJob.photos || []).map(
+        (photo) =>
+          photo.id ===
+          updatedPhoto.id
+            ? {
+                ...photo,
+                ...updatedPhoto,
+              }
+            : photo
+      );
 
-    const event = createTimelineEvent(
-      "photo",
-      "Photo Updated",
-      updatedPhoto.caption ||
-        "Job photo updated."
-    );
+    const event =
+      createTimelineEvent(
+        "photo",
+        "Photo Updated",
+        updatedPhoto.caption ||
+          "Job photo updated."
+      );
 
     setEditedJob(
       addTimelineEvent(
@@ -241,25 +299,33 @@ export default function JobEditor({
     setEditingPhoto(null);
   }
 
-  function handleDeletePhoto(photo) {
+  function handleDeletePhoto(
+    photo
+  ) {
     if (
       !window.confirm(
-        `Delete "${photo.caption || "this photo"}"?`
+        `Delete "${
+          photo.caption ||
+          "this photo"
+        }"?`
       )
     ) {
       return;
     }
 
-    const photos = (editedJob.photos || []).filter(
-      (item) => item.id !== photo.id
-    );
+    const photos =
+      (editedJob.photos || []).filter(
+        (item) =>
+          item.id !== photo.id
+      );
 
-    const event = createTimelineEvent(
-      "photo",
-      "Photo Deleted",
-      photo.caption ||
-        "Job photo deleted."
-    );
+    const event =
+      createTimelineEvent(
+        "photo",
+        "Photo Deleted",
+        photo.caption ||
+          "Job photo deleted."
+      );
 
     setEditedJob(
       addTimelineEvent(
@@ -276,8 +342,22 @@ export default function JobEditor({
     switch (activeTab) {
       case "Overview":
         return (
-          <JobOverview
+          <JobWorkspaceOverview
             job={editedJob}
+            onWorkflowStage={
+              handleWorkflowStage
+            }
+            onChecklistToggle={
+              handleChecklistToggle
+            }
+            onWorkflowNotesChange={(
+              value
+            ) =>
+              updateJobField(
+                "workflowNotes",
+                value
+              )
+            }
           />
         );
 
@@ -285,7 +365,9 @@ export default function JobEditor({
         return (
           <JobDetailsPanel
             job={editedJob}
-            onChange={setEditedJob}
+            onChange={
+              setEditedJob
+            }
           />
         );
 
@@ -347,8 +429,22 @@ export default function JobEditor({
 
       default:
         return (
-          <JobOverview
+          <JobWorkspaceOverview
             job={editedJob}
+            onWorkflowStage={
+              handleWorkflowStage
+            }
+            onChecklistToggle={
+              handleChecklistToggle
+            }
+            onWorkflowNotesChange={(
+              value
+            ) =>
+              updateJobField(
+                "workflowNotes",
+                value
+              )
+            }
           />
         );
     }
@@ -360,71 +456,112 @@ export default function JobEditor({
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 24,
+          gap: 18,
+          minWidth: 0,
         }}
       >
-        {/* Job Header */}
+        {/* =====================================================
+            JOB HEADER
+        ====================================================== */}
         <div
           style={{
             background: "#FFFFFF",
             border:
               "1px solid #E6E8EC",
             borderRadius: 18,
-            padding: 28,
-            marginBottom: 8,
+            padding: "22px 26px",
             boxShadow:
               "0 2px 10px rgba(0,0,0,0.04)",
           }}
         >
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 30,
-              lineHeight: 1.15,
-              fontWeight: 600,
-              color: "#2F3A3F",
-            }}
-          >
-            {editedJob.name}
-          </h1>
-
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              gap: 12,
-              flexWrap: "wrap",
-              marginTop: 14,
-              marginBottom: 20,
+              justifyContent:
+                "space-between",
+              alignItems: "flex-start",
+              gap: 20,
             }}
           >
             <div
               style={{
-                color: "#8B1E3F",
-                fontWeight: 700,
-                letterSpacing: 1,
+                minWidth: 0,
               }}
             >
-              {editedJob.reference ||
-                "CHR-NEW"}
+              <h1
+                style={{
+                  margin: 0,
+                  fontSize: 30,
+                  lineHeight: 1.15,
+                  fontWeight: 600,
+                  color: "#2F3A3F",
+                }}
+              >
+                {editedJob.name}
+              </h1>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 10,
+                  marginTop: 10,
+                }}
+              >
+                <span
+                  style={{
+                    color: "#8B1E3F",
+                    fontWeight: 700,
+                    letterSpacing: 0.8,
+                  }}
+                >
+                  {editedJob.reference ||
+                    "CHR-NEW"}
+                </span>
+
+                {editedJob.status && (
+                  <StatusBadge
+                    status={
+                      editedJob.status
+                    }
+                  />
+                )}
+              </div>
             </div>
 
-            {editedJob.status && (
-              <StatusBadge
-                status={
-                  editedJob.status
-                }
-              />
-            )}
+            <button
+              type="button"
+              onClick={onCancel}
+              title="Close job"
+              style={{
+                flexShrink: 0,
+                width: 42,
+                height: 42,
+                border:
+                  "1px solid #D9DDE1",
+                borderRadius: 10,
+                background: "#FFFFFF",
+                color: "#374151",
+                fontSize: 20,
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
           </div>
 
           <div
             style={{
               display: "flex",
               flexWrap: "wrap",
-              gap: 20,
+              gap: 22,
+              marginTop: 18,
+              paddingTop: 16,
+              borderTop:
+                "1px solid #ECECEC",
               color: "#666",
-              fontSize: 15,
+              fontSize: 14,
             }}
           >
             <div
@@ -452,47 +589,87 @@ export default function JobEditor({
                 )}
               </div>
             )}
+
+            {editedJob.priority && (
+              <div>
+                🎯{" "}
+                {editedJob.priority}
+              </div>
+            )}
           </div>
         </div>
 
+        {/* =====================================================
+            TABS
+        ====================================================== */}
         <JobTabs
           activeTab={activeTab}
           onChange={setActiveTab}
         />
 
+        {/* =====================================================
+            CONTENT
+        ====================================================== */}
         {renderTab()}
 
-        {/* Sticky Job Actions */}
+        {/* =====================================================
+            STICKY ACTION BAR
+        ====================================================== */}
         <div
           style={{
             position: "sticky",
             bottom: 0,
             zIndex: 20,
             display: "flex",
-            gap: 10,
+            gap: 14,
             width: "100%",
             padding: "14px 0",
-            marginTop: 4,
-            background: "rgba(255,255,255,0.98)",
-            borderTop: "1px solid #E6E8EC",
-            boxShadow: "0 -6px 18px rgba(0,0,0,0.06)",
-            backdropFilter: "blur(8px)",
+            background:
+              "rgba(255,255,255,0.98)",
+            borderTop:
+              "1px solid #E6E8EC",
+            boxShadow:
+              "0 -8px 20px rgba(0,0,0,0.07)",
+            backdropFilter:
+              "blur(8px)",
           }}
         >
-          <div style={{ flex: 1 }}>
-            <Button onClick={handleSave}>
+          <div
+            style={{
+              flex: 1,
+            }}
+          >
+            <Button
+              onClick={
+                handleSave
+              }
+            >
               💾 Save
             </Button>
           </div>
 
-          <div style={{ flex: 1 }}>
-            <Button onClick={onCancel}>
+          <div
+            style={{
+              flex: 1,
+            }}
+          >
+            <Button
+              onClick={onCancel}
+            >
               ✕ Close
             </Button>
           </div>
 
-          <div style={{ flex: 1 }}>
-            <Button onClick={handleDelete}>
+          <div
+            style={{
+              flex: 1,
+            }}
+          >
+            <Button
+              onClick={
+                handleDelete
+              }
+            >
               🗑 Delete
             </Button>
           </div>
@@ -543,7 +720,9 @@ export default function JobEditor({
       {editingPhoto && (
         <PhotoEditModal
           photo={editingPhoto}
-          onSave={handleSavePhotoEdit}
+          onSave={
+            handleSavePhotoEdit
+          }
           onClose={() =>
             setEditingPhoto(null)
           }
@@ -552,6 +731,907 @@ export default function JobEditor({
     </>
   );
 }
+
+/* ============================================================
+   JOB WORKSPACE OVERVIEW
+============================================================ */
+
+function JobWorkspaceOverview({
+  job,
+  onWorkflowStage,
+  onChecklistToggle,
+  onWorkflowNotesChange,
+}) {
+  const quote = Number(
+    job.price || 0
+  );
+
+  const totalPaid = (
+    job.payments || []
+  ).reduce(
+    (total, payment) =>
+      total +
+      Number(
+        payment.amount || 0
+      ),
+    0
+  );
+
+  const outstanding = Math.max(
+    quote - totalPaid,
+    0
+  );
+
+  const checklist =
+    job.workflowChecklist || {};
+
+  const completedChecklist =
+    CHECKLIST_ITEMS.filter(
+      ([key]) =>
+        Boolean(checklist[key])
+    ).length;
+
+  const checklistPercent =
+    CHECKLIST_ITEMS.length
+      ? Math.round(
+          (completedChecklist /
+            CHECKLIST_ITEMS.length) *
+            100
+        )
+      : 0;
+
+  const currentStageIndex =
+    WORKFLOW_STAGES.indexOf(
+      job.status
+    );
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+      }}
+    >
+      {/* =====================================================
+          WORKFLOW + CHECKLIST
+      ====================================================== */}
+      <section
+        style={{
+          background: "#FAF9F6",
+          border:
+            "1px solid #E5E7EB",
+          borderRadius: 16,
+          padding: 20,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent:
+              "space-between",
+            alignItems: "flex-start",
+            gap: 16,
+            flexWrap: "wrap",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                letterSpacing: 1,
+                textTransform:
+                  "uppercase",
+                color: "#8B1E3F",
+              }}
+            >
+              Garment Workflow
+            </div>
+
+            <div
+              style={{
+                marginTop: 5,
+                color: "#777",
+                fontSize: 13,
+              }}
+            >
+              Move the job through
+              production as work is
+              completed.
+            </div>
+          </div>
+
+          {job.status && (
+            <StatusBadge
+              status={job.status}
+            />
+          )}
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(8, minmax(82px, 1fr))",
+            gap: 7,
+            overflowX: "auto",
+            paddingBottom: 3,
+          }}
+        >
+          {WORKFLOW_STAGES.map(
+            (stage, index) => {
+              const isCurrent =
+                job.status === stage;
+
+              const isComplete =
+                currentStageIndex >=
+                  0 &&
+                index <
+                  currentStageIndex;
+
+              return (
+                <button
+                  key={stage}
+                  type="button"
+                  onClick={() =>
+                    onWorkflowStage(
+                      stage
+                    )
+                  }
+                  title={`Set workflow stage to ${stage}`}
+                  style={{
+                    minWidth: 82,
+                    minHeight: 66,
+                    border: isCurrent
+                      ? "2px solid #8B1E3F"
+                      : isComplete
+                      ? "1px solid #B7DFC5"
+                      : "1px solid #D9DDE1",
+                    borderRadius: 10,
+                    background:
+                      isCurrent
+                        ? "#FFF5F7"
+                        : isComplete
+                        ? "#F0FDF4"
+                        : "#FFFFFF",
+                    color:
+                      isCurrent
+                        ? "#8B1E3F"
+                        : isComplete
+                        ? "#34724B"
+                        : "#59636A",
+                    padding:
+                      "7px 5px",
+                    display: "flex",
+                    flexDirection:
+                      "column",
+                    alignItems:
+                      "center",
+                    justifyContent:
+                      "center",
+                    gap: 5,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius:
+                        "50%",
+                      display:
+                        "inline-flex",
+                      alignItems:
+                        "center",
+                      justifyContent:
+                        "center",
+                      background:
+                        isComplete
+                          ? "#D8F3DF"
+                          : "#E8EAED",
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}
+                  >
+                    {isComplete
+                      ? "✓"
+                      : index + 1}
+                  </span>
+
+                  <span>
+                    {stage}
+                  </span>
+                </button>
+              );
+            }
+          )}
+        </div>
+
+        {job.status ===
+          "Mending" && (
+          <div
+            style={{
+              marginTop: 12,
+              padding:
+                "10px 12px",
+              borderRadius: 9,
+              background: "#FFF7E6",
+              border:
+                "1px solid #F3D38A",
+              color: "#745000",
+              fontSize: 12,
+            }}
+          >
+            🔧{" "}
+            <strong>
+              Mending
+            </strong>{" "}
+            is an active repair
+            path. When complete,
+            move the job to{" "}
+            <strong>
+              Ready
+            </strong>
+            .
+          </div>
+        )}
+
+        {job.status ===
+          "Cancelled" && (
+          <div
+            style={{
+              marginTop: 12,
+              padding:
+                "10px 12px",
+              borderRadius: 9,
+              background: "#FFF7E6",
+              border:
+                "1px solid #F3D38A",
+              color: "#745000",
+              fontSize: 12,
+            }}
+          >
+            ⚠️ This job is
+            currently{" "}
+            <strong>
+              Cancelled
+            </strong>
+            .
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "minmax(0, 1fr) minmax(260px, 0.8fr)",
+            gap: 20,
+            marginTop: 20,
+          }}
+        >
+          {/* Production Checklist */}
+          <div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 800,
+                  color: "#555",
+                  textTransform:
+                    "uppercase",
+                  letterSpacing:
+                    0.7,
+                }}
+              >
+                Production
+                Checklist
+              </div>
+
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#777",
+                }}
+              >
+                {
+                  completedChecklist
+                }{" "}
+                /{" "}
+                {
+                  CHECKLIST_ITEMS.length
+                }
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(2, minmax(0, 1fr))",
+                gap: 8,
+              }}
+            >
+              {CHECKLIST_ITEMS.map(
+                ([key, label]) => {
+                  const checked =
+                    Boolean(
+                      checklist[key]
+                    );
+
+                  return (
+                    <label
+                      key={key}
+                      style={{
+                        display: "flex",
+                        alignItems:
+                          "center",
+                        gap: 8,
+                        padding:
+                          "10px",
+                        borderRadius: 9,
+                        border:
+                          "1px solid #E8EAED",
+                        background:
+                          checked
+                            ? "#F0FDF4"
+                            : "#FFFFFF",
+                        color: "#4F585E",
+                        fontSize: 12,
+                        cursor:
+                          "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          checked
+                        }
+                        onChange={() =>
+                          onChecklistToggle(
+                            key
+                          )
+                        }
+                        style={{
+                          width: 16,
+                          height: 16,
+                          accentColor:
+                            "#8B1E3F",
+                        }}
+                      />
+
+                      <span
+                        style={{
+                          textDecoration:
+                            checked
+                              ? "line-through"
+                              : "none",
+                        }}
+                      >
+                        {label}
+                      </span>
+                    </label>
+                  );
+                }
+              )}
+            </div>
+          </div>
+
+          {/* Workflow Notes */}
+          <div>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 800,
+                color: "#555",
+                textTransform:
+                  "uppercase",
+                letterSpacing:
+                  0.7,
+                marginBottom: 10,
+              }}
+            >
+              Workflow Notes
+            </div>
+
+            <textarea
+              value={
+                job.workflowNotes ||
+                ""
+              }
+              onChange={(event) =>
+                onWorkflowNotesChange(
+                  event.target.value
+                )
+              }
+              placeholder="What needs to happen next? Add production notes, materials, alterations or special instructions..."
+              rows={7}
+              style={{
+                width: "100%",
+                boxSizing:
+                  "border-box",
+                padding:
+                  "11px 13px",
+                border:
+                  "1px solid #D9DDE1",
+                borderRadius: 10,
+                fontSize: 13,
+                lineHeight: 1.45,
+                color: "#2F3A3F",
+                background:
+                  "#FFFFFF",
+                outline: "none",
+                resize:
+                  "vertical",
+                fontFamily:
+                  "inherit",
+              }}
+            />
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 14,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              height: 7,
+              background:
+                "#E8EAED",
+              borderRadius: 999,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${checklistPercent}%`,
+                height: "100%",
+                background:
+                  "#8B1E3F",
+                borderRadius: 999,
+                transition:
+                  "width 0.2s ease",
+              }}
+            />
+          </div>
+
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              color: "#666",
+              minWidth: 34,
+              textAlign: "right",
+            }}
+          >
+            {
+              checklistPercent
+            }%
+          </span>
+        </div>
+      </section>
+
+      {/* =====================================================
+          THREE-COLUMN SUMMARY
+      ====================================================== */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "1.1fr 1fr 1fr",
+          gap: 14,
+        }}
+      >
+        {/* Job Summary */}
+        <SummaryPanel title="Job Summary">
+          <div
+            style={summaryGridStyle}
+          >
+            <SummaryValue
+              label="Garment"
+              value={
+                job.garmentType ||
+                "General Job"
+              }
+              icon="👗"
+            />
+
+            <SummaryValue
+              label="Status"
+              value={
+                job.status || "-"
+              }
+              status
+            />
+
+            <SummaryValue
+              label="Client"
+              value={
+                job.clientName ||
+                "Unassigned"
+              }
+              icon="👤"
+              fullWidth
+            />
+
+            <SummaryValue
+              label="Due Date"
+              value={
+                formatDate(
+                  job.dueDate
+                ) || "-"
+              }
+              icon="📅"
+              fullWidth
+            />
+          </div>
+        </SummaryPanel>
+
+        {/* Financial Summary */}
+        <SummaryPanel title="At a Glance">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(2, minmax(0, 1fr))",
+              gap: 9,
+            }}
+          >
+            <MoneySummary
+              label="Quote"
+              value={quote}
+            />
+
+            <MoneySummary
+              label="Total Paid"
+              value={totalPaid}
+            />
+
+            <MoneySummary
+              label="Outstanding"
+              value={
+                outstanding
+              }
+              highlight
+            />
+
+            <MoneySummary
+              label="Payments"
+              valueText={`${
+                (
+                  job.payments ||
+                  []
+                ).length
+              }`}
+            />
+          </div>
+        </SummaryPanel>
+
+        {/* Activity Summary */}
+        <SummaryPanel title="Job Activity">
+          <div
+            style={{
+              display: "grid",
+              gap: 10,
+            }}
+          >
+            <ActivityValue
+              icon="📅"
+              label="Fittings"
+              value={
+                (
+                  job.fittings ||
+                  []
+                ).length
+              }
+            />
+
+            <ActivityValue
+              icon="📷"
+              label="Photos"
+              value={
+                (
+                  job.photos ||
+                  []
+                ).length
+              }
+            />
+
+            <ActivityValue
+              icon="📝"
+              label="Timeline Events"
+              value={
+                (
+                  job.timeline ||
+                  []
+                ).length
+              }
+            />
+          </div>
+        </SummaryPanel>
+      </div>
+
+      {/* =====================================================
+          DESCRIPTION
+      ====================================================== */}
+      {job.description && (
+        <section
+          style={{
+            background:
+              "#FFFFFF",
+            border:
+              "1px solid #E5E7EB",
+            borderRadius: 14,
+            padding:
+              "16px 18px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 800,
+              textTransform:
+                "uppercase",
+              letterSpacing:
+                0.8,
+              color: "#777",
+              marginBottom: 7,
+            }}
+          >
+            Job Description
+          </div>
+
+          <div
+            style={{
+              fontSize: 14,
+              lineHeight: 1.55,
+              color: "#4F585E",
+              whiteSpace:
+                "pre-wrap",
+            }}
+          >
+            {job.description}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+   SUMMARY COMPONENTS
+============================================================ */
+
+function SummaryPanel({
+  title,
+  children,
+}) {
+  return (
+    <section
+      style={{
+        background: "#FFFFFF",
+        border:
+          "1px solid #E5E7EB",
+        borderRadius: 14,
+        padding: 16,
+        boxShadow:
+          "0 2px 8px rgba(0,0,0,0.025)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 12,
+          fontWeight: 800,
+          textTransform:
+            "uppercase",
+          letterSpacing:
+            0.8,
+          color: "#8B1E3F",
+          marginBottom: 12,
+        }}
+      >
+        {title}
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+function SummaryValue({
+  label,
+  value,
+  icon,
+  status = false,
+  fullWidth = false,
+}) {
+  return (
+    <div
+      style={{
+        gridColumn: fullWidth
+          ? "1 / -1"
+          : undefined,
+        padding:
+          "9px 10px",
+        background:
+          "#F8F9FA",
+        border:
+          "1px solid #E8EAED",
+        borderRadius: 9,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          color: "#888",
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          fontSize: 13,
+          fontWeight: 700,
+          color: "#2F3A3F",
+        }}
+      >
+        {icon && (
+          <span>
+            {icon}
+          </span>
+        )}
+
+        {status ? (
+          <StatusBadge
+            status={value}
+          />
+        ) : (
+          value
+        )}
+      </div>
+    </div>
+  );
+}
+
+function MoneySummary({
+  label,
+  value,
+  valueText,
+  highlight = false,
+}) {
+  return (
+    <div
+      style={{
+        padding:
+          "10px",
+        borderRadius: 9,
+        background:
+          highlight
+            ? "#FFF7E6"
+            : "#F8F9FA",
+        border:
+          highlight
+            ? "1px solid #F3D38A"
+            : "1px solid #E8EAED",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          color: "#888",
+          marginBottom: 4,
+        }}
+      >
+        {label}
+      </div>
+
+      <div
+        style={{
+          fontSize: 16,
+          fontWeight: 700,
+          color:
+            highlight
+              ? "#8A5A00"
+              : "#2F3A3F",
+          whiteSpace:
+            "nowrap",
+        }}
+      >
+        {valueText !==
+        undefined
+          ? valueText
+          : `$${Number(
+              value || 0
+            ).toFixed(2)}`}
+      </div>
+    </div>
+  );
+}
+
+function ActivityValue({
+  icon,
+  label,
+  value,
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent:
+          "space-between",
+        padding:
+          "10px 11px",
+        borderRadius: 9,
+        background:
+          "#F8F9FA",
+        border:
+          "1px solid #E8EAED",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          alignItems:
+            "center",
+          gap: 8,
+          fontSize: 12,
+          color: "#555",
+        }}
+      >
+        <span>
+          {icon}
+        </span>
+
+        <span>
+          {label}
+        </span>
+      </div>
+
+      <strong
+        style={{
+          color: "#2F3A3F",
+          fontSize: 14,
+        }}
+      >
+        {value}
+      </strong>
+    </div>
+  );
+}
+
+const summaryGridStyle = {
+  display: "grid",
+  gridTemplateColumns:
+    "repeat(2, minmax(0, 1fr))",
+  gap: 9,
+};
+
+/* ============================================================
+   STATUS
+============================================================ */
 
 function StatusBadge({
   status,
@@ -562,20 +1642,31 @@ function StatusBadge({
   return (
     <span
       style={{
+        display:
+          "inline-flex",
+        alignItems:
+          "center",
         padding:
-          "5px 11px",
+          "4px 9px",
         borderRadius: 999,
         background:
           styles.background,
-        color: styles.color,
-        fontSize: 12,
+        color:
+          styles.color,
+        fontSize: 11,
         fontWeight: 700,
+        whiteSpace:
+          "nowrap",
       }}
     >
       {status}
     </span>
   );
 }
+
+/* ============================================================
+   FITTING MODAL
+============================================================ */
 
 function FittingModal({
   fitting,
@@ -742,7 +1833,8 @@ function FittingModal({
               ...inputStyle,
               height: "auto",
               padding: 12,
-              resize: "vertical",
+              resize:
+                "vertical",
             }}
           />
         </FormField>
@@ -759,6 +1851,10 @@ function FittingModal({
     </Modal>
   );
 }
+
+/* ============================================================
+   PHOTO MODAL
+============================================================ */
 
 function PhotoModal({
   onSave,
@@ -873,8 +1969,10 @@ function PhotoModal({
               "2px dashed #D9DDE1",
             borderRadius: 14,
             padding: 20,
-            textAlign: "center",
-            background: "#F8F9FA",
+            textAlign:
+              "center",
+            background:
+              "#F8F9FA",
           }}
         >
           {preview ? (
@@ -884,7 +1982,8 @@ function PhotoModal({
               style={{
                 width: "100%",
                 maxHeight: 280,
-                objectFit: "contain",
+                objectFit:
+                  "contain",
                 borderRadius: 10,
                 background:
                   "#FFFFFF",
@@ -922,7 +2021,8 @@ function PhotoModal({
                 }}
               >
                 JPG, PNG or another
-                image format up to 5 MB.
+                image format up to
+                5 MB.
               </div>
             </div>
           )}
@@ -931,7 +2031,9 @@ function PhotoModal({
             ref={fileInputRef}
             type="file"
             accept="image/*"
-            onChange={handleFile}
+            onChange={
+              handleFile
+            }
             style={{
               display: "none",
             }}
@@ -945,7 +2047,8 @@ function PhotoModal({
             style={{
               marginTop: 14,
               border: "none",
-              background: "#F4C542",
+              background:
+                "#F4C542",
               color: "#2F3A3F",
               borderRadius: 9,
               padding:
@@ -966,7 +2069,8 @@ function PhotoModal({
               marginTop: 10,
               padding: 10,
               borderRadius: 8,
-              background: "#FEE2E2",
+              background:
+                "#FEE2E2",
               color: "#B91C1C",
               fontSize: 13,
             }}
@@ -997,21 +2101,30 @@ function PhotoModal({
   );
 }
 
+/* ============================================================
+   PHOTO EDIT MODAL
+============================================================ */
+
 function PhotoEditModal({
   photo,
   onSave,
   onClose,
 }) {
   const [caption, setCaption] =
-    useState(photo?.caption || "");
+    useState(
+      photo?.caption || ""
+    );
 
-  function handleSubmit(event) {
+  function handleSubmit(
+    event
+  ) {
     event.preventDefault();
 
     onSave({
       ...photo,
       caption:
-        caption.trim() || "Untitled photo",
+        caption.trim() ||
+        "Untitled photo",
     });
   }
 
@@ -1020,14 +2133,20 @@ function PhotoEditModal({
       title="Edit Photo"
       onClose={onClose}
     >
-      <form onSubmit={handleSubmit}>
+      <form
+        onSubmit={
+          handleSubmit
+        }
+      >
         <div
           style={{
-            border: "1px solid #E5E7EB",
+            border:
+              "1px solid #E5E7EB",
             borderRadius: 12,
             overflow: "hidden",
             marginBottom: 18,
-            background: "#F8F9FA",
+            background:
+              "#F8F9FA",
           }}
         >
           {photo?.url ? (
@@ -1040,7 +2159,8 @@ function PhotoEditModal({
               style={{
                 width: "100%",
                 maxHeight: 300,
-                objectFit: "contain",
+                objectFit:
+                  "contain",
                 display: "block",
               }}
             />
@@ -1049,8 +2169,10 @@ function PhotoEditModal({
               style={{
                 height: 180,
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                alignItems:
+                  "center",
+                justifyContent:
+                  "center",
                 fontSize: 42,
               }}
             >
@@ -1064,7 +2186,9 @@ function PhotoEditModal({
             autoFocus
             value={caption}
             onChange={(event) =>
-              setCaption(event.target.value)
+              setCaption(
+                event.target.value
+              )
             }
             placeholder="e.g. Front of garment"
             style={inputStyle}
@@ -1080,6 +2204,10 @@ function PhotoEditModal({
   );
 }
 
+/* ============================================================
+   PHOTO VIEWER
+============================================================ */
+
 function PhotoViewer({
   photo,
   onClose,
@@ -1094,8 +2222,10 @@ function PhotoViewer({
           "rgba(0,0,0,0.72)",
         zIndex: 1001,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        alignItems:
+          "center",
+        justifyContent:
+          "center",
         padding: 24,
       }}
     >
@@ -1104,7 +2234,8 @@ function PhotoViewer({
           event.stopPropagation()
         }
         style={{
-          width: "min(900px, 100%)",
+          width:
+            "min(900px, 100%)",
           maxHeight: "90vh",
           background: "#FFFFFF",
           borderRadius: 16,
@@ -1117,7 +2248,8 @@ function PhotoViewer({
             display: "flex",
             justifyContent:
               "space-between",
-            alignItems: "center",
+            alignItems:
+              "center",
             marginBottom: 12,
           }}
         >
@@ -1151,11 +2283,13 @@ function PhotoViewer({
             style={{
               border:
                 "1px solid #D9DDE1",
-              background: "#FFFFFF",
+              background:
+                "#FFFFFF",
               borderRadius: 8,
               padding:
                 "7px 11px",
-              cursor: "pointer",
+              cursor:
+                "pointer",
               fontSize: 16,
             }}
           >
@@ -1173,7 +2307,8 @@ function PhotoViewer({
             width: "100%",
             maxHeight:
               "calc(90vh - 120px)",
-            objectFit: "contain",
+            objectFit:
+              "contain",
             display: "block",
             borderRadius: 10,
             background:
@@ -1184,6 +2319,10 @@ function PhotoViewer({
     </div>
   );
 }
+
+/* ============================================================
+   GENERIC MODAL
+============================================================ */
 
 function Modal({
   title,
@@ -1199,8 +2338,10 @@ function Modal({
           "rgba(0,0,0,0.45)",
         zIndex: 1000,
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
+        alignItems:
+          "center",
+        justifyContent:
+          "center",
         padding: 20,
       }}
       onClick={onClose}
@@ -1210,10 +2351,13 @@ function Modal({
           event.stopPropagation()
         }
         style={{
-          width: "min(520px, 100%)",
+          width:
+            "min(520px, 100%)",
           maxHeight: "90vh",
-          overflowY: "auto",
-          background: "#FFFFFF",
+          overflowY:
+            "auto",
+          background:
+            "#FFFFFF",
           borderRadius: 18,
           padding: 24,
           boxShadow:
@@ -1225,7 +2369,8 @@ function Modal({
             display: "flex",
             justifyContent:
               "space-between",
-            alignItems: "center",
+            alignItems:
+              "center",
             marginBottom: 22,
           }}
         >
@@ -1245,11 +2390,13 @@ function Modal({
             style={{
               border:
                 "1px solid #D9DDE1",
-              background: "#FFFFFF",
+              background:
+                "#FFFFFF",
               borderRadius: 8,
               width: 36,
               height: 36,
-              cursor: "pointer",
+              cursor:
+                "pointer",
               fontSize: 16,
             }}
           >
@@ -1262,6 +2409,10 @@ function Modal({
     </div>
   );
 }
+
+/* ============================================================
+   FORM HELPERS
+============================================================ */
 
 function FormField({
   label,
@@ -1298,7 +2449,8 @@ function ModalActions({
     <div
       style={{
         display: "flex",
-        justifyContent: "flex-end",
+        justifyContent:
+          "flex-end",
         gap: 10,
         marginTop: 22,
       }}
@@ -1309,12 +2461,14 @@ function ModalActions({
         style={{
           border:
             "1px solid #D9DDE1",
-          background: "#FFFFFF",
+          background:
+            "#FFFFFF",
           borderRadius: 9,
           padding:
             "10px 16px",
           fontWeight: 600,
-          cursor: "pointer",
+          cursor:
+            "pointer",
         }}
       >
         Cancel
@@ -1324,13 +2478,15 @@ function ModalActions({
         type="submit"
         style={{
           border: "none",
-          background: "#F4C542",
+          background:
+            "#F4C542",
           color: "#2F3A3F",
           borderRadius: 9,
           padding:
             "10px 18px",
           fontWeight: 700,
-          cursor: "pointer",
+          cursor:
+            "pointer",
         }}
       >
         {submitLabel}
@@ -1338,6 +2494,10 @@ function ModalActions({
     </div>
   );
 }
+
+/* ============================================================
+   DATE HELPERS
+============================================================ */
 
 function formatDate(value) {
   if (!value) return "";
@@ -1431,10 +2591,20 @@ function formatDateForJob(
   return `${day}/${month}/${year}`;
 }
 
+/* ============================================================
+   STATUS STYLES
+============================================================ */
+
 function getStatusStyle(
   status
 ) {
   switch (status) {
+    case "New":
+      return {
+        background: "#F3F4F6",
+        color: "#374151",
+      };
+
     case "Measuring":
       return {
         background: "#DBEAFE",
@@ -1447,22 +2617,34 @@ function getStatusStyle(
         color: "#6D28D9",
       };
 
+    case "Sewing":
+      return {
+        background: "#FFE4E6",
+        color: "#BE123C",
+      };
+
     case "Construction":
       return {
         background: "#FFE4E6",
         color: "#BE123C",
       };
 
-    case "Mending":
-      return {
-        background: "#E0F2FE",
-        color: "#0369A1",
-      };
-
     case "Fitting":
       return {
         background: "#FEF3C7",
         color: "#92400E",
+      };
+
+    case "Alterations":
+      return {
+        background: "#FCE7F3",
+        color: "#9D174D",
+      };
+
+    case "Mending":
+      return {
+        background: "#E0F2FE",
+        color: "#0369A1",
       };
 
     case "Ready":
@@ -1475,6 +2657,12 @@ function getStatusStyle(
       return {
         background: "#E5E7EB",
         color: "#374151",
+      };
+
+    case "Cancelled":
+      return {
+        background: "#FEE2E2",
+        color: "#991B1B",
       };
 
     default:
@@ -1497,5 +2685,6 @@ const inputStyle = {
   color: "#2F3A3F",
   background: "#FFFFFF",
   outline: "none",
-  fontFamily: "inherit",
+  fontFamily:
+    "inherit",
 };
