@@ -5,19 +5,32 @@ import { getRecentActivity } from "../../utils/dashboard";
 export default function RecentActivity({ clients = [], jobs = [] }) {
   const [showAll, setShowAll] = useState(false);
 
-  const rawActivity = useMemo(() => [
-    ...getRecentActivity(clients),
-    ...jobs
-      .filter((job) => job.overdue || job.dueToday || ["Completed", "Collected", "Ready"].includes(job.status))
-      .map((job) => ({
-        id: `job-${job.id ?? job.reference ?? job.name}`,
-        reference: job.reference,
-        client: job.clientName ?? job.client ?? "",
-        title: getTitle(job),
-        description: getDescription(job),
-        date: job.updatedAt ?? job.completedAt ?? job.collectedAt ?? job.dueDate ?? new Date().toISOString(),
-      })),
-  ], [clients, jobs]);
+  const rawActivity = useMemo(
+    () => [
+      ...getRecentActivity(clients),
+      ...jobs
+        .filter(
+          (job) =>
+            job.overdue ||
+            job.dueToday ||
+            ["Completed", "Collected", "Ready"].includes(job.status)
+        )
+        .map((job) => ({
+          id: `job-${job.id ?? job.reference ?? job.name}`,
+          reference: job.reference,
+          client: job.clientName ?? job.client ?? "",
+          title: getTitle(job),
+          description: getDescription(job),
+          date:
+            job.updatedAt ??
+            job.completedAt ??
+            job.collectedAt ??
+            job.dueDate ??
+            new Date().toISOString(),
+        })),
+    ],
+    [clients, jobs]
+  );
 
   const groupedActivity = useMemo(
     () => groupActivity(rawActivity).sort((a, b) => new Date(b.date) - new Date(a.date)),
@@ -36,7 +49,11 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
       <div style={headerStyle}>
         <h2 style={titleStyle}>Recent Activity</h2>
         {hasMore && (
-          <button type="button" onClick={() => setShowAll((value) => !value)} style={viewAllStyle}>
+          <button
+            type="button"
+            onClick={() => setShowAll((value) => !value)}
+            style={viewAllStyle}
+          >
             {showAll ? "Show less ↑" : "View all"}
           </button>
         )}
@@ -44,11 +61,21 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
 
       {rawActivity.length === 0 ? (
         <div style={emptyStyle}>
-          <EmptyState icon="📝" title="No Recent Activity" message="Activity will appear here as you work." />
+          <EmptyState
+            icon="📝"
+            title="No Recent Activity"
+            message="Activity will appear here as you work."
+          />
         </div>
       ) : (
         <div style={listStyle}>
-          {visibleActivity.map((item, index) => <ActivityRow key={`${item.id ?? "activity"}-${index}`} item={item} isLast={index === visibleActivity.length - 1} />)}
+          {visibleActivity.map((item, index) => (
+            <ActivityRow
+              key={`${item.id ?? "activity"}-${index}`}
+              item={item}
+              isLast={index === visibleActivity.length - 1}
+            />
+          ))}
         </div>
       )}
     </section>
@@ -58,7 +85,12 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
 function groupActivity(items) {
   const groups = new Map();
   items.forEach((item) => {
-    const key = [item.reference || "", item.client || "", item.title || "", item.description || ""].join("|");
+    const key = [
+      item.reference || "",
+      item.client || "",
+      item.title || "",
+      item.description || "",
+    ].join("|");
     const existing = groups.get(key);
     if (!existing) {
       groups.set(key, { ...item, id: `activity-${key}`, count: 1 });
@@ -72,7 +104,12 @@ function groupActivity(items) {
 
 function ActivityRow({ item, isLast }) {
   return (
-    <div style={{ ...rowStyle, borderBottom: isLast ? "0" : "1px solid #D9DEE2" }}>
+    <div
+      style={{
+        ...rowStyle,
+        borderBottom: isLast ? 0 : "1px solid #D9DEE2",
+      }}
+    >
       <div style={iconStyle}>{getActivityIcon(item)}</div>
       <div style={contentStyle}>
         <div style={titleLineStyle}>
@@ -80,7 +117,10 @@ function ActivityRow({ item, isLast }) {
           <strong>{cleanTitle(item.title)}</strong>
           {item.count > 1 && <span style={countStyle}>{item.count} updates</span>}
         </div>
-        <div style={metaStyle}>{item.client}{item.description ? ` · ${item.description}` : ""}</div>
+        <div style={metaStyle}>
+          {item.client}
+          {item.description ? ` · ${item.description}` : ""}
+        </div>
       </div>
       <span style={dateStyle}>{formatActivityDate(item.date)}</span>
     </div>
@@ -123,21 +163,105 @@ function formatActivityDate(value) {
   if (Number.isNaN(date.getTime())) return "Unknown date";
   const now = new Date();
   const sameDay = date.toDateString() === now.toDateString();
-  if (sameDay) return `Today, ${date.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })}`;
+  if (sameDay) {
+    return `Today, ${date.toLocaleTimeString("en-AU", {
+      hour: "numeric",
+      minute: "2-digit",
+    })}`;
+  }
   return date.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
-const sectionStyle = { background: "#FFFFFF", border: "1px solid #D9DEE2", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 4px rgba(31,41,51,.025)" };
-const headerStyle = { minHeight: 44, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 15px", borderBottom: "1px solid #D9DEE2" };
-const titleStyle = { margin: 0, color: "#20262B", fontSize: 17, lineHeight: 1.2 };
-const viewAllStyle = { border: 0, background: "transparent", color: "#9A2348", fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 };
-const listStyle = { padding: "0 10px" };
-const rowStyle = { display: "grid", gridTemplateColumns: "28px minmax(0, 1fr) auto", alignItems: "center", gap: 9, minHeight: 56, padding: "0 4px" };
-const iconStyle = { width: 27, textAlign: "center", fontSize: 16 };
+const sectionStyle = {
+  background: "#FFFFFF",
+  border: "1px solid #D9DEE2",
+  borderRadius: 8,
+  overflow: "hidden",
+  boxShadow: "0 1px 4px rgba(31,41,51,.025)",
+};
+
+const headerStyle = {
+  minHeight: 50,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  padding: "0 20px",
+  borderBottom: "1px solid #D9DEE2",
+};
+
+const titleStyle = {
+  margin: 0,
+  color: "#20262B",
+  fontSize: 18,
+  lineHeight: 1.2,
+};
+
+const viewAllStyle = {
+  border: 0,
+  background: "transparent",
+  color: "#9A2348",
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  padding: 0,
+};
+
+const listStyle = { padding: "0 12px" };
+
+const rowStyle = {
+  display: "grid",
+  gridTemplateColumns: "34px minmax(0, 1fr) auto",
+  alignItems: "center",
+  gap: 12,
+  minHeight: 72,
+  padding: "0 4px",
+};
+
+const iconStyle = {
+  width: 32,
+  textAlign: "center",
+  fontSize: 19,
+};
+
 const contentStyle = { minWidth: 0 };
-const titleLineStyle = { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 };
-const referenceStyle = { color: "#9A2348", fontSize: 10, fontWeight: 800, letterSpacing: .35 };
-const countStyle = { padding: "2px 6px", borderRadius: 999, background: "#F3F4F6", color: "#687178", fontSize: 10, fontWeight: 700 };
-const metaStyle = { marginTop: 2, color: "#707980", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
-const dateStyle = { color: "#8A9298", fontSize: 10, whiteSpace: "nowrap" };
+const titleLineStyle = {
+  display: "flex",
+  alignItems: "center",
+  flexWrap: "wrap",
+  gap: 6,
+};
+
+const referenceStyle = {
+  color: "#9A2348",
+  fontSize: 10,
+  fontWeight: 800,
+  letterSpacing: 0.35,
+};
+
+const countStyle = {
+  padding: "2px 6px",
+  borderRadius: 999,
+  background: "#F3F4F6",
+  color: "#687178",
+  fontSize: 10,
+  fontWeight: 700,
+};
+
+const metaStyle = {
+  marginTop: 4,
+  color: "#707980",
+  fontSize: 11,
+  whiteSpace: "nowrap",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
+
+const dateStyle = {
+  color: "#687178",
+  fontSize: 11,
+  whiteSpace: "nowrap",
+  textAlign: "right",
+};
+
 const emptyStyle = { padding: 16 };
