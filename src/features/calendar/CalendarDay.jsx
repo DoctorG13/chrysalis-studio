@@ -1,21 +1,27 @@
-export default function CalendarDay({
-  date,
-  inMonth,
-  isToday,
-  isSelected,
-  events = [],
-  onClick,
-  onEventClick,
-}) {
+import { useChrysalis } from "../../context/ChrysalisProvider";
+
+export default function CalendarDay({ date, inMonth, isToday, isSelected, events = [], onClick }) {
+  const { openClient, openJob } = useChrysalis();
+
+  function handleEventClick(event, clickEvent) {
+    clickEvent.preventDefault();
+    clickEvent.stopPropagation();
+
+    if ((event.type === "appointment" || event.type === "fitting") && event.client) {
+      openClient(event.client);
+      return;
+    }
+
+    if (event.type === "job" && event.client) {
+      openJob(event.client, event.jobId);
+    }
+  }
+
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`Select ${date.toLocaleDateString("en-AU", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      })}`}
+      aria-label={`Select ${date.toLocaleDateString("en-AU", { weekday: "long", day: "numeric", month: "long" })}`}
       style={{
         minHeight: 116,
         padding: 9,
@@ -45,23 +51,9 @@ export default function CalendarDay({
         event.currentTarget.style.transform = "translateY(0)";
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          width: "100%",
-          marginBottom: 7,
-        }}
-      >
-        <span style={{ fontWeight: isToday ? 800 : 600, color: inMonth ? "#20262B" : "#A7ADB1", fontSize: 13 }}>
-          {date.getDate()}
-        </span>
-        {isToday && (
-          <span style={{ background: "#8B1E3F", color: "#FFFFFF", fontSize: 8, fontWeight: 800, padding: "3px 6px", borderRadius: 999, letterSpacing: 0.3 }}>
-            TODAY
-          </span>
-        )}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", marginBottom: 7 }}>
+        <span style={{ fontWeight: isToday ? 800 : 600, color: inMonth ? "#20262B" : "#A7ADB1", fontSize: 13 }}>{date.getDate()}</span>
+        {isToday && <span style={{ background: "#8B1E3F", color: "#FFFFFF", fontSize: 8, fontWeight: 800, padding: "3px 6px", borderRadius: 999, letterSpacing: 0.3 }}>TODAY</span>}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%", overflow: "hidden" }}>
@@ -71,17 +63,9 @@ export default function CalendarDay({
             role="button"
             tabIndex={0}
             title={`Open ${event.label}`}
-            onClick={(clickEvent) => {
-              clickEvent.preventDefault();
-              clickEvent.stopPropagation();
-              onEventClick?.(event);
-            }}
+            onClick={(clickEvent) => handleEventClick(event, clickEvent)}
             onKeyDown={(keyEvent) => {
-              if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                keyEvent.preventDefault();
-                keyEvent.stopPropagation();
-                onEventClick?.(event);
-              }
+              if (keyEvent.key === "Enter" || keyEvent.key === " ") handleEventClick(event, keyEvent);
             }}
             style={{
               display: "block",
@@ -97,7 +81,6 @@ export default function CalendarDay({
               width: "100%",
               boxSizing: "border-box",
               cursor: "pointer",
-              pointerEvents: "auto",
               transition: "transform 140ms ease, filter 140ms ease, box-shadow 140ms ease",
             }}
             onMouseEnter={(eventElement) => {
@@ -115,15 +98,8 @@ export default function CalendarDay({
           </span>
         ))}
 
-        {events.length > 4 && (
-          <span style={{ color: "#8B1E3F", fontSize: 10, fontWeight: 700 }}>
-            +{events.length - 4} more
-          </span>
-        )}
-
-        {events.length === 0 && inMonth && (
-          <span style={{ color: "#B1B7BB", fontSize: 10 }}>No events</span>
-        )}
+        {events.length > 4 && <span style={{ color: "#8B1E3F", fontSize: 10, fontWeight: 700 }}>+{events.length - 4} more</span>}
+        {events.length === 0 && inMonth && <span style={{ color: "#B1B7BB", fontSize: 10 }}>No events</span>}
       </div>
     </button>
   );
