@@ -35,14 +35,21 @@ function getScrollContainer(element) {
     current = current.parentElement;
   }
 
-  return document.scrollingElement || document.documentElement;
+  return (
+    document.scrollingElement ||
+    document.documentElement
+  );
 }
 
-function scrollToElement(element, offset = NAV_HEIGHT + NAV_GAP) {
+function scrollToElement(
+  element,
+  offset = NAV_HEIGHT + NAV_GAP
+) {
   if (!element) return;
 
   const container = getScrollContainer(element);
-  const elementRect = element.getBoundingClientRect();
+  const elementRect =
+    element.getBoundingClientRect();
 
   const containerRect =
     container === document.scrollingElement ||
@@ -68,8 +75,15 @@ function parseCalendarDate(value) {
     typeof value === "string" &&
     /^\d{2}\/\d{2}\/\d{4}$/.test(value)
   ) {
-    const [day, month, year] = value.split("/").map(Number);
-    return new Date(year, month - 1, day);
+    const [day, month, year] = value
+      .split("/")
+      .map(Number);
+
+    return new Date(
+      year,
+      month - 1,
+      day
+    );
   }
 
   if (
@@ -81,12 +95,18 @@ function parseCalendarDate(value) {
       .split("-")
       .map(Number);
 
-    return new Date(year, month - 1, day);
+    return new Date(
+      year,
+      month - 1,
+      day
+    );
   }
 
   const date = new Date(value);
 
-  return Number.isNaN(date.getTime()) ? null : date;
+  return Number.isNaN(date.getTime())
+    ? null
+    : date;
 }
 
 function clientName(client) {
@@ -96,7 +116,10 @@ function clientName(client) {
     return client.name;
   }
 
-  return [client.firstName, client.lastName]
+  return [
+    client.firstName,
+    client.lastName,
+  ]
     .filter(Boolean)
     .join(" ");
 }
@@ -107,19 +130,36 @@ function addDays(value, days) {
   return date;
 }
 
-export default function CalendarPage({ clients = [], jobs = [] }) {
-  const [displayMonth, setDisplayMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [weekDate, setWeekDate] = useState(new Date());
-  const [calendarMode, setCalendarMode] = useState("month");
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [appointmentEditor, setAppointmentEditor] = useState(null);
+export default function CalendarPage({
+  clients = [],
+  jobs = [],
+}) {
+  const [displayMonth, setDisplayMonth] =
+    useState(new Date());
+
+  const [selectedDate, setSelectedDate] =
+    useState(new Date());
+
+  const [weekDate, setWeekDate] =
+    useState(new Date());
+
+  const [calendarMode, setCalendarMode] =
+    useState("month");
+
+  const [isScrolled, setIsScrolled] =
+    useState(false);
+
+  const [
+    appointmentEditor,
+    setAppointmentEditor,
+  ] = useState(null);
 
   const pageRef = useRef(null);
   const todayRef = useRef(null);
   const calendarRef = useRef(null);
   const resultsRef = useRef(null);
-  const scrollContainerRef = useRef(null);
+  const scrollContainerRef =
+    useRef(null);
 
   const {
     openClient,
@@ -127,6 +167,7 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     createAppointment,
     updateAppointment,
     deleteAppointment,
+    updateJob,
   } = useChrysalis();
 
   const today = new Date();
@@ -136,45 +177,71 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     [displayMonth]
   );
 
-  const monthStart = startOfMonth(displayMonth);
-  const monthEnd = endOfMonth(displayMonth);
+  const monthStart =
+    startOfMonth(displayMonth);
+
+  const monthEnd =
+    endOfMonth(displayMonth);
 
   useEffect(() => {
-    const container = getScrollContainer(pageRef.current);
+    const container =
+      getScrollContainer(
+        pageRef.current
+      );
 
-    scrollContainerRef.current = container;
+    scrollContainerRef.current =
+      container;
 
     const handleScroll = () => {
-      setIsScrolled(container.scrollTop > 160);
+      setIsScrolled(
+        container.scrollTop > 160
+      );
     };
 
     handleScroll();
 
-    container.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
+    container.addEventListener(
+      "scroll",
+      handleScroll,
+      {
+        passive: true,
+      }
+    );
 
     return () => {
-      container.removeEventListener("scroll", handleScroll);
+      container.removeEventListener(
+        "scroll",
+        handleScroll
+      );
     };
   }, []);
 
   function goPrevious() {
     if (calendarMode === "week") {
-      setWeekDate((value) => addDays(value, -7));
+      setWeekDate((value) =>
+        addDays(value, -7)
+      );
+
       return;
     }
 
-    setDisplayMonth(previousMonth(displayMonth));
+    setDisplayMonth(
+      previousMonth(displayMonth)
+    );
   }
 
   function goNext() {
     if (calendarMode === "week") {
-      setWeekDate((value) => addDays(value, 7));
+      setWeekDate((value) =>
+        addDays(value, 7)
+      );
+
       return;
     }
 
-    setDisplayMonth(nextMonth(displayMonth));
+    setDisplayMonth(
+      nextMonth(displayMonth)
+    );
   }
 
   function selectDate(date) {
@@ -185,7 +252,9 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
 
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        scrollToElement(resultsRef.current);
+        scrollToElement(
+          resultsRef.current
+        );
       });
     });
   }
@@ -198,7 +267,9 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     setSelectedDate(now);
 
     window.requestAnimationFrame(() => {
-      scrollToElement(calendarRef.current);
+      scrollToElement(
+        calendarRef.current
+      );
     });
   }
 
@@ -217,7 +288,9 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
   function scrollToTop() {
     const container =
       scrollContainerRef.current ||
-      getScrollContainer(pageRef.current);
+      getScrollContainer(
+        pageRef.current
+      );
 
     container.scrollTo({
       top: 0,
@@ -229,92 +302,144 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     const events = [];
 
     clients.forEach((client) => {
-      (client.appointments || []).forEach((appointment) => {
-        const appointmentDate = parseCalendarDate(
-          appointment.date
-        );
+      const name = clientName(client);
 
-        if (
-          appointmentDate &&
-          sameDay(appointmentDate, date)
-        ) {
+      (client.appointments || []).forEach(
+        (appointment) => {
+          const appointmentDate =
+            parseCalendarDate(
+              appointment.date
+            );
+
+          if (
+            !appointmentDate ||
+            !sameDay(
+              appointmentDate,
+              date
+            )
+          ) {
+            return;
+          }
+
+          const appointmentType =
+            appointment.title ||
+            appointment.type ||
+            "Appointment";
+
           events.push({
             id: appointment.id,
             type: "appointment",
             client,
+            clientName: name,
             appointment,
-            icon: "👤",
+            icon: "📅",
             colour: "#1976D2",
             label:
-              appointment.title ||
-              appointment.type ||
-              clientName(client) ||
-              "Appointment",
+              name || "Appointment",
+            subLabel:
+              appointmentType,
           });
         }
-      });
+      );
 
-      (client.fittings || []).forEach((fitting) => {
-        const fittingDate = parseCalendarDate(fitting.date);
+      (client.fittings || []).forEach(
+        (fitting) => {
+          const fittingDate =
+            parseCalendarDate(
+              fitting.date
+            );
 
-        if (
-          fittingDate &&
-          sameDay(fittingDate, date)
-        ) {
+          if (
+            !fittingDate ||
+            !sameDay(
+              fittingDate,
+              date
+            )
+          ) {
+            return;
+          }
+
           events.push({
             id: fitting.id,
             type: "fitting",
             client,
+            clientName: name,
             fitting,
             icon: "👗",
             colour: "#8B1E3F",
-            label: fitting.title || "Fitting",
+            label:
+              name || "Fitting",
+            subLabel:
+              fitting.title ||
+              "Fitting",
           });
         }
-      });
+      );
     });
 
     jobs.forEach((job) => {
-      const due = parseCalendarDate(job.dueDate);
+      const due =
+        parseCalendarDate(
+          job.dueDate
+        );
 
-      if (!due || !sameDay(due, date)) {
+      if (
+        !due ||
+        !sameDay(due, date)
+      ) {
         return;
       }
 
-      const client = clients.find(
-        (candidate) =>
-          String(candidate.id) === String(job.clientId)
-      );
+      const client =
+        clients.find(
+          (candidate) =>
+            String(candidate.id) ===
+            String(job.clientId)
+        );
+
+      const name =
+        clientName(client);
+
+      const jobTitle =
+        job.title ||
+        job.name ||
+        "Job";
 
       events.push({
         id: job.id,
         type: "job",
         client,
+        clientName: name,
         jobId: job.id,
         job,
-        icon: "💼",
-        colour: "#C62828",
+        icon: "✂️",
+        colour: "#8B1E3F",
         label:
-          job.reference ||
-          job.title ||
-          job.name ||
-          "Job",
+          name || "Job",
+        subLabel:
+          jobTitle,
       });
     });
 
     return events.slice(0, 4);
   }
 
-  function openNewAppointment(date = selectedDate) {
+  function openNewAppointment(
+    date = selectedDate
+  ) {
     const target = new Date(date);
 
     setAppointmentEditor({
       appointment: null,
-      date: target.toISOString().slice(0, 10),
+      date: target
+        .toISOString()
+        .slice(0, 10),
     });
   }
 
-  function openExistingAppointment(appointment) {
+  function openExistingAppointment(
+    appointment
+  ) {
     if (!appointment) return;
 
     setAppointmentEditor({
@@ -323,16 +448,149 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
     });
   }
 
-  const selectedEvents = getEventsForDate(selectedDate);
+  function handleOpenJob(
+    client,
+    job
+  ) {
+    if (!job) return;
+
+    const resolvedClient =
+      client ||
+      clients.find(
+        (candidate) =>
+          String(candidate.id) ===
+          String(job.clientId)
+      );
+
+    if (resolvedClient) {
+      openJob(
+        resolvedClient,
+        job.id
+      );
+
+      return;
+    }
+
+    openJob(
+      null,
+      job.id
+    );
+  }
+
+  async function handleRescheduleAppointment(
+    appointment,
+    changes
+  ) {
+    if (
+      !appointment ||
+      !changes
+    ) {
+      return;
+    }
+
+    await updateAppointment({
+      ...appointment,
+      date: changes.date,
+      time:
+        changes.time ||
+        appointment.time ||
+        "09:00",
+    });
+  }
+
+  async function handleRescheduleJob(
+    job,
+    changes
+  ) {
+    if (
+      !job ||
+      !changes
+    ) {
+      return;
+    }
+
+    await updateJob({
+      ...job,
+      dueDate: changes.date,
+    });
+  }
+
+  async function handleRescheduleEvent(
+    event
+  ) {
+    if (!event) return;
+
+    if (
+      event.type ===
+      "appointment"
+    ) {
+      const appointment =
+        clients
+          .flatMap(
+            (client) =>
+              client.appointments ||
+              []
+          )
+          .find(
+            (item) =>
+              String(item.id) ===
+              String(event.id)
+          );
+
+      if (appointment) {
+        await handleRescheduleAppointment(
+          appointment,
+          {
+            date: event.date,
+            time:
+              appointment.time ||
+              "09:00",
+          }
+        );
+      }
+
+      return;
+    }
+
+    if (
+      event.type === "job"
+    ) {
+      const job = jobs.find(
+        (item) =>
+          String(item.id) ===
+          String(event.id)
+      );
+
+      if (job) {
+        await handleRescheduleJob(
+          job,
+          {
+            date: event.date,
+          }
+        );
+      }
+    }
+  }
+
+  const selectedEvents =
+    getEventsForDate(
+      selectedDate
+    );
 
   return (
-    <div ref={pageRef} style={{ position: "relative" }}>
-      {/* CALENDAR SECTION NAVIGATION */}
+    <div
+      ref={pageRef}
+      style={{
+        position: "relative",
+      }}
+    >
       <div
         style={navigationShellStyle}
         aria-label="Calendar section navigation"
       >
-        <ChrysalisActionButton onClick={scrollToTop}>
+        <ChrysalisActionButton
+          onClick={scrollToTop}
+        >
           ↑ Top
         </ChrysalisActionButton>
 
@@ -340,72 +598,92 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
           onClick={scrollToToday}
           variant="accent"
         >
-          🦋 Today
+          📅 Today
         </ChrysalisActionButton>
 
-        <ChrysalisActionButton onClick={scrollToCalendar}>
+        <ChrysalisActionButton
+          onClick={scrollToCalendar}
+        >
           📅 Calendar
         </ChrysalisActionButton>
 
         <ChrysalisActionButton
           onClick={scrollToSelectedDay}
         >
-          📋 Selected Day
+          📍 Selected Day
         </ChrysalisActionButton>
       </div>
 
-      {/* TODAY */}
       <div
         ref={todayRef}
         style={{
-          scrollMarginTop: NAV_HEIGHT + NAV_GAP,
+          scrollMarginTop:
+            NAV_HEIGHT +
+            NAV_GAP,
         }}
       >
         <TodayView
           clients={clients}
           jobs={jobs}
           today={today}
-          onOpenClient={openClient}
-          onOpenJob={openJob}
+          onOpenClient={
+            openClient
+          }
+          onOpenJob={
+            openJob
+          }
         />
       </div>
 
-      {/* CALENDAR HEADER */}
       <div
         ref={calendarRef}
         style={{
           marginTop: 8,
           marginBottom: 16,
-          scrollMarginTop: NAV_HEIGHT + NAV_GAP,
+          scrollMarginTop:
+            NAV_HEIGHT +
+            NAV_GAP,
         }}
       >
         <CalendarToolbar
           monthLabel={
-            calendarMode === "week"
+            calendarMode ===
+            "week"
               ? "Week View"
-              : monthLabel(displayMonth)
+              : monthLabel(
+                  displayMonth
+                )
           }
-          onPrevious={goPrevious}
+          onPrevious={
+            goPrevious
+          }
           onToday={goToday}
           onNext={goNext}
           onAddAppointment={() =>
             openNewAppointment(
-              calendarMode === "week"
+              calendarMode ===
+                "week"
                 ? weekDate
                 : selectedDate
             )
           }
         />
 
-        {/* MONTH / WEEK SWITCH */}
         <div
-          style={modeSwitchStyle}
+          style={
+            modeSwitchStyle
+          }
           aria-label="Calendar view"
         >
           <ChrysalisActionButton
-            onClick={() => setCalendarMode("month")}
+            onClick={() =>
+              setCalendarMode(
+                "month"
+              )
+            }
             variant={
-              calendarMode === "month"
+              calendarMode ===
+              "month"
                 ? "accent"
                 : "default"
             }
@@ -414,64 +692,130 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
           </ChrysalisActionButton>
 
           <ChrysalisActionButton
-            onClick={() => setCalendarMode("week")}
+            onClick={() =>
+              setCalendarMode(
+                "week"
+              )
+            }
             variant={
-              calendarMode === "week"
+              calendarMode ===
+              "week"
                 ? "accent"
                 : "default"
             }
           >
-            ▦ Week
+            ☷ Week
           </ChrysalisActionButton>
         </div>
       </div>
 
-      {/* MONTH VIEW */}
-      {calendarMode === "month" && (
+      {calendarMode ===
+        "month" && (
         <CalendarGrid
-          calendarDays={calendarDays}
-          monthStart={monthStart}
-          monthEnd={monthEnd}
+          calendarDays={
+            calendarDays
+          }
+          monthStart={
+            monthStart
+          }
+          monthEnd={
+            monthEnd
+          }
           today={today}
-          selectedDate={selectedDate}
-          onSelectDate={selectDate}
-          getEventsForDate={getEventsForDate}
+          selectedDate={
+            selectedDate
+          }
+          onSelectDate={
+            selectDate
+          }
+          getEventsForDate={
+            getEventsForDate
+          }
           sameDay={sameDay}
+          onOpenAppointment={
+            openExistingAppointment
+          }
+          onOpenJob={
+            handleOpenJob
+          }
+          onOpenClient={
+            openClient
+          }
+          onRescheduleEvent={
+            handleRescheduleEvent
+          }
         />
       )}
 
-      {/* WEEK VIEW */}
-      {calendarMode === "week" && (
+      {calendarMode ===
+        "week" && (
         <CalendarWeekView
-          weekDate={weekDate}
-          clients={clients}
-          onSelectDate={selectDate}
-          onOpenAppointment={openExistingAppointment}
-          onOpenClient={openClient}
-          onOpenJob={openJob}
-          onNewAppointment={openNewAppointment}
+          weekDate={
+            weekDate
+          }
+          clients={
+            clients
+          }
+          jobs={jobs}
+          onSelectDate={
+            selectDate
+          }
+          onOpenAppointment={
+            openExistingAppointment
+          }
+          onOpenClient={
+            openClient
+          }
+          onOpenJob={
+            handleOpenJob
+          }
+          onNewAppointment={
+            openNewAppointment
+          }
           onPreviousWeek={() =>
-            setWeekDate((value) =>
-              addDays(value, -7)
+            setWeekDate(
+              (value) =>
+                addDays(
+                  value,
+                  -7
+                )
             )
           }
           onNextWeek={() =>
-            setWeekDate((value) =>
-              addDays(value, 7)
+            setWeekDate(
+              (value) =>
+                addDays(
+                  value,
+                  7
+                )
             )
           }
-          onToday={goToday}
+          onToday={
+            goToday
+          }
+          onRescheduleEvent={
+            handleRescheduleEvent
+          }
+          onRescheduleAppointment={
+            handleRescheduleAppointment
+          }
+          onRescheduleJob={
+            handleRescheduleJob
+          }
         />
       )}
 
-      {/* SELECTED DAY */}
       <div
         ref={resultsRef}
         style={{
-          scrollMarginTop: NAV_HEIGHT + NAV_GAP,
+          scrollMarginTop:
+            NAV_HEIGHT +
+            NAV_GAP,
           marginTop: 30,
-          background: "#FFFFFF",
-          border: "1px solid #DDDDDD",
+          background:
+            "#FFFFFF",
+          border:
+            "1px solid #DDDDDD",
           borderRadius: 12,
           padding: 20,
         }}
@@ -479,31 +823,43 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
         <div
           style={{
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            alignItems:
+              "center",
+            justifyContent:
+              "space-between",
             gap: 16,
             marginBottom: 12,
-            flexWrap: "wrap",
+            flexWrap:
+              "wrap",
           }}
         >
           <div>
-            <h3 style={{ margin: 0 }}>
+            <h3
+              style={{
+                margin: 0,
+              }}
+            >
               Selected Day
             </h3>
 
             <p
               style={{
-                color: "#666",
-                margin: "6px 0 0",
+                color:
+                  "#666",
+                margin:
+                  "6px 0 0",
               }}
             >
               {selectedDate.toLocaleDateString(
                 "en-AU",
                 {
-                  weekday: "long",
+                  weekday:
+                    "long",
                   day: "numeric",
-                  month: "long",
-                  year: "numeric",
+                  month:
+                    "long",
+                  year:
+                    "numeric",
                 }
               )}
             </p>
@@ -511,168 +867,217 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
 
           <div
             style={{
-              display: "flex",
+              display:
+                "flex",
               gap: 8,
-              flexWrap: "wrap",
+              flexWrap:
+                "wrap",
             }}
           >
             <ChrysalisActionButton
               onClick={() =>
-                openNewAppointment(selectedDate)
+                openNewAppointment(
+                  selectedDate
+                )
               }
               variant="accent"
             >
-              ＋ Appointment
+              ➕ Appointment
             </ChrysalisActionButton>
 
             <ChrysalisActionButton
-              onClick={scrollToCalendar}
+              onClick={
+                scrollToCalendar
+              }
             >
-              ↑ Back to Calendar
+              ← Back to Calendar
             </ChrysalisActionButton>
           </div>
         </div>
 
-        {selectedEvents.length === 0 ? (
+        {selectedEvents.length ===
+        0 ? (
           <p
             style={{
-              color: "#999999",
-              fontStyle: "italic",
+              color:
+                "#999999",
+              fontStyle:
+                "italic",
             }}
           >
-            No appointments, fittings or jobs
+            No appointments,
+            fittings or jobs
             scheduled.
           </p>
         ) : (
-          selectedEvents.map((event, index) => {
-            const appointment =
-              event.type === "appointment"
-                ? event.appointment
-                : null;
+          selectedEvents.map(
+            (
+              event,
+              index
+            ) => {
+              const appointment =
+                event.type ===
+                "appointment"
+                  ? event.appointment
+                  : null;
 
-            return (
-              <div
-                key={
-                  event.id ||
-                  event.jobId ||
-                  index
-                }
-                style={eventCardStyle}
-              >
-                <span style={{ fontSize: 20 }}>
-                  {event.icon}
-                </span>
-
+              return (
                 <div
-                  style={{
-                    minWidth: 0,
-                    flex: 1,
-                  }}
+                  key={
+                    event.id ||
+                    event.jobId ||
+                    index
+                  }
+                  style={
+                    eventCardStyle
+                  }
                 >
-                  <div
+                  <span
                     style={{
-                      fontWeight: 700,
+                      fontSize: 20,
                     }}
                   >
-                    {event.label}
-                  </div>
+                    {
+                      event.icon
+                    }
+                  </span>
 
                   <div
                     style={{
-                      color: "#666",
-                      fontSize: 13,
-                      marginTop: 3,
+                      minWidth: 0,
+                      flex: 1,
                     }}
                   >
-                    {event.type === "fitting"
-                      ? "Fitting"
-                      : event.type === "job"
-                      ? "Job due"
-                      : "Appointment"}
-
-                    {appointment?.time
-                      ? ` • ${appointment.time}`
-                      : ""}
-
-                    {event.client
-                      ? ` • ${clientName(
-                          event.client
-                        )}`
-                      : ""}
-                  </div>
-
-                  {appointment?.location && (
                     <div
                       style={{
-                        color: "#777",
-                        fontSize: 12,
-                        marginTop: 3,
+                        fontWeight:
+                          700,
                       }}
                     >
-                      📍 {appointment.location}
+                      {
+                        event.label
+                      }
                     </div>
-                  )}
-                </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: 7,
-                    flexWrap: "wrap",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  {event.type === "appointment" && (
-                    <ChrysalisActionButton
-                      onClick={() =>
-                        openExistingAppointment(
-                          appointment
-                        )
-                      }
+                    <div
+                      style={{
+                        color:
+                          "#666",
+                        fontSize:
+                          13,
+                        marginTop:
+                          3,
+                      }}
                     >
-                      Edit
-                    </ChrysalisActionButton>
-                  )}
+                      {
+                        event.subLabel
+                      }
 
-                  {event.client && (
-                    <ChrysalisActionButton
-                      onClick={() =>
-                        event.type === "job"
-                          ? openJob(
-                              event.client,
-                              event.jobId
-                            )
-                          : openClient(event.client)
-                      }
-                      variant="accent"
-                    >
-                      Open →
-                    </ChrysalisActionButton>
-                  )}
+                      {appointment?.time
+                        ? ` • ${appointment.time}`
+                        : ""}
+                    </div>
+
+                    {appointment?.location && (
+                      <div
+                        style={{
+                          color:
+                            "#777",
+                          fontSize:
+                            12,
+                          marginTop:
+                            3,
+                        }}
+                      >
+                        📍{" "}
+                        {
+                          appointment.location
+                        }
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      display:
+                        "flex",
+                      gap: 7,
+                      flexWrap:
+                        "wrap",
+                      justifyContent:
+                        "flex-end",
+                    }}
+                  >
+                    {event.type ===
+                      "appointment" && (
+                      <ChrysalisActionButton
+                        onClick={() =>
+                          openExistingAppointment(
+                            appointment
+                          )
+                        }
+                      >
+                        Edit
+                      </ChrysalisActionButton>
+                    )}
+
+                    {event.type ===
+                      "job" && (
+                      <ChrysalisActionButton
+                        onClick={() =>
+                          handleOpenJob(
+                            event.client,
+                            event.job
+                          )
+                        }
+                        variant="accent"
+                      >
+                        Open →
+                      </ChrysalisActionButton>
+                    )}
+
+                    {event.client &&
+                      event.type !==
+                        "job" && (
+                      <ChrysalisActionButton
+                        onClick={() =>
+                          openClient(
+                            event.client
+                          )
+                        }
+                        variant="accent"
+                      >
+                        Open →
+                      </ChrysalisActionButton>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            }
+          )
         )}
       </div>
 
-      {/* FLOATING BACK TO TOP */}
       {isScrolled && (
         <div
           style={{
-            position: "fixed",
+            position:
+              "fixed",
             right: 30,
             bottom: 24,
             zIndex: 100,
           }}
         >
-          <ChrysalisActionButton onClick={scrollToTop}>
+          <ChrysalisActionButton
+            onClick={
+              scrollToTop
+            }
+          >
             ↑ Back to Top
           </ChrysalisActionButton>
         </div>
       )}
 
-      {/* APPOINTMENT EDITOR */}
       {appointmentEditor && (
         <AppointmentEditor
           clients={clients}
@@ -680,15 +1085,27 @@ export default function CalendarPage({ clients = [], jobs = [] }) {
           appointment={
             appointmentEditor.appointment
           }
-          defaultDate={appointmentEditor.date}
-          onSave={async (appointment) =>
-            appointment.id
-              ? updateAppointment(appointment)
-              : createAppointment(appointment)
+          defaultDate={
+            appointmentEditor.date
           }
-          onDelete={deleteAppointment}
+          onSave={async (
+            appointment
+          ) =>
+            appointment.id
+              ? updateAppointment(
+                  appointment
+                )
+              : createAppointment(
+                  appointment
+                )
+          }
+          onDelete={
+            deleteAppointment
+          }
           onClose={() =>
-            setAppointmentEditor(null)
+            setAppointmentEditor(
+              null
+            )
           }
         />
       )}
@@ -708,7 +1125,8 @@ const navigationShellStyle = {
   background: "#FFFFFF",
   border: "1px solid #E1E4E7",
   borderRadius: 10,
-  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+  boxShadow:
+    "0 2px 8px rgba(0,0,0,0.08)",
 };
 
 const modeSwitchStyle = {
@@ -716,16 +1134,21 @@ const modeSwitchStyle = {
   gap: 6,
   marginTop: 8,
   paddingTop: 8,
-  borderTop: "1px solid #E7EAEC",
+  borderTop:
+    "1px solid #E7EAEC",
 };
 
 const eventCardStyle = {
   display: "flex",
-  alignItems: "flex-start",
+  alignItems:
+    "flex-start",
   gap: 12,
-  padding: "14px 16px",
+  padding:
+    "14px 16px",
   marginBottom: 10,
-  borderLeft: "5px solid #8B1E3F",
-  background: "#F8F8F8",
+  borderLeft:
+    "5px solid #8B1E3F",
+  background:
+    "#F8F8F8",
   borderRadius: 8,
 };
