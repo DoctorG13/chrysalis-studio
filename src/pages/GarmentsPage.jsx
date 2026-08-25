@@ -3,6 +3,11 @@ import { useMemo, useState } from "react";
 import JobCard from "../components/jobs/JobCard";
 import Button from "../components/common/Button";
 import { useChrysalis } from "../context/ChrysalisProvider";
+import {
+  JOB_WORKFLOW,
+  parseJobDate,
+  getWorkflowProgress,
+} from "../constants/jobWorkflow";
 
 function clientName(client) {
   if (!client) return "";
@@ -32,44 +37,40 @@ function getOutstanding(job) {
 }
 
 function isDueThisWeek(job) {
-  if (!job.dueDate) return false;
+  const dueDate = parseJobDate(job?.dueDate);
+
+  if (!dueDate) return false;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const endOfWeek = new Date(today);
   endOfWeek.setDate(today.getDate() + 7);
+  endOfWeek.setHours(23, 59, 59, 999);
 
-  const due = new Date(job.dueDate);
-
-  if (Number.isNaN(due.getTime())) {
-    return false;
-  }
-
-  due.setHours(0, 0, 0, 0);
-
-  return due >= today && due <= endOfWeek;
+  return dueDate >= today && dueDate <= endOfWeek;
 }
 
 function isOverdue(job) {
-  if (job.overdue) return true;
+  if (job?.overdue) return true;
 
-  if (!job.dueDate) return false;
+  const dueDate = parseJobDate(job?.dueDate);
 
-  const due = new Date(job.dueDate);
+  if (!dueDate) return false;
 
-  if (Number.isNaN(due.getTime())) {
+  if (
+    job.status === "Collected" ||
+    job.status === "Cancelled"
+  ) {
     return false;
   }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  due.setHours(0, 0, 0, 0);
 
-  return (
-    due < today &&
-    job.status !== "Completed"
-  );
+  dueDate.setHours(0, 0, 0, 0);
+
+  return dueDate < today;
 }
 
 function SummaryCard({
@@ -114,6 +115,293 @@ function SummaryCard({
   );
 }
 
+function WorkflowColumn({
+  status,
+  jobs,
+  onOpenJob,
+}) {
+  const total = jobs.length;
+
+  return (
+    <div
+      style={{
+        minWidth: 280,
+        flex: "1 1 280px",
+        maxWidth: 360,
+        background: "#F5F7F8",
+        border:
+          "1px solid #DCE1E4",
+        borderRadius: 12,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          padding: "14px 16px",
+          background: "#2F3A3F",
+          color: "#FFFFFF",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 800,
+          }}
+        >
+          {status}
+        </div>
+
+        <span
+          style={{
+            minWidth: 24,
+            height: 24,
+            padding: "0 7px",
+            borderRadius: 999,
+            background: "#FFFFFF",
+            color: "#2F3A3F",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 12,
+            fontWeight: 800,
+          }}
+        >
+          {total}
+        </span>
+      </div>
+
+      <div
+        style={{
+          padding: 10,
+          minHeight: 150,
+        }}
+      >
+        {jobs.length === 0 ? (
+          <div
+            style={{
+              padding: "28px 12px",
+              textAlign: "center",
+              color: "#9AA1A6",
+              fontSize: 12,
+              fontStyle: "italic",
+            }}
+          >
+            No garments
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            {jobs.map((job) => (
+              <ProductionJobCard
+                key={job.id}
+                job={job}
+                onOpenJob={onOpenJob}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductionJobCard({
+  job,
+  onOpenJob,
+}) {
+  const client =
+    job.clientDisplayName ||
+    job.clientName ||
+    "No client";
+
+  const garment =
+    job.name ||
+    job.title ||
+    "Untitled Garment";
+
+  const progress =
+    job.progress ??
+    getWorkflowProgress(job.status);
+
+  const dueDate =
+    job.dueDate || null;
+
+  const overdue =
+    job.overdue ||
+    isOverdue(job);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpenJob(job)}
+      style={{
+        width: "100%",
+        textAlign: "left",
+        padding: 14,
+        borderRadius: 10,
+        border: overdue
+          ? "1px solid #FCA5A5"
+          : "1px solid #D9DEE2",
+        background: "#FFFFFF",
+        cursor: "pointer",
+        boxSizing: "border-box",
+        fontFamily: "inherit",
+        color: "inherit",
+        appearance: "none",
+        WebkitAppearance: "none",
+        boxShadow:
+          "0 2px 6px rgba(31,41,51,.05)",
+      }}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.borderColor =
+          "#8B1E3F";
+
+        event.currentTarget.style.boxShadow =
+          "0 5px 14px rgba(31,41,51,.10)";
+
+        event.currentTarget.style.transform =
+          "translateY(-1px)";
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.borderColor =
+          overdue
+            ? "#FCA5A5"
+            : "#D9DEE2";
+
+        event.currentTarget.style.boxShadow =
+          "0 2px 6px rgba(31,41,51,.05)";
+
+        event.currentTarget.style.transform =
+          "translateY(0)";
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent:
+            "space-between",
+          alignItems: "flex-start",
+          gap: 10,
+        }}
+      >
+        <div
+          style={{
+            minWidth: 0,
+            flex: 1,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 800,
+              color: "#2F3A3F",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {client}
+          </div>
+
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 13,
+              color: "#687178",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {garment}
+          </div>
+        </div>
+
+        <div
+          style={{
+            flexShrink: 0,
+            padding: "4px 7px",
+            borderRadius: 6,
+            background: "#8B1E3F",
+            color: "#FFFFFF",
+            fontSize: 10,
+            fontWeight: 800,
+            letterSpacing: 0.5,
+          }}
+        >
+          {job.reference || "NEW"}
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 12,
+          height: 7,
+          background: "#E5E7EB",
+          borderRadius: 999,
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            width: `${Math.max(
+              0,
+              Math.min(100, progress)
+            )}%`,
+            height: "100%",
+            background: "#8B1E3F",
+            borderRadius: 999,
+            transition:
+              "width .25s ease",
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent:
+            "space-between",
+          gap: 8,
+          marginTop: 8,
+          fontSize: 11,
+          color: "#687178",
+        }}
+      >
+        <span>
+          {progress}% complete
+        </span>
+
+        {dueDate && (
+          <span
+            style={{
+              color: overdue
+                ? "#B91C1C"
+                : "#687178",
+              fontWeight: overdue
+                ? 800
+                : 600,
+            }}
+          >
+            {overdue
+              ? "OVERDUE"
+              : `Due ${dueDate}`}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
+
 export default function GarmentsPage({
   clients = [],
   jobs = [],
@@ -125,6 +413,11 @@ export default function GarmentsPage({
 
   const [statusFilter, setStatusFilter] =
     useState("All");
+
+  const [
+    showProductionBoard,
+    setShowProductionBoard,
+  ] = useState(true);
 
   const clientLookup = useMemo(
     () =>
@@ -185,8 +478,7 @@ export default function GarmentsPage({
 
         const matchesStatus =
           statusFilter === "All" ||
-          job.status ===
-            statusFilter;
+          job.status === statusFilter;
 
         return (
           matchesSearch &&
@@ -203,8 +495,8 @@ export default function GarmentsPage({
   const inProgressJobs =
     jobs.filter(
       (job) =>
-        job.status !==
-        "Completed"
+        job.status !== "Collected" &&
+        job.status !== "Cancelled"
     );
 
   const dueThisWeekJobs =
@@ -220,6 +512,22 @@ export default function GarmentsPage({
         getOutstanding(job),
       0
     );
+
+  const workflowJobs =
+    useMemo(() => {
+      return JOB_WORKFLOW.reduce(
+        (columns, status) => {
+          columns[status] =
+            filteredJobs.filter(
+              (job) =>
+                job.status === status
+            );
+
+          return columns;
+        },
+        {}
+      );
+    }, [filteredJobs]);
 
   function handleOpenJob(job) {
     if (!job) return;
@@ -247,6 +555,8 @@ export default function GarmentsPage({
         paddingBottom: 40,
       }}
     >
+      {/* HEADER */}
+
       <div
         style={{
           display: "flex",
@@ -309,6 +619,8 @@ export default function GarmentsPage({
         </div>
       </div>
 
+      {/* SUMMARY */}
+
       <div
         style={{
           display: "grid",
@@ -347,7 +659,9 @@ export default function GarmentsPage({
 
         <SummaryCard
           title="Overdue"
-          value={overdueJobs.length}
+          value={
+            overdueJobs.length
+          }
           background="#FEF2F2"
           border="#FCA5A5"
           colour="#B91C1C"
@@ -363,6 +677,8 @@ export default function GarmentsPage({
           colour="#166534"
         />
       </div>
+
+      {/* SEARCH / FILTER */}
 
       <div
         style={{
@@ -420,121 +736,244 @@ export default function GarmentsPage({
             All Statuses
           </option>
 
-          <option value="New">
-            New
-          </option>
-
-          <option value="In Progress">
-            In Progress
-          </option>
-
-          <option value="Awaiting Fitting">
-            Awaiting Fitting
-          </option>
-
-          <option value="Ready">
-            Ready
-          </option>
-
-          <option value="Ready for Collection">
-            Ready for Collection
-          </option>
-
-          <option value="Completed">
-            Completed
-          </option>
-        </select>
-      </div>
-
-      {filteredJobs.length === 0 ? (
-        <div
-          style={{
-            border:
-              "2px dashed #DDD",
-            borderRadius: 12,
-            padding: 60,
-            textAlign: "center",
-          }}
-        >
-          <h3>
-            No garments found
-          </h3>
-
-          <p
-            style={{
-              color: "#777",
-            }}
-          >
-            Try changing your
-            search or status filter.
-          </p>
-
-          {(search ||
-            statusFilter !==
-              "All") && (
-            <Button
-              onClick={() => {
-                setSearch("");
-                setStatusFilter(
-                  "All"
-                );
-              }}
-            >
-              Clear Filters
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fill,minmax(380px,1fr))",
-            gap: 20,
-          }}
-        >
-          {filteredJobs.map(
-            (job) => (
-              <div
-                key={job.id}
-                style={{
-                  position:
-                    "relative",
-                }}
+          {JOB_WORKFLOW.map(
+            (status) => (
+              <option
+                key={status}
+                value={status}
               >
-                <div
-                  style={{
-                    marginBottom: 8,
-                    padding:
-                      "8px 12px",
-                    background:
-                      "#F8F8F8",
-                    borderRadius:
-                      "8px 8px 0 0",
-                    border:
-                      "1px solid #E1E4E7",
-                    borderBottom:
-                      "none",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color:
-                      "#2F3A3F",
-                  }}
-                >
-                  {job.clientDisplayName}
-                </div>
-
-                <JobCard
-                  job={job}
-                  onOpen={() =>
-                    handleOpenJob(job)
-                  }
-                />
-              </div>
+                {status}
+              </option>
             )
           )}
-        </div>
+
+          <option value="Cancelled">
+            Cancelled
+          </option>
+        </select>
+
+        <Button
+          onClick={() =>
+            setShowProductionBoard(
+              (value) => !value
+            )
+          }
+        >
+          {showProductionBoard
+            ? "Hide Production Board"
+            : "Show Production Board"}
+        </Button>
+      </div>
+
+      {/* PRODUCTION BOARD */}
+
+      {showProductionBoard && (
+        <section>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent:
+                "space-between",
+              gap: 16,
+              marginBottom: 14,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <h2
+                style={{
+                  margin: 0,
+                  color: "#2F3A3F",
+                }}
+              >
+                Production Board
+              </h2>
+
+              <p
+                style={{
+                  margin:
+                    "5px 0 0",
+                  color: "#687178",
+                  fontSize: 13,
+                }}
+              >
+                Move through the
+                workflow at a glance.
+              </p>
+            </div>
+
+            <div
+              style={{
+                fontSize: 12,
+                color: "#687178",
+              }}
+            >
+              {filteredJobs.length}{" "}
+              visible garments
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 14,
+              overflowX: "auto",
+              paddingBottom: 12,
+              alignItems:
+                "flex-start",
+            }}
+          >
+            {JOB_WORKFLOW.map(
+              (status) => (
+                <WorkflowColumn
+                  key={status}
+                  status={status}
+                  jobs={
+                    workflowJobs[
+                      status
+                    ] || []
+                  }
+                  onOpenJob={
+                    handleOpenJob
+                  }
+                />
+              )
+            )}
+          </div>
+        </section>
       )}
+
+      {/* GARMENT LIST */}
+
+      <section>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent:
+              "space-between",
+            gap: 16,
+            marginBottom: 14,
+            flexWrap: "wrap",
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                color: "#2F3A3F",
+              }}
+            >
+              Garment List
+            </h2>
+
+            <p
+              style={{
+                margin:
+                  "5px 0 0",
+                color: "#687178",
+                fontSize: 13,
+              }}
+            >
+              Detailed garment and
+              job information.
+            </p>
+          </div>
+        </div>
+
+        {filteredJobs.length === 0 ? (
+          <div
+            style={{
+              border:
+                "2px dashed #DDD",
+              borderRadius: 12,
+              padding: 60,
+              textAlign: "center",
+            }}
+          >
+            <h3>
+              No garments found
+            </h3>
+
+            <p
+              style={{
+                color: "#777",
+              }}
+            >
+              Try changing your
+              search or status filter.
+            </p>
+
+            {(search ||
+              statusFilter !==
+                "All") && (
+              <Button
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter(
+                    "All"
+                  );
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fill,minmax(380px,1fr))",
+              gap: 20,
+            }}
+          >
+            {filteredJobs.map(
+              (job) => (
+                <div
+                  key={job.id}
+                  style={{
+                    position:
+                      "relative",
+                  }}
+                >
+                  <div
+                    style={{
+                      marginBottom: 8,
+                      padding:
+                        "8px 12px",
+                      background:
+                        "#F8F8F8",
+                      borderRadius:
+                        "8px 8px 0 0",
+                      border:
+                        "1px solid #E1E4E7",
+                      borderBottom:
+                        "none",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      color:
+                        "#2F3A3F",
+                    }}
+                  >
+                    {
+                      job.clientDisplayName
+                    }
+                  </div>
+
+                  <JobCard
+                    job={job}
+                    onOpen={() =>
+                      handleOpenJob(job)
+                    }
+                  />
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
