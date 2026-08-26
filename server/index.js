@@ -184,6 +184,17 @@ const MIGRATIONS = [
         VALUES ('schema_name', 'chrysalis-business-data');
     `,
   },
+  {
+    version: 2,
+    name: "application-settings",
+    sql: `
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
 ];
 
 function assertSupportedNode() {
@@ -532,6 +543,123 @@ function getClient(database, id) {
   return row ? clientFromRow(row) : null;
 }
 
+const DEFAULT_SETTINGS = {
+  business: {
+    businessName: "Chrysalis Studio",
+    ownerName: "Donna",
+    address: "",
+    phone: "",
+    email: "",
+    website: "",
+    abn: "",
+  },
+  financial: {
+    gstRate: 10,
+    depositPercent: 25,
+    paymentTerms: 14,
+    currency: "AUD",
+  },
+  quotesInvoices: {
+    quoteValidityDays: 30,
+    invoicePrefix: "INV",
+    quotePrefix: "QUO",
+    paymentInstructions: "",
+    terms: "",
+  },
+  jobs: {
+    referencePrefix: "CHR",
+    defaultStatus: "Quote",
+    defaultPriority: "Normal",
+    workflowStages:
+      "Quote, Cutting, Sewing, Fitting, Finishing, Completed, Collected",
+  },
+  calendar: {
+    workingDays:
+      "Monday, Tuesday, Wednesday, Thursday, Friday",
+    openingTime: "09:00",
+    closingTime: "17:00",
+    defaultAppointmentDuration: 60,
+  },
+  production: {
+    garmentCategories:
+      "Wedding Dress, Formal Dress, Alteration, Other",
+    productionStages:
+      "Quote, Cutting, Sewing, Fitting, Finishing, Completed",
+    measurementUnit: "cm",
+  },
+};
+
+function cloneDefaultSettings() {
+  return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+}
+
+function getSettings(database) {
+  const settings = cloneDefaultSettings();
+  const rows = database
+    .prepare("SELECT key, value FROM settings ORDER BY key")
+    .all();
+
+  for (const row of rows) {
+    try {
+      const stored = JSON.parse(row.value);
+      if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+        settings[row.key] = {
+          ...(settings[row.key] || {}),
+          ...stored,
+        };
+      }
+    } catch {
+      // Keep the built-in defaults if a stored value is malformed.
+    }
+  }
+
+  return settings;
+}
+
+function saveSettings(database, input) {
+  const current = cloneDefaultSettings();
+  const incoming = input && typeof input === "object" ? input : {};
+  const settings = {};
+
+  for (const key of Object.keys(current)) {
+    settings[key] = {
+      ...current[key],
+      ...(incoming[key] && typeof incoming[key] === "object"
+        ? incoming[key]
+        : {}),
+    };
+  }
+
+  const updatedAt = new Date().toISOString();
+  const statement = database.prepare(
+    `INSERT INTO settings (key, value, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET
+       value = excluded.value,
+       updated_at = excluded.updated_at`
+  );
+
+  database.exec("BEGIN IMMEDIATE");
+
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      statement.run(key, JSON.stringify(value), updatedAt);
+    }
+
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getSettings(database);
+}
+
+function resetSettings(database) {
+  database.exec("DELETE FROM settings");
+  return getSettings(database);
+}
+
 function createApiServer(database) {
   return createServer(async (request, response) => {
     if (request.method === "OPTIONS") {
@@ -569,6 +697,38 @@ function createApiServer(database) {
       if (request.method === "POST" && url.pathname === "/api/database/backup") {
         const path = await backupDatabase(database, "manual");
         sendJson(response, 200, { ok: true, path });
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/settings") {
+        sendJson(response, 200, {
+          ok: true,
+          settings: getSettings(database),
+        });
+        return;
+      }
+
+      if (request.method === "PUT" && url.pathname === "/api/settings") {
+        const payload = await readJsonBody(request);
+        const settings = saveSettings(database, payload.settings || payload);
+
+        sendJson(response, 200, {
+          ok: true,
+          settings,
+        });
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/api/settings/reset"
+      ) {
+        const settings = resetSettings(database);
+
+        sendJson(response, 200, {
+          ok: true,
+          settings,
+        });
         return;
       }
 
