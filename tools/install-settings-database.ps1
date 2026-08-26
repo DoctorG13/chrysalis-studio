@@ -21,8 +21,8 @@ $backup = "server/index.js.before-settings"
 Copy-Item "server/index.js" $backup -Force
 
 $patch = @'
---- server/index.js
-+++ server/index.js
+--- a/server/index.js
++++ b/server/index.js
 @@ -182,6 +182,17 @@
  
        INSERT OR REPLACE INTO app_metadata (key, value)
@@ -218,7 +218,6 @@ $patch = @'
        if (request.method === "GET" && url.pathname === "/api/clients") {
          sendJson(response, 200, { ok: true, clients: getAllClients(database) });
          return;
-*** End Patch
 '@
 
 $patchFile = Join-Path $env:TEMP "chrysalis-settings.patch"
