@@ -11,6 +11,49 @@ const MENU_ITEMS = [
   { id: "settings", label: "Settings", icon: "⚙" },
 ];
 
+function PlatformPromise() {
+  return (
+    <div
+      style={{
+        color: "#D8DADC",
+        fontSize: 11,
+        lineHeight: 1.45,
+        margin: "0 auto",
+        textAlign: "center",
+      }}
+    >
+      <div>Streamline your business.</div>
+      <div>Simplify your work.</div>
+    </div>
+  );
+}
+
+function CustomerSlogan({ slogan }) {
+  if (!slogan) {
+    return null;
+  }
+
+  return (
+    <div
+      style={{
+        color: "#BFC3C5",
+        marginTop: 5,
+        fontSize: 11,
+        lineHeight: 1.4,
+        maxWidth: 190,
+        marginLeft: "auto",
+        marginRight: "auto",
+        textAlign: "center",
+        textWrap: "balance",
+        overflowWrap: "normal",
+        wordBreak: "normal",
+      }}
+    >
+      {slogan}
+    </div>
+  );
+}
+
 export default function Sidebar({
   currentPage,
   setCurrentPage,
@@ -101,17 +144,7 @@ export default function Sidebar({
             </span>
           </div>
 
-          <div
-            style={{
-              color: "#D8DADC",
-              fontSize: 11,
-              lineHeight: 1.45,
-              maxWidth: 190,
-              margin: "0 auto",
-            }}
-          >
-            {PLATFORM_PROMISE}
-          </div>
+          <PlatformPromise />
         </div>
 
         {/* CUSTOMER BRAND */}
@@ -173,23 +206,13 @@ export default function Sidebar({
               fontWeight: 700,
               lineHeight: 1.2,
               overflowWrap: "anywhere",
+              textWrap: "balance",
             }}
           >
             {businessName}
           </div>
 
-          {slogan && (
-            <div
-              style={{
-                color: "#BFC3C5",
-                marginTop: 5,
-                fontSize: 11,
-                lineHeight: 1.4,
-              }}
-            >
-              {slogan}
-            </div>
-          )}
+          <CustomerSlogan slogan={slogan} />
         </div>
 
         {/* NAVIGATION */}
