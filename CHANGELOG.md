@@ -14,7 +14,7 @@ All notable changes to Chrysalis are recorded here.
 - Added database inspection and backup CLI commands.
 - Added a local API health endpoint for database status.
 - Added a minimum Node.js requirement of 24.15.0 for the built-in SQLite runtime.
-- Protected the local `data/` directory from Git so client databases and backups are never committed.
+- Protected the `data/` directory from Git so client databases and backups are never committed.
 - Added a safe legacy `chrysalis-clients` JSON importer.
 - Added deterministic IDs so a repeated import does not create duplicate records.
 - Added a pre-import SQLite backup.
@@ -26,6 +26,20 @@ All notable changes to Chrysalis are recorded here.
 - Database migrations are additive and versioned; an already-applied migration cannot be silently changed.
 - Existing client data will remain in the persistent database while application revisions are deployed independently.
 - Legacy localStorage data remains untouched during the import phase.
+
+---
+
+## Settings
+
+### Added
+
+- Added the Settings page to the main application navigation.
+- Connected Settings to the SQLite-backed `/api/settings` endpoints.
+- Added Business, Branding, Financial, Quotes & Invoices, Jobs & Workflow, Calendar, Production, Workspace & Data, and About sections.
+- Added database backup, settings export, and settings reset actions.
+- Added a compact settings navigation and consistent action buttons.
+- Reduced redundant Settings headings and simplified the Workspace & Data wording.
+- Hid the sidebar scrollbar while preserving scrolling.
 
 ---
 

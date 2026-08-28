@@ -1,7 +1,4 @@
-export default function Sidebar({
-  currentPage,
-  setCurrentPage,
-}) {
+export default function Sidebar({ currentPage, setCurrentPage }) {
   const menu = [
     { id: "studio", label: "🦋 Studio" },
     { id: "people", label: "👥 People" },
@@ -16,70 +13,45 @@ export default function Sidebar({
     <aside
       style={{
         width: 240,
+        flexShrink: 0,
+        boxSizing: "border-box",
         background: "#2F3A3F",
         color: "white",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        padding: 20,
+        padding: "20px 14px",
+        overflowY: "auto",
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
       }}
     >
-      <div>
-        <div
-  style={{
-    marginBottom: 40,
-    textAlign: "center",
-  }}
->
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 30,
-              fontWeight: "700",
-            }}
-          >
-            🦋 Chrysalis
-          </h1>
+      <style>{`aside::-webkit-scrollbar { display: none; }`}</style>
 
-          <p
-  style={{
-    color: "#CCCCCC",
-    marginTop: 10,
-    lineHeight: 1.5,
-    fontSize: 14,
-  }}
->
-  Professional Dressmaker
-  <br />
-  Business System
-</p>
+      <div>
+        <div style={{ marginBottom: 28, textAlign: "center", padding: "0 6px" }}>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700 }}>🦋 Chrysalis</h1>
+          <p style={{ color: "#CCCCCC", margin: "8px 0 0", lineHeight: 1.35, fontSize: 12 }}>Professional Dressmaker<br />Business System</p>
         </div>
 
         {menu.map((item) => (
           <button
             key={item.id}
+            type="button"
             onClick={() => setCurrentPage(item.id)}
             style={{
               width: "100%",
               textAlign: "left",
-              padding: "14px 16px",
-              marginBottom: 8,
+              padding: "11px 13px",
+              marginBottom: 4,
               border: "none",
-              borderRadius: 10,
+              borderRadius: 9,
               cursor: "pointer",
-              fontSize: 16,
-
-              background:
-                currentPage === item.id
-                  ? "#F4C542"
-                  : "transparent",
-
-              color:
-                currentPage === item.id
-                  ? "#2F3A3F"
-                  : "white",
-
-              transition: "0.2s",
+              fontSize: 14,
+              fontWeight: currentPage === item.id ? 700 : 500,
+              background: currentPage === item.id ? "#F4C542" : "transparent",
+              color: currentPage === item.id ? "#2F3A3F" : "white",
+              transition: "background 0.2s, color 0.2s",
             }}
           >
             {item.label}
@@ -87,15 +59,8 @@ export default function Sidebar({
         ))}
       </div>
 
-      <div
-        style={{
-          color: "#AAAAAA",
-          fontSize: 13,
-        }}
-      >
-        Chrysalis Studio
-        <br />
-        Version 2.1
+      <div style={{ color: "#AAAAAA", fontSize: 11, padding: "14px 6px 0" }}>
+        Chrysalis Studio<br />Version 2.1
       </div>
     </aside>
   );
