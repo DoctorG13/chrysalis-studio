@@ -1,171 +1,155 @@
-import { useMemo, useState } from "react";
-import EmptyState from "../common/EmptyState";
-import { getRecentActivity } from "../../utils/dashboard";
-
 export default function RecentActivity({ clients = [], jobs = [] }) {
-  const [showAll, setShowAll] = useState(false);
-
-  const rawActivity = useMemo(
-    () => [
-      ...getRecentActivity(clients),
-      ...jobs
-        .filter((job) => job.overdue || job.dueToday || ["Completed", "Collected", "Ready"].includes(job.status))
-        .map((job) => ({
-          id: `job-${job.id ?? job.reference ?? job.name}`,
-          reference: job.reference,
-          client: job.clientName ?? job.client ?? "",
-          title: getTitle(job),
-          description: getDescription(job),
-          date: job.updatedAt ?? job.completedAt ?? job.collectedAt ?? job.dueDate ?? new Date().toISOString(),
-        })),
-    ],
-    [clients, jobs]
-  );
-
-  const groupedActivity = useMemo(
-    () => groupActivity(rawActivity).sort((a, b) => new Date(b.date) - new Date(a.date)),
-    [rawActivity]
-  );
-  const sortedRawActivity = useMemo(
-    () => [...rawActivity].sort((a, b) => new Date(b.date) - new Date(a.date)),
-    [rawActivity]
-  );
-  const compactActivity = groupedActivity.slice(0, 4);
-  const visibleActivity = showAll ? sortedRawActivity : compactActivity;
-  const hasMore = rawActivity.length > compactActivity.length || groupedActivity.length > 4;
+  const activities = buildRecentActivity(clients, jobs).slice(0, 5);
 
   return (
     <section style={sectionStyle}>
       <div style={headerStyle}>
         <h2 style={titleStyle}>Recent Activity</h2>
-        {hasMore && (
-          <button
-            type="button"
-            onClick={() => setShowAll((value) => !value)}
-            style={viewAllStyle}
-            onMouseEnter={(event) => {
-              event.currentTarget.style.background = "#8B1E3F";
-              event.currentTarget.style.color = "#FFFFFF";
-              event.currentTarget.style.borderColor = "#8B1E3F";
-              event.currentTarget.style.transform = "translateY(-1px)";
-              event.currentTarget.style.boxShadow = "0 3px 8px rgba(139,30,63,.14)";
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.background = "#FFFFFF";
-              event.currentTarget.style.color = "#8B1E3F";
-              event.currentTarget.style.borderColor = "#C96A83";
-              event.currentTarget.style.transform = "translateY(0)";
-              event.currentTarget.style.boxShadow = "0 1px 2px rgba(31,41,51,.035)";
-            }}
-          >
-            {showAll ? "Show less ↑" : "View all →"}
-          </button>
-        )}
+        <span style={latestStyle}>Latest 5</span>
       </div>
 
-      {rawActivity.length === 0 ? (
+      {activities.length === 0 ? (
         <div style={emptyStyle}>
-          <EmptyState icon="📝" title="No Recent Activity" message="Activity will appear here as you work." />
+          <span style={emptyIconStyle}>🕘</span>
+          <strong>No recent activity</strong>
+          <span>New clients, jobs and payments will appear here.</span>
         </div>
       ) : (
         <div style={listStyle}>
-          {visibleActivity.map((item, index) => (
-            <ActivityRow key={`${item.id ?? "activity"}-${index}`} item={item} isLast={index === visibleActivity.length - 1} />
+          {activities.map((activity, index) => (
+            <ActivityRow key={activity.id} activity={activity} last={index === activities.length - 1} />
           ))}
         </div>
       )}
+
+      <div style={footerStyle}>View full activity <span aria-hidden="true">→</span></div>
     </section>
   );
 }
 
-function groupActivity(items) {
-  const groups = new Map();
-  items.forEach((item) => {
-    const key = [item.reference || "", item.client || "", item.title || "", item.description || ""].join("|");
-    const existing = groups.get(key);
-    if (!existing) {
-      groups.set(key, { ...item, id: `activity-${key}`, count: 1 });
-      return;
+function buildRecentActivity(clients, jobs) {
+  const activities = [];
+  const seen = new Set();
+  const push = (activity) => {
+    if (!activity.timestamp) return;
+    const timestamp = new Date(activity.timestamp);
+    if (Number.isNaN(timestamp.getTime())) return;
+    const id = activity.id || `${activity.type}-${activity.timestamp}-${activity.description}`;
+    if (seen.has(id)) return;
+    seen.add(id);
+    activities.push({ ...activity, id, timestamp: timestamp.toISOString() });
+  };
+
+  for (const client of clients) {
+    const clientName = getClientName(client);
+    if (client.createdAt || client.created_at || client.clientSince) {
+      push({ id: `client-${client.id}-${client.createdAt || client.created_at || client.clientSince}`, timestamp: client.createdAt || client.created_at || client.clientSince, icon: "👤", type: "client", title: "New client", description: clientName });
     }
-    existing.count += 1;
-    if (new Date(item.date) > new Date(existing.date)) existing.date = item.date;
-  });
-  return Array.from(groups.values());
+
+    for (const appointment of client.appointments || []) {
+      const timestamp = appointment.updatedAt || appointment.updated_at || appointment.createdAt || appointment.created_at || appointment.date;
+      push({ id: `appointment-${appointment.id || timestamp}`, timestamp, icon: "📅", type: "appointment", title: appointment.type ? `${appointment.type} appointment` : "Appointment updated", description: [clientName, appointment.date, appointment.time].filter(Boolean).join(" · ") });
+    }
+
+    for (const fitting of client.fittings || []) {
+      const timestamp = fitting.updatedAt || fitting.updated_at || fitting.createdAt || fitting.created_at || fitting.date;
+      push({ id: `fitting-${fitting.id || timestamp}`, timestamp, icon: "✂️", type: "fitting", title: fitting.title ? `Fitting: ${fitting.title}` : "Fitting updated", description: [clientName, fitting.date, fitting.time].filter(Boolean).join(" · ") });
+    }
+
+    for (const payment of client.payments || []) pushPayment(push, payment, null, clientName);
+    for (const invoice of client.invoices || []) pushInvoice(push, invoice, null, clientName);
+  }
+
+  for (const job of jobs) {
+    const client = clients.find((candidate) => String(candidate.id) === String(job.clientId));
+    const clientName = getClientName(client) || job.clientName || job.client || "";
+    const jobName = job.name || job.title || job.reference || "Job";
+
+    for (const event of job.timeline || []) {
+      const timestamp = event.date || event.timestamp || event.createdAt || event.updatedAt;
+      push({ id: `timeline-${job.id || job.reference}-${event.id || timestamp}-${event.title || event.type || "event"}`, timestamp, icon: iconForType(event.type || event.title), type: event.type || "job", title: event.title || event.label || event.name || `Job ${String(job.status || "updated").toLowerCase()}`, description: event.description || [jobName, clientName].filter(Boolean).join(" · ") });
+    }
+
+    const timestamp = job.modifiedAt || job.updatedAt || job.modified_at || job.createdAt || job.created_at;
+    if (timestamp && !(job.timeline || []).length) {
+      push({ id: `job-${job.id || job.reference}-${timestamp}`, timestamp, icon: "💼", type: "job", title: job.status ? `Job ${String(job.status).toLowerCase()}` : "Job updated", description: [jobName, clientName].filter(Boolean).join(" · ") });
+    }
+
+    for (const payment of job.payments || []) pushPayment(push, payment, job, clientName);
+    for (const invoice of job.invoices || []) pushInvoice(push, invoice, job, clientName);
+  }
+
+  return activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
-function ActivityRow({ item, isLast }) {
+function pushPayment(push, payment, job, clientName) {
+  const timestamp = payment.date || payment.paymentDate || payment.paidAt || payment.updatedAt || payment.updated_at || payment.createdAt || payment.created_at;
+  if (!timestamp) return;
+  const amount = Number(payment.amount || 0);
+  const jobName = job?.name || job?.title || job?.reference;
+  push({ id: `payment-${payment.id || timestamp}-${job?.id || clientName}`, timestamp, icon: "💰", type: "payment", title: "Payment recorded", description: [formatCurrency(amount), clientName, jobName].filter(Boolean).join(" · ") });
+}
+
+function pushInvoice(push, invoice, job, clientName) {
+  const timestamp = invoice.updatedAt || invoice.updated_at || invoice.createdAt || invoice.created_at || invoice.issueDate || invoice.issue_date;
+  if (!timestamp) return;
+  push({ id: `invoice-${invoice.id || invoice.number || timestamp}-${job?.id || clientName}`, timestamp, icon: "📄", type: "invoice", title: invoice.status ? `Invoice ${String(invoice.status).toLowerCase()}` : "Invoice drafted", description: [invoice.number, clientName, job?.name || job?.title || job?.reference].filter(Boolean).join(" · ") });
+}
+
+function iconForType(type = "") {
+  const text = String(type).toLowerCase();
+  if (text.includes("payment")) return "💰";
+  if (text.includes("invoice")) return "📄";
+  if (text.includes("appointment")) return "📅";
+  if (text.includes("fitting")) return "✂️";
+  return "💼";
+}
+
+function ActivityRow({ activity, last }) {
   return (
-    <div style={{ ...rowStyle, borderBottom: isLast ? 0 : "1px solid #D9DEE2" }}>
-      <div style={iconStyle}>{getActivityIcon(item)}</div>
+    <div style={{ ...rowStyle, borderBottom: last ? 0 : "1px solid #E5E8EA" }}>
+      <div style={{ ...iconStyle, background: activityBackgrounds[activity.type] || "#F3F4F5" }}>{activity.icon}</div>
       <div style={contentStyle}>
-        <div style={titleLineStyle}>
-          {item.reference && <span style={referenceStyle}>{item.reference}</span>}
-          <strong>{cleanTitle(item.title)}</strong>
-          {item.count > 1 && <span style={countStyle}>{item.count} updates</span>}
-        </div>
-        <div style={metaStyle}>
-          {item.client}
-          {item.description ? ` · ${item.description}` : ""}
-        </div>
+        <strong style={activityTitleStyle}>{activity.title}</strong>
+        <span style={activityDescriptionStyle} title={activity.description}>{activity.description}</span>
       </div>
-      <span style={dateStyle}>{formatActivityDate(item.date)}</span>
+      <span style={timeStyle}>{formatActivityTime(activity.timestamp)}</span>
     </div>
   );
 }
 
-function cleanTitle(title = "") {
-  return title.replace(/^[^ ]+\s/, "");
+function getClientName(client) {
+  if (!client) return "";
+  return client.name || [client.firstName, client.lastName].filter(Boolean).join(" ") || "";
 }
 
-function getActivityIcon(item) {
-  if (item.title.includes("overdue")) return "🔴";
-  if (item.title.includes("Fitting")) return "👗";
-  if (item.title.includes("Payment")) return "💰";
-  if (item.title.includes("Appointment")) return "📅";
-  return "💼";
-}
-
-function getTitle(job) {
-  if (job.overdue) return `🔴 ${job.name} is overdue`;
-  if (job.dueToday) return `🟠 ${job.name} is due today`;
-  if (job.status === "Ready") return `🟢 ${job.name} is ready for collection`;
-  if (job.status === "Collected") return `📦 ${job.name} was collected`;
-  if (job.status === "Completed") return `✅ ${job.name} completed`;
-  return job.name;
-}
-
-function getDescription(job) {
-  if (job.overdue) return `Next action: ${job.nextAction || "-"}`;
-  if (job.dueToday) return `Due today · ${job.progress ?? 0}% complete`;
-  if (job.status === "Ready") return "Waiting for collection";
-  if (job.status === "Collected") return "Customer collected garment";
-  if (job.status === "Completed") return "Workflow completed";
-  return "";
-}
-
-function formatActivityDate(value) {
-  if (!value) return "Unknown date";
+function formatActivityTime(value) {
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Unknown date";
+  if (Number.isNaN(date.getTime())) return "";
   const now = new Date();
-  const sameDay = date.toDateString() === now.toDateString();
-  if (sameDay) {
-    return `Today, ${date.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })}`;
-  }
+  if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" });
+  const daysAgo = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(date.getFullYear(), date.getMonth(), date.getDate())) / 86400000);
+  if (daysAgo === 1) return `Yesterday · ${date.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit" })}`;
+  if (daysAgo > 1 && daysAgo < 7) return date.toLocaleDateString("en-AU", { weekday: "short" });
   return date.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 }
 
-const sectionStyle = { background: "#FFFFFF", border: "1px solid #D9DEE2", borderRadius: 8, overflow: "hidden", boxShadow: "0 1px 4px rgba(31,41,51,.025)" };
-const headerStyle = { minHeight: 50, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "0 20px", borderBottom: "1px solid #D9DEE2" };
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value) || 0);
+}
+
+const sectionStyle = { background: "#FFFFFF", border: "1px solid #D9DEE2", borderRadius: 9, overflow: "hidden", boxShadow: "0 1px 4px rgba(31,41,51,.025)", minWidth: 0 };
+const headerStyle = { minHeight: 50, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "0 16px", borderBottom: "1px solid #D9DEE2" };
 const titleStyle = { margin: 0, color: "#20262B", fontSize: 18, lineHeight: 1.2 };
-const viewAllStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, minHeight: 29, padding: "0 10px", border: "1px solid #C96A83", borderRadius: 999, background: "#FFFFFF", color: "#8B1E3F", fontSize: 11, fontWeight: 700, cursor: "pointer", boxShadow: "0 1px 2px rgba(31,41,51,.035)", transition: "background 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease" };
+const latestStyle = { display: "inline-flex", alignItems: "center", minHeight: 25, padding: "0 9px", borderRadius: 999, background: "#F8E9EE", color: "#8B1E3F", fontSize: 10, fontWeight: 800 };
 const listStyle = { padding: "0 12px" };
-const rowStyle = { display: "grid", gridTemplateColumns: "34px minmax(0, 1fr) auto", alignItems: "center", gap: 12, minHeight: 72, padding: "0 4px" };
-const iconStyle = { width: 32, textAlign: "center", fontSize: 19 };
+const rowStyle = { display: "grid", gridTemplateColumns: "32px minmax(0, 1fr) auto", alignItems: "center", gap: 9, minHeight: 57, padding: "0 2px" };
+const iconStyle = { width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, fontSize: 16, flexShrink: 0 };
 const contentStyle = { minWidth: 0 };
-const titleLineStyle = { display: "flex", alignItems: "center", flexWrap: "wrap", gap: 6 };
-const referenceStyle = { color: "#9A2348", fontSize: 10, fontWeight: 800, letterSpacing: 0.35 };
-const countStyle = { padding: "2px 6px", borderRadius: 999, background: "#F3F4F6", color: "#687178", fontSize: 10, fontWeight: 700 };
-const metaStyle = { marginTop: 4, color: "#707980", fontSize: 11, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
-const dateStyle = { color: "#687178", fontSize: 11, whiteSpace: "nowrap", textAlign: "right" };
-const emptyStyle = { padding: 16 };
+const activityTitleStyle = { display: "block", color: "#20262B", fontSize: 11, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const activityDescriptionStyle = { display: "block", marginTop: 2, color: "#687178", fontSize: 10, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" };
+const timeStyle = { color: "#687178", fontSize: 10, whiteSpace: "nowrap", textAlign: "right" };
+const footerStyle = { minHeight: 36, display: "flex", alignItems: "center", justifyContent: "center", gap: 5, borderTop: "1px solid #E5E8EA", color: "#8B1E3F", fontSize: 10, fontWeight: 800 };
+const emptyStyle = { minHeight: 180, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 5, padding: 16, color: "#687178", fontSize: 11, textAlign: "center" };
+const emptyIconStyle = { fontSize: 24, marginBottom: 3 };
+const activityBackgrounds = { client: "#F3E8EE", job: "#EEF2F3", payment: "#EAF5EF", appointment: "#EAF2F8", fitting: "#F0EDF7", invoice: "#F0EDF7" };
