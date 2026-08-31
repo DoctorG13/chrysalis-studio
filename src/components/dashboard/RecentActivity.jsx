@@ -1,5 +1,10 @@
+import { useState } from "react";
+
 export default function RecentActivity({ clients = [], jobs = [] }) {
-  const activities = buildRecentActivity(clients, jobs).slice(0, 3);
+  const [expanded, setExpanded] = useState(false);
+  const allActivities = buildRecentActivity(clients, jobs).slice(0, 5);
+  const activities = expanded ? allActivities : allActivities.slice(0, 2);
+  const canExpand = allActivities.length > 2;
 
   return (
     <section style={sectionStyle}>
@@ -21,9 +26,17 @@ export default function RecentActivity({ clients = [], jobs = [] }) {
         </div>
       )}
 
-      <div style={footerStyle}>
-        View all activity <span aria-hidden="true">→</span>
-      </div>
+      {canExpand && (
+        <button
+          type="button"
+          style={footerStyle}
+          onClick={() => setExpanded((current) => !current)}
+          aria-expanded={expanded}
+        >
+          {expanded ? "Show less" : `Show more · ${allActivities.length - 2}`}
+          <span aria-hidden="true">{expanded ? "↑" : "↓"}</span>
+        </button>
+      )}
     </section>
   );
 }
@@ -121,7 +134,9 @@ function buildRecentActivity(clients, jobs) {
         timestamp,
         icon: iconForType(event.type || event.title),
         type: event.type || "job",
-        title: shortActivityTitle(event.title || event.label || event.name || event.type),
+        title: shortActivityTitle(
+          event.title || event.label || event.name || event.type
+        ),
         description: jobName || clientName,
       });
     }
@@ -139,7 +154,9 @@ function buildRecentActivity(clients, jobs) {
         timestamp,
         icon: "💼",
         type: "job",
-        title: shortActivityTitle(job.status ? `Job ${job.status}` : "Job updated"),
+        title: shortActivityTitle(
+          job.status ? `Job ${job.status}` : "Job updated"
+        ),
         description: jobName || clientName,
       });
     }
@@ -402,15 +419,20 @@ const timeStyle = {
 };
 
 const footerStyle = {
+  width: "100%",
   minHeight: 32,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: 5,
+  gap: 6,
+  border: 0,
   borderTop: "1px solid #E5E8EA",
+  background: "#FFFFFF",
   color: "#8B1E3F",
   fontSize: 9,
   fontWeight: 800,
+  cursor: "pointer",
+  padding: 0,
 };
 
 const emptyStyle = {
