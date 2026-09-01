@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import Button from "../common/Button";
+import { ThriveDialog, useThriveDialog } from "../common/ThriveDialog";
 
 import JobTabs from "./JobTabs";
 import JobDetailsPanel from "./JobDetailsPanel";
@@ -40,6 +41,8 @@ export default function JobEditor({
   const [activeTab, setActiveTab] =
     useState("Overview");
 
+  const { confirm, dialogProps } = useThriveDialog();
+
   const [editedJob, setEditedJob] =
     useState(job);
 
@@ -74,14 +77,17 @@ export default function JobEditor({
     onSave?.(editedJob);
   }
 
-  function handleDelete() {
-    if (
-      window.confirm(
-        `Delete "${editedJob.name}"?`
-      )
-    ) {
-      onDelete?.(editedJob.id);
-    }
+  async function handleDelete() {
+    const confirmed = await confirm({
+      title: "Delete Job",
+      message: `Delete "${editedJob.name}"? This cannot be undone.`,
+      confirmLabel: "Delete Job",
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
+    onDelete?.(editedJob.id);
   }
 
   function createTimelineEvent(
@@ -299,19 +305,20 @@ export default function JobEditor({
     setEditingPhoto(null);
   }
 
-  function handleDeletePhoto(
+  async function handleDeletePhoto(
     photo
   ) {
-    if (
-      !window.confirm(
-        `Delete "${
-          photo.caption ||
-          "this photo"
-        }"?`
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Delete Photo",
+      message: `Delete "${
+        photo.caption ||
+        "this photo"
+      }"? This cannot be undone.`,
+      confirmLabel: "Delete Photo",
+      danger: true,
+    });
+
+    if (!confirmed) return;
 
     const photos =
       (editedJob.photos || []).filter(
@@ -728,6 +735,8 @@ export default function JobEditor({
           }
         />
       )}
+
+      <ThriveDialog {...dialogProps} />
     </>
   );
 }

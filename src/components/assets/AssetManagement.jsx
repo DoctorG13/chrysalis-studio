@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import AssetCard from "./AssetCard";
+import { ThriveDialog, useThriveDialog } from "../common/ThriveDialog";
 import {
   createAssetRecord,
   deleteAssetRecord,
@@ -11,6 +12,7 @@ export default function AssetManagement({ clientId, jobId, title = "Photos & Doc
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { confirm, dialogProps } = useThriveDialog();
 
   useEffect(() => {
     let active = true;
@@ -40,7 +42,13 @@ export default function AssetManagement({ clientId, jobId, title = "Photos & Doc
   }
 
   async function handleDelete(assetId) {
-    if (!window.confirm("Delete this asset? This cannot be undone.")) return;
+    const confirmed = await confirm({
+      title: "Delete Asset",
+      message: "Delete this asset? This cannot be undone.",
+      confirmLabel: "Delete Asset",
+      danger: true,
+    });
+    if (!confirmed) return;
     await deleteAssetRecord(assetId);
     setAssets((current) => current.filter((item) => item.id !== assetId));
   }
@@ -108,6 +116,7 @@ export default function AssetManagement({ clientId, jobId, title = "Photos & Doc
           ))}
         </div>
       )}
+      <ThriveDialog {...dialogProps} />
     </section>
   );
 }

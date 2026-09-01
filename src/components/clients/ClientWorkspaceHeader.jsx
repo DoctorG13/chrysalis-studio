@@ -2,22 +2,53 @@ import { useChrysalis } from "../../context/ChrysalisProvider";
 
 export default function ClientWorkspaceHeader({
   client,
+  jobs = [],
+  appointments = [],
 }) {
   const { closeWorkspace } = useChrysalis();
 
   if (!client) return null;
 
-  const activeJobs = client.jobs?.length || 0;
+  // Use the authoritative jobs collection.
+  // Do not use client.jobs because that relationship can become stale.
+  const clientJobs = jobs.filter(
+    (job) =>
+      String(job.clientId) === String(client.id)
+  );
 
-  const outstanding =
-    (client.jobs || []).reduce(
-      (total, job) =>
-        total + (Number(job.balance) || 0),
-      0
+  const activeJobs = clientJobs.filter(
+    (job) =>
+      !["Completed", "Cancelled", "Archived"].includes(
+        String(job.status || "").trim()
+      )
+  ).length;
+
+  const outstanding = clientJobs.reduce(
+    (total, job) =>
+      total + (Number(job.balance) || 0),
+    0
+  );
+
+  const upcomingAppointments = [...appointments]
+    .filter((appointment) => {
+      if (!appointment?.date) return false;
+
+      const date = new Date(appointment.date);
+
+      return !Number.isNaN(date.getTime());
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.date).getTime() -
+        new Date(b.date).getTime()
     );
 
   const nextAppointment =
-    client.appointments?.[0]?.date || "None Scheduled";
+    upcomingAppointments[0]?.date || null;
+
+  const formattedNextAppointment = nextAppointment
+    ? formatAppointmentDate(nextAppointment)
+    : "None scheduled";
 
   return (
     <div
@@ -38,13 +69,23 @@ export default function ClientWorkspaceHeader({
           marginBottom: 12,
         }}
       >
-        <h2
-          style={{
-            margin: 0,
-          }}
-        >
-          👤 {client.firstName} {client.lastName}
-        </h2>
+        <div>
+          <h2 style={{ margin: 0 }}>
+            👤 {client.firstName} {client.lastName}
+          </h2>
+
+          <div
+            style={{
+              color: "#666",
+              marginTop: 8,
+              lineHeight: 1.6,
+            }}
+          >
+            📞 {client.phone || "No Phone"}
+            <br />
+            ✉️ {client.email || "No Email"}
+          </div>
+        </div>
 
         <button
           type="button"
@@ -65,80 +106,99 @@ export default function ClientWorkspaceHeader({
         </button>
       </div>
 
+      {/* Compact Client Snapshot */}
       <div
         style={{
-          color: "#666",
-          marginBottom: 20,
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 0,
+          padding: "12px 14px",
+          background: "#f7f7f7",
+          borderRadius: 8,
+          border: "1px solid #ececec",
         }}
       >
-        📞 {client.phone || "No Phone"}
-
-        <br />
-
-        ✉️ {client.email || "No Email"}
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(180px,1fr))",
-          gap: 15,
-        }}
-      >
-        <SummaryCard
-          title="Active Jobs"
-          value={activeJobs}
+        <SnapshotItem
           icon="💼"
+          label={`${activeJobs} Active Job${
+            activeJobs === 1 ? "" : "s"
+          }`}
         />
 
-        <SummaryCard
-          title="Next Appointment"
-          value={nextAppointment}
+        <SnapshotDivider />
+
+        <SnapshotItem
           icon="📅"
+          label={`Next: ${formattedNextAppointment}`}
         />
 
-        <SummaryCard
-          title="Outstanding"
-          value={`$${outstanding}`}
+        <SnapshotDivider />
+
+        <SnapshotItem
           icon="💰"
+          label={`${formatCurrency(
+            outstanding
+          )} outstanding`}
+          emphasis={outstanding > 0}
         />
       </div>
     </div>
   );
 }
 
-function SummaryCard({
-  title,
-  value,
+function SnapshotItem({
   icon,
+  label,
+  emphasis = false,
 }) {
   return (
     <div
       style={{
-        background: "#f7f7f7",
-        padding: 15,
-        borderRadius: 8,
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        padding: "2px 10px",
+        color: emphasis ? "#8A4B5C" : "#555",
+        fontSize: 14,
+        fontWeight: emphasis ? 600 : 500,
+        whiteSpace: "nowrap",
       }}
     >
-      <div
-        style={{
-          fontSize: 14,
-          color: "#777",
-        }}
-      >
-        {icon} {title}
-      </div>
-
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: "bold",
-          marginTop: 6,
-        }}
-      >
-        {value}
-      </div>
+      <span>{icon}</span>
+      <span>{label}</span>
     </div>
   );
+}
+
+function SnapshotDivider() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 1,
+        height: 20,
+        background: "#dcdcdc",
+        margin: "0 4px",
+      }}
+    />
+  );
+}
+
+function formatCurrency(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function formatAppointmentDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "None scheduled";
+  }
+
+  return date.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }

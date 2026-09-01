@@ -1,6 +1,6 @@
-import { createServer } from "node:http";
-import { existsSync, mkdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+﻿import { createServer } from "node:http";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { basename, join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { DatabaseSync, backup as sqliteBackup } from "node:sqlite";
 
@@ -15,6 +15,7 @@ const DATA_DIR = resolve(
 );
 const DB_PATH = join(DATA_DIR, "chrysalis.db");
 const BACKUP_DIR = join(DATA_DIR, "backups");
+const BACKUP_METADATA_PATH = join(BACKUP_DIR, "backup-metadata.json");
 
 const MIGRATIONS = [
   {
@@ -184,6 +185,85 @@ const MIGRATIONS = [
         VALUES ('schema_name', 'chrysalis-business-data');
     `,
   },
+  {
+    version: 2,
+    name: "application-settings",
+    sql: `
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
+  {
+    version: 3,
+    name: "quotes-client-delete-safe",
+    sql: `
+      CREATE TABLE quotes_new (
+        id TEXT PRIMARY KEY,
+        client_id TEXT,
+        job_id TEXT,
+        number TEXT NOT NULL,
+        amount REAL NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'Draft',
+        issue_date TEXT NOT NULL,
+        valid_until TEXT,
+        data_json TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (client_id)
+          REFERENCES clients(id)
+          ON DELETE SET NULL,
+        FOREIGN KEY (job_id)
+          REFERENCES jobs(id)
+          ON DELETE SET NULL
+      );
+
+      INSERT INTO quotes_new (
+        id,
+        client_id,
+        job_id,
+        number,
+        amount,
+        status,
+        issue_date,
+        valid_until,
+        data_json,
+        created_at,
+        updated_at
+      )
+      SELECT
+        id,
+        client_id,
+        job_id,
+        number,
+        amount,
+        status,
+        issue_date,
+        valid_until,
+        data_json,
+        created_at,
+        updated_at
+      FROM quotes;
+
+      DROP TABLE quotes;
+
+      ALTER TABLE quotes_new RENAME TO quotes;
+
+      CREATE INDEX IF NOT EXISTS idx_quotes_client_id
+        ON quotes(client_id);
+
+      CREATE INDEX IF NOT EXISTS idx_quotes_job_id
+        ON quotes(job_id);
+
+      CREATE INDEX IF NOT EXISTS idx_quotes_issue_date
+        ON quotes(issue_date);
+
+      CREATE INDEX IF NOT EXISTS idx_quotes_number
+        ON quotes(number);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
@@ -240,7 +320,7 @@ function checksumForMigration(migration) {
     .digest("hex");
 }
 
-async function backupDatabase(database, reason = "manual") {
+async function backupDatabase(database, reason = "manual", name = "") {
   ensureDataDirectories();
 
   if (!existsSync(DB_PATH)) return null;
@@ -256,7 +336,270 @@ async function backupDatabase(database, reason = "manual") {
   );
 
   await sqliteBackup(database, destination);
+
+  const metadata = readBackupMetadata();
+  const versions = Object.values(metadata)
+    .map((entry) => Number(entry?.version))
+    .filter((version) => Number.isInteger(version) && version > 0);
+  const nextVersion =
+    versions.length > 0
+      ? Math.max(...versions) + 1
+      : readdirSync(BACKUP_DIR, { withFileTypes: true }).filter(
+          (entry) =>
+            entry.isFile() &&
+            entry.name.startsWith("chrysalis-") &&
+            entry.name.endsWith(".db")
+        ).length;
+
+  const cleanedName = String(name || "").trim();
+
+  metadata[basename(destination)] = {
+    ...(metadata[basename(destination)] || {}),
+    version: nextVersion,
+    ...(cleanedName ? { name: cleanedName } : {}),
+  };
+  writeBackupMetadata(metadata);
+
   return destination;
+}
+
+function readBackupMetadata() {
+  ensureDataDirectories();
+
+  if (!existsSync(BACKUP_METADATA_PATH)) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(
+      readFileSync(BACKUP_METADATA_PATH, "utf8")
+    );
+
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    console.error("Unable to read backup metadata.", error);
+    return {};
+  }
+}
+
+function writeBackupMetadata(metadata) {
+  ensureDataDirectories();
+  writeFileSync(
+    BACKUP_METADATA_PATH,
+    JSON.stringify(metadata, null, 2),
+    "utf8"
+  );
+}
+
+function getBackupHistory() {
+  ensureDataDirectories();
+  const metadata = readBackupMetadata();
+
+  const backups = readdirSync(BACKUP_DIR, { withFileTypes: true })
+    .filter(
+      (entry) =>
+        entry.isFile() &&
+        entry.name.startsWith("chrysalis-") &&
+        entry.name.endsWith(".db")
+    )
+    .map((entry) => {
+      const fullPath = join(BACKUP_DIR, entry.name);
+      const stats = statSync(fullPath);
+      const saved = metadata[entry.name] || {};
+
+      return {
+        id: entry.name,
+        createdAt: stats.birthtime.toISOString(),
+        modifiedAt: stats.mtime.toISOString(),
+        size: stats.size,
+        name: typeof saved.name === "string" ? saved.name : "",
+        versionNumber: Number.isInteger(Number(saved.version))
+          ? Number(saved.version)
+          : null,
+      };
+    })
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt || b.modifiedAt).getTime() -
+        new Date(a.createdAt || a.modifiedAt).getTime()
+    );
+
+  const missingVersions = backups.some(
+    (backup) => !Number.isInteger(backup.versionNumber) || backup.versionNumber <= 0
+  );
+
+  if (missingVersions) {
+    const existingVersions = backups
+      .map((backup) => backup.versionNumber)
+      .filter((version) => Number.isInteger(version) && version > 0);
+
+    if (existingVersions.length === 0) {
+      backups.forEach((backup, index) => {
+        backup.versionNumber = backups.length - index;
+      });
+    } else {
+      let nextVersion = Math.max(...existingVersions) + 1;
+      backups.forEach((backup) => {
+        if (!Number.isInteger(backup.versionNumber) || backup.versionNumber <= 0) {
+          backup.versionNumber = nextVersion;
+          nextVersion += 1;
+        }
+      });
+    }
+
+    for (const backup of backups) {
+      metadata[backup.id] = {
+        ...(metadata[backup.id] || {}),
+        version: backup.versionNumber,
+      };
+    }
+
+    writeBackupMetadata(metadata);
+  }
+
+  return backups.map((backup) => ({
+    ...backup,
+    version: `Version ${String(backup.versionNumber).padStart(3, "0")}`,
+    label:
+      backup.name ||
+      `Version ${String(backup.versionNumber).padStart(3, "0")}`,
+  }));
+}
+
+function renameBackup(id, name) {
+  const filename = basename(String(id || ""));
+  getBackupById(filename);
+
+  const cleanedName = String(name || "").trim();
+
+  if (cleanedName.length > 80) {
+    throw new Error("Backup name must be 80 characters or fewer.");
+  }
+
+  const metadata = readBackupMetadata();
+
+  if (cleanedName) {
+    metadata[filename] = {
+      ...(metadata[filename] || {}),
+      name: cleanedName,
+    };
+  } else {
+    delete metadata[filename];
+  }
+
+  writeBackupMetadata(metadata);
+
+  return getBackupHistory().find((backup) => backup.id === filename);
+}
+
+function deleteBackup(id) {
+  const filename = basename(String(id || ""));
+  const backupPath = getBackupById(filename);
+
+  unlinkSync(backupPath);
+
+  const metadata = readBackupMetadata();
+  delete metadata[filename];
+  writeBackupMetadata(metadata);
+
+  return getBackupHistory();
+}
+
+function getBackupById(id) {
+  const filename = basename(String(id || ""));
+
+  if (
+    !filename ||
+    filename !== String(id || "") ||
+    !filename.startsWith("chrysalis-") ||
+    !filename.endsWith(".db")
+  ) {
+    throw new Error("Invalid backup version.");
+  }
+
+  const fullPath = join(BACKUP_DIR, filename);
+
+  if (!existsSync(fullPath)) {
+    throw new Error("That backup version could not be found.");
+  }
+
+  return fullPath;
+}
+
+function restoreDatabase(database, backupPath) {
+  const source = new DatabaseSync(backupPath, {
+    timeout: 5000,
+    readOnly: true,
+    enableForeignKeyConstraints: false,
+  });
+
+  try {
+    const tables = source
+      .prepare(
+        `SELECT name FROM sqlite_master
+         WHERE type = 'table'
+           AND name NOT LIKE 'sqlite_%'
+         ORDER BY name`
+      )
+      .all()
+      .map((row) => row.name);
+
+    database.exec("PRAGMA foreign_keys = OFF;");
+    database.exec("BEGIN IMMEDIATE");
+
+    try {
+      for (const table of tables) {
+        const safeTable = `"${String(table).replace(/"/g, '""')}"`;
+        database.exec(`DELETE FROM ${safeTable}`);
+      }
+
+      for (const table of tables) {
+        const safeTable = `"${String(table).replace(/"/g, '""')}"`;
+
+        const columns = source
+          .prepare(`PRAGMA table_info(${safeTable})`)
+          .all()
+          .map((column) => column.name);
+
+        if (!columns.length) continue;
+
+        const safeColumns = columns
+          .map(
+            (column) =>
+              `"${String(column).replace(/"/g, '""')}"`
+          )
+          .join(", ");
+
+        const placeholders = columns
+          .map(() => "?")
+          .join(", ");
+
+        const rows = source
+          .prepare(`SELECT ${safeColumns} FROM ${safeTable}`)
+          .all();
+
+        const statement = database.prepare(
+          `INSERT INTO ${safeTable} (${safeColumns})
+           VALUES (${placeholders})`
+        );
+
+        for (const row of rows) {
+          statement.run(
+            ...columns.map((column) => row[column])
+          );
+        }
+      }
+
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw error;
+    } finally {
+      database.exec("PRAGMA foreign_keys = ON;");
+    }
+  } finally {
+    source.close();
+  }
 }
 
 async function runMigrations(database) {
@@ -532,6 +875,123 @@ function getClient(database, id) {
   return row ? clientFromRow(row) : null;
 }
 
+const DEFAULT_SETTINGS = {
+  business: {
+    businessName: "Chrysalis Studio",
+    ownerName: "Donna",
+    address: "",
+    phone: "",
+    email: "",
+    website: "",
+    abn: "",
+  },
+  financial: {
+    gstRate: 10,
+    depositPercent: 25,
+    paymentTerms: 14,
+    currency: "AUD",
+  },
+  quotesInvoices: {
+    quoteValidityDays: 30,
+    invoicePrefix: "INV",
+    quotePrefix: "QUO",
+    paymentInstructions: "",
+    terms: "",
+  },
+  jobs: {
+    referencePrefix: "CHR",
+    defaultStatus: "Quote",
+    defaultPriority: "Normal",
+    workflowStages:
+      "Quote, Cutting, Sewing, Fitting, Finishing, Completed, Collected",
+  },
+  calendar: {
+    workingDays:
+      "Monday, Tuesday, Wednesday, Thursday, Friday",
+    openingTime: "09:00",
+    closingTime: "17:00",
+    defaultAppointmentDuration: 60,
+  },
+  production: {
+    garmentCategories:
+      "Wedding Dress, Formal Dress, Alteration, Other",
+    productionStages:
+      "Quote, Cutting, Sewing, Fitting, Finishing, Completed",
+    measurementUnit: "cm",
+  },
+};
+
+function cloneDefaultSettings() {
+  return JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+}
+
+function getSettings(database) {
+  const settings = cloneDefaultSettings();
+  const rows = database
+    .prepare("SELECT key, value FROM settings ORDER BY key")
+    .all();
+
+  for (const row of rows) {
+    try {
+      const stored = JSON.parse(row.value);
+      if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+        settings[row.key] = {
+          ...(settings[row.key] || {}),
+          ...stored,
+        };
+      }
+    } catch {
+      // Keep the built-in defaults if a stored value is malformed.
+    }
+  }
+
+  return settings;
+}
+
+function saveSettings(database, input) {
+  const current = cloneDefaultSettings();
+  const incoming = input && typeof input === "object" ? input : {};
+  const settings = {};
+
+  for (const key of Object.keys(current)) {
+    settings[key] = {
+      ...current[key],
+      ...(incoming[key] && typeof incoming[key] === "object"
+        ? incoming[key]
+        : {}),
+    };
+  }
+
+  const updatedAt = new Date().toISOString();
+  const statement = database.prepare(
+    `INSERT INTO settings (key, value, updated_at)
+     VALUES (?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET
+       value = excluded.value,
+       updated_at = excluded.updated_at`
+  );
+
+  database.exec("BEGIN IMMEDIATE");
+
+  try {
+    for (const [key, value] of Object.entries(settings)) {
+      statement.run(key, JSON.stringify(value), updatedAt);
+    }
+
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getSettings(database);
+}
+
+function resetSettings(database) {
+  database.exec("DELETE FROM settings");
+  return getSettings(database);
+}
+
 function createApiServer(database) {
   return createServer(async (request, response) => {
     if (request.method === "OPTIONS") {
@@ -567,8 +1027,153 @@ function createApiServer(database) {
       }
 
       if (request.method === "POST" && url.pathname === "/api/database/backup") {
-        const path = await backupDatabase(database, "manual");
-        sendJson(response, 200, { ok: true, path });
+        const payload = await readJsonBody(request);
+        const requestedName =
+          typeof payload?.name === "string"
+            ? payload.name.trim()
+            : "";
+
+        if (requestedName.length > 80) {
+          throw new Error("Backup name must be 80 characters or fewer.");
+        }
+
+        const path = await backupDatabase(
+          database,
+          "manual",
+          requestedName
+        );
+
+        if (!path || !existsSync(path)) {
+          throw new Error("The database backup could not be created.");
+        }
+
+        const backups = getBackupHistory();
+        const createdBackup = backups.find(
+          (backup) => backup.id === basename(path)
+        );
+
+        if (!createdBackup) {
+          throw new Error(
+            "The backup was created but could not be added to backup history."
+          );
+        }
+
+        sendJson(response, 200, {
+          ok: true,
+          path,
+          backup: createdBackup,
+          backups,
+        });
+        return;
+      }
+
+      if (
+        request.method === "GET" &&
+        url.pathname === "/api/database/backups"
+      ) {
+        sendJson(response, 200, {
+          ok: true,
+          backups: getBackupHistory(),
+        });
+        return;
+      }
+
+      if (
+        request.method === "PUT" &&
+        url.pathname.startsWith("/api/database/backups/")
+      ) {
+        const id = decodeURIComponent(
+          url.pathname.slice("/api/database/backups/".length)
+        );
+        const payload = await readJsonBody(request);
+        const backup = renameBackup(id, payload?.name);
+
+        sendJson(response, 200, {
+          ok: true,
+          backup,
+          backups: getBackupHistory(),
+        });
+        return;
+      }
+
+      if (
+        request.method === "DELETE" &&
+        url.pathname.startsWith("/api/database/backups/")
+      ) {
+        const id = decodeURIComponent(
+          url.pathname.slice("/api/database/backups/".length)
+        );
+
+        const backups = deleteBackup(id);
+
+        sendJson(response, 200, {
+          ok: true,
+          backups,
+        });
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname.startsWith("/api/database/restore/")
+      ) {
+        const id = decodeURIComponent(
+          url.pathname.slice("/api/database/restore/".length)
+        );
+
+        const backupPath = getBackupById(id);
+        const selectedBackup = getBackupHistory().find(
+          (backup) => backup.id === id
+        );
+
+        if (!selectedBackup) {
+          throw new Error("That backup version could not be found.");
+        }
+
+        await backupDatabase(
+          database,
+          `before-restore-${selectedBackup.label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`
+        );
+
+        restoreDatabase(database, backupPath);
+
+        sendJson(response, 200, {
+          ok: true,
+          restored: selectedBackup,
+          settings: getSettings(database),
+        });
+        return;
+      }
+
+      if (request.method === "GET" && url.pathname === "/api/settings") {
+        sendJson(response, 200, {
+          ok: true,
+          settings: getSettings(database),
+        });
+        return;
+      }
+
+      if (request.method === "PUT" && url.pathname === "/api/settings") {
+        const payload = await readJsonBody(request);
+        const settings = saveSettings(database, payload.settings || payload);
+
+        sendJson(response, 200, {
+          ok: true,
+          settings,
+        });
+        return;
+      }
+
+      if (
+        request.method === "POST" &&
+        url.pathname === "/api/settings/reset"
+      ) {
+        const settings = resetSettings(database);
+
+        sendJson(response, 200, {
+          ok: true,
+          settings,
+        });
         return;
       }
 
@@ -631,8 +1236,36 @@ function createApiServer(database) {
           return;
         }
 
+        const clientName =
+          `${existing.firstName || ""} ${existing.lastName || ""}`.trim() || id;
+
+        // Create and verify a safety backup before deleting the client.
+        const backupPath = await backupDatabase(
+          database,
+          `before-client-delete-${clientName}`,
+          `Before deleting ${clientName}`
+        );
+
+        if (!backupPath || !existsSync(backupPath)) {
+          throw new Error(
+            "The safety backup could not be created. The client was not deleted."
+          );
+        }
+
+        // Foreign-key rules handle all related records:
+        // CASCADE removes dependent records, while quotes retain their
+        // record with client_id set to NULL.
         database.prepare("DELETE FROM clients WHERE id = ?").run(id);
-        sendJson(response, 200, { ok: true, id });
+
+        sendJson(response, 200, {
+          ok: true,
+          id,
+          backupPath,
+          message:
+            `Client ${clientName} deleted successfully. ` +
+            "A safety backup was created before deletion.",
+        });
+
         return;
       }
 
@@ -703,3 +1336,8 @@ main().catch((error) => {
   console.error(error);
   process.exit(1);
 });
+
+
+
+
+

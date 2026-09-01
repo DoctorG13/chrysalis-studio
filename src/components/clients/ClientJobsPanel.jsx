@@ -16,7 +16,8 @@ export default function ClientJobsPanel({
   onClose,
 }) {
   const clientJobs = jobs.filter(
-    (job) => job.clientId === client?.id
+    (job) =>
+      String(job.clientId) === String(client?.id)
   );
 
   const [showJobForm, setShowJobForm] = useState(false);
@@ -27,14 +28,19 @@ export default function ClientJobsPanel({
     if (!initialJobId) return;
 
     const exists = jobs.some(
-      (job) => job.id === initialJobId && job.clientId === client?.id
+      (job) =>
+        String(job.id) === String(initialJobId) &&
+        String(job.clientId) === String(client?.id)
     );
 
     setSelectedJobId(exists ? initialJobId : null);
-  }, [initialJobId]);
+  }, [initialJobId, jobs, client?.id]);
 
   const selectedJob =
-    clientJobs.find((job) => job.id === selectedJobId) || null;
+    clientJobs.find(
+      (job) =>
+        String(job.id) === String(selectedJobId)
+    ) || null;
 
   function createTimelineEvent(type, title, description = "") {
     return {
@@ -58,7 +64,9 @@ export default function ClientJobsPanel({
       job.reference?.startsWith(`CHR-${datePart}-`)
     );
 
-    return `CHR-${datePart}-${String(todaysJobs.length + 1).padStart(3, "0")}`;
+    return `CHR-${datePart}-${String(
+      todaysJobs.length + 1
+    ).padStart(3, "0")}`;
   }
 
   async function handleCreateJob(job) {
@@ -90,7 +98,10 @@ export default function ClientJobsPanel({
 
   async function handleSaveJob(job) {
     const existing =
-      clientJobs.find((item) => item.id === job.id) || job;
+      clientJobs.find(
+        (item) =>
+          String(item.id) === String(job.id)
+      ) || job;
 
     const timeline = [...(job.timeline || [])];
 
@@ -118,7 +129,8 @@ export default function ClientJobsPanel({
       updatedAt: new Date().toISOString(),
       collectedAt:
         job.status === "Collected"
-          ? (existing.collectedAt ?? new Date().toISOString())
+          ? (existing.collectedAt ??
+            new Date().toISOString())
           : existing.collectedAt,
       timeline,
     };
@@ -133,7 +145,11 @@ export default function ClientJobsPanel({
   }
 
   async function handleDeleteJob(jobId) {
-    if (!window.confirm("Delete this job? This cannot be undone.")) {
+    if (
+      !window.confirm(
+        "Delete this job? This cannot be undone."
+      )
+    ) {
       return;
     }
 

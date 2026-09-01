@@ -446,48 +446,83 @@ function PaymentModal({ payment, initialPaymentType, initialAmount, maxAmount, o
           </select>
         </FormField>
 
-        <FormField label="Amount">
-          <input
-            autoFocus
-            type="number"
-            min="0.01"
-            max={maxAmount > 0 ? Number(maxAmount).toFixed(2) : undefined}
-            step="0.01"
-            value={amount}
-            onChange={handleAmountChange}
-            placeholder="0.00"
-            style={{ ...inputStyle, ...(exceedsMaximum ? invalidInputStyle : {}) }}
-            aria-invalid={exceedsMaximum}
-            aria-describedby={error ? "payment-amount-error" : undefined}
-          />
-          {maxAmount > 0 && (
-            <div style={amountHintStyle}>Maximum available: <strong>{maximumLabel}</strong></div>
-          )}
-          {maxAmount <= 0 && (
-            <div style={amountHintErrorStyle}>This job has no outstanding balance. No further payment can be recorded.</div>
-          )}
-          {error && <div id="payment-amount-error" style={inlineErrorStyle}>{error}</div>}
-        </FormField>
+        <div style={paymentFormGridStyle}>
+          <FormField label="Amount">
+            <div style={currencyInputWrapStyle}>
+              <span style={currencyPrefixStyle}>$</span>
+              <input
+                autoFocus
+                type="number"
+                min="0.01"
+                max={maxAmount > 0 ? Number(maxAmount).toFixed(2) : undefined}
+                step="0.01"
+                value={amount}
+                onChange={handleAmountChange}
+                placeholder="0.00"
+                style={{
+                  ...inputStyle,
+                  paddingLeft: 28,
+                  ...(exceedsMaximum ? invalidInputStyle : {}),
+                }}
+                aria-invalid={exceedsMaximum}
+                aria-describedby={error ? "payment-amount-error" : undefined}
+              />
+            </div>
+            {maxAmount > 0 && (
+              <div style={amountHintStyle}>
+                Maximum available: <strong>{maximumLabel}</strong>
+              </div>
+            )}
+            {maxAmount <= 0 && (
+              <div style={amountHintErrorStyle}>
+                This job has no outstanding balance. No further payment can be recorded.
+              </div>
+            )}
+            {error && (
+              <div id="payment-amount-error" style={inlineErrorStyle}>
+                {error}
+              </div>
+            )}
+          </FormField>
 
-        <FormField label="Payment Date">
-          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} style={inputStyle} />
-        </FormField>
+          <FormField label="Payment Date">
+            <input
+              type="date"
+              value={date}
+              onChange={(event) => setDate(event.target.value)}
+              style={inputStyle}
+            />
+          </FormField>
 
-        <FormField label="Payment Method">
-          <select value={method} onChange={(event) => setMethod(event.target.value)} style={inputStyle}>
-            <option value="">Select method</option>
-            <option value="Cash">Cash</option>
-            <option value="Card">Card</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="EFTPOS">EFTPOS</option>
-            <option value="PayPal">PayPal</option>
-            <option value="Other">Other</option>
-          </select>
-        </FormField>
+          <FormField label="Payment Method">
+            <select
+              value={method}
+              onChange={(event) => setMethod(event.target.value)}
+              style={inputStyle}
+            >
+              <option value="">Select method</option>
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="EFTPOS">EFTPOS</option>
+              <option value="PayPal">PayPal</option>
+              <option value="Other">Other</option>
+            </select>
+          </FormField>
 
-        <FormField label="Description">
-          <input value={description} onChange={(event) => setDescription(event.target.value)} placeholder={paymentType === "Deposit" ? "e.g. Initial deposit" : "e.g. Final payment"} style={inputStyle} />
-        </FormField>
+          <FormField label="Description">
+            <input
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder={
+                paymentType === "Deposit"
+                  ? "e.g. Initial deposit"
+                  : "e.g. Final payment"
+              }
+              style={inputStyle}
+            />
+          </FormField>
+        </div>
 
         <div style={modalActionsStyle}>
           <button type="button" onClick={onClose} style={secondaryButtonStyle}>Cancel</button>
@@ -608,6 +643,27 @@ const amountHintErrorStyle = { marginTop: 6, padding: "8px 10px", borderRadius: 
 const invalidInputStyle = { borderColor: "#DC2626", background: "#FFF7F7", boxShadow: "0 0 0 1px #DC2626" };
 const disabledButtonStyle = { opacity: 0.5, cursor: "not-allowed" };
 const successStyle = { marginTop: 16, padding: 12, borderRadius: 10, background: "#DCFCE7", color: "#166534", fontSize: 13, fontWeight: 600 };
+const paymentFormGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: "0 14px",
+};
+
+const currencyInputWrapStyle = {
+  position: "relative",
+};
+
+const currencyPrefixStyle = {
+  position: "absolute",
+  left: 12,
+  top: "50%",
+  transform: "translateY(-50%)",
+  color: "#777",
+  fontSize: 14,
+  fontWeight: 700,
+  pointerEvents: "none",
+};
+
 const inputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #D9DDE1", borderRadius: 9, background: "#FFFFFF", padding: "10px 11px", fontSize: 14, color: "#2F3A3F", outline: "none" };
 const primaryButtonStyle = { border: "none", background: "#F4C33F", color: "#24344A", borderRadius: 10, padding: "11px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer" };
 const payBalanceButtonStyle = { border: "1px solid #8B1E3F", background: "#8B1E3F", color: "#FFFFFF", borderRadius: 10, padding: "11px 16px", fontSize: 14, fontWeight: 700, cursor: "pointer" };

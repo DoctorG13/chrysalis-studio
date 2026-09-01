@@ -589,6 +589,19 @@ export default function CalendarPage({
         aria-label="Calendar section navigation"
       >
         <ChrysalisActionButton
+          onClick={() =>
+            openNewAppointment(
+              calendarMode === "week"
+                ? weekDate
+                : selectedDate
+            )
+          }
+          variant="accent"
+        >
+          ➕ Add Appointment
+        </ChrysalisActionButton>
+
+        <ChrysalisActionButton
           onClick={scrollToTop}
         >
           ↑ Top
@@ -596,7 +609,6 @@ export default function CalendarPage({
 
         <ChrysalisActionButton
           onClick={scrollToToday}
-          variant="accent"
         >
           📅 Today
         </ChrysalisActionButton>

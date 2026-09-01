@@ -5,6 +5,19 @@ import TextInput from "../common/TextInput";
 
 import { createJob } from "../../models/Job";
 
+const selectStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "12px 14px",
+  marginTop: 6,
+  border: "1px solid #DDD",
+  borderRadius: 10,
+  fontSize: 16,
+  outline: "none",
+  backgroundColor: "#FFF",
+  color: "#2F3A3F",
+};
+
 export default function JobForm({
   onSave,
   onCancel,
@@ -14,17 +27,6 @@ export default function JobForm({
   const [priority, setPriority] = useState("Normal");
   const [status, setStatus] = useState("Quote");
   const [description, setDescription] = useState("");
-
-  function createTimelineEvent(title, type = "system") {
-    return {
-      id:
-        globalThis.crypto?.randomUUID?.() ??
-        `timeline-${Date.now()}`,
-      title,
-      type,
-      date: new Date().toISOString(),
-    };
-  }
 
   function handleSave() {
     if (!name.trim()) {
@@ -38,9 +40,6 @@ export default function JobForm({
       priority,
       status,
       description,
-      timeline: [
-        createTimelineEvent("Job Created"),
-      ],
     });
 
     onSave(job);
@@ -48,12 +47,20 @@ export default function JobForm({
 
   return (
     <>
-      <h2>Create Job</h2>
+      <h2
+        style={{
+          marginTop: 0,
+          color: "#2F3A3F",
+        }}
+      >
+        New Job
+      </h2>
 
       <TextInput
         label="Job Name"
         value={name}
         onChange={setName}
+        placeholder="e.g. Wedding Dress"
       />
 
       <TextInput
@@ -63,33 +70,99 @@ export default function JobForm({
         onChange={setDueDate}
       />
 
-      <TextInput
-        label="Priority"
-        value={priority}
-        onChange={setPriority}
-      />
+      <div style={{ marginBottom: 20 }}>
+        <label
+          style={{
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+          }}
+        >
+          Priority
+        </label>
 
-      <TextInput
-        label="Status"
-        value={status}
-        onChange={setStatus}
-      />
+        <select
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+          style={selectStyle}
+        >
+          <option value="Low">Low</option>
+          <option value="Normal">Normal</option>
+          <option value="High">High</option>
+          <option value="Urgent">Urgent</option>
+        </select>
+      </div>
 
-      <TextInput
-        label="Description"
-        value={description}
-        onChange={setDescription}
-      />
+      <div style={{ marginBottom: 20 }}>
+        <label
+          style={{
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+          }}
+        >
+          Status
+        </label>
+
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          style={selectStyle}
+        >
+          <option value="Quote">Quote</option>
+          <option value="Accepted">Accepted</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Awaiting Fitting">Awaiting Fitting</option>
+          <option value="Ready">Ready</option>
+          <option value="Collected">Collected</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      <div style={{ marginBottom: 20 }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+            marginBottom: 6,
+          }}
+        >
+          Description
+        </label>
+
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Add notes about this job..."
+          rows={4}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "12px 14px",
+            border: "1px solid #DDD",
+            borderRadius: 10,
+            fontSize: 16,
+            lineHeight: 1.5,
+            outline: "none",
+            resize: "vertical",
+            fontFamily: "inherit",
+            color: "#2F3A3F",
+          }}
+        />
+      </div>
 
       <div
         style={{
           display: "flex",
           gap: 12,
-          marginTop: 24,
+          marginTop: 30,
         }}
       >
         <Button onClick={handleSave}>
-          Save
+          Create Job
         </Button>
 
         <Button onClick={onCancel}>

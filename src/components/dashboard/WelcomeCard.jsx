@@ -1,7 +1,14 @@
-export default function WelcomeCard() {
+export default function WelcomeCard({ ownerName = "Donna" }) {
   const now = new Date();
   const hour = now.getHours();
-  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
+
+  const greeting =
+    hour < 12
+      ? "Good Morning"
+      : hour < 18
+        ? "Good Afternoon"
+        : "Good Evening";
+
   const formattedDate = now.toLocaleDateString("en-AU", {
     weekday: "long",
     day: "numeric",
@@ -13,10 +20,18 @@ export default function WelcomeCard() {
     <header style={welcomeStyle}>
       <div>
         <div style={greetingStyle}>
-          <span aria-hidden="true" style={sunStyle}>☀</span>
-          <h1 style={titleStyle}>{greeting}, Donna</h1>
+          <span aria-hidden="true" style={sunStyle}>
+            ☀
+          </span>
+
+          <h1 style={titleStyle}>
+            {greeting}, {ownerName}
+          </h1>
         </div>
-        <div style={dateStyle}>{formattedDate}</div>
+
+        <div style={dateStyle}>
+          {formattedDate}
+        </div>
       </div>
     </header>
   );
@@ -32,12 +47,12 @@ const welcomeStyle = {
 const greetingStyle = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
+  gap: 12,
 };
 
 const sunStyle = {
   color: "#9A2348",
-  fontSize: 27,
+  fontSize: 29,
   lineHeight: 1,
 };
 
@@ -49,8 +64,8 @@ const titleStyle = {
 };
 
 const dateStyle = {
-  marginTop: 3,
+  marginTop: 5,
   color: "#697178",
-  fontSize: 12,
+  fontSize: 13,
   lineHeight: 1.2,
 };

@@ -1,120 +1,132 @@
+
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
 import Card from "../common/Card";
-import EmptyState from "../common/EmptyState";
+  },
+  attention: {
+    border: "#CA8A04",
+    background: "#FEFCE8",
+    text: "#854D0E",
+  },
+  info: {
+    border: "#2563EB",
+    background: "#EFF6FF",
+    text: "#1D4ED8",
+  },
+};
 
-export default function TodaysPriorities({
-  jobs = [],
-}) {
-  const priorities = [...jobs]
-    .filter(
-      (job) =>
-        job.overdue ||
-        job.dueToday ||
-        job.needsAttention
-    )
-    .sort((a, b) => {
-      const score = (job) => {
-        if (job.overdue) return 1;
-        if (job.dueToday) return 2;
-        if (job.needsAttention) return 3;
-        return 99;
-      };
+function getOutstanding(job) {
+  const total = Number(
+    job.price ??
+      job.total ??
+      job.quoteTotal ??
+      0
+  );
 
-      return score(a) - score(b);
-    });
+  const payments = Array.isArray(job.payments)
+    ? job.payments
+    : [];
 
-  return (
-    <Card title="Today's Priorities">
-      {priorities.length === 0 ? (
-        <EmptyState
-          icon="🎉"
-          title="You're all caught up!"
-          message="There are no urgent priorities today."
-        />
-      ) : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
-        >
-          {priorities.map((job) => (
-            <PriorityRow
-              key={job.id ?? job.reference ?? job.name}
-              job={job}
-            />
-          ))}
-        </div>
-      )}
-    </Card>
+  const totalPaid = payments.reduce(
+    (sum, payment) =>
+      sum + Number(payment.amount || 0),
+    0
+  );
+
+  return Math.max(total - totalPaid, 0);
+}
+
+function startOfDay(date) {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
   );
 }
 
-function PriorityRow({ job }) {
-  let level = "info";
-  let icon = "ℹ️";
-
-  if (job.overdue) {
-    level = "critical";
-    icon = "🔴";
-  } else if (job.dueToday) {
-    level = "warning";
-    icon = "🟠";
-  } else if (job.needsAttention) {
-    level = "success";
-    icon = "🟡";
-  }
-
-  const styles = {
-    critical: {
-      border: "#DC2626",
-      background: "#FEF2F2",
-    },
-    warning: {
-      border: "#EA580C",
-      background: "#FFF7ED",
-    },
-    info: {
-      border: "#2563EB",
-      background: "#EFF6FF",
-    },
-    success: {
-      border: "#16A34A",
-      background: "#F0FDF4",
-    },
-  };
-
-  const style = styles[level];
-
+function sameDay(a, b) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 6,
-        padding: 16,
-        borderLeft: `6px solid ${style.border}`,
-        background: style.background,
-        borderRadius: 10,
-      }}
-    >
-      <strong>
-        {icon} {job.name}
-      </strong>
-
-      <div>
-        <strong>Status:</strong> {job.status}
-      </div>
-
-      <div>
-        <strong>Next:</strong> {job.nextAction}
-      </div>
-
-      {job.dueDate && (
-        <div>
-          <strong>Due:</strong> {job.dueDate}
-        </div>
-      )}
-    </div>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
   );
+}
+
+function differenceInDays(a, b) {
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+  return Math.round(
+    (a.getTime() - b.getTime()) /
+      millisecondsPerDay
+  );
+}
+
+function formatDate(date) {
+  return date.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+  });
 }

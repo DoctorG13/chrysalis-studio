@@ -3,6 +3,12 @@
    Global Styles
 ====================================================== */
 
+:root {
+  --brand-primary: #8B1E3F;
+  --brand-secondary: #2F3A3F;
+  --brand-accent: #C96A83;
+}
+
 *,
 *::before,
 *::after {
@@ -19,9 +25,15 @@ body,
 }
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: #f7f5f2;
-  color: #2f3a3f;
+  font-family:
+    "Segoe UI",
+    Tahoma,
+    Geneva,
+    Verdana,
+    sans-serif;
+
+  background: #F7F5F2;
+  color: var(--brand-secondary);
   overflow: hidden;
 }
 
@@ -44,4 +56,9 @@ a {
 img {
   max-width: 100%;
   display: block;
+}
+
+::selection {
+  background: var(--brand-accent);
+  color: #FFFFFF;
 }

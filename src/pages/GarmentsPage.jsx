@@ -125,9 +125,9 @@ function WorkflowColumn({
   return (
     <div
       style={{
-        minWidth: 280,
-        flex: "1 1 280px",
-        maxWidth: 360,
+        minWidth: 0,
+        width: "100%",
+        boxSizing: "border-box",
         background: "#F5F7F8",
         border:
           "1px solid #DCE1E4",
@@ -816,12 +816,12 @@ export default function GarmentsPage({
 
           <div
             style={{
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(220px, 1fr))",
               gap: 14,
-              overflowX: "auto",
-              paddingBottom: 12,
-              alignItems:
-                "flex-start",
+              width: "100%",
+              alignItems: "start",
             }}
           >
             {JOB_WORKFLOW.map(

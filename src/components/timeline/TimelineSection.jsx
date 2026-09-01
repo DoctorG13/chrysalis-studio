@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ThriveDialog, useThriveDialog } from "../common/ThriveDialog";
 import {
   createTimelineEvent,
   deleteTimelineEvent,
@@ -43,6 +44,7 @@ export default function TimelineSection({ clientId, jobId = "" }) {
   const [editingId, setEditingId] = useState("");
   const [draft, setDraft] = useState({ type: "note", title: "", description: "" });
   const [showComposer, setShowComposer] = useState(false);
+  const { confirm, dialogProps } = useThriveDialog();
 
   async function load() {
     setLoading(true);
@@ -106,7 +108,13 @@ export default function TimelineSection({ clientId, jobId = "" }) {
   }
 
   async function remove(event) {
-    if (!window.confirm(`Delete timeline event “${event.title}”?`)) return;
+    const confirmed = await confirm({
+      title: "Delete Timeline Event",
+      message: `Delete timeline event “${event.title}”? This cannot be undone.`,
+      confirmLabel: "Delete Event",
+      danger: true,
+    });
+    if (!confirmed) return;
     setError("");
     try {
       await deleteTimelineEvent(event.id);
@@ -154,6 +162,7 @@ export default function TimelineSection({ clientId, jobId = "" }) {
           ))}
         </div>
       )}
+      <ThriveDialog {...dialogProps} />
     </div>
   );
 }

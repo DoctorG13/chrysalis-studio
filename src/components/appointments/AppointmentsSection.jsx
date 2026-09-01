@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import Button from "../common/Button";
 import TextInput from "../common/TextInput";
+import { ThriveDialog, useThriveDialog } from "../common/ThriveDialog";
 
 const appointmentTypes = [
   "Initial Consultation",
@@ -38,6 +39,7 @@ export default function AppointmentsSection({
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const { confirm, dialogProps } = useThriveDialog();
 
   const editorRef = useRef(null);
 
@@ -123,9 +125,13 @@ export default function AppointmentsSection({
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Delete this appointment?")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Delete Appointment",
+      message: "Delete this appointment? This cannot be undone.",
+      confirmLabel: "Delete Appointment",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     setError("");
     setIsSaving(true);
@@ -317,6 +323,7 @@ export default function AppointmentsSection({
           </div>
         </div>
       </div>
+      <ThriveDialog {...dialogProps} />
     </div>
   );
 }

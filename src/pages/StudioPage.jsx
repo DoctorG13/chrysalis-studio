@@ -1,4 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 import SlidePanel from "../components/common/SlidePanel";
 
@@ -10,6 +14,7 @@ import DashboardPage from "../components/dashboard/DashboardPage";
 import SearchResultsOverlay from "../components/search/SearchResultsOverlay";
 
 import JobsWorkspace from "../components/jobs/JobsWorkspace";
+
 import { useChrysalis } from "../context/ChrysalisProvider";
 
 export default function StudioPage({
@@ -23,14 +28,25 @@ export default function StudioPage({
   searchResults = [],
   onClearSearch,
   onOpenCalendar,
+  ownerName = "Your Name",
 }) {
-  const [showClientPanel, setShowClientPanel] = useState(false);
+  const [
+    showClientPanel,
+    setShowClientPanel,
+  ] = useState(false);
 
-  const { openClient, openJob } = useChrysalis();
+  const {
+    openClient,
+    openJob,
+  } = useChrysalis();
 
-  const [showJobsWorkspace, setShowJobsWorkspace] = useState(false);
+  const [
+    showJobsWorkspace,
+    setShowJobsWorkspace,
+  ] = useState(false);
 
-  const clientListRef = useRef(null);
+  const clientListRef =
+    useRef(null);
 
   useEffect(() => {
     window.scrollTo({
@@ -40,42 +56,69 @@ export default function StudioPage({
     });
   }, []);
 
-  function handleSaveClient(client) {
-    setClients([...clients, client]);
+  function handleSaveClient(
+    client
+  ) {
+    setClients([
+      ...clients,
+      client,
+    ]);
+
     setShowClientPanel(false);
   }
 
-  function handleClientClick(client) {
+  function handleClientClick(
+    client
+  ) {
     openClient(client);
   }
 
-  function handleJobClick(client, jobId) {
-    openJob(client, jobId);
+  function handleJobClick(
+    client,
+    jobId
+  ) {
+    openJob(
+      client,
+      jobId
+    );
   }
 
-  function handleDashboardJobClick(job) {
-    if (!job) return;
+  function handleDashboardJobClick(
+    job
+  ) {
+    if (!job) {
+      return;
+    }
 
-    const client = clients.find(
-      (candidate) => candidate.id === job.clientId
-    );
+    const client =
+      clients.find(
+        (candidate) =>
+          String(candidate.id) ===
+          String(job.clientId)
+      );
 
     if (!client) {
       console.warn(
         "Unable to open dashboard job: client not found",
         job
       );
+
       return;
     }
 
-    openJob(client, job.id);
+    openJob(
+      client,
+      job.id
+    );
   }
 
   function handleClientsClick() {
-    clientListRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+    clientListRef.current?.scrollIntoView(
+      {
+        behavior: "smooth",
+        block: "start",
+      }
+    );
   }
 
   function handleJobsClick() {
@@ -87,43 +130,70 @@ export default function StudioPage({
       <DashboardPage
         clients={clients}
         jobs={jobs}
-        onNewClient={() => setShowClientPanel(true)}
-        onClientsClick={handleClientsClick}
-        onJobsClick={handleJobsClick}
-        onSelectJob={handleDashboardJobClick}
-        onOpenCalendar={onOpenCalendar}
+        ownerName={ownerName}
+        onNewClient={() =>
+          setShowClientPanel(true)
+        }
+        onClientsClick={
+          handleClientsClick
+        }
+        onJobsClick={
+          handleJobsClick
+        }
+        onSelectJob={
+          handleDashboardJobClick
+        }
+        onOpenCalendar={
+          onOpenCalendar
+        }
       />
 
       {searchQuery.trim() !== "" && (
         <SearchResultsOverlay
           query={searchQuery}
           results={searchResults}
-          onSelectClient={handleClientClick}
-          onSelectJob={handleJobClick}
-          onClose={onClearSearch}
+          onSelectClient={
+            handleClientClick
+          }
+          onSelectJob={
+            handleJobClick
+          }
+          onClose={
+            onClearSearch
+          }
         />
       )}
 
       <div ref={clientListRef}>
         <ClientList
           clients={clients}
-          onClientClick={handleClientClick}
+          onClientClick={
+            handleClientClick
+          }
         />
       </div>
 
       <SlidePanel
         open={showClientPanel}
-        onClose={() => setShowClientPanel(false)}
+        onClose={() =>
+          setShowClientPanel(false)
+        }
       >
         <ClientForm
-          onSave={handleSaveClient}
-          onCancel={() => setShowClientPanel(false)}
+          onSave={
+            handleSaveClient
+          }
+          onCancel={() =>
+            setShowClientPanel(false)
+          }
         />
       </SlidePanel>
 
       <SlidePanel
         open={showJobsWorkspace}
-        onClose={() => setShowJobsWorkspace(false)}
+        onClose={() =>
+          setShowJobsWorkspace(false)
+        }
       >
         <JobsWorkspace
           jobs={jobs}
@@ -131,7 +201,9 @@ export default function StudioPage({
           createJob={createJob}
           updateJob={updateJob}
           deleteJob={deleteJob}
-          onClose={() => setShowJobsWorkspace(false)}
+          onClose={() =>
+            setShowJobsWorkspace(false)
+          }
         />
       </SlidePanel>
     </>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import ChrysalisActionButton from "./ChrysalisActionButton";
+import { ThriveDialog, useThriveDialog } from "../../components/common/ThriveDialog";
 
 const APPOINTMENT_TYPES = [
   "Consultation",
@@ -54,6 +55,7 @@ export default function AppointmentEditor({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
+  const { confirm, dialogProps } = useThriveDialog();
 
   useEffect(() => {
     setForm(appointment ? { ...emptyAppointment(), ...appointment, date: toDateInput(appointment.date) } : emptyAppointment(defaultDate));
@@ -101,7 +103,16 @@ export default function AppointmentEditor({
 
   async function handleDelete() {
     if (!form.id || !onDelete) return;
-    if (!window.confirm("Delete this appointment? This cannot be undone.")) return;
+
+    const confirmed = await confirm({
+      title: "Delete Appointment",
+      message: "Delete this appointment? This cannot be undone.",
+      confirmLabel: "Delete Appointment",
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
     setDeleting(true);
     setError("");
     try {
@@ -185,6 +196,8 @@ export default function AppointmentEditor({
           </div>
         </div>
       </form>
+
+      <ThriveDialog {...dialogProps} />
     </div>
   );
 }

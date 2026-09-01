@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import AssetCard from "./AssetCard";
+import { ThriveDialog, useThriveDialog } from "../common/ThriveDialog";
 import { createAssetRecord, deleteAssetRecord, getAssets, updateAssetRecord } from "../../services/assetManagementApi";
 
 export default function AssetManagementV2({ clientId, jobId, title = "Photos & Documents" }) {
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { confirm, dialogProps } = useThriveDialog();
 
   useEffect(() => {
     let active = true;
@@ -14,7 +16,17 @@ export default function AssetManagementV2({ clientId, jobId, title = "Photos & D
   }, [clientId, jobId]);
 
   async function update(asset) { const saved = await updateAssetRecord(asset); setAssets((items) => items.map((item) => item.id === saved.id ? saved : item)); }
-  async function remove(id) { if (!window.confirm("Delete this asset? This cannot be undone.")) return; await deleteAssetRecord(id); setAssets((items) => items.filter((item) => item.id !== id)); }
+  async function remove(id) {
+    const confirmed = await confirm({
+      title: "Delete Asset",
+      message: "Delete this asset? This cannot be undone.",
+      confirmLabel: "Delete Asset",
+      danger: true,
+    });
+    if (!confirmed) return;
+    await deleteAssetRecord(id);
+    setAssets((items) => items.filter((item) => item.id !== id));
+  }
   async function upload(event) {
     try {
       for (const file of Array.from(event.target.files || [])) {
@@ -33,6 +45,7 @@ export default function AssetManagementV2({ clientId, jobId, title = "Photos & D
     </div>
     {error && <p style={{ color: "#a33" }}>{error}</p>}
     {loading ? <p>Loading assets...</p> : !assets.length ? <p style={{ color: "#778087" }}>No assets uploaded yet.</p> : <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 16 }}>{assets.map((asset) => <AssetCard key={asset.id} asset={asset} onUpdate={update} onDelete={remove} />)}</div>}
+    <ThriveDialog {...dialogProps} />
   </section>;
 }
 function readFile(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = () => reject(new Error(`Unable to read ${file.name}.`)); reader.readAsDataURL(file); }); }
