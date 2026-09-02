@@ -6,6 +6,7 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = 10;
 
 const loginAttempts = new Map();
+const revokedSessions = new Map();
 
 function requiredEnv(name) {
   const value = String(process.env[name] || "").trim();
@@ -99,7 +100,7 @@ function readCookie(request, name) {
 }
 
 function parseSession(token, secret) {
-  if (!token) return null;
+  if (!token || revokedSessions.has(token)) return null;
 
   const parts = token.split(".");
   if (parts.length !== 2) return null;
@@ -153,6 +154,33 @@ export function clearExpiredLoginAttempts() {
 
   for (const [key, entry] of loginAttempts) {
     if (entry.startedAt < cutoff) loginAttempts.delete(key);
+  }
+}
+
+export function clearExpiredRevokedSessions() {
+  const now = Date.now();
+
+  for (const [token, expiresAt] of revokedSessions) {
+    if (expiresAt <= now) revokedSessions.delete(token);
+  }
+}
+
+export function revokeSession(request) {
+  const token = readCookie(request, COOKIE_NAME);
+  if (!token) return;
+
+  const parts = token.split(".");
+  if (parts.length !== 2) return;
+
+  try {
+    const payload = JSON.parse(fromBase64Url(parts[0]).toString("utf8"));
+    const expiresAt = Number(payload?.expiresAt);
+
+    if (Number.isFinite(expiresAt) && expiresAt > Date.now()) {
+      revokedSessions.set(token, expiresAt);
+    }
+  } catch {
+    // Ignore malformed session tokens during logout.
   }
 }
 
