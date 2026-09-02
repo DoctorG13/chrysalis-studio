@@ -71,9 +71,7 @@ function safeEqual(left, right) {
   const a = Buffer.from(String(left || ""));
   const b = Buffer.from(String(right || ""));
 
-  if (a.length !== b.length) {
-    return false;
-  }
+  if (a.length !== b.length) return false;
 
   return crypto.timingSafeEqual(a, b);
 }
@@ -94,9 +92,7 @@ function readCookie(request, name) {
   for (const part of header.split(";")) {
     const [key, ...valueParts] = part.trim().split("=");
 
-    if (key === name) {
-      return valueParts.join("=");
-    }
+    if (key === name) return valueParts.join("=");
   }
 
   return "";
@@ -106,15 +102,12 @@ function parseSession(token, secret) {
   if (!token) return null;
 
   const parts = token.split(".");
-
   if (parts.length !== 2) return null;
 
   const [encoded, providedSignature] = parts;
   const expectedSignature = sign(encoded, secret);
 
-  if (!safeEqual(providedSignature, expectedSignature)) {
-    return null;
-  }
+  if (!safeEqual(providedSignature, expectedSignature)) return null;
 
   try {
     const payload = JSON.parse(fromBase64Url(encoded).toString("utf8"));
@@ -123,9 +116,7 @@ function parseSession(token, secret) {
       return null;
     }
 
-    if (payload.expiresAt <= Date.now()) {
-      return null;
-    }
+    if (payload.expiresAt <= Date.now()) return null;
 
     return payload;
   } catch {
@@ -137,49 +128,31 @@ function clientAddress(request) {
   return String(request.socket?.remoteAddress || "unknown");
 }
 
-function allowLoginAttempt(request) {
+export function allowLoginAttempt(request) {
   const key = clientAddress(request);
   const now = Date.now();
   const existing = loginAttempts.get(key);
 
   if (!existing || now - existing.startedAt >= LOGIN_WINDOW_MS) {
-    loginAttempts.set(key, {
-      startedAt: now,
-      count: 1,
-    });
+    loginAttempts.set(key, { startedAt: now, count: 1 });
     return true;
   }
 
-  if (existing.count >= MAX_LOGIN_ATTEMPTS) {
-    return false;
-  }
+  if (existing.count >= MAX_LOGIN_ATTEMPTS) return false;
 
   existing.count += 1;
   return true;
 }
 
-function clearLoginAttempts(request) {
+export function clearLoginAttempts(request) {
   loginAttempts.delete(clientAddress(request));
-}
-
-function cookieHeader(value, maxAge) {
-  return [
-    `${COOKIE_NAME}=${value}`,
-    "Path=/",
-    "HttpOnly",
-    "Secure",
-    "SameSite=Strict",
-    `Max-Age=${maxAge}`,
-  ].join("; ");
 }
 
 export function clearExpiredLoginAttempts() {
   const cutoff = Date.now() - LOGIN_WINDOW_MS;
 
   for (const [key, entry] of loginAttempts) {
-    if (entry.startedAt < cutoff) {
-      loginAttempts.delete(key);
-    }
+    if (entry.startedAt < cutoff) loginAttempts.delete(key);
   }
 }
 
@@ -193,64 +166,7 @@ export function getAuthenticatedUser(request, authConfig) {
     return null;
   }
 
-  return {
-    username: authConfig.username,
-  };
-}
-
-export function handleAuthRequest(request, response, authConfig) {
-  const url = new URL(
-    request.url || "/",
-    `http://${request.headers.host || "localhost"}`
-  );
-
-  if (request.method === "GET" && url.pathname === "/api/auth/me") {
-    const user = getAuthenticatedUser(request, authConfig);
-
-    response.writeHead(user ? 200 : 401, {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-    });
-    response.end(
-      JSON.stringify(
-        user
-          ? { ok: true, authenticated: true, user }
-          : { ok: false, authenticated: false }
-      )
-    );
-    return true;
-  }
-
-  if (request.method === "POST" && url.pathname === "/api/auth/login") {
-    if (!allowLoginAttempt(request)) {
-      response.writeHead(429, {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store",
-        "Retry-After": "900",
-      });
-      response.end(
-        JSON.stringify({
-          ok: false,
-          error: "Too many login attempts. Please try again later.",
-        })
-      );
-      return true;
-    }
-
-    return false;
-  }
-
-  if (request.method === "POST" && url.pathname === "/api/auth/logout") {
-    response.writeHead(200, {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      "Set-Cookie": cookieHeader("", 0),
-    });
-    response.end(JSON.stringify({ ok: true }));
-    return true;
-  }
-
-  return false;
+  return { username: authConfig.username };
 }
 
 export function authenticateLogin(username, password, authConfig) {
@@ -261,8 +177,25 @@ export function authenticateLogin(username, password, authConfig) {
 }
 
 export function createLoginCookie(username, authConfig) {
-  return cookieHeader(
-    createSession(username, authConfig.sessionSecret),
-    SESSION_MAX_AGE_SECONDS
-  );
+  const session = createSession(username, authConfig.sessionSecret);
+
+  return [
+    `${COOKIE_NAME}=${session}`,
+    "Path=/",
+    "HttpOnly",
+    "Secure",
+    "SameSite=Strict",
+    `Max-Age=${SESSION_MAX_AGE_SECONDS}`,
+  ].join("; ");
+}
+
+export function createLogoutCookie() {
+  return [
+    `${COOKIE_NAME}=`,
+    "Path=/",
+    "HttpOnly",
+    "Secure",
+    "SameSite=Strict",
+    "Max-Age=0",
+  ].join("; ");
 }
