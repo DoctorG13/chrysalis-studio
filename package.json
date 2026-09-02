@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "node server/production.js",
     "lint": "oxlint",
     "preview": "vite preview",
     "server": "node server/start.js",
