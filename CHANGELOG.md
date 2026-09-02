@@ -169,3 +169,14 @@ Cancelled
 - The production password must be at least 12 characters.
 - The production session secret must be at least 32 characters.
 - Real credentials must never be committed to Git.
+
+---
+
+## Production Logout
+
+### Added
+
+- Added an authenticated account menu to the application header.
+- Added a server-side `POST /api/auth/logout` action from the account menu.
+- Added logout progress and error feedback without silently discarding a failed sign-out request.
+- Reloads the application after a successful logout so the authentication gate immediately returns the user to the secure login screen.
