@@ -146,3 +146,26 @@ Cancelled
 - Added direct navigation from Today View items into the existing Client Workspace and Job Workspace.
 - Extended the existing calendar day events to surface fittings alongside appointments and job due dates.
 - Preserved the existing month navigation, date selection and selected-day detail workflow.
+
+---
+
+## Deployment Security Gate
+
+### Added
+
+- Added production authentication using environment-configured credentials.
+- Added signed, HTTP-only, Secure, SameSite session cookies with an 8-hour lifetime.
+- Added timing-safe credential and session-signature comparisons.
+- Added login rate limiting for repeated failed attempts.
+- Added an authenticated application gate and production login screen.
+- Protected all production `/api/*` routes except health and authentication endpoints.
+- Added same-origin protection for state-changing production requests.
+- Removed wildcard CORS behaviour from the public production gateway while sanitising upstream CORS headers.
+- Added `.env.example` documenting the production authentication and persistent-data configuration.
+
+### Security requirements
+
+- `CHRYSALIS_AUTH_USERNAME`, `CHRYSALIS_AUTH_PASSWORD`, and `CHRYSALIS_SESSION_SECRET` are required for production startup.
+- The production password must be at least 12 characters.
+- The production session secret must be at least 32 characters.
+- Real credentials must never be committed to Git.
