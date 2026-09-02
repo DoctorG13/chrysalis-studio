@@ -3,11 +3,23 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
 
+import {
+  allowLoginAttempt,
+  authenticateLogin,
+  clearExpiredLoginAttempts,
+  clearLoginAttempts,
+  createLoginCookie,
+  createLogoutCookie,
+  getAuthenticatedUser,
+  validateAuthConfiguration,
+} from "./auth.js";
+
 const DATA_DIR = resolve(
   process.env.CHRYSALIS_DATA_DIR || join(process.cwd(), "data")
 );
 const DIST_DIR = resolve(process.cwd(), "dist");
 const PORT = Number(process.env.PORT || 4173);
+const MAX_LOGIN_BODY_BYTES = 64 * 1024;
 
 const SERVICES = [
   { name: "database", script: "server/index.js", args: ["server"], envKey: "CHRYSALIS_API_PORT", port: 4274 },
@@ -35,6 +47,8 @@ const ROUTES = [
 const children = new Map();
 let gateway = null;
 let shuttingDown = false;
+let authConfig = null;
+let loginCleanupTimer = null;
 
 function log(message) {
   console.log(`[Chrysalis production] ${message}`);
@@ -45,6 +59,66 @@ function getApiPort(pathname) {
     ([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
   return match ? match[1] : 4274;
+}
+
+function sendJson(response, statusCode, payload, headers = {}) {
+  const body = JSON.stringify(payload, null, 2);
+
+  response.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": Buffer.byteLength(body),
+    "Cache-Control": "no-store",
+    ...headers,
+  });
+  response.end(body);
+}
+
+function readJsonBody(request, maxBytes = MAX_LOGIN_BODY_BYTES) {
+  return new Promise((resolveBody, reject) => {
+    let body = "";
+    let size = 0;
+    let settled = false;
+
+    request.setEncoding("utf8");
+
+    request.on("data", (chunk) => {
+      if (settled) return;
+
+      size += Buffer.byteLength(chunk);
+
+      if (size > maxBytes) {
+        settled = true;
+        reject(new Error("Request body is too large."));
+        request.destroy();
+        return;
+      }
+
+      body += chunk;
+    });
+
+    request.on("end", () => {
+      if (settled) return;
+      settled = true;
+
+      if (!body.trim()) {
+        resolveBody({});
+        return;
+      }
+
+      try {
+        resolveBody(JSON.parse(body));
+      } catch {
+        reject(new Error("Request body must contain valid JSON."));
+      }
+    });
+
+    request.on("error", (error) => {
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    });
+  });
 }
 
 function checkHealth(service, attempt = 0) {
@@ -189,6 +263,33 @@ function serveStatic(request, response) {
   response.end(request.method === "HEAD" ? undefined : body);
 }
 
+function isSameOrigin(request) {
+  const origin = String(request.headers.origin || "");
+
+  if (!origin) return true;
+
+  const forwardedProto = String(
+    request.headers["x-forwarded-proto"] || "https"
+  ).split(",")[0].trim();
+  const host = String(request.headers.host || "");
+
+  if (!host) return false;
+
+  return origin === `${forwardedProto}://${host}`;
+}
+
+function isStateChangingMethod(method) {
+  return ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+}
+
+function sanitiseUpstreamHeaders(headers) {
+  return Object.fromEntries(
+    Object.entries(headers).filter(
+      ([name]) => !name.toLowerCase().startsWith("access-control-")
+    )
+  );
+}
+
 function proxyApi(request, response) {
   const url = new URL(
     request.url || "/",
@@ -209,7 +310,10 @@ function proxyApi(request, response) {
       },
     },
     (upstream) => {
-      response.writeHead(upstream.statusCode || 502, upstream.headers);
+      response.writeHead(
+        upstream.statusCode || 502,
+        sanitiseUpstreamHeaders(upstream.headers)
+      );
       upstream.pipe(response);
     }
   );
@@ -235,39 +339,154 @@ function proxyApi(request, response) {
   request.pipe(proxy);
 }
 
+async function handleLogin(request, response) {
+  if (!allowLoginAttempt(request)) {
+    sendJson(
+      response,
+      429,
+      {
+        ok: false,
+        error: "Too many login attempts. Please try again later.",
+      },
+      { "Retry-After": "900" }
+    );
+    return;
+  }
+
+  try {
+    const payload = await readJsonBody(request);
+    const username = String(payload?.username || "");
+    const password = String(payload?.password || "");
+
+    if (!authenticateLogin(username, password, authConfig)) {
+      sendJson(response, 401, {
+        ok: false,
+        error: "Invalid username or password.",
+      });
+      return;
+    }
+
+    clearLoginAttempts(request);
+
+    sendJson(
+      response,
+      200,
+      {
+        ok: true,
+        authenticated: true,
+        user: { username: authConfig.username },
+      },
+      { "Set-Cookie": createLoginCookie(username, authConfig) }
+    );
+  } catch (error) {
+    sendJson(response, 400, {
+      ok: false,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
 function createGateway() {
-  return createServer((request, response) => {
+  return createServer(async (request, response) => {
     const url = new URL(
       request.url || "/",
       `http://${request.headers.host || "localhost"}`
     );
 
     if (request.method === "OPTIONS") {
+      if (!isSameOrigin(request)) {
+        sendJson(response, 403, {
+          ok: false,
+          error: "Cross-origin requests are not permitted.",
+        });
+        return;
+      }
+
       response.writeHead(204, {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        "Cache-Control": "no-store",
       });
       response.end();
       return;
     }
 
     if (url.pathname === "/health" || url.pathname === "/api/health") {
-      response.writeHead(200, {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store",
+      sendJson(response, 200, {
+        ok: true,
+        service: "chrysalis",
+        environment: process.env.NODE_ENV || "production",
       });
-      response.end(
-        JSON.stringify({
-          ok: true,
-          service: "chrysalis",
-          environment: process.env.NODE_ENV || "production",
-        })
+      return;
+    }
+
+    if (url.pathname === "/api/auth/me" && request.method === "GET") {
+      const user = getAuthenticatedUser(request, authConfig);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+        });
+        return;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        user,
+      });
+      return;
+    }
+
+    if (url.pathname === "/api/auth/login" && request.method === "POST") {
+      if (!isSameOrigin(request)) {
+        sendJson(response, 403, {
+          ok: false,
+          error: "Cross-origin requests are not permitted.",
+        });
+        return;
+      }
+
+      await handleLogin(request, response);
+      return;
+    }
+
+    if (url.pathname === "/api/auth/logout" && request.method === "POST") {
+      if (!isSameOrigin(request)) {
+        sendJson(response, 403, {
+          ok: false,
+          error: "Cross-origin requests are not permitted.",
+        });
+        return;
+      }
+
+      sendJson(
+        response,
+        200,
+        { ok: true },
+        { "Set-Cookie": createLogoutCookie() }
       );
       return;
     }
 
     if (url.pathname.startsWith("/api/")) {
+      const user = getAuthenticatedUser(request, authConfig);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          error: "Authentication required.",
+        });
+        return;
+      }
+
+      if (isStateChangingMethod(request.method) && !isSameOrigin(request)) {
+        sendJson(response, 403, {
+          ok: false,
+          error: "Cross-origin requests are not permitted.",
+        });
+        return;
+      }
+
       proxyApi(request, response);
       return;
     }
@@ -289,6 +508,8 @@ function shutdown(code = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
 
+  if (loginCleanupTimer) clearInterval(loginCleanupTimer);
+
   log("Stopping production gateway and backend services...");
 
   if (gateway) gateway.close();
@@ -301,11 +522,15 @@ function shutdown(code = 0) {
 }
 
 async function main() {
+  authConfig = validateAuthConfiguration();
+
   if (!existsSync(DIST_DIR)) {
     throw new Error(
       `Production frontend build not found: ${DIST_DIR}. Run npm run build first.`
     );
   }
+
+  loginCleanupTimer = setInterval(clearExpiredLoginAttempts, 5 * 60 * 1000);
 
   for (const service of SERVICES) spawnService(service);
   await Promise.all(SERVICES.map((service) => checkHealth(service)));
@@ -314,6 +539,7 @@ async function main() {
   gateway.listen(PORT, "0.0.0.0", () => {
     log(`Gateway listening on 0.0.0.0:${PORT}`);
     log(`Persistent data directory: ${DATA_DIR}`);
+    log("Production authentication is enabled.");
     log("Chrysalis production backend is ready.");
   });
 }
