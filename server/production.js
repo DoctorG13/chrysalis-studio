@@ -20,6 +20,9 @@ const DATA_DIR = resolve(
 const DIST_DIR = resolve(process.cwd(), "dist");
 const PORT = Number(process.env.PORT || 4173);
 const MAX_LOGIN_BODY_BYTES = 64 * 1024;
+const HEALTH_CHECK_TIMEOUT_MS = 1000;
+const HEALTH_CHECK_MAX_WAIT_MS = 30000;
+const HEALTH_CHECK_RETRY_MS = 250;
 
 const SERVICES = [
   { name: "database", script: "server/index.js", args: ["server"], envKey: "CHRYSALIS_API_PORT", port: 4274 },
@@ -121,8 +124,20 @@ function readJsonBody(request, maxBytes = MAX_LOGIN_BODY_BYTES) {
   });
 }
 
-function checkHealth(service, attempt = 0) {
-  return new Promise((resolveHealth, rejectHealth) => {
+function wait(milliseconds) {
+  return new Promise((resolveWait) => setTimeout(resolveWait, milliseconds));
+}
+
+function probeHealth(service, timeoutMs) {
+  return new Promise((resolveHealth) => {
+    let settled = false;
+
+    const finish = (healthy) => {
+      if (settled) return;
+      settled = true;
+      resolveHealth(healthy);
+    };
+
     const request = httpRequest(
       {
         hostname: "127.0.0.1",
@@ -131,37 +146,41 @@ function checkHealth(service, attempt = 0) {
         method: "GET",
       },
       (response) => {
+        const healthy = response.statusCode === 200;
         response.resume();
-        if (response.statusCode === 200) {
-          resolveHealth();
-          return;
-        }
-        retryHealth(service, attempt, rejectHealth);
+        response.on("end", () => finish(healthy));
+        response.on("error", () => finish(false));
       }
     );
 
-    request.setTimeout(1000, () => {
+    request.setTimeout(timeoutMs, () => {
       request.destroy();
-      retryHealth(service, attempt, rejectHealth);
+      finish(false);
     });
-    request.on("error", () => retryHealth(service, attempt, rejectHealth));
+
+    request.on("error", () => finish(false));
     request.end();
   });
 }
 
-function retryHealth(service, attempt, rejectHealth) {
-  if (attempt >= 30) {
-    rejectHealth(
-      new Error(`${service.name} service did not become ready within 30 seconds.`)
-    );
-    return;
+async function checkHealth(service) {
+  const deadline = Date.now() + HEALTH_CHECK_MAX_WAIT_MS;
+
+  while (Date.now() < deadline) {
+    const remainingMs = deadline - Date.now();
+    const timeoutMs = Math.min(HEALTH_CHECK_TIMEOUT_MS, remainingMs);
+
+    if (await probeHealth(service, timeoutMs)) {
+      return;
+    }
+
+    const retryMs = Math.min(HEALTH_CHECK_RETRY_MS, deadline - Date.now());
+    if (retryMs > 0) await wait(retryMs);
   }
 
-  setTimeout(() => {
-    checkHealth(service, attempt + 1)
-      .then(() => undefined)
-      .catch(rejectHealth);
-  }, 1000);
+  throw new Error(
+    `${service.name} service did not become ready within ${HEALTH_CHECK_MAX_WAIT_MS / 1000} seconds.`
+  );
 }
 
 function spawnService(service) {
