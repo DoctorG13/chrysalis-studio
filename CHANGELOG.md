@@ -14,7 +14,7 @@ All notable changes to Chrysalis are recorded here.
 - Added database inspection and backup CLI commands.
 - Added a local API health endpoint for database status.
 - Added a minimum Node.js requirement of 24.15.0 for the built-in SQLite runtime.
-- Protected the local `data/` directory from Git so client databases and backups are never committed.
+- Protected the application data directory from Git so client databases and backups are never committed.
 - Added a safe legacy `chrysalis-clients` JSON importer.
 - Added deterministic IDs so a repeated import does not create duplicate records.
 - Added a pre-import SQLite backup.
@@ -180,3 +180,15 @@ Cancelled
 - Added a server-side `POST /api/auth/logout` action from the account menu.
 - Added logout progress and error feedback without silently discarding a failed sign-out request.
 - Reloads the application after a successful logout so the authentication gate immediately returns the user to the secure login screen.
+
+---
+
+## Production Gateway Health Check Reliability
+
+### Fixed
+
+- Replaced the recursive production-service health-check retry implementation with deterministic polling.
+- Added a single-settlement guard for each health probe so timeout, error and response events cannot create competing retry chains.
+- Added an explicit 30-second readiness deadline for each backend service.
+- Added a short retry interval so the public gateway starts promptly once all backend services are healthy.
+- Preserved the existing production gateway, authentication, proxying, static serving and graceful shutdown behaviour.
