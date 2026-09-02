@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const TEMP_BACKUP_MAX_AGE_DAYS = 30;
 const TEMP_BACKUP_WARNING_DAYS = 3;
@@ -53,6 +53,7 @@ export default function Header({
   onSearch,
   isDemoMode = false,
   onToggleDemo,
+  user = "",
 }) {
   const [backupWarning, setBackupWarning] =
     useState(null);
@@ -62,6 +63,15 @@ export default function Header({
 
   const [notificationDismissed, setNotificationDismissed] =
     useState(false);
+
+  const [accountOpen, setAccountOpen] =
+    useState(false);
+
+  const [isLoggingOut, setIsLoggingOut] =
+    useState(false);
+
+  const [logoutError, setLogoutError] =
+    useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -142,6 +152,43 @@ export default function Header({
   function dismissBackupWarning() {
     setNotificationDismissed(true);
     setNotificationOpen(false);
+  }
+
+  function openAccountMenu() {
+    setLogoutError("");
+    setAccountOpen((current) => !current);
+  }
+
+  async function handleLogout() {
+    if (isLoggingOut) return;
+
+    setLogoutError("");
+    setIsLoggingOut(true);
+
+    try {
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+
+        throw new Error(
+          payload?.error || "Unable to sign out."
+        );
+      }
+
+      window.location.reload();
+    } catch (error) {
+      setIsLoggingOut(false);
+      setLogoutError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out."
+      );
+    }
   }
 
   const warningDays =
@@ -481,11 +528,114 @@ export default function Header({
 
           <button
             type="button"
+            onClick={openAccountMenu}
             style={iconButton}
-            aria-label="User profile"
+            aria-label="Account menu"
+            title="Account"
+            aria-expanded={accountOpen}
+            aria-haspopup="menu"
           >
             👤
           </button>
+
+          {/* =================================================
+              ACCOUNT MENU
+          ================================================== */}
+          {accountOpen && (
+            <div
+              role="menu"
+              aria-label="Account"
+              style={{
+                position: "absolute",
+                top: 56,
+                right: 0,
+                width: 250,
+                maxWidth: "calc(100vw - 40px)",
+                background: "#FFFFFF",
+                border: "1px solid #E5E5E5",
+                borderRadius: 14,
+                boxShadow:
+                  "0 16px 40px rgba(30,35,40,.16)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  padding: "15px 16px",
+                  borderBottom: "1px solid #EEEEEE",
+                }}
+              >
+                <div
+                  style={{
+                    color: "#777777",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.7,
+                    marginBottom: 5,
+                  }}
+                >
+                  Signed in as
+                </div>
+
+                <div
+                  style={{
+                    color: "#2F3A3F",
+                    fontSize: 14,
+                    fontWeight: 700,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {user || "Authenticated user"}
+                </div>
+              </div>
+
+              {logoutError && (
+                <div
+                  role="alert"
+                  style={{
+                    margin: "12px 12px 0",
+                    padding: "9px 10px",
+                    borderRadius: 8,
+                    border: "1px solid #E5B5B5",
+                    background: "#FFF4F4",
+                    color: "#8B2E2E",
+                    fontSize: 12,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {logoutError}
+                </div>
+              )}
+
+              <div style={{ padding: 12 }}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  style={{
+                    width: "100%",
+                    minHeight: 42,
+                    border: "1px solid #E5D1D7",
+                    borderRadius: 9,
+                    background: "#FFF8FA",
+                    color: "#8B1E3F",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: isLoggingOut
+                      ? "wait"
+                      : "pointer",
+                    opacity: isLoggingOut ? 0.75 : 1,
+                  }}
+                >
+                  {isLoggingOut ? "Signing out..." : "Log out"}
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* =================================================
               NOTIFICATION PANEL
@@ -578,8 +728,7 @@ export default function Header({
                         borderRadius:
                           "50%",
                         display: "flex",
-                        alignItems:
-                          "center",
+                        alignItems: "center",
                         justifyContent:
                           "center",
                         background:
@@ -665,8 +814,7 @@ export default function Header({
                           borderRadius: 9,
                           background:
                             "#FFFFFF",
-                          color:
-                            "#6B4F12",
+                          color: "#6B4F12",
                           padding:
                             "8px 12px",
                           fontSize: 12,
