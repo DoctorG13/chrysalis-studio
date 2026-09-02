@@ -192,3 +192,14 @@ Cancelled
 - Added an explicit 30-second readiness deadline for each backend service.
 - Added a short retry interval so the public gateway starts promptly once all backend services are healthy.
 - Preserved the existing production gateway, authentication, proxying, static serving and graceful shutdown behaviour.
+
+---
+
+## Production Session Revocation
+
+### Fixed
+
+- Added server-side session revocation when a user logs out.
+- Prevented a previously issued session token from being replayed after logout.
+- Added automatic cleanup of expired revoked-session entries.
+- Preserved the existing Secure, HttpOnly and SameSite=Strict cookie configuration.
