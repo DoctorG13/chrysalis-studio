@@ -7,10 +7,12 @@ import {
   allowLoginAttempt,
   authenticateLogin,
   clearExpiredLoginAttempts,
+  clearExpiredRevokedSessions,
   clearLoginAttempts,
   createLoginCookie,
   createLogoutCookie,
   getAuthenticatedUser,
+  revokeSession,
   validateAuthConfiguration,
 } from "./auth.js";
 
@@ -52,6 +54,7 @@ let gateway = null;
 let shuttingDown = false;
 let authConfig = null;
 let loginCleanupTimer = null;
+let revokedSessionCleanupTimer = null;
 
 function log(message) {
   console.log(`[Chrysalis production] ${message}`);
@@ -478,6 +481,8 @@ function createGateway() {
         return;
       }
 
+      revokeSession(request);
+
       sendJson(
         response,
         200,
@@ -528,6 +533,7 @@ function shutdown(code = 0) {
   shuttingDown = true;
 
   if (loginCleanupTimer) clearInterval(loginCleanupTimer);
+  if (revokedSessionCleanupTimer) clearInterval(revokedSessionCleanupTimer);
 
   log("Stopping production gateway and backend services...");
 
@@ -550,6 +556,10 @@ async function main() {
   }
 
   loginCleanupTimer = setInterval(clearExpiredLoginAttempts, 5 * 60 * 1000);
+  revokedSessionCleanupTimer = setInterval(
+    clearExpiredRevokedSessions,
+    5 * 60 * 1000
+  );
 
   for (const service of SERVICES) spawnService(service);
   await Promise.all(SERVICES.map((service) => checkHealth(service)));
