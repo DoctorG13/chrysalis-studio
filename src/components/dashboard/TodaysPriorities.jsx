@@ -1,132 +1,118 @@
-
-247
-248
-249
-250
-251
-252
-253
-254
-255
-256
-257
-258
-259
-260
-261
-262
-263
-264
-265
-266
-267
-268
-269
-270
-271
-272
-273
-274
-275
-276
-277
-278
-279
-280
-281
-282
-283
-284
-285
-286
-287
-288
-289
-290
-291
-292
-293
-294
-295
-296
-297
-298
-299
-300
-301
-302
-303
-304
-305
-306
-307
-308
-309
-310
-311
 import Card from "../common/Card";
-  },
-  attention: {
-    border: "#CA8A04",
-    background: "#FEFCE8",
-    text: "#854D0E",
-  },
-  info: {
-    border: "#2563EB",
-    background: "#EFF6FF",
-    text: "#1D4ED8",
-  },
-};
+import EmptyState from "../common/EmptyState";
 
-function getOutstanding(job) {
-  const total = Number(
-    job.price ??
-      job.total ??
-      job.quoteTotal ??
-      0
-  );
+import {
+  getAppointmentsToday,
+  getJobsDueThisWeek,
+  getOutstandingPayments,
+} from "../../utils/dashboard";
 
-  const payments = Array.isArray(job.payments)
-    ? job.payments
-    : [];
+export default function TodaysPriorities({
+  clients = [],
+}) {
+  const appointments =
+    getAppointmentsToday(clients);
 
-  const totalPaid = payments.reduce(
-    (sum, payment) =>
-      sum + Number(payment.amount || 0),
-    0
-  );
+  const dueJobs =
+    getJobsDueThisWeek(clients);
 
-  return Math.max(total - totalPaid, 0);
-}
+  const outstanding =
+    getOutstandingPayments(clients);
 
-function startOfDay(date) {
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
-}
+  const priorities = [];
 
-function sameDay(a, b) {
+  if (appointments.length > 0) {
+    priorities.push({
+      icon: "📅",
+      title: `${appointments.length} appointment${
+        appointments.length === 1 ? "" : "s"
+      } today`,
+      colour: "#2563EB",
+    });
+  }
+
+  if (dueJobs.length > 0) {
+    priorities.push({
+      icon: "🧵",
+      title: `${dueJobs.length} job${
+        dueJobs.length === 1 ? "" : "s"
+      } due this week`,
+      colour: "#EA580C",
+    });
+  }
+
+  if (outstanding > 0) {
+    priorities.push({
+      icon: "💰",
+      title: `$${outstanding.toFixed(
+        2
+      )} outstanding`,
+      colour: "#16A34A",
+    });
+  }
+
   return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
+    <Card title="Today's Priorities">
+      {priorities.length === 0 ? (
+        <EmptyState
+          icon="🎉"
+          title="You're all caught up!"
+          message="There are no urgent priorities today."
+        />
+      ) : (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+          }}
+        >
+          {priorities.map(
+            (priority, index) => (
+              <PriorityRow
+                key={index}
+                {...priority}
+              />
+            )
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
-function differenceInDays(a, b) {
-  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+function PriorityRow({
+  icon,
+  title,
+  colour,
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+        padding: 16,
+        borderLeft: `5px solid ${colour}`,
+        background: "#F9FAFB",
+        borderRadius: 8,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 28,
+        }}
+      >
+        {icon}
+      </div>
 
-  return Math.round(
-    (a.getTime() - b.getTime()) /
-      millisecondsPerDay
+      <div
+        style={{
+          fontWeight: 600,
+        }}
+      >
+        {title}
+      </div>
+    </div>
   );
-}
-
-function formatDate(date) {
-  return date.toLocaleDateString("en-AU", {
-    day: "numeric",
-    month: "short",
-  });
 }
