@@ -3,7 +3,7 @@ import { useState } from "react";
 import Button from "../common/Button";
 import TextInput from "../common/TextInput";
 
-import { createJob } from "../../models/Job";
+import { createJob } from "../../models/job";
 
 const selectStyle = {
   width: "100%",
