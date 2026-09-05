@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
+
 import Card from "../common/Card";
+import { getPayments } from "../../services/paymentApi";
 
 function getClientJobs(client) {
   return Array.isArray(client?.jobs) ? client.jobs.filter(Boolean) : [];
@@ -13,12 +16,12 @@ function getActiveJobs(jobs) {
   );
 }
 
-function getOutstanding(jobs) {
+function getStoredOutstanding(jobs) {
   return jobs.reduce((total, job) => {
     const balance = Number(
-      job.balance ??
-        job.outstanding ??
-        (Number(job.price || 0) - Number(job.deposit || 0))
+      job?.balance ??
+        job?.outstanding ??
+        (Number(job?.price || 0) - Number(job?.deposit || 0))
     );
 
     return total + Math.max(0, Number.isFinite(balance) ? balance : 0);
@@ -82,9 +85,71 @@ export default function ClientCard({
 }) {
   const jobs = getClientJobs(client);
   const activeJobs = getActiveJobs(jobs);
-  const outstanding = getOutstanding(jobs);
+  const [outstanding, setOutstanding] = useState(() => {
+    if (!jobs.length) return 0;
+    return null;
+  });
   const nextAppointment = getNextAppointment(client);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadOutstanding() {
+      if (!jobs.length) {
+        setOutstanding(0);
+        return;
+      }
+
+      try {
+        const paymentsByJob = await Promise.all(
+          jobs.map(async (job) => {
+            if (!job?.id) return [];
+            return getPayments(job.id);
+          })
+        );
+
+        const totalPaid = paymentsByJob.reduce(
+          (total, payments) =>
+            total +
+            payments.reduce(
+              (jobTotal, payment) =>
+                jobTotal + (Number(payment?.amount) || 0),
+              0
+            ),
+          0
+        );
+
+        const totalQuoted = jobs.reduce(
+          (total, job) =>
+            total + (Number(job?.price) || 0),
+          0
+        );
+
+        if (active) {
+          setOutstanding(
+            Math.max(0, totalQuoted - totalPaid)
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load client payments for ClientCard.",
+          error
+        );
+
+        if (active) {
+          setOutstanding(getStoredOutstanding(jobs));
+        }
+      }
+    }
+
+    loadOutstanding();
+
+    return () => {
+      active = false;
+    };
+  }, [client?.id, jobs.length]);
+
+  const displayedOutstanding = outstanding ?? 0;
   const primaryJob = activeJobs[0] || jobs[0] || null;
   const additionalActiveJobs = Math.max(0, activeJobs.length - 1);
 
@@ -163,14 +228,14 @@ export default function ClientCard({
                     : "No appointment"}
                 </span>
 
-                {outstanding > 0 && (
+                {displayedOutstanding > 0 && (
                   <span
                     style={{
                       color: "#8B1E3F",
                       fontWeight: 700,
                     }}
                   >
-                    · 💰 ${outstanding.toFixed(2)} outstanding
+                    · 💰 ${displayedOutstanding.toFixed(2)} outstanding
                   </span>
                 )}
               </div>
