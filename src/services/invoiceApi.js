@@ -1,4 +1,4 @@
-const BASE_URL = "http://127.0.0.1:4181/api/invoices";
+const BASE_URL = "/api/invoices";
 
 async function request(path = "", options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
