@@ -224,3 +224,14 @@ Cancelled
 - Moved `ChrysalisProvider` mounting inside the authenticated application gate.
 - Prevented the provider from attempting its initial Client, Job and Appointment API loads before the production session has been established.
 - Ensured the application loads persistent business data only after authentication succeeds.
+
+---
+
+## Authoritative Payment Balances
+
+### Fixed
+
+- Changed Job and Client cards to load payment records from the SQLite-backed Payment API when calculating outstanding balances.
+- Prevented cards from treating the full quoted job price as outstanding when payments are stored separately from the Job record.
+- Kept the existing fallback balance calculation for resilience if the Payment API is temporarily unavailable.
+- Aligned list and card balance displays with the authoritative payment history shown in the Job Workspace.
