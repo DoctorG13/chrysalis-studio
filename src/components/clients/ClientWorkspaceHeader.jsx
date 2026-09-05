@@ -11,14 +11,14 @@ export default function ClientWorkspaceHeader({
   const { closeWorkspace } = useChrysalis();
   const [outstanding, setOutstanding] = useState(0);
 
-  if (!client) return null;
-
-  // Use the authoritative jobs collection.
-  // Do not use client.jobs because that relationship can become stale.
   const clientJobs = jobs.filter(
     (job) =>
-      String(job.clientId) === String(client.id)
+      String(job.clientId) === String(client?.id)
   );
+
+  const clientJobIds = clientJobs
+    .map((job) => String(job.id))
+    .join("|");
 
   const activeJobs = clientJobs.filter(
     (job) =>
@@ -31,7 +31,7 @@ export default function ClientWorkspaceHeader({
     let active = true;
 
     async function loadOutstanding() {
-      if (clientJobs.length === 0) {
+      if (!clientJobs.length) {
         setOutstanding(0);
         return;
       }
@@ -77,7 +77,11 @@ export default function ClientWorkspaceHeader({
     return () => {
       active = false;
     };
-  }, [clientJobs]);
+    // The joined IDs are a stable representation of the job set.
+    // Payment changes are persisted and reflected when the workspace is reopened.
+  }, [clientJobIds]);
+
+  if (!client) return null;
 
   const upcomingAppointments = [...appointments]
     .filter((appointment) => {
