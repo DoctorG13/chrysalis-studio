@@ -5,6 +5,12 @@ const TYPE_STYLES = {
     colour: "#4F46E5",
   },
 
+  workflow: {
+    icon: "🔄",
+    background: "#FFF5F7",
+    colour: "#8B1E3F",
+  },
+
   status: {
     icon: "🔄",
     background: "#EFF6FF",
@@ -42,15 +48,9 @@ const TYPE_STYLES = {
   },
 };
 
-export default function JobTimeline({
-  job,
-}) {
-  const timeline = [
-    ...(job.timeline || []),
-  ].sort(
-    (a, b) =>
-      new Date(b.date) -
-      new Date(a.date)
+export default function JobTimeline({ job }) {
+  const timeline = [...(job.timeline || [])].sort(
+    (a, b) => new Date(b.date) - new Date(a.date)
   );
 
   return (
@@ -60,16 +60,10 @@ export default function JobTimeline({
         border: "1px solid #E5E7EB",
         borderRadius: 18,
         padding: 24,
-        boxShadow:
-          "0 2px 10px rgba(0,0,0,0.03)",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.03)",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          marginBottom: 22,
-        }}
-      >
+      <div style={{ marginBottom: 22 }}>
         <div
           style={{
             fontSize: 13,
@@ -83,26 +77,15 @@ export default function JobTimeline({
           Timeline
         </div>
 
-        <div
-          style={{
-            fontSize: 14,
-            color: "#777",
-          }}
-        >
-          A history of activity and changes
-          for this job.
+        <div style={{ fontSize: 14, color: "#777" }}>
+          A history of activity and changes for this job.
         </div>
       </div>
 
       {timeline.length === 0 ? (
         <EmptyTimeline />
       ) : (
-        <div
-          style={{
-            position: "relative",
-          }}
-        >
-          {/* Timeline line */}
+        <div style={{ position: "relative" }}>
           <div
             style={{
               position: "absolute",
@@ -121,17 +104,12 @@ export default function JobTimeline({
               gap: 18,
             }}
           >
-            {timeline.map(
-              (event, index) => (
-                <TimelineItem
-                  key={
-                    event.id ||
-                    `${event.date}-${index}`
-                  }
-                  event={event}
-                />
-              )
-            )}
+            {timeline.map((event, index) => (
+              <TimelineItem
+                key={event.id || `${event.date}-${index}`}
+                event={event}
+              />
+            ))}
           </div>
         </div>
       )}
@@ -139,17 +117,11 @@ export default function JobTimeline({
   );
 }
 
-function TimelineItem({
-  event,
-}) {
-  const style =
-    TYPE_STYLES[event.type] ||
-    TYPE_STYLES.note;
-
-  const formattedDate =
-    formatTimelineDate(
-      event.date
-    );
+function TimelineItem({ event }) {
+  const style = TYPE_STYLES[event.type] || TYPE_STYLES.note;
+  const formattedDate = formatTimelineDate(event.date);
+  const isWorkflowEvent = event.type === "workflow";
+  const transition = getWorkflowTransition(event);
 
   return (
     <div
@@ -160,18 +132,14 @@ function TimelineItem({
         alignItems: "flex-start",
       }}
     >
-      {/* Event icon */}
       <div
         style={{
           width: 38,
           height: 38,
           borderRadius: "50%",
-          background:
-            style.background,
-          border:
-            "3px solid #FFFFFF",
-          boxShadow:
-            "0 0 0 1px #E5E7EB",
+          background: style.background,
+          border: "3px solid #FFFFFF",
+          boxShadow: `0 0 0 1px ${style.colour}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -183,14 +151,14 @@ function TimelineItem({
         {style.icon}
       </div>
 
-      {/* Event content */}
       <div
         style={{
           flex: 1,
           minWidth: 0,
-          background: "#F8F9FA",
-          border:
-            "1px solid #E8EAED",
+          background: isWorkflowEvent ? "#FFF9FA" : "#F8F9FA",
+          border: isWorkflowEvent
+            ? "1px solid #E7B8C5"
+            : "1px solid #E8EAED",
           borderRadius: 12,
           padding: "13px 14px",
         }}
@@ -198,25 +166,35 @@ function TimelineItem({
         <div
           style={{
             display: "flex",
-            justifyContent:
-              "space-between",
+            justifyContent: "space-between",
             alignItems: "flex-start",
             gap: 12,
-            marginBottom:
-              event.description
-                ? 6
-                : 0,
+            marginBottom: isWorkflowEvent || event.description ? 8 : 0,
           }}
         >
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#2F3A3F",
-            }}
-          >
-            {event.title ||
-              "Job activity"}
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#2F3A3F",
+              }}
+            >
+              {getEventTitle(event)}
+            </div>
+
+            <div
+              style={{
+                marginTop: 3,
+                fontSize: 10,
+                fontWeight: 800,
+                letterSpacing: 0.8,
+                textTransform: "uppercase",
+                color: style.colour,
+              }}
+            >
+              {isWorkflowEvent ? "Workflow" : event.type || "Activity"}
+            </div>
           </div>
 
           {formattedDate && (
@@ -224,8 +202,7 @@ function TimelineItem({
               style={{
                 fontSize: 11,
                 color: "#888",
-                whiteSpace:
-                  "nowrap",
+                whiteSpace: "nowrap",
               }}
             >
               {formattedDate}
@@ -233,20 +210,96 @@ function TimelineItem({
           )}
         </div>
 
-        {event.description && (
-          <div
-            style={{
-              fontSize: 13,
-              lineHeight: 1.5,
-              color: "#666",
-            }}
-          >
-            {event.description}
-          </div>
+        {isWorkflowEvent && transition ? (
+          <WorkflowTransition transition={transition} />
+        ) : (
+          event.description && (
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: 1.5,
+                color: "#666",
+              }}
+            >
+              {event.description}
+            </div>
+          )
         )}
       </div>
     </div>
   );
+}
+
+function WorkflowTransition({ transition }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: 8,
+      }}
+    >
+      <StageBadge label={transition.from} muted />
+
+      <span
+        aria-hidden="true"
+        style={{
+          color: "#8B1E3F",
+          fontSize: 17,
+          fontWeight: 800,
+          lineHeight: 1,
+        }}
+      >
+        →
+      </span>
+
+      <StageBadge label={transition.to} />
+    </div>
+  );
+}
+
+function StageBadge({ label, muted = false }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        minHeight: 28,
+        padding: "4px 10px",
+        borderRadius: 999,
+        background: muted ? "#F1F2F3" : "#8B1E3F",
+        color: muted ? "#5F686E" : "#FFFFFF",
+        border: muted ? "1px solid #D9DDE1" : "1px solid #8B1E3F",
+        fontSize: 12,
+        fontWeight: 800,
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function getEventTitle(event) {
+  if (event.type === "workflow") {
+    return event.title || "Workflow Status Changed";
+  }
+
+  return event.title || "Job activity";
+}
+
+function getWorkflowTransition(event) {
+  const description = String(event.description || "");
+  const separatorIndex = description.indexOf("→");
+
+  if (separatorIndex === -1) return null;
+
+  const from = description.slice(0, separatorIndex).trim();
+  const to = description.slice(separatorIndex + 1).trim();
+
+  if (!from || !to) return null;
+
+  return { from, to };
 }
 
 function EmptyTimeline() {
@@ -256,19 +309,11 @@ function EmptyTimeline() {
         padding: 24,
         borderRadius: 12,
         background: "#F8F9FA",
-        border:
-          "1px solid #E8EAED",
+        border: "1px solid #E8EAED",
         textAlign: "center",
       }}
     >
-      <div
-        style={{
-          fontSize: 28,
-          marginBottom: 8,
-        }}
-      >
-        🕒
-      </div>
+      <div style={{ fontSize: 28, marginBottom: 8 }}>🕒</div>
 
       <div
         style={{
@@ -281,42 +326,27 @@ function EmptyTimeline() {
         No timeline activity
       </div>
 
-      <div
-        style={{
-          fontSize: 13,
-          color: "#888",
-        }}
-      >
-        Activity for this job will appear
-        here as it progresses.
+      <div style={{ fontSize: 13, color: "#888" }}>
+        Activity for this job will appear here as it progresses.
       </div>
     </div>
   );
 }
 
-function formatTimelineDate(
-  value
-) {
+function formatTimelineDate(value) {
   if (!value) return "";
 
   const date = new Date(value);
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return value;
   }
 
-  return date.toLocaleString(
-    "en-AU",
-    {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }
-  );
+  return date.toLocaleString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
