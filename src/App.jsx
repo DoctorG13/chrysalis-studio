@@ -16,7 +16,10 @@ import SettingsPage from "./pages/SettingsPage";
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import SlidePanel from "./components/common/SlidePanel";
 
-import { useChrysalis } from "./context/ChrysalisProvider";
+import {
+  ChrysalisProvider,
+  useChrysalis,
+} from "./context/ChrysalisProvider";
 import { searchStudio } from "./utils/search";
 
 const DEFAULT_BRANDING = {
@@ -423,7 +426,9 @@ export default function App() {
   return (
     <AuthenticationGate>
       {(authenticatedUser) => (
-        <ChrysalisApplication authenticatedUser={authenticatedUser} />
+        <ChrysalisProvider>
+          <ChrysalisApplication authenticatedUser={authenticatedUser} />
+        </ChrysalisProvider>
       )}
     </AuthenticationGate>
   );
