@@ -1,4 +1,4 @@
-const PAYMENT_API_BASE = "http://127.0.0.1:4178/api";
+const PAYMENT_API_BASE = "/api";
 
 async function request(path, options = {}) {
   const response = await fetch(`${PAYMENT_API_BASE}${path}`, {
