@@ -1,4 +1,4 @@
-const MEASUREMENT_API_BASE = "http://127.0.0.1:4177/api";
+const MEASUREMENT_API_BASE = "/api";
 
 async function request(path, options = {}) {
   const response = await fetch(`${MEASUREMENT_API_BASE}${path}`, {
