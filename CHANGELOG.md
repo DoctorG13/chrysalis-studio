@@ -4,6 +4,21 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Job Save Confirmation & Workflow Event Cleanup
+
+### Added
+
+- Added a visible success confirmation after a Job is successfully saved.
+- Added save error feedback when a Job save fails.
+- Save confirmation automatically clears after a short period.
+
+### Fixed
+
+- Removed the client-side duplicate `Status Changed` timeline event when a workflow status changes.
+- Workflow status changes now rely on the persistent automatic workflow timeline event created by the Job API.
+
+---
+
 ## Job Workflow Automation
 
 ### Added
