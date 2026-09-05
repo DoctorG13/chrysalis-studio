@@ -12,11 +12,13 @@ export default function JobsWorkspace({
   onClose,
 }) {
   const editorRef = useRef(null);
+  const feedbackTimerRef = useRef(null);
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState(null);
 
   const clientLookup = useMemo(() => {
     return new Map(
@@ -82,6 +84,28 @@ export default function JobsWorkspace({
     }
   }, [selectedJob]);
 
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  function showSaveFeedback(type, message) {
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+
+    setSaveFeedback({ type, message });
+
+    if (type === "success") {
+      feedbackTimerRef.current = setTimeout(() => {
+        setSaveFeedback(null);
+      }, 3000);
+    }
+  }
+
   async function saveJob(updatedJob) {
     const existing =
       jobs.find((job) => job.id === updatedJob.id) ||
@@ -89,15 +113,7 @@ export default function JobsWorkspace({
 
     const timeline = [...(updatedJob.timeline || [])];
 
-    if (existing.status !== updatedJob.status) {
-      timeline.push({
-        id: crypto.randomUUID(),
-        type: "status",
-        title: "Status Changed",
-        description: `${existing.status || "Unknown"} → ${updatedJob.status}`,
-        date: new Date().toISOString(),
-      });
-    } else {
+    if (existing.status === updatedJob.status) {
       timeline.push({
         id: crypto.randomUUID(),
         type: "note",
@@ -108,6 +124,7 @@ export default function JobsWorkspace({
     }
 
     setIsSaving(true);
+    setSaveFeedback(null);
 
     try {
       await updateJob({
@@ -115,6 +132,19 @@ export default function JobsWorkspace({
         timeline,
         updatedAt: new Date().toISOString(),
       });
+
+      showSaveFeedback(
+        "success",
+        "Job saved successfully."
+      );
+    } catch (error) {
+      showSaveFeedback(
+        "error",
+        error instanceof Error
+          ? error.message
+          : "Unable to save job."
+      );
+      throw error;
     } finally {
       setIsSaving(false);
     }
@@ -122,6 +152,7 @@ export default function JobsWorkspace({
 
   async function handleDeleteJob(jobId) {
     setIsSaving(true);
+    setSaveFeedback(null);
 
     try {
       await deleteJob(jobId);
@@ -232,6 +263,40 @@ export default function JobsWorkspace({
             onDelete={handleDeleteJob}
             onCancel={() => setSelectedJobId(null)}
           />
+        </div>
+      )}
+
+      {saveFeedback && (
+        <div
+          role="status"
+          style={{
+            position: "fixed",
+            right: 24,
+            bottom: 88,
+            zIndex: 100,
+            maxWidth: 360,
+            padding: "12px 16px",
+            borderRadius: 10,
+            background:
+              saveFeedback.type === "success"
+                ? "#ECFDF5"
+                : "#FEF2F2",
+            border:
+              saveFeedback.type === "success"
+                ? "1px solid #A7F3D0"
+                : "1px solid #FECACA",
+            color:
+              saveFeedback.type === "success"
+                ? "#166534"
+                : "#991B1B",
+            boxShadow:
+              "0 8px 24px rgba(0,0,0,0.12)",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          {saveFeedback.type === "success" ? "✓ " : "⚠ "}
+          {saveFeedback.message}
         </div>
       )}
     </div>
