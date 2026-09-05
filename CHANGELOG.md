@@ -214,3 +214,13 @@ Cancelled
 - Changed Client, Job, Appointment, Measurement, Payment, Asset, Timeline, Invoice and Quote API services to use same-origin `/api` routes.
 - Preserved the existing Vite development proxy architecture and production gateway routing.
 - Allows the deployed frontend to reach the persistent Railway-backed application data through the authenticated production gateway.
+
+---
+
+## Authenticated Data Loading
+
+### Fixed
+
+- Moved `ChrysalisProvider` mounting inside the authenticated application gate.
+- Prevented the provider from attempting its initial Client, Job and Appointment API loads before the production session has been established.
+- Ensured the application loads persistent business data only after authentication succeeds.
