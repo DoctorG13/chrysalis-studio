@@ -203,3 +203,14 @@ Cancelled
 - Prevented a previously issued session token from being replayed after logout.
 - Added automatic cleanup of expired revoked-session entries.
 - Preserved the existing Secure, HttpOnly and SameSite=Strict cookie configuration.
+
+---
+
+## Production API Routing
+
+### Fixed
+
+- Removed browser-side dependencies on container-internal `127.0.0.1` API ports from the production data services.
+- Changed Client, Job, Appointment, Measurement, Payment, Asset, Timeline, Invoice and Quote API services to use same-origin `/api` routes.
+- Preserved the existing Vite development proxy architecture and production gateway routing.
+- Allows the deployed frontend to reach the persistent Railway-backed application data through the authenticated production gateway.
