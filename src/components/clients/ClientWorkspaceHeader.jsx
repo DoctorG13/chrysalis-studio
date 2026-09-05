@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+
+import { getPayments } from "../../services/paymentApi";
 import { useChrysalis } from "../../context/ChrysalisProvider";
 
 export default function ClientWorkspaceHeader({
@@ -6,6 +9,7 @@ export default function ClientWorkspaceHeader({
   appointments = [],
 }) {
   const { closeWorkspace } = useChrysalis();
+  const [outstanding, setOutstanding] = useState(0);
 
   if (!client) return null;
 
@@ -23,11 +27,57 @@ export default function ClientWorkspaceHeader({
       )
   ).length;
 
-  const outstanding = clientJobs.reduce(
-    (total, job) =>
-      total + (Number(job.balance) || 0),
-    0
-  );
+  useEffect(() => {
+    let active = true;
+
+    async function loadOutstanding() {
+      if (clientJobs.length === 0) {
+        setOutstanding(0);
+        return;
+      }
+
+      try {
+        const paymentGroups = await Promise.all(
+          clientJobs.map(async (job) => {
+            const payments = await getPayments(job.id);
+            const totalPaid = payments.reduce(
+              (total, payment) =>
+                total + (Number(payment.amount) || 0),
+              0
+            );
+
+            const quotedPrice = Number(job.price) || 0;
+
+            return Math.max(0, quotedPrice - totalPaid);
+          })
+        );
+
+        if (active) {
+          setOutstanding(
+            paymentGroups.reduce(
+              (total, balance) => total + balance,
+              0
+            )
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load client outstanding balance.",
+          error
+        );
+
+        if (active) {
+          setOutstanding(0);
+        }
+      }
+    }
+
+    loadOutstanding();
+
+    return () => {
+      active = false;
+    };
+  }, [clientJobs]);
 
   const upcomingAppointments = [...appointments]
     .filter((appointment) => {
@@ -106,7 +156,6 @@ export default function ClientWorkspaceHeader({
         </button>
       </div>
 
-      {/* Compact Client Snapshot */}
       <div
         style={{
           display: "flex",
