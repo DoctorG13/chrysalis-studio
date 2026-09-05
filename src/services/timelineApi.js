@@ -1,4 +1,4 @@
-const BASE_URL = "http://127.0.0.1:4180/api/timeline";
+const BASE_URL = "/api/timeline";
 
 async function request(path = "", options = {}) {
   const response = await fetch(`${BASE_URL}${path}`, {
