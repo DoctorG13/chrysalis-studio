@@ -1,6 +1,6 @@
 const API_BASE =
   import.meta.env.VITE_CHRYSALIS_API_URL ||
-  "http://127.0.0.1:4174";
+  "";
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
