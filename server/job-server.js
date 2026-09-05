@@ -265,6 +265,93 @@ function normalizeJob(input, existing = null) {
   };
 }
 
+function appendTimelineEvent(database, table, id, event) {
+  const row = database
+    .prepare(`SELECT data_json FROM ${table} WHERE id = ?`)
+    .get(id);
+
+  if (!row) return;
+
+  const stored = parseJson(row.data_json, {});
+  const timeline = Array.isArray(stored.timeline)
+    ? stored.timeline
+    : [];
+
+  const nextTimeline = [
+    event,
+    ...timeline.filter(
+      (item) => item?.id !== event.id
+    ),
+  ];
+
+  database
+    .prepare(`UPDATE ${table} SET data_json = ? WHERE id = ?`)
+    .run(
+      JSON.stringify({
+        ...stored,
+        timeline: nextTimeline,
+      }),
+      id
+    );
+}
+
+function createWorkflowEvent(database, job, previous = null) {
+  const statusChanged =
+    !previous || previous.status !== job.status;
+
+  if (!statusChanged) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  const event = {
+    id: crypto.randomUUID(),
+    clientId: job.clientId,
+    jobId: job.id,
+    type: "workflow",
+    title: previous
+      ? "Workflow status changed"
+      : "Job created",
+    description: previous
+      ? `${previous.status || "Unknown"} → ${job.status || "Unknown"}`
+      : `Job created at ${job.status || "Quote"}`,
+    date: now,
+  };
+
+  database
+    .prepare(
+      `INSERT INTO timeline_events
+        (id, client_id, job_id, type, title, description, date, data_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      event.id,
+      event.clientId,
+      event.jobId,
+      event.type,
+      event.title,
+      event.description,
+      event.date,
+      JSON.stringify(event)
+    );
+
+  appendTimelineEvent(
+    database,
+    "jobs",
+    job.id,
+    event
+  );
+
+  appendTimelineEvent(
+    database,
+    "clients",
+    job.clientId,
+    event
+  );
+
+  return event;
+}
+
 function saveJob(database, input, existing = null) {
   const job = normalizeJob(input, existing);
 
@@ -327,6 +414,7 @@ function saveJob(database, input, existing = null) {
       );
 
     syncJobFittings(database, job);
+    createWorkflowEvent(database, job, existing);
     database.exec("COMMIT");
   } catch (error) {
     database.exec("ROLLBACK");
