@@ -1,4 +1,4 @@
-const ASSET_API_BASE = "http://127.0.0.1:4179";
+const ASSET_API_BASE = "";
 
 async function request(path, options = {}) {
   const response = await fetch(`${ASSET_API_BASE}${path}`, {
