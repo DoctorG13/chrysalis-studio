@@ -258,21 +258,30 @@ export default function JobsWorkspace({
             paddingTop: 24,
           }}
         >
+          <JobEditor
+            job={selectedJob}
+            onSave={saveJob}
+            onDelete={handleDeleteJob}
+            onCancel={() => setSelectedJobId(null)}
+          />
+
           {saveFeedback && (
             <div
               role="status"
               aria-live="polite"
               style={{
-                position: "absolute",
-                top: 42,
-                right: 24,
-                zIndex: 50,
+                position: "fixed",
+                left: "50%",
+                bottom: 88,
+                transform: "translateX(-50%)",
+                zIndex: 100,
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "center",
                 gap: 12,
-                width: "min(430px, calc(100% - 48px))",
+                width: "min(430px, calc(100vw - 48px))",
                 boxSizing: "border-box",
-                padding: "16px 20px",
+                padding: "12px 18px",
                 borderRadius: 12,
                 background:
                   saveFeedback.type === "success"
@@ -290,6 +299,7 @@ export default function JobsWorkspace({
                   "0 10px 30px rgba(0,0,0,0.14)",
                 fontSize: 15,
                 fontWeight: 700,
+                textAlign: "center",
               }}
             >
               <span
@@ -316,13 +326,6 @@ export default function JobsWorkspace({
               <span>{saveFeedback.message}</span>
             </div>
           )}
-
-          <JobEditor
-            job={selectedJob}
-            onSave={saveJob}
-            onDelete={handleDeleteJob}
-            onCancel={() => setSelectedJobId(null)}
-          />
         </div>
       )}
     </div>
