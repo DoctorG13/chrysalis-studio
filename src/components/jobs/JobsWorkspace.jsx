@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 import JobsSection from "./JobsSection";
 import JobEditor from "./JobEditor";
@@ -162,172 +163,186 @@ export default function JobsWorkspace({
     }
   }
 
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-        padding: 10,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0 }}>Jobs Workspace</h1>
-
-          <div
+  const saveFeedbackPortal = saveFeedback
+    ? createPortal(
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: 88,
+            transform: "translateX(-50%)",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            width: "min(430px, calc(100vw - 48px))",
+            boxSizing: "border-box",
+            padding: "12px 18px",
+            borderRadius: 12,
+            background:
+              saveFeedback.type === "success"
+                ? "#ECFDF5"
+                : "#FEF2F2",
+            border:
+              saveFeedback.type === "success"
+                ? "1px solid #86EFAC"
+                : "1px solid #FCA5A5",
+            color:
+              saveFeedback.type === "success"
+                ? "#166534"
+                : "#991B1B",
+            boxShadow:
+              "0 10px 30px rgba(0,0,0,0.14)",
+            fontSize: 15,
+            fontWeight: 700,
+            textAlign: "center",
+          }}
+        >
+          <span
             style={{
-              color: "#777",
-              marginTop: 6,
+              width: 30,
+              height: 30,
+              flexShrink: 0,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "50%",
+              background:
+                saveFeedback.type === "success"
+                  ? "#16A34A"
+                  : "#DC2626",
+              color: "#FFFFFF",
+              fontSize: 18,
+              fontWeight: 800,
             }}
           >
-            Showing {filteredJobs.length} of {jobs.length} jobs
-          </div>
-        </div>
+            {saveFeedback.type === "success" ? "✓" : "!"}
+          </span>
 
-        <Button onClick={onClose}>Close</Button>
-      </div>
+          <span>{saveFeedback.message}</span>
+        </div>,
+        document.body
+      )
+    : null;
+
+  return (
+    <>
+      <style>{`
+        .jobs-workspace-job-editor [role="status"][aria-live="polite"] {
+          display: none !important;
+        }
+      `}</style>
 
       <div
         style={{
           display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
-          alignItems: "center",
+          flexDirection: "column",
+          gap: 24,
+          padding: 10,
         }}
       >
-        <input
-          placeholder="Search client, garment, reference, phone..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          style={{
-            flex: 1,
-            minWidth: 320,
-            padding: 10,
-            borderRadius: 8,
-            border: "1px solid #ccc",
-          }}
-        />
-
-        {search && (
-          <Button onClick={() => setSearch("")}>Clear</Button>
-        )}
-
-        <select
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          style={{
-            padding: 10,
-            borderRadius: 8,
-          }}
-        >
-          <option>All</option>
-          <option>New</option>
-          <option>In Progress</option>
-          <option>Ready</option>
-          <option>Completed</option>
-        </select>
-      </div>
-
-      {isSaving && (
-        <div style={{ color: "#777", fontSize: 13 }}>
-          Saving job…
-        </div>
-      )}
-
-      <JobsSection
-        jobs={filteredJobs}
-        selectedJobId={selectedJobId}
-        onOpenJob={(job) => setSelectedJobId(job.id)}
-        onNewJob={() => {}}
-      />
-
-      {selectedJob && (
         <div
-          ref={editorRef}
           style={{
-            position: "relative",
-            marginTop: 24,
-            borderTop: "1px solid #ddd",
-            paddingTop: 24,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <JobEditor
-            job={selectedJob}
-            onSave={saveJob}
-            onDelete={handleDeleteJob}
-            onCancel={() => setSelectedJobId(null)}
-          />
+          <div>
+            <h1 style={{ margin: 0 }}>Jobs Workspace</h1>
 
-          {saveFeedback && (
             <div
-              role="status"
-              aria-live="polite"
               style={{
-                position: "fixed",
-                left: "50%",
-                bottom: 88,
-                transform: "translateX(-50%)",
-                zIndex: 100,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 12,
-                width: "min(430px, calc(100vw - 48px))",
-                boxSizing: "border-box",
-                padding: "12px 18px",
-                borderRadius: 12,
-                background:
-                  saveFeedback.type === "success"
-                    ? "#ECFDF5"
-                    : "#FEF2F2",
-                border:
-                  saveFeedback.type === "success"
-                    ? "1px solid #86EFAC"
-                    : "1px solid #FCA5A5",
-                color:
-                  saveFeedback.type === "success"
-                    ? "#166534"
-                    : "#991B1B",
-                boxShadow:
-                  "0 10px 30px rgba(0,0,0,0.14)",
-                fontSize: 15,
-                fontWeight: 700,
-                textAlign: "center",
+                color: "#777",
+                marginTop: 6,
               }}
             >
-              <span
-                style={{
-                  width: 30,
-                  height: 30,
-                  flexShrink: 0,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  background:
-                    saveFeedback.type === "success"
-                      ? "#16A34A"
-                      : "#DC2626",
-                  color: "#FFFFFF",
-                  fontSize: 18,
-                  fontWeight: 800,
-                }}
-              >
-                {saveFeedback.type === "success" ? "✓" : "!"}
-              </span>
-
-              <span>{saveFeedback.message}</span>
+              Showing {filteredJobs.length} of {jobs.length} jobs
             </div>
-          )}
+          </div>
+
+          <Button onClick={onClose}>Close</Button>
         </div>
-      )}
-    </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 12,
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
+          <input
+            placeholder="Search client, garment, reference, phone..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            style={{
+              flex: 1,
+              minWidth: 320,
+              padding: 10,
+              borderRadius: 8,
+              border: "1px solid #ccc",
+            }}
+          />
+
+          {search && (
+            <Button onClick={() => setSearch("")}>Clear</Button>
+          )}
+
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            style={{
+              padding: 10,
+              borderRadius: 8,
+            }}
+          >
+            <option>All</option>
+            <option>New</option>
+            <option>In Progress</option>
+            <option>Ready</option>
+            <option>Completed</option>
+          </select>
+        </div>
+
+        {isSaving && (
+          <div style={{ color: "#777", fontSize: 13 }}>
+            Saving job…
+          </div>
+        )}
+
+        <JobsSection
+          jobs={filteredJobs}
+          selectedJobId={selectedJobId}
+          onOpenJob={(job) => setSelectedJobId(job.id)}
+          onNewJob={() => {}}
+        />
+
+        {selectedJob && (
+          <div
+            ref={editorRef}
+            className="jobs-workspace-job-editor"
+            style={{
+              position: "relative",
+              marginTop: 24,
+              borderTop: "1px solid #ddd",
+              paddingTop: 24,
+            }}
+          >
+            <JobEditor
+              job={selectedJob}
+              onSave={saveJob}
+              onDelete={handleDeleteJob}
+              onCancel={() => setSelectedJobId(null)}
+            />
+          </div>
+        )}
+      </div>
+
+      {saveFeedbackPortal}
+    </>
   );
 }
