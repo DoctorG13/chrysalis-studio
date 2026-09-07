@@ -41,8 +41,10 @@ function nextReference(database, createdAt, reserved = new Set()) {
 
   for (const row of rows) {
     const reference = String(row.reference || "");
+
     if (reference.startsWith(prefix)) {
       const suffix = Number(reference.slice(prefix.length));
+
       if (Number.isInteger(suffix) && suffix > 0) {
         used.add(suffix);
       }
@@ -50,6 +52,7 @@ function nextReference(database, createdAt, reserved = new Set()) {
   }
 
   let sequence = 1;
+
   while (used.has(sequence)) {
     sequence += 1;
   }
@@ -79,7 +82,10 @@ function updateStoredReference(database, job, reference) {
 
 export function repairAndEnforceJobReferences() {
   if (!existsSync(DB_PATH)) {
-    return { repaired: 0, databasePath: DB_PATH };
+    return {
+      repaired: 0,
+      databasePath: DB_PATH,
+    };
   }
 
   const database = new DatabaseSync(DB_PATH, {
@@ -107,7 +113,10 @@ export function repairAndEnforceJobReferences() {
       for (const job of jobs) {
         const current = String(job.reference || "").trim();
 
-        if (current && !seenReferences.has(current)) {
+        if (
+          current &&
+          !seenReferences.has(current)
+        ) {
           seenReferences.add(current);
           continue;
         }
@@ -118,16 +127,15 @@ export function repairAndEnforceJobReferences() {
           seenReferences
         );
 
-        updateStoredReference(database, job, reference);
+        updateStoredReference(
+          database,
+          job,
+          reference
+        );
+
         seenReferences.add(reference);
         repaired += 1;
       }
-
-      database.exec(`
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_jobs_reference_unique
-        ON jobs(reference)
-        WHERE reference <> '';
-      `);
 
       database.exec(`
         CREATE TRIGGER IF NOT EXISTS trg_jobs_reference_insert
@@ -147,7 +155,7 @@ export function repairAndEnforceJobReferences() {
               printf('%03d', COALESCE(MAX(
                 CASE
                   WHEN reference LIKE 'CHR-' || strftime('%d%m%Y', NEW.created_at) || '-%'
-                  THEN CAST(substr(reference, 13) AS INTEGER)
+                  THEN CAST(substr(reference, 14) AS INTEGER)
                   ELSE 0
                 END
               ), 0) + 1)
@@ -167,7 +175,56 @@ export function repairAndEnforceJobReferences() {
                 printf('%03d', COALESCE(MAX(
                   CASE
                     WHEN reference LIKE 'CHR-' || strftime('%d%m%Y', NEW.created_at) || '-%'
-                    THEN CAST(substr(reference, 13) AS INTEGER)
+                    THEN CAST(substr(reference, 14) AS INTEGER)
+                    ELSE 0
+                  END
+                ), 0) + 1)
+              FROM jobs
+              WHERE id <> NEW.id
+                AND reference LIKE 'CHR-' || strftime('%d%m%Y', NEW.created_at) || '-%'
+            )
+          )
+          WHERE id = NEW.id;
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS trg_jobs_reference_update
+        AFTER UPDATE OF reference ON jobs
+        WHEN NEW.reference = ''
+          OR EXISTS (
+            SELECT 1
+            FROM jobs
+            WHERE reference = NEW.reference
+              AND id <> NEW.id
+          )
+        BEGIN
+          UPDATE jobs
+          SET reference = (
+            SELECT 'CHR-' ||
+              strftime('%d%m%Y', NEW.created_at) || '-' ||
+              printf('%03d', COALESCE(MAX(
+                CASE
+                  WHEN reference LIKE 'CHR-' || strftime('%d%m%Y', NEW.created_at) || '-%'
+                  THEN CAST(substr(reference, 14) AS INTEGER)
+                  ELSE 0
+                END
+              ), 0) + 1)
+            FROM jobs
+            WHERE id <> NEW.id
+              AND reference LIKE 'CHR-' || strftime('%d%m%Y', NEW.created_at) || '-%'
+          ),
+          data_json = json_set(
+            CASE
+              WHEN json_valid(data_json) THEN data_json
+              ELSE '{}'
+            END,
+            '$.reference',
+            (
+              SELECT 'CHR-' ||
+                strftime('%d%m%Y', NEW.created_at) || '-' ||
+                printf('%03d', COALESCE(MAX(
+                  CASE
+                    WHEN reference LIKE 'CHR-' || strftime('%d%m%Y', NEW.created_at) || '-%'
+                    THEN CAST(substr(reference, 14) AS INTEGER)
                     ELSE 0
                   END
                 ), 0) + 1)
