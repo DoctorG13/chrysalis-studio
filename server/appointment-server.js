@@ -129,7 +129,7 @@ function normalizeAppointment(input, existing = null) {
     type: String(source.type || "Consultation"),
     date: String(source.date || ""),
     time: String(source.time || ""),
-    duration: Number(source.duration || 60),
+    duration: Math.max(5, Number(source.duration || 60)),
     location: String(source.location || ""),
     status: String(source.status || "Scheduled"),
     notes: String(source.notes || ""),
@@ -138,11 +138,73 @@ function normalizeAppointment(input, existing = null) {
   };
 }
 
+function timeToMinutes(value) {
+  const match = String(value || "09:00").match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return 9 * 60;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return 9 * 60;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function isInactiveStatus(status) {
+  return ["cancelled", "completed"].includes(
+    String(status || "").trim().toLowerCase()
+  );
+}
+
+function findAppointmentConflict(database, appointment) {
+  if (!appointment.date || isInactiveStatus(appointment.status)) {
+    return null;
+  }
+
+  const start = timeToMinutes(appointment.time);
+  const end = start + Math.max(5, Number(appointment.duration) || 60);
+
+  const rows = database
+    .prepare(
+      `SELECT * FROM appointments
+       WHERE date = ?
+         AND id <> ?
+         AND LOWER(COALESCE(status, 'Scheduled')) NOT IN ('cancelled', 'completed')
+       ORDER BY time ASC, created_at ASC, id ASC`
+    )
+    .all(appointment.date, appointment.id);
+
+  for (const row of rows) {
+    const other = rowToAppointment(row);
+    const otherStart = timeToMinutes(other.time);
+    const otherEnd = otherStart + Math.max(5, Number(other.duration) || 60);
+
+    if (start < otherEnd && end > otherStart) {
+      return other;
+    }
+  }
+
+  return null;
+}
+
+function formatTime(value) {
+  const minutes = timeToMinutes(value);
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
 function saveAppointment(database, input, existing = null) {
   const appointment = normalizeAppointment(input, existing);
 
   if (!appointment.clientId) {
     throw new Error("An appointment must have a clientId.");
+  }
+
+  if (!appointment.date) {
+    throw new Error("An appointment must have a date.");
   }
 
   const client = database
@@ -169,6 +231,33 @@ function saveAppointment(database, input, existing = null) {
         "The appointment job must belong to the appointment client."
       );
     }
+  }
+
+  const conflict = findAppointmentConflict(
+    database,
+    appointment
+  );
+
+  if (conflict) {
+    const conflictName = conflict.clientId === appointment.clientId
+      ? "this client"
+      : "another appointment";
+
+    const conflictLabel = conflict.type || "Appointment";
+
+    const error = new Error(
+      `Appointment conflict: ${conflictLabel} for ${conflictName} already starts at ${formatTime(conflict.time)}.`
+    );
+    error.code = "APPOINTMENT_CONFLICT";
+    error.conflict = {
+      id: conflict.id,
+      clientId: conflict.clientId,
+      date: conflict.date,
+      time: conflict.time,
+      duration: conflict.duration,
+      type: conflict.type,
+    };
+    throw error;
   }
 
   database
@@ -341,9 +430,17 @@ function createAppointmentServer(database) {
       });
     } catch (error) {
       console.error(error);
-      sendJson(response, 500, {
+
+      const statusCode = error?.code === "APPOINTMENT_CONFLICT"
+        ? 409
+        : 500;
+
+      sendJson(response, statusCode, {
         ok: false,
         error: error instanceof Error ? error.message : String(error),
+        ...(error?.code === "APPOINTMENT_CONFLICT"
+          ? { code: error.code, conflict: error.conflict }
+          : {}),
       });
     }
   });
