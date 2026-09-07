@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Appointment Conflict Protection
+
+### Added
+
+- Added appointment overlap detection based on date, start time and duration.
+- Cancelled and completed appointments do not block new appointments.
+- Appointment conflicts are checked in the Appointment Editor before saving.
+- The Appointment API performs the same validation server-side and returns a `409` conflict response, preventing conflicting appointments from being persisted.
+
+---
+
 ## Unique Job References
 
 ### Fixed
