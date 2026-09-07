@@ -1,5 +1,31 @@
+import { useEffect, useState } from "react";
+
 import JobCard from "./JobCard";
 import Button from "../common/Button";
+import { getPayments } from "../../services/paymentApi";
+
+function getPaymentTotal(payments) {
+  return payments.reduce(
+    (total, payment) =>
+      total + (Number(payment?.amount) || 0),
+    0
+  );
+}
+
+function getFallbackPaid(job) {
+  if (Array.isArray(job?.payments)) {
+    return getPaymentTotal(job.payments);
+  }
+
+  return Number(job?.deposit || 0);
+}
+
+function getFallbackOutstanding(job) {
+  return Math.max(
+    0,
+    Number(job?.price || 0) - getFallbackPaid(job)
+  );
+}
 
 export default function JobsSection({
   jobs = [],
@@ -7,6 +33,51 @@ export default function JobsSection({
   onNewJob,
   onOpenJob,
 }) {
+  const [paymentTotals, setPaymentTotals] = useState({});
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPaymentTotals() {
+      const entries = await Promise.all(
+        jobs
+          .filter((job) => job?.id)
+          .map(async (job) => {
+            try {
+              const payments = await getPayments(job.id);
+
+              return [
+                job.id,
+                getPaymentTotal(payments),
+              ];
+            } catch (error) {
+              console.error(
+                "Unable to load job payments for JobsSection.",
+                error
+              );
+
+              return [
+                job.id,
+                getFallbackPaid(job),
+              ];
+            }
+          })
+      );
+
+      if (!active) return;
+
+      setPaymentTotals(
+        Object.fromEntries(entries)
+      );
+    }
+
+    loadPaymentTotals();
+
+    return () => {
+      active = false;
+    };
+  }, [jobs]);
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -35,19 +106,29 @@ export default function JobsSection({
     return due >= today && due <= endOfWeek;
   });
 
-  const outstanding = jobs.reduce(
+  const totalValue = jobs.reduce(
     (total, job) =>
-      total +
-      Math.max(
-        0,
-        Number(
-          job.balance ??
-            job.outstanding ??
-            (Number(job.price || 0) -
-              Number(job.deposit || 0))
-        )
-      ),
+      total + Number(job?.price || 0),
     0
+  );
+
+  const totalPaid = jobs.reduce(
+    (total, job) => {
+      const paid = Object.prototype.hasOwnProperty.call(
+        paymentTotals,
+        job.id
+      )
+        ? paymentTotals[job.id]
+        : getFallbackPaid(job);
+
+      return total + paid;
+    },
+    0
+  );
+
+  const outstanding = Math.max(
+    0,
+    totalValue - totalPaid
   );
 
   return (
