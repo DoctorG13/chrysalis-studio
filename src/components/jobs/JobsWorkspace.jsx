@@ -102,7 +102,7 @@ export default function JobsWorkspace({
     if (type === "success") {
       feedbackTimerRef.current = setTimeout(() => {
         setSaveFeedback(null);
-      }, 4000);
+      }, 5000);
     }
   }
 
@@ -194,41 +194,6 @@ export default function JobsWorkspace({
         <Button onClick={onClose}>Close</Button>
       </div>
 
-      {saveFeedback && (
-        <div
-          role="status"
-          aria-live="polite"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "14px 18px",
-            borderRadius: 12,
-            background:
-              saveFeedback.type === "success"
-                ? "#ECFDF5"
-                : "#FEF2F2",
-            border:
-              saveFeedback.type === "success"
-                ? "1px solid #A7F3D0"
-                : "1px solid #FECACA",
-            color:
-              saveFeedback.type === "success"
-                ? "#166534"
-                : "#991B1B",
-            boxShadow:
-              "0 4px 14px rgba(0,0,0,0.08)",
-            fontSize: 14,
-            fontWeight: 700,
-          }}
-        >
-          <span style={{ fontSize: 18 }}>
-            {saveFeedback.type === "success" ? "✓" : "⚠"}
-          </span>
-          <span>{saveFeedback.message}</span>
-        </div>
-      )}
-
       <div
         style={{
           display: "flex",
@@ -287,11 +252,71 @@ export default function JobsWorkspace({
         <div
           ref={editorRef}
           style={{
+            position: "relative",
             marginTop: 24,
             borderTop: "1px solid #ddd",
             paddingTop: 24,
           }}
         >
+          {saveFeedback && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                position: "absolute",
+                top: 42,
+                right: 24,
+                zIndex: 50,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                width: "min(430px, calc(100% - 48px))",
+                boxSizing: "border-box",
+                padding: "16px 20px",
+                borderRadius: 12,
+                background:
+                  saveFeedback.type === "success"
+                    ? "#ECFDF5"
+                    : "#FEF2F2",
+                border:
+                  saveFeedback.type === "success"
+                    ? "1px solid #86EFAC"
+                    : "1px solid #FCA5A5",
+                color:
+                  saveFeedback.type === "success"
+                    ? "#166534"
+                    : "#991B1B",
+                boxShadow:
+                  "0 10px 30px rgba(0,0,0,0.14)",
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              <span
+                style={{
+                  width: 30,
+                  height: 30,
+                  flexShrink: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  background:
+                    saveFeedback.type === "success"
+                      ? "#16A34A"
+                      : "#DC2626",
+                  color: "#FFFFFF",
+                  fontSize: 18,
+                  fontWeight: 800,
+                }}
+              >
+                {saveFeedback.type === "success" ? "✓" : "!"}
+              </span>
+
+              <span>{saveFeedback.message}</span>
+            </div>
+          )}
+
           <JobEditor
             job={selectedJob}
             onSave={saveJob}
