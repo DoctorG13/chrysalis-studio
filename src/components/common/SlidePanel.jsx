@@ -1,10 +1,36 @@
+import { useEffect } from "react";
+
 export default function SlidePanel({
   open,
   onClose,
   children,
 }) {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    document.body.classList.add(
+      "chrysalis-slide-panel-open"
+    );
+
+    return () => {
+      document.body.classList.remove(
+        "chrysalis-slide-panel-open"
+      );
+    };
+  }, [open]);
+
   return (
     <>
+      <style>{`
+        body.chrysalis-slide-panel-open > [role="status"][aria-live="polite"] {
+          left: calc(100% - min(640px, 100vw) / 2) !important;
+          top: 50% !important;
+          bottom: auto !important;
+          transform: translate(-50%, -50%) !important;
+          width: min(430px, calc(min(640px, 100vw) - 48px)) !important;
+        }
+      `}</style>
+
       <div
         onClick={open ? onClose : undefined}
         style={{
