@@ -102,7 +102,7 @@ export default function JobsWorkspace({
     if (type === "success") {
       feedbackTimerRef.current = setTimeout(() => {
         setSaveFeedback(null);
-      }, 3000);
+      }, 4000);
     }
   }
 
@@ -194,6 +194,41 @@ export default function JobsWorkspace({
         <Button onClick={onClose}>Close</Button>
       </div>
 
+      {saveFeedback && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "14px 18px",
+            borderRadius: 12,
+            background:
+              saveFeedback.type === "success"
+                ? "#ECFDF5"
+                : "#FEF2F2",
+            border:
+              saveFeedback.type === "success"
+                ? "1px solid #A7F3D0"
+                : "1px solid #FECACA",
+            color:
+              saveFeedback.type === "success"
+                ? "#166534"
+                : "#991B1B",
+            boxShadow:
+              "0 4px 14px rgba(0,0,0,0.08)",
+            fontSize: 14,
+            fontWeight: 700,
+          }}
+        >
+          <span style={{ fontSize: 18 }}>
+            {saveFeedback.type === "success" ? "✓" : "⚠"}
+          </span>
+          <span>{saveFeedback.message}</span>
+        </div>
+      )}
+
       <div
         style={{
           display: "flex",
@@ -263,40 +298,6 @@ export default function JobsWorkspace({
             onDelete={handleDeleteJob}
             onCancel={() => setSelectedJobId(null)}
           />
-        </div>
-      )}
-
-      {saveFeedback && (
-        <div
-          role="status"
-          style={{
-            position: "fixed",
-            right: 24,
-            bottom: 88,
-            zIndex: 100,
-            maxWidth: 360,
-            padding: "12px 16px",
-            borderRadius: 10,
-            background:
-              saveFeedback.type === "success"
-                ? "#ECFDF5"
-                : "#FEF2F2",
-            border:
-              saveFeedback.type === "success"
-                ? "1px solid #A7F3D0"
-                : "1px solid #FECACA",
-            color:
-              saveFeedback.type === "success"
-                ? "#166534"
-                : "#991B1B",
-            boxShadow:
-              "0 8px 24px rgba(0,0,0,0.12)",
-            fontSize: 13,
-            fontWeight: 700,
-          }}
-        >
-          {saveFeedback.type === "success" ? "✓ " : "⚠ "}
-          {saveFeedback.message}
         </div>
       )}
     </div>
