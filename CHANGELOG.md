@@ -12,6 +12,7 @@ All notable changes to Chrysalis are recorded here.
 - The Jobs summary now uses Total Job Value minus actual payments received, so a $300 job with $200 paid correctly shows $100 outstanding.
 - Made successful Job save confirmation visible inside the Jobs Workspace instead of relying on a fixed-position notification.
 - Kept save errors visible in the same confirmation area.
+- Centered the Job Editor save confirmation above the action buttons so success and error feedback stays with the Save controls.
 
 ---
 
