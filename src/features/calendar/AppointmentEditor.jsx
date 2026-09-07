@@ -42,6 +42,53 @@ function emptyAppointment(date = "") {
   };
 }
 
+function timeToMinutes(value) {
+  const match = String(value || "09:00").match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return 9 * 60;
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return 9 * 60;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function formatTime(value) {
+  const minutes = timeToMinutes(value);
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
+}
+
+function findAppointmentConflict(appointments, form) {
+  if (!form.date || form.status === "Cancelled" || form.status === "Completed") {
+    return null;
+  }
+
+  const start = timeToMinutes(form.time);
+  const end = start + Math.max(5, Number(form.duration) || 60);
+
+  return appointments.find((appointment) => {
+    if (String(appointment.id) === String(form.id)) return false;
+    if (String(appointment.date) !== String(form.date)) return false;
+
+    const status = String(appointment.status || "Scheduled").trim().toLowerCase();
+    if (["cancelled", "completed"].includes(status)) return false;
+
+    const otherStart = timeToMinutes(appointment.time);
+    const otherEnd = otherStart + Math.max(5, Number(appointment.duration) || 60);
+
+    return start < otherEnd && end > otherStart;
+  }) || null;
+}
+
+function appointmentLabel(appointment) {
+  return appointment?.type || "Appointment";
+}
+
 export default function AppointmentEditor({
   clients = [],
   jobs = [],
@@ -67,6 +114,11 @@ export default function AppointmentEditor({
     [jobs, form.clientId]
   );
 
+  const appointmentConflict = useMemo(() => {
+    const appointments = clients.flatMap((client) => client.appointments || []);
+    return findAppointmentConflict(appointments, form);
+  }, [clients, form]);
+
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
   }
@@ -84,6 +136,10 @@ export default function AppointmentEditor({
     }
     if (!form.date) {
       setError("Please select a date.");
+      return;
+    }
+    if (appointmentConflict) {
+      setError(`Appointment conflict: ${appointmentLabel(appointmentConflict)} is already scheduled at ${formatTime(appointmentConflict.time)}.`);
       return;
     }
     setSaving(true);
@@ -137,6 +193,15 @@ export default function AppointmentEditor({
         </div>
 
         {error && <div style={errorStyle}>{error}</div>}
+
+        {appointmentConflict && !error && (
+          <div style={warningStyle} role="alert">
+            <strong>⚠ Appointment conflict</strong>
+            <span>
+              {appointmentLabel(appointmentConflict)} is already scheduled at {formatTime(appointmentConflict.time)} on this date.
+            </span>
+          </div>
+        )}
 
         <div style={gridStyle}>
           <Field label="Client" required>
@@ -192,7 +257,7 @@ export default function AppointmentEditor({
           {form.id && <ChrysalisActionButton onClick={handleDelete} disabled={deleting || saving}>{deleting ? "Deleting…" : "Delete Appointment"}</ChrysalisActionButton>}
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <ChrysalisActionButton onClick={onClose} disabled={saving || deleting}>Cancel</ChrysalisActionButton>
-            <ChrysalisActionButton type="submit" variant="accent" disabled={saving || deleting}>{saving ? "Saving…" : "Save Appointment"}</ChrysalisActionButton>
+            <ChrysalisActionButton type="submit" variant="accent" disabled={saving || deleting || Boolean(appointmentConflict)}>{saving ? "Saving…" : "Save Appointment"}</ChrysalisActionButton>
           </div>
         </div>
       </form>
@@ -212,6 +277,7 @@ const headerStyle = { display: "flex", alignItems: "flex-start", justifyContent:
 const eyebrowStyle = { color: "#8B1E3F", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.7 };
 const titleStyle = { margin: "4px 0 0", color: "#20262B", fontSize: 21 };
 const errorStyle = { marginBottom: 16, padding: "10px 12px", borderRadius: 8, border: "1px solid #E6A7A7", background: "#FFF3F3", color: "#9B1C1C", fontSize: 13, fontWeight: 600 };
+const warningStyle = { display: "flex", flexDirection: "column", gap: 4, marginBottom: 16, padding: "10px 12px", borderRadius: 8, border: "1px solid #E8C56A", background: "#FFF9E8", color: "#795B00", fontSize: 13 };
 const gridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 };
 const fieldStyle = { display: "flex", flexDirection: "column", gap: 6 };
 const labelStyle = { fontSize: 12, fontWeight: 800, color: "#4B555B" };
