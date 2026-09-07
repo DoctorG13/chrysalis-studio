@@ -654,57 +654,6 @@ export default function JobEditor({
               </div>
             )}
           </div>
-
-          {saveFeedback && (
-            <div
-              role="status"
-              aria-live="polite"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 16,
-                padding: "12px 16px",
-                borderRadius: 12,
-                background:
-                  saveFeedback.type === "success"
-                    ? "#ECFDF5"
-                    : "#FEF2F2",
-                border:
-                  saveFeedback.type === "success"
-                    ? "1px solid #86EFAC"
-                    : "1px solid #FCA5A5",
-                color:
-                  saveFeedback.type === "success"
-                    ? "#166534"
-                    : "#991B1B",
-                fontSize: 14,
-                fontWeight: 700,
-              }}
-            >
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  flexShrink: 0,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  background:
-                    saveFeedback.type === "success"
-                      ? "#16A34A"
-                      : "#DC2626",
-                  color: "#FFFFFF",
-                  fontSize: 17,
-                  fontWeight: 800,
-                }}
-              >
-                {saveFeedback.type === "success" ? "✓" : "!"}
-              </span>
-              <span>{saveFeedback.message}</span>
-            </div>
-          )}
         </div>
 
         {/* =====================================================
@@ -721,8 +670,63 @@ export default function JobEditor({
         {renderTab()}
 
         {/* =====================================================
-            STICKY ACTION BAR
+            SAVE CONFIRMATION + STICKY ACTION BAR
         ====================================================== */}
+        {saveFeedback && (
+          <div
+            role="status"
+            aria-live="polite"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              width: "100%",
+              boxSizing: "border-box",
+              marginTop: -2,
+              padding: "12px 16px",
+              borderRadius: 12,
+              background:
+                saveFeedback.type === "success"
+                  ? "#ECFDF5"
+                  : "#FEF2F2",
+              border:
+                saveFeedback.type === "success"
+                  ? "1px solid #86EFAC"
+                  : "1px solid #FCA5A5",
+              color:
+                saveFeedback.type === "success"
+                  ? "#166534"
+                  : "#991B1B",
+              fontSize: 14,
+              fontWeight: 700,
+              textAlign: "center",
+            }}
+          >
+            <span
+              style={{
+                width: 28,
+                height: 28,
+                flexShrink: 0,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "50%",
+                background:
+                  saveFeedback.type === "success"
+                    ? "#16A34A"
+                    : "#DC2626",
+                color: "#FFFFFF",
+                fontSize: 17,
+                fontWeight: 800,
+              }}
+            >
+              {saveFeedback.type === "success" ? "✓" : "!"}
+            </span>
+            <span>{saveFeedback.message}</span>
+          </div>
+        )}
+
         <div
           style={{
             position: "sticky",
