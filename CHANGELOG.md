@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Jobs Balance & Save Feedback
+
+### Fixed
+
+- Changed the Jobs Workspace Outstanding summary to calculate balances from the authoritative Payment API instead of the Job deposit field alone.
+- The Jobs summary now uses Total Job Value minus actual payments received, so a $300 job with $200 paid correctly shows $100 outstanding.
+- Made successful Job save confirmation visible inside the Jobs Workspace instead of relying on a fixed-position notification.
+- Kept save errors visible in the same confirmation area.
+
+---
+
 ## Job Save Confirmation & Workflow Event Cleanup
 
 ### Added
