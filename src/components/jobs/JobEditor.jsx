@@ -46,6 +46,14 @@ export default function JobEditor({
   const [editedJob, setEditedJob] =
     useState(job);
 
+  const [isSaving, setIsSaving] =
+    useState(false);
+
+  const [saveFeedback, setSaveFeedback] =
+    useState(null);
+
+  const feedbackTimerRef = useRef(null);
+
   const [showFittingForm, setShowFittingForm] =
     useState(false);
 
@@ -71,10 +79,52 @@ export default function JobEditor({
     setEditingPhoto(null);
   }, [job]);
 
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
+
   if (!editedJob) return null;
 
-  function handleSave() {
-    onSave?.(editedJob);
+  function showSaveFeedback(type, message) {
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+
+    setSaveFeedback({ type, message });
+
+    if (type === "success") {
+      feedbackTimerRef.current = setTimeout(() => {
+        setSaveFeedback(null);
+      }, 5000);
+    }
+  }
+
+  async function handleSave() {
+    if (isSaving) return;
+
+    setIsSaving(true);
+    setSaveFeedback(null);
+
+    try {
+      await onSave?.(editedJob);
+      showSaveFeedback(
+        "success",
+        "Job saved successfully."
+      );
+    } catch (error) {
+      showSaveFeedback(
+        "error",
+        error instanceof Error
+          ? error.message
+          : "Unable to save job."
+      );
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleDelete() {
@@ -604,6 +654,57 @@ export default function JobEditor({
               </div>
             )}
           </div>
+
+          {saveFeedback && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginTop: 16,
+                padding: "12px 16px",
+                borderRadius: 12,
+                background:
+                  saveFeedback.type === "success"
+                    ? "#ECFDF5"
+                    : "#FEF2F2",
+                border:
+                  saveFeedback.type === "success"
+                    ? "1px solid #86EFAC"
+                    : "1px solid #FCA5A5",
+                color:
+                  saveFeedback.type === "success"
+                    ? "#166534"
+                    : "#991B1B",
+                fontSize: 14,
+                fontWeight: 700,
+              }}
+            >
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  flexShrink: 0,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  background:
+                    saveFeedback.type === "success"
+                      ? "#16A34A"
+                      : "#DC2626",
+                  color: "#FFFFFF",
+                  fontSize: 17,
+                  fontWeight: 800,
+                }}
+              >
+                {saveFeedback.type === "success" ? "✓" : "!"}
+              </span>
+              <span>{saveFeedback.message}</span>
+            </div>
+          )}
         </div>
 
         {/* =====================================================
@@ -651,7 +752,9 @@ export default function JobEditor({
                 handleSave
               }
             >
-              💾 Save
+              {isSaving
+                ? "⏳ Saving…"
+                : "💾 Save"}
             </Button>
           </div>
 
@@ -1004,8 +1107,7 @@ function JobWorkspaceOverview({
               fontSize: 12,
             }}
           >
-            ⚠️ This job is
-            currently{" "}
+            ⚠️ This job is currently{" "}
             <strong>
               Cancelled
             </strong>
