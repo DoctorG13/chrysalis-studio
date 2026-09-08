@@ -45,9 +45,7 @@ const DEMO_BRANDING = {
 function getStoredSettings() {
   try {
     const stored = window.localStorage.getItem("chrysalisSettings");
-
     if (!stored) return null;
-
     return JSON.parse(stored);
   } catch {
     return null;
@@ -58,18 +56,13 @@ function getBrandingFromSettings(settings) {
   const business = settings?.business || {};
 
   return {
-    businessName:
-      business.businessName?.trim() || DEFAULT_BRANDING.businessName,
-    ownerName:
-      business.ownerName?.trim() || DEFAULT_BRANDING.ownerName,
+    businessName: business.businessName?.trim() || DEFAULT_BRANDING.businessName,
+    ownerName: business.ownerName?.trim() || DEFAULT_BRANDING.ownerName,
     logo: business.logo || DEFAULT_BRANDING.logo,
     slogan: business.slogan?.trim() || DEFAULT_BRANDING.slogan,
-    primaryColour:
-      business.primaryColour || DEFAULT_BRANDING.primaryColour,
-    secondaryColour:
-      business.secondaryColour || DEFAULT_BRANDING.secondaryColour,
-    accentColour:
-      business.accentColour || DEFAULT_BRANDING.accentColour,
+    primaryColour: business.primaryColour || DEFAULT_BRANDING.primaryColour,
+    secondaryColour: business.secondaryColour || DEFAULT_BRANDING.secondaryColour,
+    accentColour: business.accentColour || DEFAULT_BRANDING.accentColour,
   };
 }
 
@@ -108,10 +101,7 @@ function AuthenticationGate({ children }) {
         setStatus("authenticated");
       } catch (error) {
         console.error("Unable to verify Chrysalis authentication.", error);
-
-        if (active) {
-          setStatus("error");
-        }
+        if (active) setStatus("error");
       }
     }
 
@@ -124,17 +114,7 @@ function AuthenticationGate({ children }) {
 
   if (status === "checking") {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#F7F5F2",
-          color: "#2F3A3F",
-          fontSize: 14,
-        }}
-      >
+      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F7F5F2", color: "#2F3A3F", fontSize: 14 }}>
         Checking secure access...
       </main>
     );
@@ -142,50 +122,14 @@ function AuthenticationGate({ children }) {
 
   if (status === "error") {
     return (
-      <main
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-          boxSizing: "border-box",
-          background: "#F7F5F2",
-          color: "#2F3A3F",
-        }}
-      >
-        <div
-          style={{
-            width: "100%",
-            maxWidth: 430,
-            padding: 28,
-            background: "#FFFFFF",
-            border: "1px solid #E8E8E8",
-            borderRadius: 16,
-            textAlign: "center",
-            boxShadow: "0 18px 50px rgba(47,58,63,.08)",
-          }}
-        >
+      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, boxSizing: "border-box", background: "#F7F5F2", color: "#2F3A3F" }}>
+        <div style={{ width: "100%", maxWidth: 430, padding: 28, background: "#FFFFFF", border: "1px solid #E8E8E8", borderRadius: 16, textAlign: "center", boxShadow: "0 18px 50px rgba(47,58,63,.08)" }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>🦋</div>
           <h1 style={{ margin: 0, fontSize: 22 }}>Chrysalis Studio</h1>
           <p style={{ color: "#6B7478", lineHeight: 1.5 }}>
             Secure access could not be verified. Please refresh the page and try again.
           </p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            style={{
-              marginTop: 8,
-              minHeight: 44,
-              padding: "0 18px",
-              border: "none",
-              borderRadius: 10,
-              background: "#8B1E3F",
-              color: "#FFFFFF",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
+          <button type="button" onClick={() => window.location.reload()} style={{ marginTop: 8, minHeight: 44, padding: "0 18px", border: "none", borderRadius: 10, background: "#8B1E3F", color: "#FFFFFF", fontWeight: 700, cursor: "pointer" }}>
             Try Again
           </button>
         </div>
@@ -251,17 +195,13 @@ function ChrysalisApplication({ authenticatedUser }) {
         if (!response.ok) return;
 
         const payload = await response.json();
-
         if (cancelled) return;
 
         const nextBranding = getBrandingFromSettings(payload?.settings);
         setBranding(nextBranding);
 
         try {
-          window.localStorage.setItem(
-            "chrysalisSettings",
-            JSON.stringify(payload?.settings || {})
-          );
+          window.localStorage.setItem("chrysalisSettings", JSON.stringify(payload?.settings || {}));
         } catch {
           // Database remains the source of truth.
         }
@@ -282,10 +222,7 @@ function ChrysalisApplication({ authenticatedUser }) {
     setBranding(nextBranding);
 
     try {
-      window.localStorage.setItem(
-        "chrysalisSettings",
-        JSON.stringify(nextSettings)
-      );
+      window.localStorage.setItem("chrysalisSettings", JSON.stringify(nextSettings));
     } catch {
       // Database remains the source of truth.
     }
@@ -295,19 +232,14 @@ function ChrysalisApplication({ authenticatedUser }) {
     switch (currentPage) {
       case "people":
         return <PeoplePage clients={clients} setClients={setClients} />;
-
       case "garments":
         return <GarmentsPage clients={clients} jobs={jobs} />;
-
       case "calendar":
         return <CalendarPage clients={clients} jobs={jobs} />;
-
       case "finance":
         return <FinancePage clients={clients} jobs={jobs} />;
-
       case "reports":
         return <ReportsPage />;
-
       case "settings":
         return (
           <SettingsPage
@@ -328,19 +260,13 @@ function ChrysalisApplication({ authenticatedUser }) {
 
               const payload = await response.json();
 
-              if (
-                Array.isArray(payload?.clients) &&
-                payload.clients.length > 0
-              ) {
-                throw new Error(
-                  "Some client records could not be removed."
-                );
+              if (Array.isArray(payload?.clients) && payload.clients.length > 0) {
+                throw new Error("Some client records could not be removed.");
               }
             }}
             onClose={() => setCurrentPage("studio")}
           />
         );
-
       case "studio":
       default:
         return (
@@ -380,11 +306,7 @@ function ChrysalisApplication({ authenticatedUser }) {
     <AppShell
       branding={displayBranding}
       sidebar={
-        <Sidebar
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          branding={displayBranding}
-        />
+        <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} branding={displayBranding} />
       }
       header={
         <Header
@@ -396,6 +318,9 @@ function ChrysalisApplication({ authenticatedUser }) {
           branding={displayBranding}
           isDemoMode={isDemoMode}
           onToggleDemo={toggleDemoMode}
+          clients={clients}
+          jobs={jobs}
+          appointments={appointments}
         />
       }
     >
