@@ -4,6 +4,23 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Workflow Consistency & Production Tracking Foundation
+
+### Added
+
+- Centralised the production-stage workflow as `PRODUCTION_WORKFLOW`, derived from the authoritative job workflow.
+- Updated the Job Editor to use the shared workflow sequence: Quote, Booked, Measuring, Pattern, Cutting, Sewing, Fitting, Alterations, Mending, Ready, Collected and Cancelled.
+- Added workflow-stage changes to the job Timeline as workflow transition events.
+- Limited Job Editor labour-hour tracking and costing to active production stages rather than quote, booking or terminal stages.
+- Updated Production Workload to consume the same shared production-stage definition.
+
+### Changed
+
+- Job Editor workflow ordering, production workload stages and labour-stage reporting now use one authoritative workflow definition.
+- Cancelled jobs no longer appear as though every earlier workflow stage has been completed in the Job Editor.
+
+---
+
 ## Production Workload
 
 ### Added
