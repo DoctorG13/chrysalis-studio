@@ -13,13 +13,17 @@ export const JOB_WORKFLOW = [
   "Cancelled",
 ];
 
+export const PRODUCTION_WORKFLOW = JOB_WORKFLOW.filter(
+  (stage) => !["Quote", "Booked", "Cancelled", "Collected"].includes(stage)
+);
+
 export const JOB_STATUS_COLOURS = {
   Quote: "#94A3B8",
   Booked: "#3B82F6",
   Pattern: "#8B5CF6",
   Cutting: "#F97316",
-  Construction: "#F59E0B",
-  "First Fitting": "#EC4899",
+  Sewing: "#F59E0B",
+  Fitting: "#EC4899",
   Alterations: "#EAB308",
   Mending: "#92400E",
   Ready: "#10B981",
