@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from "react";
 
 import Button from "../common/Button";
 import { ThriveDialog, useThriveDialog } from "../common/ThriveDialog";
+import {
+  JOB_WORKFLOW,
+  PRODUCTION_WORKFLOW,
+  getWorkflowIndex,
+  getNextAction,
+} from "../../constants/jobWorkflow";
 
 import JobTabs from "./JobTabs";
 import JobDetailsPanel from "./JobDetailsPanel";
@@ -11,16 +17,8 @@ import JobTimeline from "./JobTimeline";
 import JobFittings from "./JobFittings";
 import JobPhotos from "./JobPhotos";
 
-const WORKFLOW_STAGES = [
-  "New",
-  "Measuring",
-  "Cutting",
-  "Sewing",
-  "Fitting",
-  "Alterations",
-  "Ready",
-  "Collected",
-];
+const WORKFLOW_STAGES = JOB_WORKFLOW;
+const LABOUR_WORKFLOW_STAGES = PRODUCTION_WORKFLOW;
 
 const CHECKLIST_ITEMS = [
   ["measurements", "Measurements confirmed"],
@@ -229,7 +227,24 @@ export default function JobEditor({
   }
 
   function handleWorkflowStage(stage) {
-    updateJobField("status", stage);
+    if (!stage || stage === editedJob.status) return;
+
+    const previousStage = editedJob.status || "Unassigned";
+    const event = createTimelineEvent(
+      "workflow",
+      "Workflow Stage Changed",
+      `${previousStage} → ${stage}`
+    );
+
+    setEditedJob(
+      addTimelineEvent(
+        {
+          ...editedJob,
+          status: stage,
+        },
+        event
+      )
+    );
   }
 
   function handleChecklistToggle(key) {
@@ -954,9 +969,9 @@ function JobWorkspaceOverview({
       : 0;
 
   const currentStageIndex =
-    WORKFLOW_STAGES.indexOf(
-      job.status
-    );
+    job.status === "Cancelled"
+      ? -1
+      : getWorkflowIndex(job.status);
 
   const workflowHours = job.workflowHours || {};
   const effectiveLabourRate =
@@ -964,7 +979,7 @@ function JobWorkspaceOverview({
       ? defaultLabourRate
       : Number(job.workflowLabourRate) || 0;
 
-  const workflowTotals = WORKFLOW_STAGES.reduce(
+  const workflowTotals = LABOUR_WORKFLOW_STAGES.reduce(
     (totals, stage) => {
       const entry = workflowHours[stage] || {};
       totals.estimatedHours += Math.max(0, Number(entry.estimated) || 0);
@@ -1050,7 +1065,7 @@ function JobWorkspaceOverview({
           style={{
             display: "grid",
             gridTemplateColumns:
-              "repeat(8, minmax(82px, 1fr))",
+              "repeat(12, minmax(82px, 1fr))",
             gap: 7,
             overflowX: "auto",
             paddingBottom: 3,
@@ -1171,8 +1186,7 @@ function JobWorkspaceOverview({
             move the job to{" "}
             <strong>
               Ready
-            </strong>
-            .
+            </strong>.
           </div>
         )}
 
@@ -1194,8 +1208,7 @@ function JobWorkspaceOverview({
             ⚠️ This job is currently{" "}
             <strong>
               Cancelled
-            </strong>
-            .
+            </strong>.
           </div>
         )}
 
@@ -1425,7 +1438,7 @@ function JobWorkspaceOverview({
 
       {/* =====================================================
           WORKFLOW LABOUR COSTING
-      ====================================================== */}
+      ====================================================== */
       <section
         style={{
           background: "#FFFFFF",
@@ -1528,7 +1541,7 @@ function JobWorkspaceOverview({
             <span>Actual cost</span>
           </div>
 
-          {WORKFLOW_STAGES.map((stage) => {
+          {LABOUR_WORKFLOW_STAGES.map((stage) => {
             const entry = workflowHours[stage] || {};
             const actual = Math.max(0, Number(entry.actual) || 0);
             const actualCost = actual * effectiveLabourRate;
@@ -1711,9 +1724,7 @@ function JobWorkspaceOverview({
             <SummaryValue
               label="Next Action"
               value={
-                getNextAction(
-                  job.status
-                )
+                getNextAction(job)
               }
               icon="→"
             />
@@ -1961,29 +1972,6 @@ function formatDate(value) {
         month: "short",
         year: "numeric",
       });
-}
-
-function getNextAction(status) {
-  switch (status) {
-    case "New":
-      return "Start measuring";
-    case "Measuring":
-      return "Confirm measurements";
-    case "Cutting":
-      return "Complete cutting";
-    case "Sewing":
-      return "Complete construction";
-    case "Fitting":
-      return "Complete fitting";
-    case "Alterations":
-      return "Complete alterations";
-    case "Ready":
-      return "Await collection";
-    case "Collected":
-      return "Archive job";
-    default:
-      return "Continue workflow";
-  }
 }
 
 function FittingForm({
