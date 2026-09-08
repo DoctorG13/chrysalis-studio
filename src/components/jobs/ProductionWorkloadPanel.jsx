@@ -1,7 +1,7 @@
 import { JOB_WORKFLOW, parseJobDate } from "../../constants/jobWorkflow";
 
 const PRODUCTION_STAGES = JOB_WORKFLOW.filter(
-  (stage) => !["Quote", "Cancelled", "Collected"].includes(stage)
+  (stage) => !["Quote", "Booked", "Cancelled", "Collected"].includes(stage)
 );
 
 function startOfDay(date = new Date()) {
