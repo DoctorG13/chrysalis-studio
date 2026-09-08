@@ -156,6 +156,7 @@ function ChrysalisApplication({ authenticatedUser }) {
   const [currentPage, setCurrentPage] = useState("studio");
   const [searchQuery, setSearchQuery] = useState("");
   const [branding, setBranding] = useState(getInitialBranding);
+  const [calendarFocusRequest, setCalendarFocusRequest] = useState(0);
 
   const {
     clients,
@@ -219,6 +220,36 @@ function ChrysalisApplication({ authenticatedUser }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (currentPage !== "calendar" || !calendarFocusRequest) return undefined;
+
+    let frameOne = 0;
+    let frameTwo = 0;
+
+    frameOne = window.requestAnimationFrame(() => {
+      frameTwo = window.requestAnimationFrame(() => {
+        const navigation = document.querySelector(
+          '[aria-label="Calendar section navigation"]'
+        );
+
+        const calendarSection =
+          navigation?.nextElementSibling?.nextElementSibling;
+
+        if (calendarSection) {
+          calendarSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameOne);
+      window.cancelAnimationFrame(frameTwo);
+    };
+  }, [currentPage, calendarFocusRequest]);
+
   function handleSettingsSaved(nextSettings) {
     const nextBranding = getBrandingFromSettings(nextSettings);
     setBranding(nextBranding);
@@ -247,6 +278,7 @@ function ChrysalisApplication({ authenticatedUser }) {
   }
 
   function handleNotificationCalendar() {
+    setCalendarFocusRequest((value) => value + 1);
     setCurrentPage("calendar");
   }
 
