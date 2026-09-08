@@ -250,6 +250,55 @@ function ChrysalisApplication({ authenticatedUser }) {
     };
   }, [currentPage, calendarFocusRequest]);
 
+  useEffect(() => {
+    function handleKeyboardShortcut(event) {
+      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      const target = event.target;
+      const tagName = target?.tagName?.toLowerCase();
+
+      if (
+        tagName === "input" ||
+        tagName === "textarea" ||
+        tagName === "select" ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+
+      const shortcuts = {
+        "1": "studio",
+        "2": "people",
+        "3": "garments",
+        "4": "calendar",
+        "5": "finance",
+        "6": "reports",
+        "7": "settings",
+      };
+
+      const nextPage = shortcuts[event.key];
+
+      if (!nextPage) return;
+
+      event.preventDefault();
+      setSearchQuery("");
+      closeWorkspace();
+      setCurrentPage(nextPage);
+
+      if (nextPage === "calendar") {
+        setCalendarFocusRequest((value) => value + 1);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyboardShortcut);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyboardShortcut);
+    };
+  }, [closeWorkspace]);
+
   function handleSettingsSaved(nextSettings) {
     const nextBranding = getBrandingFromSettings(nextSettings);
     setBranding(nextBranding);
