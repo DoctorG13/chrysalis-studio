@@ -4,6 +4,23 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Due Date Highlighting & Warnings
+
+### Added
+
+- Job cards now calculate due-date state directly when enriched job flags are not already present.
+- Overdue jobs receive a clear red visual treatment and `Overdue` badge.
+- Jobs due today receive a clear blue visual treatment and `Due Today` badge.
+- The due-date display now communicates the urgency directly as `OVERDUE` or `DUE TODAY`.
+- Completed, Collected and Cancelled jobs are not treated as due-today jobs.
+
+### Changed
+
+- Due-date status is now visible at the primary Job Card level rather than relying only on secondary filtering or pre-enriched data.
+- Selected-job styling remains available for jobs without an urgent due-date state.
+
+---
+
 ## Workflow Consistency & Production Tracking Foundation
 
 ### Added
