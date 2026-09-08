@@ -22,7 +22,7 @@
 
 ### Clients
 
-- [ ] Timeline
+- [x] Timeline
 - [ ] Measurement history
 - [ ] Better search
 
