@@ -13,8 +13,10 @@ import FinancePage from "./pages/FinancePage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import LabourSettingsPanel from "./components/settings/LabourSettingsPanel";
+import GarmentSchedulePanel from "./components/garments/GarmentSchedulePanel";
 
 import ClientWorkspace from "./components/clients/ClientWorkspace";
+import JobsWorkspace from "./components/jobs/JobsWorkspace";
 import SlidePanel from "./components/common/SlidePanel";
 
 import {
@@ -331,12 +333,35 @@ function ChrysalisApplication({ authenticatedUser }) {
     setCurrentPage("calendar");
   }
 
+  function handleOpenScheduleJob(job) {
+    handleNotificationJob(null, job);
+  }
+
   function renderPage() {
     switch (currentPage) {
       case "people":
         return <PeoplePage clients={clients} setClients={setClients} />;
+      case "jobs":
+        return (
+          <JobsWorkspace
+            jobs={jobs}
+            clients={clients}
+            updateJob={updateJob}
+            deleteJob={deleteJob}
+            onClose={() => setCurrentPage("studio")}
+          />
+        );
       case "garments":
-        return <GarmentsPage clients={clients} jobs={jobs} />;
+        return (
+          <>
+            <GarmentSchedulePanel
+              clients={clients}
+              jobs={jobs}
+              onOpenJob={handleOpenScheduleJob}
+            />
+            <GarmentsPage clients={clients} jobs={jobs} />
+          </>
+        );
       case "calendar":
         return <CalendarPage clients={clients} jobs={jobs} />;
       case "finance":
@@ -396,17 +421,19 @@ function ChrysalisApplication({ authenticatedUser }) {
   const pageTitle =
     currentPage === "people"
       ? "People"
-      : currentPage === "garments"
-        ? "Garments"
-        : currentPage === "calendar"
-          ? "Calendar"
-          : currentPage === "finance"
-            ? "Finance"
-            : currentPage === "reports"
-              ? "Reports"
-              : currentPage === "settings"
-                ? "Settings"
-                : displayBranding.businessName;
+      : currentPage === "jobs"
+        ? "Jobs"
+        : currentPage === "garments"
+          ? "Garments"
+          : currentPage === "calendar"
+            ? "Calendar"
+            : currentPage === "finance"
+              ? "Finance"
+              : currentPage === "reports"
+                ? "Reports"
+                : currentPage === "settings"
+                  ? "Settings"
+                  : displayBranding.businessName;
 
   return (
     <AppShell
