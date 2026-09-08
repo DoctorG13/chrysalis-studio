@@ -4,6 +4,20 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Workflow Labour Costing & Notification Links
+
+### Added
+
+- Added individual actionable header notifications for overdue jobs, jobs due today, today's appointments, and ready jobs with outstanding balances.
+- Added direct notification actions that open the related Job Workspace or Calendar.
+- Added an editable default labour hourly rate for workflow costing under Settings.
+- Added a job-specific labour hourly rate that can override the Settings default.
+- Added estimated and actual labour hours for each visible Job Workflow stage.
+- Added estimated labour cost, actual labour cost and hour variance totals to the Job Workflow area.
+- Job-specific labour rates are retained with the job once labour hours are recorded, so later changes to the global default do not alter historical job costing.
+
+---
+
 ## Business Notifications
 
 ### Added
