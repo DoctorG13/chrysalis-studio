@@ -4,6 +4,19 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Calendar Navigation & Wider Workspaces
+
+### Fixed
+
+- Notification Calendar actions now open the Calendar page directly at the main calendar section instead of leaving the user at the top of the page.
+
+### Changed
+
+- Widened the shared workspace SlidePanel from 640px to 900px so the Workflow Labour Costing table and other workspace content have more usable horizontal space.
+- Updated the in-panel save confirmation positioning to remain centered against the wider workspace panel.
+
+---
+
 ## Workflow Labour Costing & Notification Links
 
 ### Added
