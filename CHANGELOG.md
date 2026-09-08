@@ -4,6 +4,23 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Jobs Command Centre & Menu Shortcuts
+
+### Added
+
+- Added Jobs Command Centre quick filters for All Jobs, Overdue, Due Today, Due This Week, Ready and Outstanding.
+- Added command-centre workload metrics for Active Jobs, Overdue, Due Today, Due This Week, Ready and total Outstanding value.
+- Added job sorting by Due Date, Client, Workflow Status and Outstanding balance.
+- Outstanding filtering and totals use the authoritative Payment API when available.
+- Replaced numbered Alt+1 through Alt+7 navigation with menu-letter shortcuts: Alt+S Studio, Alt+P People, Alt+J Jobs, Alt+G Garments, Alt+C Calendar, Alt+F Finance and Alt+R Reports.
+- Added Alt+Shift+S for Settings because Studio and Settings both begin with S.
+
+### Changed
+
+- Jobs is now a stronger operational command centre for prioritising production work and financial follow-up.
+
+---
+
 ## Jobs Workspace & Garment Production Schedule
 
 ### Added
