@@ -164,9 +164,6 @@ export default function ClientWorkspace({
         )
       );
 
-      // The provider updates its client state after SQLite confirms the
-      // deletion. The effect above closes the workspace when the client
-      // actually disappears from the shared state.
       window.setTimeout(() => {
         setDeleteRequested((requested) => {
           if (requested) {
@@ -200,10 +197,10 @@ export default function ClientWorkspace({
   return (
     <div style={{ paddingBottom: 82 }}>
       <ClientWorkspaceHeader
-  client={currentClient}
-  jobs={jobs}
-  appointments={clientAppointments}
-/>
+        client={currentClient}
+        jobs={jobs}
+        appointments={clientAppointments}
+      />
 
       <div
         style={{
@@ -328,7 +325,10 @@ export default function ClientWorkspace({
         isOpen={openSections.timeline}
         onToggle={() => toggleSection("timeline")}
       >
-        <TimelineSection clientId={currentClient.id} />
+        <TimelineSection
+          clientId={currentClient.id}
+          jobs={jobs}
+        />
       </WorkspaceSection>
 
       {deleteConfirmOpen && (
