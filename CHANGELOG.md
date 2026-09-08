@@ -4,6 +4,18 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Appointment Status Visibility
+
+### Added
+
+- Added clear visual status treatment for calendar appointments.
+- Confirmed appointments are shown as active confirmed events.
+- Completed appointments are visually muted and marked as completed.
+- Cancelled appointments are visually muted and struck through so they remain visible without competing with active appointments.
+- Appointment status is also shown in the calendar event label and hover text.
+
+---
+
 ## Appointment Conflict Protection
 
 ### Added
