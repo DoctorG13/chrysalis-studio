@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import JobCard from "./JobCard";
+import ProductionWorkloadPanel from "./ProductionWorkloadPanel";
 import Button from "../common/Button";
 import { getPayments } from "../../services/paymentApi";
 
@@ -170,6 +171,12 @@ export default function JobsSection({
           + New Job
         </Button>
       </div>
+
+      <ProductionWorkloadPanel
+        jobs={jobs}
+        clients={[]}
+        onOpenJob={onOpenJob}
+      />
 
       <div
         style={{
