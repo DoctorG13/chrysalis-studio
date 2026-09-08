@@ -13,6 +13,7 @@ import FinancePage from "./pages/FinancePage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
 import LabourSettingsPanel from "./components/settings/LabourSettingsPanel";
+import BackupTransferPanel from "./components/settings/BackupTransferPanel";
 import GarmentSchedulePanel from "./components/garments/GarmentSchedulePanel";
 
 import ClientWorkspace from "./components/clients/ClientWorkspace";
@@ -361,6 +362,7 @@ function ChrysalisApplication({ authenticatedUser }) {
       case "settings":
         return (
           <>
+            <BackupTransferPanel />
             <LabourSettingsPanel />
             <SettingsPage
               onSettingsSaved={handleSettingsSaved}
