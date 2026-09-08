@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Business Notifications
+
+### Added
+
+- Added actionable notifications to the header bell for overdue jobs, jobs due today, today's appointments, and ready jobs with outstanding balances.
+- The notification badge appears automatically when attention is required.
+- Existing temporary deleted-client backup expiry warnings remain available in the same notification panel.
+- Notifications are derived from the live Clients, Jobs and Appointments workspace data and update as that data changes.
+
+---
+
 ## Appointment Status Visibility
 
 ### Added
