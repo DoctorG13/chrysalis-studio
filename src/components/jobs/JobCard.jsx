@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 
 import Card from "../common/Card";
-import { JOB_STATUS_COLOURS } from "../../constants/jobWorkflow";
+import {
+  JOB_STATUS_COLOURS,
+  isDueToday,
+  isOverdue,
+} from "../../constants/jobWorkflow";
 import { getPayments } from "../../services/paymentApi";
 
 function Badge({ label, background, color = "#fff" }) {
@@ -102,22 +106,41 @@ export default function JobCard({
   if (!job) return null;
 
   const displayedOutstanding = outstanding ?? 0;
+  const overdue = job.overdue ?? isOverdue(job);
+  const dueToday = job.dueToday ?? isDueToday(job);
+  const dueStatus = overdue
+    ? "overdue"
+    : dueToday
+      ? "today"
+      : null;
+
+  const dueBorder =
+    dueStatus === "overdue"
+      ? "2px solid #DC2626"
+      : dueStatus === "today"
+        ? "2px solid #2563EB"
+        : selected
+          ? "2px solid #8B1E3F"
+          : "1px solid #DDD";
+
+  const dueShadow =
+    dueStatus === "overdue"
+      ? "0 8px 24px rgba(220,38,38,.14)"
+      : dueStatus === "today"
+        ? "0 8px 24px rgba(37,99,235,.12)"
+        : selected
+          ? "0 10px 30px rgba(139,30,63,.22)"
+          : "0 2px 8px rgba(0,0,0,.06)";
 
   return (
     <div
       onClick={() => onOpen?.(job)}
-      style={{
-        cursor: "pointer",
-      }}
+      style={{ cursor: "pointer" }}
     >
       <Card
         style={{
-          border: selected
-            ? "2px solid #8B1E3F"
-            : "1px solid #DDD",
-          boxShadow: selected
-            ? "0 10px 30px rgba(139,30,63,.22)"
-            : "0 2px 8px rgba(0,0,0,.06)",
+          border: dueBorder,
+          boxShadow: dueShadow,
           transition: "all .18s ease",
         }}
       >
@@ -192,9 +215,34 @@ export default function JobCard({
               {job.status || "Unknown"}
             </div>
 
-            <p style={{ margin: "4px 0", color: "#666" }}>
-              📅 Due: {job.dueDate || "-"}
-            </p>
+            <div
+              style={{
+                margin: "4px 0",
+                padding: "10px 12px",
+                borderRadius: 8,
+                background:
+                  dueStatus === "overdue"
+                    ? "#FEF2F2"
+                    : dueStatus === "today"
+                      ? "#EFF6FF"
+                      : "#F8F8F7",
+                color:
+                  dueStatus === "overdue"
+                    ? "#991B1B"
+                    : dueStatus === "today"
+                      ? "#1D4ED8"
+                      : "#666",
+                fontWeight: dueStatus ? 800 : 500,
+                display: "inline-block",
+              }}
+            >
+              {dueStatus === "overdue"
+                ? "⚠️ OVERDUE — "
+                : dueStatus === "today"
+                  ? "📅 DUE TODAY — "
+                  : "📅 Due: "}
+              {job.dueDate || "-"}
+            </div>
 
             <div
               style={{
@@ -257,14 +305,14 @@ export default function JobCard({
             </p>
 
             <div style={{ marginTop: 12 }}>
-              {job.dueToday && (
+              {dueToday && (
                 <Badge
                   label="Due Today"
                   background="#2563EB"
                 />
               )}
 
-              {job.overdue && (
+              {overdue && (
                 <Badge
                   label="Overdue"
                   background="#DC2626"
@@ -283,7 +331,14 @@ export default function JobCard({
           <div
             style={{
               fontSize: 28,
-              color: selected ? "#8B1E3F" : "#BBB",
+              color:
+                dueStatus === "overdue"
+                  ? "#DC2626"
+                  : dueStatus === "today"
+                    ? "#2563EB"
+                    : selected
+                      ? "#8B1E3F"
+                      : "#BBB",
               alignSelf: "center",
               fontWeight: 700,
             }}
