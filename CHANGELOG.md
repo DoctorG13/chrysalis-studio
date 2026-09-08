@@ -4,6 +4,24 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Client Timeline
+
+### Added
+
+- Client Timeline now combines client-level timeline activity with timeline events recorded on all jobs belonging to that client.
+- Job history entries display their Job Reference so activity can be understood in the context of the correct garment/job.
+- Added All Activity, Client and Jobs filters for quickly narrowing the history.
+- Added job and event counts to give a quick overview of the client's recorded history.
+- Job-originated events remain read-only in the client-wide timeline because they are maintained by the related Job Workspace.
+- Existing client-level timeline notes remain editable and deletable.
+
+### Changed
+
+- The Client Workspace Timeline is now a relationship-level history rather than only a list of client-specific timeline records.
+- Timeline entries from the client's jobs are combined and sorted chronologically with client-level activity.
+
+---
+
 ## Outstanding Payment Alerts
 
 ### Added
