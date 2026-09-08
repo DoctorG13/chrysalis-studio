@@ -29,6 +29,15 @@ function Badge({ label, background, color = "#fff" }) {
 }
 
 function getFallbackOutstanding(job) {
+  if (Array.isArray(job?.payments)) {
+    const totalPaid = job.payments.reduce(
+      (total, payment) => total + (Number(payment?.amount) || 0),
+      0
+    );
+
+    return Math.max(0, Number(job?.price || 0) - totalPaid);
+  }
+
   return Math.max(
     0,
     Number(
@@ -45,18 +54,8 @@ export default function JobCard({
   onOpen,
 }) {
   const [outstanding, setOutstanding] = useState(() => {
-    if (job?.balance != null || job?.outstanding != null) {
+    if (job?.balance != null || job?.outstanding != null || Array.isArray(job?.payments)) {
       return getFallbackOutstanding(job);
-    }
-
-    if (Array.isArray(job?.payments)) {
-      const totalPaid = job.payments.reduce(
-        (total, payment) =>
-          total + (Number(payment?.amount) || 0),
-        0
-      );
-
-      return Math.max(0, Number(job?.price || 0) - totalPaid);
     }
 
     return null;
@@ -74,8 +73,7 @@ export default function JobCard({
       try {
         const payments = await getPayments(job.id);
         const totalPaid = payments.reduce(
-          (total, payment) =>
-            total + (Number(payment?.amount) || 0),
+          (total, payment) => total + (Number(payment?.amount) || 0),
           0
         );
 
@@ -106,6 +104,8 @@ export default function JobCard({
   if (!job) return null;
 
   const displayedOutstanding = outstanding ?? 0;
+  const hasOutstanding = displayedOutstanding > 0.005;
+  const readyAndUnpaid = hasOutstanding && job.status === "Ready";
   const overdue = job.overdue ?? isOverdue(job);
   const dueToday = job.dueToday ?? isDueToday(job);
   const dueStatus = overdue
@@ -119,18 +119,22 @@ export default function JobCard({
       ? "2px solid #DC2626"
       : dueStatus === "today"
         ? "2px solid #2563EB"
-        : selected
-          ? "2px solid #8B1E3F"
-          : "1px solid #DDD";
+        : hasOutstanding
+          ? "2px solid #DC2626"
+          : selected
+            ? "2px solid #8B1E3F"
+            : "1px solid #DDD";
 
   const dueShadow =
     dueStatus === "overdue"
       ? "0 8px 24px rgba(220,38,38,.14)"
       : dueStatus === "today"
         ? "0 8px 24px rgba(37,99,235,.12)"
-        : selected
-          ? "0 10px 30px rgba(139,30,63,.22)"
-          : "0 2px 8px rgba(0,0,0,.06)";
+        : hasOutstanding
+          ? "0 8px 24px rgba(220,38,38,.12)"
+          : selected
+            ? "0 10px 30px rgba(139,30,63,.22)"
+            : "0 2px 8px rgba(0,0,0,.06)";
 
   return (
     <div
@@ -247,17 +251,39 @@ export default function JobCard({
             <div
               style={{
                 margin: "8px 0",
-                padding: "10px 12px",
+                padding: "12px 14px",
                 borderRadius: 8,
-                background:
-                  displayedOutstanding > 0 ? "#FEF2F2" : "#ECFDF5",
-                color:
-                  displayedOutstanding > 0 ? "#991B1B" : "#166534",
-                fontWeight: 700,
+                background: hasOutstanding ? "#FEF2F2" : "#ECFDF5",
+                border: hasOutstanding
+                  ? "1px solid #FECACA"
+                  : "1px solid #BBF7D0",
+                color: hasOutstanding ? "#991B1B" : "#166534",
                 display: "inline-block",
+                minWidth: 190,
               }}
             >
-              💰 Outstanding: ${displayedOutstanding.toFixed(2)}
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 0.5,
+                  marginBottom: 3,
+                }}
+              >
+                {readyAndUnpaid
+                  ? "⚠️ PAYMENT REQUIRED"
+                  : hasOutstanding
+                    ? "💰 BALANCE OUTSTANDING"
+                    : "✓ PAYMENT UP TO DATE"}
+              </div>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 800,
+                }}
+              >
+                ${displayedOutstanding.toFixed(2)}
+              </div>
             </div>
 
             <div style={{ margin: "12px 0" }}>
@@ -319,6 +345,13 @@ export default function JobCard({
                 />
               )}
 
+              {hasOutstanding && (
+                <Badge
+                  label={readyAndUnpaid ? "Payment Required" : "Outstanding"}
+                  background="#DC2626"
+                />
+              )}
+
               {job.needsAttention && (
                 <Badge
                   label="Needs Attention"
@@ -332,7 +365,7 @@ export default function JobCard({
             style={{
               fontSize: 28,
               color:
-                dueStatus === "overdue"
+                dueStatus === "overdue" || hasOutstanding
                   ? "#DC2626"
                   : dueStatus === "today"
                     ? "#2563EB"
