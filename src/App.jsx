@@ -230,18 +230,11 @@ function ChrysalisApplication({ authenticatedUser }) {
 
     frameOne = window.requestAnimationFrame(() => {
       frameTwo = window.requestAnimationFrame(() => {
-        const navigation = document.querySelector(
-          '[aria-label="Calendar section navigation"]'
-        );
-
-        const calendarSection =
-          navigation?.nextElementSibling?.nextElementSibling;
+        const navigation = document.querySelector('[aria-label="Calendar section navigation"]');
+        const calendarSection = navigation?.nextElementSibling?.nextElementSibling;
 
         if (calendarSection) {
-          calendarSection.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
+          calendarSection.scrollIntoView({ behavior: "smooth", block: "start" });
         }
       });
     });
@@ -254,9 +247,7 @@ function ChrysalisApplication({ authenticatedUser }) {
 
   useEffect(() => {
     function handleKeyboardShortcut(event) {
-      if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
-        return;
-      }
+      if (!event.altKey || event.ctrlKey || event.metaKey) return;
 
       const target = event.target;
       const tagName = target?.tagName?.toLowerCase();
@@ -270,18 +261,21 @@ function ChrysalisApplication({ authenticatedUser }) {
         return;
       }
 
+      const key = event.key.toLowerCase();
+      const shortcut = event.shiftKey ? `shift+${key}` : key;
+
       const shortcuts = {
-        "1": "studio",
-        "2": "people",
-        "3": "garments",
-        "4": "calendar",
-        "5": "finance",
-        "6": "reports",
-        "7": "settings",
+        s: "studio",
+        p: "people",
+        j: "jobs",
+        g: "garments",
+        c: "calendar",
+        f: "finance",
+        r: "reports",
+        "shift+s": "settings",
       };
 
-      const nextPage = shortcuts[event.key];
-
+      const nextPage = shortcuts[shortcut];
       if (!nextPage) return;
 
       event.preventDefault();
@@ -317,11 +311,7 @@ function ChrysalisApplication({ authenticatedUser }) {
 
     const resolvedClient =
       client ||
-      clients.find(
-        (candidate) =>
-          String(candidate.id) ===
-          String(job.clientId)
-      );
+      clients.find((candidate) => String(candidate.id) === String(job.clientId));
 
     if (resolvedClient) {
       openJob(resolvedClient, job.id);
