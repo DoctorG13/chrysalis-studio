@@ -12,6 +12,7 @@ import CalendarPage from "./pages/CalendarPage";
 import FinancePage from "./pages/FinancePage";
 import ReportsPage from "./pages/ReportsPage";
 import SettingsPage from "./pages/SettingsPage";
+import LabourSettingsPanel from "./components/settings/LabourSettingsPanel";
 
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import SlidePanel from "./components/common/SlidePanel";
@@ -171,6 +172,7 @@ function ChrysalisApplication({ authenticatedUser }) {
     selectedClient,
     selectedJobId,
     closeWorkspace,
+    openJob,
     isDemoMode,
     toggleDemoMode,
   } = useChrysalis();
@@ -228,6 +230,26 @@ function ChrysalisApplication({ authenticatedUser }) {
     }
   }
 
+  function handleNotificationJob(client, job) {
+    if (!job) return;
+
+    const resolvedClient =
+      client ||
+      clients.find(
+        (candidate) =>
+          String(candidate.id) ===
+          String(job.clientId)
+      );
+
+    if (resolvedClient) {
+      openJob(resolvedClient, job.id);
+    }
+  }
+
+  function handleNotificationCalendar() {
+    setCurrentPage("calendar");
+  }
+
   function renderPage() {
     switch (currentPage) {
       case "people":
@@ -242,30 +264,33 @@ function ChrysalisApplication({ authenticatedUser }) {
         return <ReportsPage />;
       case "settings":
         return (
-          <SettingsPage
-            onSettingsSaved={handleSettingsSaved}
-            isDemoMode={isDemoMode}
-            onToggleDemo={toggleDemoMode}
-            onStartFresh={async () => {
-              await setClients([]);
+          <>
+            <LabourSettingsPanel />
+            <SettingsPage
+              onSettingsSaved={handleSettingsSaved}
+              isDemoMode={isDemoMode}
+              onToggleDemo={toggleDemoMode}
+              onStartFresh={async () => {
+                await setClients([]);
 
-              const response = await fetch("/api/clients", {
-                credentials: "same-origin",
-                cache: "no-store",
-              });
+                const response = await fetch("/api/clients", {
+                  credentials: "same-origin",
+                  cache: "no-store",
+                });
 
-              if (!response.ok) {
-                throw new Error("Unable to verify the fresh workspace.");
-              }
+                if (!response.ok) {
+                  throw new Error("Unable to verify the fresh workspace.");
+                }
 
-              const payload = await response.json();
+                const payload = await response.json();
 
-              if (Array.isArray(payload?.clients) && payload.clients.length > 0) {
-                throw new Error("Some client records could not be removed.");
-              }
-            }}
-            onClose={() => setCurrentPage("studio")}
-          />
+                if (Array.isArray(payload?.clients) && payload.clients.length > 0) {
+                  throw new Error("Some client records could not be removed.");
+                }
+              }}
+              onClose={() => setCurrentPage("studio")}
+            />
+          </>
         );
       case "studio":
       default:
@@ -306,7 +331,11 @@ function ChrysalisApplication({ authenticatedUser }) {
     <AppShell
       branding={displayBranding}
       sidebar={
-        <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} branding={displayBranding} />
+        <Sidebar
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          branding={displayBranding}
+        />
       }
       header={
         <Header
@@ -321,6 +350,8 @@ function ChrysalisApplication({ authenticatedUser }) {
           clients={clients}
           jobs={jobs}
           appointments={appointments}
+          onOpenJob={handleNotificationJob}
+          onOpenCalendar={handleNotificationCalendar}
         />
       }
     >
