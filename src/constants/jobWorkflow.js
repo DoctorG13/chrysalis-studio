@@ -50,8 +50,7 @@ export function parseJobDate(dateValue) {
   );
 
   if (australianMatch) {
-    const [, day, month, year] =
-      australianMatch;
+    const [, day, month, year] = australianMatch;
 
     const date = new Date(
       Number(year),
@@ -72,9 +71,7 @@ export function parseJobDate(dateValue) {
 
   const parsed = new Date(value);
 
-  return Number.isNaN(parsed.getTime())
-    ? null
-    : parsed;
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 export function getWorkflowProgress(status) {
@@ -95,9 +92,7 @@ export function getWorkflowIndex(status) {
 export function getNextWorkflowStep(status) {
   const index = getWorkflowIndex(status);
 
-  if (index >= JOB_WORKFLOW.length - 1) {
-    return null;
-  }
+  if (index >= JOB_WORKFLOW.length - 1) return null;
 
   return JOB_WORKFLOW[index + 1];
 }
@@ -147,9 +142,7 @@ export function needsAttention(job) {
   if (isOverdue(job)) return true;
 
   const outstanding = Number(
-    job.balance ??
-      job.outstanding ??
-      0
+    job.balance ?? job.outstanding ?? 0
   );
 
   return outstanding > 0 && job.status === "Ready";
@@ -159,6 +152,14 @@ export function isDueToday(job) {
   const dueDate = parseJobDate(job?.dueDate);
 
   if (!dueDate) return false;
+
+  if (
+    isCompleted(job?.status) ||
+    isCollected(job?.status) ||
+    isCancelled(job?.status)
+  ) {
+    return false;
+  }
 
   const today = new Date();
 
@@ -171,60 +172,30 @@ export function isDueToday(job) {
 
 export function getNextAction(job) {
   switch (job.status) {
-    case "Quote":
-      return "Book client";
-
-    case "Booked":
-      return "Take measurements";
-
-    case "Measuring":
-      return "Draft pattern";
-
-    case "Pattern":
-      return "Cut fabric";
-
-    case "Cutting":
-      return "Begin sewing";
-
-    case "Sewing":
-      return "Schedule fitting";
-
-    case "Fitting":
-      return "Complete alterations";
-
-    case "Alterations":
-      return "Finish mending";
-
-    case "Mending":
-      return "Prepare for collection";
-
-    case "Ready":
-      return "Await collection";
-
-    case "Collected":
-      return "Archive job";
-
-    default:
-      return "";
+    case "Quote": return "Book client";
+    case "Booked": return "Take measurements";
+    case "Measuring": return "Draft pattern";
+    case "Pattern": return "Cut fabric";
+    case "Cutting": return "Begin sewing";
+    case "Sewing": return "Schedule fitting";
+    case "Fitting": return "Complete alterations";
+    case "Alterations": return "Finish mending";
+    case "Mending": return "Prepare for collection";
+    case "Ready": return "Await collection";
+    case "Collected": return "Archive job";
+    default: return "";
   }
 }
 
 export function enrichJob(job) {
   return {
     ...job,
-
     progress: getWorkflowProgress(job.status),
-
     workflowIndex: getWorkflowIndex(job.status),
-
     overdue: isOverdue(job),
-
     dueToday: isDueToday(job),
-
     needsAttention: needsAttention(job),
-
     nextAction: getNextAction(job),
-
     nextStep: getNextWorkflowStep(job.status),
   };
 }
