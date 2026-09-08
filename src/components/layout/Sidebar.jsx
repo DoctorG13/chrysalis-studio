@@ -5,6 +5,7 @@ const PLATFORM_PROMISE =
 const MENU_ITEMS = [
   { id: "studio", label: "Studio", icon: "S" },
   { id: "people", label: "People", icon: "P" },
+  { id: "jobs", label: "Jobs", icon: "J" },
   { id: "garments", label: "Garments", icon: "G" },
   { id: "calendar", label: "Calendar", icon: "C" },
   { id: "finance", label: "Finance", icon: "$" },
@@ -51,9 +52,6 @@ export default function Sidebar({
         overflow: "hidden",
       }}
     >
-      {/* =====================================================
-          TOP / NAVIGATION AREA
-      ====================================================== */}
       <div
         style={{
           flex: 1,
@@ -62,14 +60,12 @@ export default function Sidebar({
           flexDirection: "column",
         }}
       >
-        {/* THRIVE PLATFORM BRAND */}
         <div
           style={{
             flexShrink: 0,
             paddingBottom: 14,
             marginBottom: 14,
-            borderBottom:
-              "1px solid rgba(255,255,255,.14)",
+            borderBottom: "1px solid rgba(255,255,255,.14)",
             textAlign: "center",
           }}
         >
@@ -96,13 +92,7 @@ export default function Sidebar({
                 transform: "rotate(45deg)",
               }}
             >
-              <span
-                style={{
-                  transform: "rotate(-45deg)",
-                }}
-              >
-                T
-              </span>
+              <span style={{ transform: "rotate(-45deg)" }}>T</span>
             </span>
 
             <span
@@ -125,16 +115,11 @@ export default function Sidebar({
               textAlign: "center",
             }}
           >
-            <div>
-              {PLATFORM_PROMISE.split(" ")[0]
-                ? "Streamline your business."
-                : ""}
-            </div>
+            <div>Streamline your business.</div>
             <div>Simplify your work.</div>
           </div>
         </div>
 
-        {/* CUSTOMER BRAND */}
         <div
           style={{
             flexShrink: 0,
@@ -177,14 +162,10 @@ export default function Sidebar({
                 justifyContent: "center",
                 fontSize: 20,
                 fontWeight: 800,
-                boxShadow:
-                  `0 0 0 1px ${accent}`,
+                boxShadow: `0 0 0 1px ${accent}`,
               }}
             >
-              {businessName
-                .trim()
-                .charAt(0)
-                .toUpperCase() || "B"}
+              {businessName.trim().charAt(0).toUpperCase() || "B"}
             </div>
           )}
 
@@ -218,32 +199,23 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* MAIN NAVIGATION
-            This section can scroll if the viewport
-            becomes too short. */}
         <nav
           aria-label="Main navigation"
           style={{
             flex: 1,
             minHeight: 0,
             overflow: "hidden",
-          
           }}
         >
           {MENU_ITEMS.map((item) => {
-            const active =
-              currentPage === item.id;
+            const active = currentPage === item.id;
 
             return (
               <button
                 key={item.id}
                 type="button"
-                aria-current={
-                  active ? "page" : undefined
-                }
-                onClick={() =>
-                  setCurrentPage(item.id)
-                }
+                aria-current={active ? "page" : undefined}
+                onClick={() => setCurrentPage(item.id)}
                 style={{
                   width: "100%",
                   display: "flex",
@@ -256,18 +228,11 @@ export default function Sidebar({
                   borderRadius: 10,
                   cursor: "pointer",
                   fontSize: 14,
-                  fontWeight: active
-                    ? 700
-                    : 500,
-                  background: active
-                    ? primary
-                    : "transparent",
+                  fontWeight: active ? 700 : 500,
+                  background: active ? primary : "transparent",
                   color: "#FFFFFF",
-                  transition:
-                    "background .2s ease, color .2s ease",
-                  boxShadow: active
-                    ? `0 0 0 1px ${accent}`
-                    : "none",
+                  transition: "background .2s ease, color .2s ease",
+                  boxShadow: active ? `0 0 0 1px ${accent}` : "none",
                   boxSizing: "border-box",
                 }}
               >
@@ -285,10 +250,7 @@ export default function Sidebar({
                       ? "rgba(255,255,255,.16)"
                       : "rgba(255,255,255,.08)",
                     color: "#FFFFFF",
-                    fontSize:
-                      item.icon === "$"
-                        ? 16
-                        : 11,
+                    fontSize: item.icon === "$" ? 16 : 11,
                     fontWeight: 800,
                   }}
                 >
@@ -318,12 +280,7 @@ export default function Sidebar({
             textAlign: "center",
           }}
         >
-          <div
-            style={{
-              color: "#D6D9DA",
-              fontWeight: 700,
-            }}
-          >
+          <div style={{ color: "#D6D9DA", fontWeight: 700 }}>
             Powered by {PLATFORM_NAME}
           </div>
           <div style={{ marginTop: 2 }}>
