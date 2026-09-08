@@ -4,6 +4,25 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Jobs Workspace & Garment Production Schedule
+
+### Added
+
+- Added Jobs as a first-class item in the main left-hand navigation.
+- Added a dedicated Jobs page using the existing Jobs Workspace and Job Editor.
+- Added a Garment Production Schedule to the Garments area.
+- Production Schedule groups active garments into Overdue, Due Today, Next 7 Days and Later based on their existing due dates.
+- Garments without due dates are identified separately rather than silently omitted.
+- Schedule entries show the garment, client, Job Reference, workflow status and due date.
+- Schedule entries open the related Job Workspace when selected.
+- Collected and Cancelled jobs are excluded from the active production schedule.
+
+### Changed
+
+- Jobs is now treated as a primary workflow destination rather than only a workspace launched from Studio.
+
+---
+
 ## Keyboard Shortcuts
 
 ### Added
