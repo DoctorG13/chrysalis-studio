@@ -1,8 +1,6 @@
-import { JOB_WORKFLOW, parseJobDate } from "../../constants/jobWorkflow";
+import { PRODUCTION_WORKFLOW, parseJobDate } from "../../constants/jobWorkflow";
 
-const PRODUCTION_STAGES = JOB_WORKFLOW.filter(
-  (stage) => !["Quote", "Booked", "Cancelled", "Collected"].includes(stage)
-);
+const PRODUCTION_STAGES = PRODUCTION_WORKFLOW;
 
 function startOfDay(date = new Date()) {
   const value = new Date(date);
