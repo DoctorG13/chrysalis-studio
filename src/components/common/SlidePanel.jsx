@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 
+const PANEL_WIDTH = 900;
+
 export default function SlidePanel({
   open,
   onClose,
@@ -24,14 +26,14 @@ export default function SlidePanel({
       <style>{`
         body.chrysalis-slide-panel-open [role="status"][aria-live="polite"] {
           position: fixed !important;
-          left: calc(100% - min(640px, 100vw) / 2) !important;
+          left: calc(100% - min(${PANEL_WIDTH}px, 100vw) / 2) !important;
           top: 50% !important;
           right: auto !important;
           bottom: auto !important;
           margin: 0 !important;
           transform: translate(-50%, -50%) !important;
-          width: min(430px, calc(min(640px, 100vw) - 48px)) !important;
-          max-width: calc(min(640px, 100vw) - 48px) !important;
+          width: min(430px, calc(min(${PANEL_WIDTH}px, 100vw) - 48px)) !important;
+          max-width: calc(min(${PANEL_WIDTH}px, 100vw) - 48px) !important;
         }
       `}</style>
 
@@ -55,7 +57,7 @@ export default function SlidePanel({
           position: "fixed",
           top: 0,
           right: 0,
-          width: 640,
+          width: PANEL_WIDTH,
           maxWidth: "100%",
           height: "100vh",
           background: "#FFF",
