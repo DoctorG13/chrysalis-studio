@@ -4,6 +4,23 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Outstanding Payment Alerts
+
+### Added
+
+- Job cards now provide an explicit payment state alongside the outstanding amount.
+- Jobs with an outstanding balance display a red financial warning treatment and `Outstanding` badge.
+- Ready jobs with an outstanding balance display the stronger `Payment Required` warning.
+- Fully paid jobs display a clear `Payment Up To Date` state.
+- Job cards continue to calculate outstanding balances from the authoritative Payment API when available, with existing job-data fallbacks retained.
+
+### Changed
+
+- Outstanding balances now have a stronger visual priority on Job Cards without replacing the existing due-date warnings.
+- Payment warnings remain consistent with the existing Jobs Command Centre Outstanding filter and totals.
+
+---
+
 ## Due Date Highlighting & Warnings
 
 ### Added
@@ -95,3 +112,5 @@ All notable changes to Chrysalis are recorded here.
 ## Keyboard Shortcuts
 
 ### Added
+
+- Added keyboard navigation support for primary application destinations.
