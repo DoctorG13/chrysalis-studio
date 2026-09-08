@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Keyboard Shortcuts
+
+### Added
+
+- Added Alt+1 through Alt+7 shortcuts for rapid navigation between Studio, People, Garments, Calendar, Finance, Reports and Settings.
+- Keyboard shortcuts are ignored while typing in inputs, textareas, selects or editable content.
+- Navigation shortcuts close an open workspace and clear active search so the destination opens cleanly.
+
+---
+
 ## Calendar Navigation & Wider Workspaces
 
 ### Fixed
