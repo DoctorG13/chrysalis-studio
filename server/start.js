@@ -1,8 +1,6 @@
 import { spawn } from "node:child_process";
 import { request as httpRequest } from "node:http";
 
-import { repairAndEnforceJobReferences } from "./job-reference.js";
-
 const SERVICES = [
   {
     name: "database",
@@ -190,13 +188,6 @@ async function main() {
 
   try {
     await checkHealth(databaseService.healthUrl);
-
-    const referenceRepair =
-      repairAndEnforceJobReferences();
-
-    console.log(
-      `Job reference check complete: ${referenceRepair.repaired} reference(s) repaired.`
-    );
 
     for (const service of SERVICES.slice(1)) {
       spawnService(service);
