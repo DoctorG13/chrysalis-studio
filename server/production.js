@@ -286,21 +286,57 @@ function serveStatic(request, response) {
 }
 
 function isSameOrigin(request) {
-  const origin = String(request.headers.origin || "");
-
+  const origin = String(request.headers.origin || "").trim();
   if (!origin) return true;
 
+  let originUrl;
+  try {
+    originUrl = new URL(origin);
+  } catch {
+    return false;
+  }
+
   const forwardedProto = String(
-    request.headers["x-forwarded-proto"] || "https"
-  ).split(",")[0].trim();
+    request.headers["x-forwarded-proto"] || ""
+  )
+    .split(",")[0]
+    .trim()
+    .toLowerCase();
+  const protocol = forwardedProto || "https";
+
   const forwardedHost = String(
     request.headers["x-forwarded-host"] || ""
-  ).split(",")[0].trim();
-  const host = forwardedHost || String(request.headers.host || "");
+  )
+    .split(",")[0]
+    .trim();
+  const requestHost = String(request.headers.host || "")
+    .split(",")[0]
+    .trim();
 
-  if (!host) return false;
+  const candidateHosts = [forwardedHost, requestHost].filter(Boolean);
 
-  return origin === `${forwardedProto}://${host}`;
+  return candidateHosts.some((candidateHost) => {
+    let candidateUrl;
+
+    try {
+      candidateUrl = new URL(`${protocol}://${candidateHost}`);
+    } catch {
+      return false;
+    }
+
+    return (
+      originUrl.protocol === candidateUrl.protocol &&
+      originUrl.hostname.toLowerCase() === candidateUrl.hostname.toLowerCase() &&
+      (originUrl.port || defaultPort(originUrl.protocol)) ===
+        (candidateUrl.port || defaultPort(candidateUrl.protocol))
+    );
+  });
+}
+
+function defaultPort(protocol) {
+  if (protocol === "https:") return "443";
+  if (protocol === "http:") return "80";
+  return "";
 }
 
 function isStateChangingMethod(method) {
