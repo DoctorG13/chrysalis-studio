@@ -2,76 +2,16 @@ import { spawn } from "node:child_process";
 import { request as httpRequest } from "node:http";
 
 const SERVICES = [
-  {
-    name: "database",
-    script: "server/index.js",
-    args: ["server"],
-    healthUrl: "http://127.0.0.1:4174/api/health",
-    label: "Database API",
-  },
-  {
-    name: "jobs",
-    script: "server/job-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4175/api/health",
-    label: "Job API",
-  },
-  {
-    name: "appointments",
-    script: "server/appointment-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4176/api/health",
-    label: "Appointment API",
-  },
-  {
-    name: "measurements",
-    script: "server/measurement-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4177/api/health",
-    label: "Measurement API",
-  },
-  {
-    name: "payments",
-    script: "server/payment-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4178/api/health",
-    label: "Payment API",
-  },
-  {
-    name: "assets",
-    script: "server/asset-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4179/api/health",
-    label: "Asset API",
-  },
-  {
-    name: "timeline",
-    script: "server/timeline-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4180/api/health",
-    label: "Timeline API",
-  },
-  {
-    name: "invoices",
-    script: "server/invoice-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4181/api/health",
-    label: "Invoice API",
-  },
-  {
-    name: "quotes",
-    script: "server/quote-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4182/api/health",
-    label: "Quote API",
-  },
-  {
-    name: "auth",
-    script: "server/auth-server.js",
-    args: [],
-    healthUrl: "http://127.0.0.1:4183/api/health",
-    label: "Authentication API",
-  },
+  { name: "database", script: "server/index.js", args: ["server"], healthUrl: "http://127.0.0.1:4174/api/health", label: "Database API" },
+  { name: "jobs", script: "server/job-server.js", args: [], healthUrl: "http://127.0.0.1:4175/api/health", label: "Job API" },
+  { name: "appointments", script: "server/appointment-server.js", args: [], healthUrl: "http://127.0.0.1:4176/api/health", label: "Appointment API" },
+  { name: "measurements", script: "server/measurement-server.js", args: [], healthUrl: "http://127.0.0.1:4177/api/health", label: "Measurement API" },
+  { name: "payments", script: "server/payment-server.js", args: [], healthUrl: "http://127.0.0.1:4178/api/health", label: "Payment API" },
+  { name: "assets", script: "server/asset-server.js", args: [], healthUrl: "http://127.0.0.1:4179/api/health", label: "Asset API" },
+  { name: "timeline", script: "server/timeline-server.js", args: [], healthUrl: "http://127.0.0.1:4180/api/health", label: "Timeline API" },
+  { name: "invoices", script: "server/invoice-server.js", args: [], healthUrl: "http://127.0.0.1:4181/api/health", label: "Invoice API" },
+  { name: "quotes", script: "server/quote-server.js", args: [], healthUrl: "http://127.0.0.1:4182/api/health", label: "Quote API" },
+  { name: "auth", script: "server/auth-server.js", args: [], healthUrl: "http://127.0.0.1:4183/api/health", label: "Authentication API" },
 ];
 
 const children = new Map();
@@ -87,64 +27,46 @@ function checkHealth(url, attempt = 0) {
         return;
       }
 
-      retryHealth(url, attempt, reject);
+      retryHealth(url, attempt, resolve, reject);
     });
 
     request.setTimeout(1000, () => {
       request.destroy();
-      retryHealth(url, attempt, reject);
+      retryHealth(url, attempt, resolve, reject);
     });
 
-    request.on("error", () => retryHealth(url, attempt, reject));
+    request.on("error", () => retryHealth(url, attempt, resolve, reject));
     request.end();
   });
 }
 
-function retryHealth(url, attempt, reject) {
+function retryHealth(url, attempt, resolve, reject) {
   if (attempt >= 30) {
-    reject(
-      new Error(
-        `Service did not become ready within 30 seconds: ${url}`
-      )
-    );
+    reject(new Error(`Service did not become ready within 30 seconds: ${url}`));
     return;
   }
 
-  setTimeout(
-    () =>
-      checkHealth(url, attempt + 1)
-        .then(() => undefined)
-        .catch(reject),
-    1000
-  );
+  setTimeout(() => {
+    checkHealth(url, attempt + 1).then(resolve).catch(reject);
+  }, 1000);
 }
 
 function spawnService(service) {
   console.log(`Starting Chrysalis ${service.name} service...`);
 
-  const child = spawn(
-    process.execPath,
-    [service.script, ...service.args],
-    {
-      stdio: "inherit",
-      windowsHide: false,
-    }
-  );
+  const child = spawn(process.execPath, [service.script, ...service.args], {
+    stdio: "inherit",
+    windowsHide: false,
+  });
 
   children.set(service.name, child);
 
   child.on("spawn", () => {
-    console.log(
-      `Chrysalis ${service.name} process started.`
-    );
+    console.log(`Chrysalis ${service.name} process started.`);
   });
 
   child.on("error", (error) => {
-    console.error(
-      `Unable to start Chrysalis ${service.name} service:`,
-      error
-    );
-
+    console.error(`Unable to start Chrysalis ${service.name} service:`, error);
     shutdown(1);
   });
 
@@ -153,12 +75,7 @@ function spawnService(service) {
 
     if (shuttingDown) return;
 
-    console.error(
-      `Chrysalis ${service.name} service stopped unexpectedly (code=${
-        code ?? "null"
-      }, signal=${signal ?? "none"}).`
-    );
-
+    console.error(`Chrysalis ${service.name} service stopped unexpectedly (code=${code ?? "null"}, signal=${signal ?? "none"}).`);
     shutdown(code || 1);
   });
 
@@ -169,13 +86,10 @@ function shutdown(code = 0) {
   if (shuttingDown) return;
 
   shuttingDown = true;
-
   console.log("Stopping Chrysalis backend services...");
 
   for (const child of children.values()) {
-    if (!child.killed) {
-      child.kill("SIGTERM");
-    }
+    if (!child.killed) child.kill("SIGTERM");
   }
 
   setTimeout(() => process.exit(code), 500);
@@ -193,17 +107,9 @@ async function main() {
       spawnService(service);
     }
 
-    await Promise.all(
-      SERVICES.slice(1).map((service) =>
-        checkHealth(service.healthUrl)
-      )
-    );
+    await Promise.all(SERVICES.slice(1).map((service) => checkHealth(service.healthUrl)));
   } catch (error) {
-    console.error(
-      "Chrysalis backend startup failed:",
-      error
-    );
-
+    console.error("Chrysalis backend startup failed:", error);
     shutdown(1);
     return;
   }
@@ -212,12 +118,7 @@ async function main() {
   console.log("Chrysalis backend is ready.");
 
   for (const service of SERVICES) {
-    console.log(
-      `  ${service.label}: ${service.healthUrl.replace(
-        "/api/health",
-        ""
-      )}`
-    );
+    console.log(`  ${service.label}: ${service.healthUrl.replace("/api/health", "")}`);
   }
 
   console.log("");
@@ -227,10 +128,6 @@ process.on("SIGINT", () => shutdown(0));
 process.on("SIGTERM", () => shutdown(0));
 
 main().catch((error) => {
-  console.error(
-    "Chrysalis backend startup failed:",
-    error
-  );
-
+  console.error("Chrysalis backend startup failed:", error);
   shutdown(1);
 });
