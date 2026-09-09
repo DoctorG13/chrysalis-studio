@@ -67,6 +67,13 @@ const SERVICES = [
     healthUrl: "http://127.0.0.1:4182/api/health",
     label: "Quote API",
   },
+  {
+    name: "auth",
+    script: "server/auth-server.js",
+    args: [],
+    healthUrl: "http://127.0.0.1:4183/api/health",
+    label: "Authentication API",
+  },
 ];
 
 const children = new Map();
