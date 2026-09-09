@@ -8,7 +8,6 @@ export default defineConfig({
     proxy: {
       "/api/auth": {
         target: "http://127.0.0.1:4183",
-        changeOrigin: true,
       },
       "/api": {
         target: "http://127.0.0.1:4174",
