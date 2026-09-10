@@ -190,6 +190,24 @@ function writeUpload(request, destination) {
   });
 }
 
+function getPublicForwardingHeaders(request) {
+  const forwardedHost = String(
+    request.headers["x-forwarded-host"] || request.headers.host || ""
+  )
+    .split(",")[0]
+    .trim();
+  const forwardedProto = String(
+    request.headers["x-forwarded-proto"] || "https"
+  )
+    .split(",")[0]
+    .trim();
+
+  return {
+    "x-forwarded-host": forwardedHost,
+    "x-forwarded-proto": forwardedProto,
+  };
+}
+
 function proxyToInternal(request, response, path) {
   const proxy = httpRequest(
     {
@@ -199,6 +217,7 @@ function proxyToInternal(request, response, path) {
       method: request.method,
       headers: {
         ...request.headers,
+        ...getPublicForwardingHeaders(request),
         host: `127.0.0.1:${INTERNAL_PORT}`,
         connection: "close",
       },
