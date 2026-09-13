@@ -35,19 +35,81 @@ function readJsonBody(request) {
 
 function parseJson(value, fallback) { try { return JSON.parse(value); } catch { return fallback; } }
 
-function rowToInvoice(row) {
+function invoiceTotal(invoice) {
+  const lineItems = Array.isArray(invoice.lineItems) ? invoice.lineItems : [];
+  const calculated = lineItems.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.rate || 0), 0);
+  const total = Number(invoice.total ?? invoice.amount ?? calculated);
+  return Number.isFinite(total) ? Math.max(total, 0) : 0;
+}
+
+function todayString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getJobPayments(database, jobId) {
+  if (!jobId) return [];
+  return database.prepare("SELECT amount FROM payments WHERE job_id = ? ORDER BY date ASC, created_at ASC, id ASC").all(jobId);
+}
+
+function reconcileInvoice(database, invoice) {
+  const total = invoiceTotal(invoice);
+
+  if (!invoice.jobId) {
+    const storedPaid = Number(invoice.amountPaid || 0);
+    const paid = Number.isFinite(storedPaid) ? Math.max(storedPaid, 0) : 0;
+    const balance = Math.max(total - paid, 0);
+    return {
+      ...invoice,
+      amountPaid: Math.round(paid * 100) / 100,
+      balance: Math.round(balance * 100) / 100,
+      paymentStatus: invoice.status || "Draft",
+    };
+  }
+
+  const paid = getJobPayments(database, invoice.jobId).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  const roundedPaid = Math.round(Math.max(paid, 0) * 100) / 100;
+  const balance = Math.round(Math.max(total - roundedPaid, 0) * 100) / 100;
+  const baseStatus = String(invoice.status || "Draft");
+
+  let paymentStatus = baseStatus;
+
+  if (baseStatus !== "Draft") {
+    if (balance <= 0 && total > 0) {
+      paymentStatus = "Paid";
+    } else if (invoice.dueDate && invoice.dueDate < todayString() && balance > 0) {
+      paymentStatus = "Overdue";
+    } else if (roundedPaid > 0) {
+      paymentStatus = "Part Paid";
+    } else {
+      paymentStatus = "Issued";
+    }
+  }
+
+  return {
+    ...invoice,
+    amountPaid: roundedPaid,
+    balance,
+    paymentStatus,
+    status: paymentStatus,
+  };
+}
+
+function rowToInvoice(row, database) {
   const stored = parseJson(row.data_json, {});
-  return { ...stored, id: row.id, clientId: row.client_id, jobId: row.job_id || "", number: row.number, amount: row.amount, status: row.status, issueDate: row.issue_date, dueDate: row.due_date, createdAt: row.created_at, updatedAt: row.updated_at };
+  return reconcileInvoice(database, { ...stored, id: row.id, clientId: row.client_id, jobId: row.job_id || "", number: row.number, amount: row.amount, status: row.status, issueDate: row.issue_date, dueDate: row.due_date, createdAt: row.created_at, updatedAt: row.updated_at });
 }
 
 function listInvoices(database, clientId = "", jobId = "") {
-  if (clientId && jobId) return database.prepare("SELECT * FROM invoices WHERE client_id = ? AND job_id = ? ORDER BY issue_date DESC, created_at DESC, id DESC").all(clientId, jobId).map(rowToInvoice);
-  if (clientId) return database.prepare("SELECT * FROM invoices WHERE client_id = ? ORDER BY issue_date DESC, created_at DESC, id DESC").all(clientId).map(rowToInvoice);
-  if (jobId) return database.prepare("SELECT * FROM invoices WHERE job_id = ? ORDER BY issue_date DESC, created_at DESC, id DESC").all(jobId).map(rowToInvoice);
-  return database.prepare("SELECT * FROM invoices ORDER BY issue_date DESC, created_at DESC, id DESC").all().map(rowToInvoice);
+  if (clientId && jobId) return database.prepare("SELECT * FROM invoices WHERE client_id = ? AND job_id = ? ORDER BY issue_date DESC, created_at DESC, id DESC").all(clientId, jobId).map((row) => rowToInvoice(row, database));
+  if (clientId) return database.prepare("SELECT * FROM invoices WHERE client_id = ? ORDER BY issue_date DESC, created_at DESC, id DESC").all(clientId).map((row) => rowToInvoice(row, database));
+  if (jobId) return database.prepare("SELECT * FROM invoices WHERE job_id = ? ORDER BY issue_date DESC, created_at DESC, id DESC").all(jobId).map((row) => rowToInvoice(row, database));
+  return database.prepare("SELECT * FROM invoices ORDER BY issue_date DESC, created_at DESC, id DESC").all().map((row) => rowToInvoice(row, database));
 }
 
-function getInvoice(database, id) { const row = database.prepare("SELECT * FROM invoices WHERE id = ?").get(id); return row ? rowToInvoice(row) : null; }
+function getInvoice(database, id) {
+  const row = database.prepare("SELECT * FROM invoices WHERE id = ?").get(id);
+  return row ? rowToInvoice(row, database) : null;
+}
 
 function assertRelations(database, invoice) {
   const client = database.prepare("SELECT id FROM clients WHERE id = ?").get(invoice.clientId);
@@ -75,9 +137,11 @@ function updateStoredInvoices(database, table, id, invoiceId, invoice, remove = 
 }
 
 function saveInvoice(database, input, existing = null) {
-  const invoice = normalizeInvoice(input, existing);
+  let invoice = normalizeInvoice(input, existing);
   assertRelations(database, invoice);
   const previous = existing || getInvoice(database, invoice.id);
+  invoice = reconcileInvoice(database, invoice);
+
   database.exec("BEGIN IMMEDIATE");
   try {
     database.prepare(`INSERT INTO invoices (id, client_id, job_id, number, amount, status, issue_date, due_date, data_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET client_id = excluded.client_id, job_id = excluded.job_id, number = excluded.number, amount = excluded.amount, status = excluded.status, issue_date = excluded.issue_date, due_date = excluded.due_date, data_json = excluded.data_json, updated_at = excluded.updated_at`).run(invoice.id, invoice.clientId, invoice.jobId || null, invoice.number, invoice.amount, invoice.status, invoice.issueDate, invoice.dueDate, JSON.stringify(invoice), invoice.createdAt, invoice.updatedAt);
