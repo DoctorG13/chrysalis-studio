@@ -1186,7 +1186,8 @@ function JobWorkspaceOverview({
             move the job to{" "}
             <strong>
               Ready
-            </strong>.
+            </strong>
+            .
           </div>
         )}
 
@@ -1208,7 +1209,8 @@ function JobWorkspaceOverview({
             ⚠️ This job is currently{" "}
             <strong>
               Cancelled
-            </strong>.
+            </strong>
+            .
           </div>
         )}
 
@@ -1438,7 +1440,7 @@ function JobWorkspaceOverview({
 
       {/* =====================================================
           WORKFLOW LABOUR COSTING
-      ====================================================== */
+      ====================================================== */}
       <section
         style={{
           background: "#FFFFFF",
