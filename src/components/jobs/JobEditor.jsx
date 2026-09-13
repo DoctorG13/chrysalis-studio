@@ -18,7 +18,9 @@ import JobFittings from "./JobFittings";
 import JobPhotos from "./JobPhotos";
 
 const WORKFLOW_STAGES = JOB_WORKFLOW;
-const LABOUR_WORKFLOW_STAGES = PRODUCTION_WORKFLOW;
+const LABOUR_WORKFLOW_STAGES = PRODUCTION_WORKFLOW.filter(
+  (stage) => stage !== "Ready"
+);
 
 const CHECKLIST_ITEMS = [
   ["measurements", "Measurements confirmed"],

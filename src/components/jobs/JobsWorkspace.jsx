@@ -1,11 +1,14 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import JobsSection from "./JobsSection";
 import JobEditor from "./JobEditor";
 import Button from "../common/Button";
 import { getPayments } from "../../services/paymentsApi";
-import { parseJobDate } from "../../constants/jobWorkflow";
+import {
+  parseJobDate,
+  PRODUCTION_WORKFLOW,
+} from "../../constants/jobWorkflow";
 
 const QUICK_FILTERS = [
   { id: "all", label: "All Jobs" },
@@ -89,6 +92,15 @@ function getDueSortValue(job) {
   return date ? date.getTime() : Number.POSITIVE_INFINITY;
 }
 
+function getWorkflowHours(job, stage) {
+  const entry = job?.workflowHours?.[stage] || {};
+
+  return {
+    estimated: Math.max(0, Number(entry.estimated) || 0),
+    actual: Math.max(0, Number(entry.actual) || 0),
+  };
+}
+
 function Metric({ label, value, tone = "default", onClick }) {
   const tones = {
     default: { background: "#F8FAFC", border: "#CBD5E1", colour: "#1E293B" },
@@ -121,12 +133,300 @@ function Metric({ label, value, tone = "default", onClick }) {
       <div style={{ color: "#64748B", fontSize: 11, fontWeight: 700 }}>
         {label}
       </div>
-      <div style={{ marginTop: 4, color: style.colour, fontSize: 24, fontWeight: 800 }}>
+      <div
+        style={{
+          marginTop: 4,
+          color: style.colour,
+          fontSize: 24,
+          fontWeight: 800,
+        }}
+      >
         {value}
       </div>
     </button>
   );
 }
+
+function ProductionWorkload({ jobs, clients, onOpenJob }) {
+  const today = startOfDay();
+  const clientLookup = useMemo(
+    () => new Map(clients.map((client) => [client.id, client])),
+    [clients]
+  );
+
+  const productionJobs = useMemo(() => {
+    return jobs
+      .filter((job) => PRODUCTION_WORKFLOW.includes(job?.status))
+      .map((job) => ({
+        ...job,
+        clientDisplayName:
+          job.clientName || clientLookup.get(job.clientId)?.name || "Client unavailable",
+      }))
+      .sort((a, b) => getDueSortValue(a) - getDueSortValue(b));
+  }, [jobs, clientLookup]);
+
+  const workload = useMemo(() => {
+    const stages = PRODUCTION_WORKFLOW.map((stage) => {
+      const stageJobs = productionJobs.filter((job) => job.status === stage);
+      const estimatedHours = stageJobs.reduce(
+        (total, job) => total + getWorkflowHours(job, stage).estimated,
+        0
+      );
+      const actualHours = stageJobs.reduce(
+        (total, job) => total + getWorkflowHours(job, stage).actual,
+        0
+      );
+
+      return {
+        stage,
+        jobs: stageJobs,
+        estimatedHours,
+        actualHours,
+      };
+    });
+
+    const dueToday = productionJobs.filter((job) => isDueToday(job, today));
+    const overdue = productionJobs.filter((job) => isOverdue(job, today));
+    const estimatedHours = stages.reduce(
+      (total, stage) => total + stage.estimatedHours,
+      0
+    );
+    const actualHours = stages.reduce(
+      (total, stage) => total + stage.actualHours,
+      0
+    );
+
+    return {
+      stages,
+      dueToday,
+      overdue,
+      estimatedHours,
+      actualHours,
+    };
+  }, [productionJobs, today]);
+
+  return (
+    <section
+      style={{
+        border: "1px solid #E5E7EB",
+        borderRadius: 16,
+        background: "#FFFFFF",
+        padding: 18,
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 16,
+          flexWrap: "wrap",
+          marginBottom: 14,
+        }}
+      >
+        <div>
+          <div
+            style={{
+              color: "#8B1E3F",
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: 1,
+              textTransform: "uppercase",
+            }}
+          >
+            Production Workload
+          </div>
+          <h2
+            style={{
+              margin: "5px 0 0",
+              color: "#2F3A3F",
+              fontSize: 22,
+            }}
+          >
+            Work on the floor
+          </h2>
+          <div style={{ marginTop: 5, color: "#777", fontSize: 13 }}>
+            Active production jobs grouped by workflow stage and ordered by due date.
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={workloadMetricStyle}>
+            <strong>{productionJobs.length}</strong>
+            <span>Active</span>
+          </div>
+          <div style={workloadMetricStyle}>
+            <strong>{workload.dueToday.length}</strong>
+            <span>Due Today</span>
+          </div>
+          <div style={{ ...workloadMetricStyle, color: workload.overdue.length ? "#B91C1C" : "#2F3A3F" }}>
+            <strong>{workload.overdue.length}</strong>
+            <span>Overdue</span>
+          </div>
+          <div style={workloadMetricStyle}>
+            <strong>{workload.estimatedHours.toFixed(1)}h</strong>
+            <span>Estimated</span>
+          </div>
+          <div style={workloadMetricStyle}>
+            <strong>{workload.actualHours.toFixed(1)}h</strong>
+            <span>Actual</span>
+          </div>
+        </div>
+      </div>
+
+      {productionJobs.length === 0 ? (
+        <div style={emptyWorkloadStyle}>
+          No active production jobs are currently assigned to a production stage.
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 10,
+          }}
+        >
+          {workload.stages.map((stage) => (
+            <div
+              key={stage.stage}
+              style={{
+                border: "1px solid #E5E7EB",
+                borderRadius: 12,
+                background: "#FAF9F6",
+                minWidth: 0,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  padding: "11px 12px",
+                  borderBottom: "1px solid #E5E7EB",
+                  background: "#FFFFFF",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 8,
+                  alignItems: "center",
+                }}
+              >
+                <strong style={{ color: "#2F3A3F", fontSize: 13 }}>
+                  {stage.stage}
+                </strong>
+                <span
+                  style={{
+                    minWidth: 24,
+                    padding: "2px 7px",
+                    borderRadius: 999,
+                    background: stage.jobs.length ? "#8B1E3F" : "#E5E7EB",
+                    color: stage.jobs.length ? "#FFFFFF" : "#6B7280",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    textAlign: "center",
+                  }}
+                >
+                  {stage.jobs.length}
+                </span>
+              </div>
+
+              <div style={{ padding: 10 }}>
+                <div style={{ display: "flex", gap: 12, marginBottom: 8, color: "#777", fontSize: 11 }}>
+                  <span>Est. {stage.estimatedHours.toFixed(1)}h</span>
+                  <span>Actual {stage.actualHours.toFixed(1)}h</span>
+                </div>
+
+                {stage.jobs.length === 0 ? (
+                  <div style={{ color: "#9CA3AF", fontSize: 12, padding: "8px 2px" }}>
+                    No jobs
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {stage.jobs.map((job) => {
+                      const hours = getWorkflowHours(job, stage.stage);
+                      const overdue = isOverdue(job, today);
+                      const dueToday = isDueToday(job, today);
+                      const dueDate = parseJobDate(job.dueDate);
+
+                      return (
+                        <button
+                          key={job.id}
+                          type="button"
+                          onClick={() => onOpenJob(job)}
+                          style={{
+                            width: "100%",
+                            border: overdue
+                              ? "1px solid #FCA5A5"
+                              : dueToday
+                                ? "1px solid #FDBA74"
+                                : "1px solid #E5E7EB",
+                            borderRadius: 9,
+                            background: "#FFFFFF",
+                            padding: 9,
+                            textAlign: "left",
+                            cursor: "pointer",
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          <div style={{ color: "#8B1E3F", fontSize: 11, fontWeight: 800 }}>
+                            {job.reference || "CHR-NEW"}
+                          </div>
+                          <div style={{ marginTop: 3, color: "#2F3A3F", fontWeight: 700, fontSize: 12 }}>
+                            {job.name || job.garmentType || "Untitled Job"}
+                          </div>
+                          <div style={{ marginTop: 3, color: "#667085", fontSize: 11 }}>
+                            {job.clientDisplayName}
+                          </div>
+                          <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", gap: 8, color: "#777", fontSize: 10 }}>
+                            <span>
+                              {overdue
+                                ? "OVERDUE"
+                                : dueToday
+                                  ? "DUE TODAY"
+                                  : dueDate
+                                    ? `Due ${dueDate.toLocaleDateString("en-AU", { day: "numeric", month: "short" })}`
+                                    : "No due date"}
+                            </span>
+                            <span>{hours.estimated.toFixed(1)}h est.</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+const workloadMetricStyle = {
+  minWidth: 70,
+  padding: "8px 10px",
+  border: "1px solid #E5E7EB",
+  borderRadius: 9,
+  background: "#FAF9F6",
+  color: "#2F3A3F",
+  display: "flex",
+  flexDirection: "column",
+  gap: 2,
+};
+
+const emptyWorkloadStyle = {
+  padding: 20,
+  border: "1px dashed #D1D5DB",
+  borderRadius: 10,
+  background: "#FAFAF9",
+  color: "#777",
+  textAlign: "center",
+  fontSize: 13,
+};
 
 export default function JobsWorkspace({
   jobs = [],
@@ -438,6 +738,17 @@ export default function JobsWorkspace({
           <Button onClick={onClose}>Close</Button>
         </div>
 
+        <ProductionWorkload
+          jobs={jobs}
+          clients={clients}
+          onOpenJob={(job) => {
+            setSelectedJobId(job.id);
+            requestAnimationFrame(() => {
+              editorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+          }}
+        />
+
         <div
           style={{
             display: "flex",
@@ -518,7 +829,6 @@ export default function JobsWorkspace({
             <option>All</option>
             <option>Quote</option>
             <option>Booked</option>
-            <option>New</option>
             <option>Measuring</option>
             <option>Pattern</option>
             <option>Cutting</option>
