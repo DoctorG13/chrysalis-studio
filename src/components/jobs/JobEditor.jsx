@@ -696,155 +696,61 @@ export default function JobEditor({
               title="Close job"
               style={{
                 flexShrink: 0,
-                width: 42,
-                height: 42,
-                border:
-                  "1px solid #D9DDE1",
-                borderRadius: 10,
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                border: "1px solid #E6E8EC",
                 background: "#FFFFFF",
-                color: "#374151",
-                fontSize: 20,
+                color: "#667085",
                 cursor: "pointer",
+                fontSize: 18,
+                lineHeight: 1,
               }}
             >
-              ✕
+              ×
             </button>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 22,
-              marginTop: 18,
-              paddingTop: 16,
-              borderTop:
-                "1px solid #ECECEC",
-              color: "#666",
-              fontSize: 14,
-            }}
-          >
+          {saveFeedback && (
             <div
               style={{
-                color: "#2F3A3F",
-                fontWeight: 700,
+                marginTop: 16,
+                padding: "11px 14px",
+                borderRadius: 10,
+                background:
+                  saveFeedback.type === "success"
+                    ? "#ECFDF3"
+                    : "#FEF3F2",
+                color:
+                  saveFeedback.type === "success"
+                    ? "#027A48"
+                    : "#B42318",
+                fontSize: 14,
+                fontWeight: 600,
               }}
             >
-              👤{" "}
-              {editedJob.clientName ||
-                "No client assigned"}
+              {saveFeedback.message}
             </div>
-
-            <div>
-              👗{" "}
-              {editedJob.garmentType ||
-                "General Job"}
-            </div>
-
-            {editedJob.dueDate && (
-              <div>
-                📅{" "}
-                {formatDate(
-                  editedJob.dueDate
-                )}
-              </div>
-            )}
-
-            {editedJob.priority && (
-              <div>
-                🎯{" "}
-                {editedJob.priority}
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* =====================================================
-            TABS
-        ====================================================== */}
         <JobTabs
           activeTab={activeTab}
           onChange={setActiveTab}
         />
 
-        {/* =====================================================
-            CONTENT
-        ====================================================== */}
         {renderTab()}
-
-        {/* =====================================================
-            SAVE CONFIRMATION + STICKY ACTION BAR
-        ====================================================== */}
-        {saveFeedback && (
-          <div
-            role="status"
-            aria-live="polite"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              width: "100%",
-              boxSizing: "border-box",
-              marginTop: -2,
-              padding: "12px 16px",
-              borderRadius: 12,
-              background:
-                saveFeedback.type === "success"
-                  ? "#ECFDF5"
-                  : "#FEF2F2",
-              border:
-                saveFeedback.type === "success"
-                  ? "1px solid #86EFAC"
-                  : "1px solid #FCA5A5",
-              color:
-                saveFeedback.type === "success"
-                  ? "#166534"
-                  : "#991B1B",
-              fontSize: 14,
-              fontWeight: 700,
-              textAlign: "center",
-            }}
-          >
-            <span
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background:
-                  saveFeedback.type === "success"
-                    ? "#D1FAE5"
-                    : "#FEE2E2",
-                fontSize: 15,
-              }}
-            >
-              {saveFeedback.type === "success"
-                ? "✓"
-                : "!"}
-            </span>
-            <span>{saveFeedback.message}</span>
-          </div>
-        )}
 
         <div
           style={{
-            position: "sticky",
-            bottom: 0,
-            zIndex: 20,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            gap: 12,
-            padding: "14px 0 2px",
-            background:
-              "linear-gradient(to bottom, rgba(247,245,242,0), #F7F5F2 18px)",
+            gap: 16,
+            marginTop: 4,
           }}
         >
           <Button
-            type="button"
             variant="danger"
             onClick={handleDelete}
           >
@@ -854,33 +760,27 @@ export default function JobEditor({
           <div
             style={{
               display: "flex",
-              gap: 10,
+              gap: 12,
             }}
           >
             <Button
-              type="button"
               variant="secondary"
               onClick={onCancel}
             >
               Cancel
             </Button>
-
             <Button
-              type="button"
-              variant="primary"
               onClick={handleSave}
               disabled={isSaving}
             >
-              {isSaving
-                ? "⏳ Saving..."
-                : "💾 Save"}
+              {isSaving ? "Saving…" : "Save"}
             </Button>
           </div>
         </div>
       </div>
 
       {showFittingForm && (
-        <FittingForm
+        <FittingEditor
           fitting={editingFitting}
           onSave={handleSaveFitting}
           onCancel={() => {
@@ -899,22 +799,18 @@ export default function JobEditor({
         />
       )}
 
-      {editingPhoto && (
-        <PhotoEditForm
-          photo={editingPhoto}
-          onSave={handleSavePhotoEdit}
-          onCancel={() =>
-            setEditingPhoto(null)
-          }
+      {selectedPhoto && (
+        <PhotoLightbox
+          photo={selectedPhoto}
+          onClose={() => setSelectedPhoto(null)}
         />
       )}
 
-      {selectedPhoto && (
-        <PhotoPreview
-          photo={selectedPhoto}
-          onClose={() =>
-            setSelectedPhoto(null)
-          }
+      {editingPhoto && (
+        <PhotoEditDialog
+          photo={editingPhoto}
+          onSave={handleSavePhotoEdit}
+          onCancel={() => setEditingPhoto(null)}
         />
       )}
 
@@ -928,671 +824,484 @@ function JobWorkspaceOverview({
   onWorkflowStage,
   onChecklistToggle,
   onWorkflowNotesChange,
-  defaultLabourRate = 0,
+  defaultLabourRate,
   onWorkflowLabourRateChange,
   onWorkflowHoursChange,
 }) {
-  const quote = Number(
-    job.price || 0
-  );
-
-  const totalPaid = (
-    job.payments || []
-  ).reduce(
-    (total, payment) =>
-      total +
-      Number(
-        payment.amount || 0
-      ),
-    0
-  );
-
-  const outstanding = Math.max(
-    quote - totalPaid,
-    0
-  );
-
-  const checklist =
-    job.workflowChecklist || {};
-
-  const completedChecklist =
-    CHECKLIST_ITEMS.filter(
-      ([key]) =>
-        Boolean(checklist[key])
-    ).length;
-
-  const checklistPercent =
-    CHECKLIST_ITEMS.length
-      ? Math.round(
-          (completedChecklist /
-            CHECKLIST_ITEMS.length) *
-            100
-        )
-      : 0;
-
-  const currentStageIndex =
-    job.status === "Cancelled"
-      ? -1
-      : getWorkflowIndex(job.status);
+  const workflowIndex = getWorkflowIndex(job.status);
+  const nextAction = getNextAction(job);
 
   const workflowHours = job.workflowHours || {};
-  const effectiveLabourRate =
-    job.workflowLabourRate == null || job.workflowLabourRate === ""
-      ? defaultLabourRate
-      : Number(job.workflowLabourRate) || 0;
-
-  const workflowTotals = LABOUR_WORKFLOW_STAGES.reduce(
-    (totals, stage) => {
-      const entry = workflowHours[stage] || {};
-      totals.estimatedHours += Math.max(0, Number(entry.estimated) || 0);
-      totals.actualHours += Math.max(0, Number(entry.actual) || 0);
-      return totals;
-    },
-    { estimatedHours: 0, actualHours: 0 }
+  const labourRate = Number(
+    job.workflowLabourRate ?? defaultLabourRate ?? 0
   );
 
-  const estimatedLabourCost =
-    workflowTotals.estimatedHours * effectiveLabourRate;
-  const actualLabourCost =
-    workflowTotals.actualHours * effectiveLabourRate;
-  const labourVariance =
-    workflowTotals.actualHours - workflowTotals.estimatedHours;
+  const estimatedHours = LABOUR_WORKFLOW_STAGES.reduce(
+    (sum, stage) =>
+      sum +
+      (Number(workflowHours[stage]?.estimated) || 0),
+    0
+  );
+
+  const actualHours = LABOUR_WORKFLOW_STAGES.reduce(
+    (sum, stage) =>
+      sum +
+      (Number(workflowHours[stage]?.actual) || 0),
+    0
+  );
+
+  const estimatedLabour = estimatedHours * labourRate;
+  const actualLabour = actualHours * labourRate;
+  const hourVariance = actualHours - estimatedHours;
 
   return (
     <div
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 16,
+        gap: 18,
       }}
     >
-      {/* =====================================================
-          WORKFLOW + CHECKLIST
-      ====================================================== */}
-      <section
-        style={{
-          background: "#FAF9F6",
-          border:
-            "1px solid #E5E7EB",
-          borderRadius: 16,
-          padding: 20,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent:
-              "space-between",
-            alignItems: "flex-start",
-            gap: 16,
-            flexWrap: "wrap",
-            marginBottom: 18,
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                letterSpacing: 1,
-                textTransform:
-                  "uppercase",
-                color: "#8B1E3F",
-              }}
-            >
-              Garment Workflow
-            </div>
-
-            <div
-              style={{
-                marginTop: 5,
-                color: "#777",
-                fontSize: 13,
-              }}
-            >
-              Move the job through
-              production as work is
-              completed.
-            </div>
-          </div>
-
-          {job.status && (
-            <StatusBadge
-              status={job.status}
-            />
-          )}
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(12, minmax(82px, 1fr))",
-            gap: 7,
-            overflowX: "auto",
-            paddingBottom: 3,
-          }}
-        >
-          {WORKFLOW_STAGES.map(
-            (stage, index) => {
-              const isCurrent =
-                job.status === stage;
-
-              const isComplete =
-                currentStageIndex >=
-                  0 &&
-                index <
-                  currentStageIndex;
-
-              return (
-                <button
-                  key={stage}
-                  type="button"
-                  onClick={() =>
-                    onWorkflowStage(
-                      stage
-                    )
-                  }
-                  title={`Set workflow stage to ${stage}`}
-                  style={{
-                    minWidth: 82,
-                    minHeight: 66,
-                    border: isCurrent
-                      ? "2px solid #8B1E3F"
-                      : isComplete
-                      ? "1px solid #B7DFC5"
-                      : "1px solid #D9DDE1",
-                    borderRadius: 10,
-                    background:
-                      isCurrent
-                        ? "#FFF5F7"
-                        : isComplete
-                        ? "#F0FDF4"
-                        : "#FFFFFF",
-                    color:
-                      isCurrent
-                        ? "#8B1E3F"
-                        : isComplete
-                        ? "#34724B"
-                        : "#59636A",
-                    padding:
-                      "7px 5px",
-                    display: "flex",
-                    flexDirection:
-                      "column",
-                    alignItems:
-                      "center",
-                    justifyContent:
-                      "center",
-                    gap: 5,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  <span
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius:
-                        "50%",
-                      display:
-                        "inline-flex",
-                      alignItems:
-                        "center",
-                      justifyContent:
-                        "center",
-                      background:
-                        isComplete
-                          ? "#D8F3DF"
-                          : "#E8EAED",
-                      fontSize: 10,
-                      fontWeight: 800,
-                    }}
-                  >
-                    {isComplete
-                      ? "✓"
-                      : index + 1}
-                  </span>
-
-                  <span>
-                    {stage}
-                  </span>
-                </button>
-              );
-            }
-          )}
-        </div>
-
-        {job.status ===
-          "Mending" && (
-          <div
-            style={{
-              marginTop: 12,
-              padding:
-                "10px 12px",
-              borderRadius: 9,
-              background: "#FFF7E6",
-              border:
-                "1px solid #F3D38A",
-              color: "#745000",
-              fontSize: 12,
-            }}
-          >
-            🔧{" "}
-            <strong>
-              Mending
-            </strong>{" "}
-            is an active repair
-            path. When complete,
-            move the job to{" "}
-            <strong>
-              Ready
-            </strong>
-            .
-          </div>
-        )}
-
-        {job.status ===
-          "Cancelled" && (
-          <div
-            style={{
-              marginTop: 12,
-              padding:
-                "10px 12px",
-              borderRadius: 9,
-              background: "#FFF7E6",
-              border:
-                "1px solid #F3D38A",
-              color: "#745000",
-              fontSize: 12,
-            }}
-          >
-            ⚠️ This job is currently{" "}
-            <strong>
-              Cancelled
-            </strong>
-            .
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "minmax(0, 1fr) minmax(260px, 0.8fr)",
-            gap: 20,
-            marginTop: 20,
-          }}
-        >
-          {/* Production Checklist */}
-          <div>
-            <div
-              style={{
-                display: "flex",
-                justifyContent:
-                  "space-between",
-                alignItems: "center",
-                marginBottom: 10,
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 12,
-                  fontWeight: 800,
-                  color: "#555",
-                  textTransform:
-                    "uppercase",
-                  letterSpacing:
-                    0.7,
-                }}
-              >
-                Production
-                Checklist
-              </div>
-
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "#777",
-                }}
-              >
-                {
-                  completedChecklist
-                }{" "}
-                /{" "}
-                {
-                  CHECKLIST_ITEMS.length
-                }
-              </span>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(2, minmax(0, 1fr))",
-                gap: 8,
-              }}
-            >
-              {CHECKLIST_ITEMS.map(
-                ([key, label]) => {
-                  const checked =
-                    Boolean(
-                      checklist[key]
-                    );
-
-                  return (
-                    <label
-                      key={key}
-                      style={{
-                        display: "flex",
-                        alignItems:
-                          "center",
-                        gap: 8,
-                        padding:
-                          "10px",
-                        borderRadius: 9,
-                        border:
-                          "1px solid #E8EAED",
-                        background:
-                          checked
-                            ? "#F0FDF4"
-                            : "#FFFFFF",
-                        color: "#4F585E",
-                        fontSize: 12,
-                        cursor:
-                          "pointer",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={
-                          checked
-                        }
-                        onChange={() =>
-                          onChecklistToggle(
-                            key
-                          )
-                        }
-                        style={{
-                          width: 16,
-                          height: 16,
-                          accentColor:
-                            "#8B1E3F",
-                        }}
-                      />
-
-                      <span
-                        style={{
-                          textDecoration:
-                            checked
-                              ? "line-through"
-                              : "none",
-                        }}
-                      >
-                        {label}
-                      </span>
-                    </label>
-                  );
-                }
-              )}
-            </div>
-          </div>
-
-          {/* Workflow Notes */}
-          <div>
-            <div
-              style={{
-                fontSize: 12,
-                fontWeight: 800,
-                color: "#555",
-                textTransform:
-                  "uppercase",
-                letterSpacing:
-                  0.7,
-                marginBottom: 10,
-              }}
-            >
-              Workflow Notes
-            </div>
-
-            <textarea
-              value={
-                job.workflowNotes ||
-                ""
-              }
-              onChange={(event) =>
-                onWorkflowNotesChange(
-                  event.target.value
-                )
-              }
-              placeholder="What needs to happen next? Add production notes, materials, alterations or special instructions..."
-              rows={7}
-              style={{
-                width: "100%",
-                boxSizing:
-                  "border-box",
-                padding:
-                  "11px 13px",
-                border:
-                  "1px solid #D9DDE1",
-                borderRadius: 10,
-                fontSize: 13,
-                lineHeight: 1.45,
-                color: "#2F3A3F",
-                background:
-                  "#FFFFFF",
-                outline: "none",
-                resize:
-                  "vertical",
-                fontFamily:
-                  "inherit",
-              }}
-            />
-          </div>
-        </div>
-
-        <div
-          style={{
-            marginTop: 14,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          <div
-            style={{
-              flex: 1,
-              height: 7,
-              background:
-                "#E8EAED",
-              borderRadius: 999,
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                width: `${checklistPercent}%`,
-                height: "100%",
-                background:
-                  "#8B1E3F",
-                borderRadius: 999,
-                transition:
-                  "width 0.2s ease",
-              }}
-            />
-          </div>
-
-          <span
-            style={{
-              fontSize: 11,
-              fontWeight: 700,
-              color: "#666",
-              minWidth: 34,
-              textAlign: "right",
-            }}
-          >
-            {
-              checklistPercent
-            }%
-          </span>
-        </div>
-      </section>
-
-      {/* =====================================================
-          WORKFLOW LABOUR COSTING
-      ====================================================== */}
       <section
         style={{
           background: "#FFFFFF",
-          border: "1px solid #E5E7EB",
-          borderRadius: 16,
-          padding: 20,
+          border: "1px solid #E6E8EC",
+          borderRadius: 18,
+          padding: 22,
+          boxShadow:
+            "0 2px 10px rgba(0,0,0,0.03)",
         }}
       >
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-start",
+            alignItems: "center",
             gap: 16,
-            flexWrap: "wrap",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: "#8B1E3F",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
+              }}
+            >
+              Workflow
+            </div>
+            <h2
+              style={{
+                margin: "5px 0 0",
+                color: "#2F3A3F",
+                fontSize: 22,
+              }}
+            >
+              Production Progress
+            </h2>
+          </div>
+
+          <div
+            style={{
+              textAlign: "right",
+              color: "#667085",
+              fontSize: 13,
+            }}
+          >
+            <div>Current stage</div>
+            <strong
+              style={{
+                color: "#2F3A3F",
+                fontSize: 15,
+              }}
+            >
+              {job.status || "Unassigned"}
+            </strong>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 10,
+          }}
+        >
+          {WORKFLOW_STAGES.map((stage, index) => {
+            const isActive = stage === job.status;
+            const isComplete = index < workflowIndex;
+
+            return (
+              <button
+                key={stage}
+                type="button"
+                onClick={() => onWorkflowStage(stage)}
+                style={{
+                  textAlign: "left",
+                  border: isActive
+                    ? "1px solid #8B1E3F"
+                    : "1px solid #E6E8EC",
+                  background: isActive
+                    ? "#FFF5F8"
+                    : isComplete
+                    ? "#F8FAFC"
+                    : "#FFFFFF",
+                  borderRadius: 12,
+                  padding: "12px 13px",
+                  cursor: "pointer",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "#98A2B3",
+                    fontWeight: 700,
+                    marginBottom: 5,
+                  }}
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </div>
+                <div
+                  style={{
+                    color: isActive
+                      ? "#8B1E3F"
+                      : "#344054",
+                    fontSize: 14,
+                    fontWeight: 700,
+                  }}
+                >
+                  {stage}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: 16,
+            marginTop: 20,
+          }}
+        >
+          <div
+            style={{
+              padding: 16,
+              borderRadius: 14,
+              background: "#F8FAFC",
+            }}
+          >
+            <div
+              style={{
+                color: "#667085",
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+              }}
+            >
+              Next action
+            </div>
+            <div
+              style={{
+                marginTop: 6,
+                color: "#2F3A3F",
+                fontWeight: 700,
+              }}
+            >
+              {nextAction || "—"}
+            </div>
+          </div>
+
+          <div
+            style={{
+              padding: 16,
+              borderRadius: 14,
+              background: "#F8FAFC",
+            }}
+          >
+            <div
+              style={{
+                color: "#667085",
+                fontSize: 12,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 0.8,
+              }}
+            >
+              Progress
+            </div>
+            <div
+              style={{
+                marginTop: 6,
+                color: "#2F3A3F",
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              {Math.round(
+                (workflowIndex /
+                  (WORKFLOW_STAGES.length - 1)) *
+                  100
+              ) || 0}
+              %
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E6E8EC",
+          borderRadius: 18,
+          padding: 22,
+          boxShadow:
+            "0 2px 10px rgba(0,0,0,0.03)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 16,
             marginBottom: 16,
           }}
         >
           <div>
             <div
               style={{
-                fontSize: 12,
-                fontWeight: 800,
-                letterSpacing: 1,
-                textTransform: "uppercase",
                 color: "#8B1E3F",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1.2,
+                textTransform: "uppercase",
               }}
             >
-              Workflow Labour Costing
+              Checklist
             </div>
-            <div style={{ marginTop: 5, color: "#777", fontSize: 13 }}>
-              Record estimated and actual hours for each production stage.
-            </div>
-          </div>
-
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              color: "#555",
-            }}
-          >
-            Hourly rate
-            <span style={{ color: "#8B1E3F" }}>$</span>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={
-                job.workflowLabourRate == null
-                  ? defaultLabourRate
-                  : job.workflowLabourRate
-              }
-              onChange={(event) =>
-                onWorkflowLabourRateChange?.(event.target.value)
-              }
+            <h2
               style={{
-                width: 96,
-                padding: "8px 9px",
-                border: "1px solid #D9DDE1",
-                borderRadius: 8,
-                fontSize: 13,
+                margin: "5px 0 0",
                 color: "#2F3A3F",
-                boxSizing: "border-box",
+                fontSize: 22,
               }}
-              aria-label="Job labour hourly rate"
-            />
-          </label>
+            >
+              Production Checks
+            </h2>
+          </div>
         </div>
 
         <div
           style={{
-            overflowX: "auto",
-            border: "1px solid #E8EAED",
-            borderRadius: 10,
+            display: "grid",
+            gridTemplateColumns:
+              "repeat(auto-fit, minmax(250px, 1fr))",
+            gap: 10,
+          }}
+        >
+          {CHECKLIST_ITEMS.map(([key, label]) => {
+            const checked = Boolean(
+              job.workflowChecklist?.[key]
+            );
+
+            return (
+              <label
+                key={key}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "12px 13px",
+                  border: "1px solid #E6E8EC",
+                  borderRadius: 12,
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    onChecklistToggle(key)
+                  }
+                />
+                <span
+                  style={{
+                    color: "#344054",
+                    fontSize: 14,
+                  }}
+                >
+                  {label}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 18 }}>
+          <label
+            style={{
+              display: "block",
+              color: "#475467",
+              fontSize: 13,
+              fontWeight: 700,
+              marginBottom: 7,
+            }}
+          >
+            Workflow Notes
+          </label>
+          <textarea
+            value={job.workflowNotes || ""}
+            onChange={(event) =>
+              onWorkflowNotesChange(event.target.value)
+            }
+            rows={4}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              border: "1px solid #D0D5DD",
+              borderRadius: 10,
+              padding: 12,
+              fontFamily: "inherit",
+              resize: "vertical",
+            }}
+          />
+        </div>
+      </section>
+
+      <section
+        style={{
+          background: "#FFFFFF",
+          border: "1px solid #E6E8EC",
+          borderRadius: 18,
+          padding: 22,
+          boxShadow:
+            "0 2px 10px rgba(0,0,0,0.03)",
+        }}
+      >
+        <div
+          style={{
+            marginBottom: 16,
           }}
         >
           <div
             style={{
-              minWidth: 620,
-              display: "grid",
-              gridTemplateColumns: "minmax(150px, 1.5fr) 110px 110px 120px",
-              alignItems: "center",
-              background: "#FAF9F6",
-              borderBottom: "1px solid #E8EAED",
-              padding: "9px 12px",
-              fontSize: 10,
-              fontWeight: 800,
-              color: "#737B80",
+              color: "#8B1E3F",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 1.2,
               textTransform: "uppercase",
-              letterSpacing: 0.6,
             }}
           >
-            <span>Workflow stage</span>
-            <span>Estimated hrs</span>
-            <span>Actual hrs</span>
-            <span>Actual cost</span>
+            Labour Hours
           </div>
+          <h2
+            style={{
+              margin: "5px 0 0",
+              color: "#2F3A3F",
+              fontSize: 22,
+            }}
+          >
+            Production Labour
+          </h2>
+          <p
+            style={{
+              margin: "7px 0 0",
+              color: "#667085",
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
+            Record estimated and actual labour against production stages only.
+          </p>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns:
+              "minmax(260px, 1.6fr) repeat(2, minmax(120px, 0.8fr)) minmax(120px, 0.8fr)",
+            gap: 0,
+            border: "1px solid #E6E8EC",
+            borderRadius: 14,
+            overflow: "hidden",
+          }}
+        >
+          <div style={tableHeaderStyle}>Production Stage</div>
+          <div style={tableHeaderStyle}>Estimated</div>
+          <div style={tableHeaderStyle}>Actual</div>
+          <div style={tableHeaderStyle}>Labour</div>
 
           {LABOUR_WORKFLOW_STAGES.map((stage) => {
-            const entry = workflowHours[stage] || {};
-            const actual = Math.max(0, Number(entry.actual) || 0);
-            const actualCost = actual * effectiveLabourRate;
+            const estimated = workflowHours[stage]?.estimated ?? "";
+            const actual = workflowHours[stage]?.actual ?? "";
+            const stageHours =
+              (Number(estimated) || 0) +
+              (Number(actual) || 0);
+            const stageLabour =
+              Number(actual) * labourRate || 0;
 
             return (
               <div
                 key={stage}
                 style={{
-                  minWidth: 620,
-                  display: "grid",
-                  gridTemplateColumns: "minmax(150px, 1.5fr) 110px 110px 120px",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 12px",
-                  borderBottom: "1px solid #F0F1F2",
+                  display: "contents",
                 }}
               >
-                <strong style={{ fontSize: 12, color: "#3F484D" }}>
+                <div style={tableCellStyleStrong}>
                   {stage}
-                </strong>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={entry.estimated ?? ""}
-                  onChange={(event) =>
-                    onWorkflowHoursChange?.(stage, "estimated", event.target.value)
-                  }
-                  placeholder="—"
-                  aria-label={`${stage} estimated hours`}
-                  style={workflowHoursInputStyle}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.25"
-                  value={entry.actual ?? ""}
-                  onChange={(event) =>
-                    onWorkflowHoursChange?.(stage, "actual", event.target.value)
-                  }
-                  placeholder="—"
-                  aria-label={`${stage} actual hours`}
-                  style={workflowHoursInputStyle}
-                />
-                <span style={{ fontSize: 12, fontWeight: 700, color: "#4F585E" }}>
-                  ${actualCost.toFixed(2)}
-                </span>
+                </div>
+                <div style={tableCellStyle}>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.25"
+                    value={estimated}
+                    onChange={(event) =>
+                      onWorkflowHoursChange(
+                        stage,
+                        "estimated",
+                        event.target.value
+                      )
+                    }
+                    style={tableInputStyle}
+                  />
+                </div>
+                <div style={tableCellStyle}>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.25"
+                    value={actual}
+                    onChange={(event) =>
+                      onWorkflowHoursChange(
+                        stage,
+                        "actual",
+                        event.target.value
+                      )
+                    }
+                    style={tableInputStyle}
+                  />
+                </div>
+                <div style={tableCellStyle}>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      color: stageHours
+                        ? "#2F3A3F"
+                        : "#667085",
+                    }}
+                  >
+                    ${stageLabour.toFixed(2)}
+                  </span>
+                </div>
               </div>
             );
           })}
@@ -1601,178 +1310,124 @@ function JobWorkspaceOverview({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, minmax(110px, 1fr))",
-            gap: 8,
-            marginTop: 14,
+            gridTemplateColumns:
+              "repeat(5, minmax(150px, 1fr))",
+            gap: 10,
+            marginTop: 16,
           }}
         >
-          <LabourSummary label="Estimated hours" value={`${workflowTotals.estimatedHours.toFixed(2)} hrs`} />
-          <LabourSummary label="Actual hours" value={`${workflowTotals.actualHours.toFixed(2)} hrs`} />
-          <LabourSummary label="Estimated labour" value={`$${estimatedLabourCost.toFixed(2)}`} />
-          <LabourSummary label="Actual labour" value={`$${actualLabourCost.toFixed(2)}`} />
-          <LabourSummary
-            label="Hour variance"
-            value={`${labourVariance > 0 ? "+" : ""}${labourVariance.toFixed(2)} hrs`}
-            emphasis={labourVariance > 0 ? "#A33A3A" : labourVariance < 0 ? "#34724B" : "#4F585E"}
+          <SummaryMetric
+            label="Estimated Hours"
+            value={`${estimatedHours.toFixed(2)} hrs`}
+          />
+          <SummaryMetric
+            label="Actual Hours"
+            value={`${actualHours.toFixed(2)} hrs`}
+          />
+          <SummaryMetric
+            label="Estimated Labour"
+            value={`$${estimatedLabour.toFixed(2)}`}
+          />
+          <SummaryMetric
+            label="Actual Labour"
+            value={`$${actualLabour.toFixed(2)}`}
+          />
+          <SummaryMetric
+            label="Hour Variance"
+            value={`${hourVariance.toFixed(2)} hrs`}
           />
         </div>
 
         <div
           style={{
-            marginTop: 12,
-            padding: "9px 11px",
-            borderRadius: 8,
-            background: "#F8F9FA",
-            color: "#737B80",
-            fontSize: 11,
-            lineHeight: 1.4,
+            marginTop: 16,
+            padding: "11px 13px",
+            background: "#F8FAFC",
+            borderRadius: 10,
+            color: "#667085",
+            fontSize: 13,
+            lineHeight: 1.5,
           }}
         >
           The job rate is saved with this job once labour hours are recorded, so changing the Settings default later will not alter historical job costing.
         </div>
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <label
+            style={{
+              color: "#475467",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            Job Labour Rate ($/hr)
+          </label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={
+              job.workflowLabourRate ?? defaultLabourRate ?? 0
+            }
+            onChange={(event) =>
+              onWorkflowLabourRateChange(event.target.value)
+            }
+            style={{
+              width: 130,
+              border: "1px solid #D0D5DD",
+              borderRadius: 10,
+              padding: "9px 11px",
+            }}
+          />
+          <span
+            style={{
+              color: "#667085",
+              fontSize: 12,
+            }}
+          >
+            Default: ${Number(defaultLabourRate || 0).toFixed(2)}/hr
+          </span>
+        </div>
       </section>
-
-      {/* =====================================================
-          THREE-COLUMN SUMMARY
-      ====================================================== */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "1.1fr 1fr 1fr",
-          gap: 14,
-        }}
-      >
-        {/* Job Summary */}
-        <SummaryPanel title="Job Summary">
-          <div
-            style={summaryGridStyle}
-          >
-            <SummaryValue
-              label="Garment"
-              value={
-                job.garmentType ||
-                "General Job"
-              }
-              icon="👗"
-            />
-
-            <SummaryValue
-              label="Status"
-              value={
-                job.status || "-"
-              }
-              status
-            />
-
-            <SummaryValue
-              label="Client"
-              value={
-                job.clientName ||
-                "Unassigned"
-              }
-              icon="👤"
-              fullWidth
-            />
-
-            <SummaryValue
-              label="Due Date"
-              value={
-                formatDate(
-                  job.dueDate
-                ) || "-"
-              }
-              icon="📅"
-              fullWidth
-            />
-          </div>
-        </SummaryPanel>
-
-        {/* Financial Summary */}
-        <SummaryPanel title="At a Glance">
-          <div
-            style={summaryGridStyle}
-          >
-            <SummaryValue
-              label="Quoted"
-              value={`$${quote.toFixed(2)}`}
-              icon="💵"
-            />
-
-            <SummaryValue
-              label="Paid"
-              value={`$${totalPaid.toFixed(2)}`}
-              icon="✓"
-            />
-
-            <SummaryValue
-              label="Outstanding"
-              value={`$${outstanding.toFixed(2)}`}
-              icon="⏳"
-              fullWidth
-            />
-          </div>
-        </SummaryPanel>
-
-        {/* Production Summary */}
-        <SummaryPanel title="Production">
-          <div
-            style={summaryGridStyle}
-          >
-            <SummaryValue
-              label="Progress"
-              value={`${checklistPercent}%`}
-              icon="⚙️"
-            />
-
-            <SummaryValue
-              label="Next Action"
-              value={
-                getNextAction(job)
-              }
-              icon="→"
-            />
-
-            <SummaryValue
-              label="Workflow Hours"
-              value={`${workflowTotals.actualHours.toFixed(2)} hrs`}
-              icon="⏱"
-              fullWidth
-            />
-          </div>
-        </SummaryPanel>
-      </div>
     </div>
   );
 }
 
-function LabourSummary({ label, value, emphasis = "#2F3A3F" }) {
+function SummaryMetric({ label, value }) {
   return (
     <div
       style={{
-        padding: "10px 11px",
-        border: "1px solid #E8EAED",
-        borderRadius: 9,
-        background: "#FAFAFA",
+        padding: 14,
+        border: "1px solid #E6E8EC",
+        borderRadius: 12,
+        background: "#FCFCFD",
       }}
     >
       <div
         style={{
-          fontSize: 9,
-          fontWeight: 800,
-          color: "#7A8287",
+          color: "#667085",
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: 0.8,
           textTransform: "uppercase",
-          letterSpacing: 0.5,
         }}
       >
         {label}
       </div>
       <div
         style={{
-          marginTop: 4,
-          fontSize: 14,
-          fontWeight: 800,
-          color: emphasis,
+          marginTop: 5,
+          color: "#2F3A3F",
+          fontWeight: 700,
+          fontSize: 16,
         }}
       >
         {value}
@@ -1781,54 +1436,51 @@ function LabourSummary({ label, value, emphasis = "#2F3A3F" }) {
   );
 }
 
-const workflowHoursInputStyle = {
-  width: "100%",
-  minHeight: 34,
-  padding: "6px 8px",
-  border: "1px solid #D9DDE1",
-  borderRadius: 7,
-  fontSize: 12,
+const tableHeaderStyle = {
+  padding: "12px 14px",
+  background: "#F8FAFC",
+  borderBottom: "1px solid #E6E8EC",
+  color: "#667085",
+  fontSize: 11,
+  fontWeight: 700,
+  letterSpacing: 0.8,
+  textTransform: "uppercase",
+};
+
+const tableCellStyle = {
+  padding: "12px 14px",
+  borderBottom: "1px solid #E6E8EC",
+  color: "#475467",
+  fontSize: 14,
+};
+
+const tableCellStyleStrong = {
+  ...tableCellStyle,
   color: "#2F3A3F",
-  background: "#FFFFFF",
+  fontWeight: 700,
+};
+
+const tableInputStyle = {
+  width: "100%",
   boxSizing: "border-box",
+  border: "1px solid #D0D5DD",
+  borderRadius: 9,
+  padding: "8px 10px",
 };
 
 function StatusBadge({ status }) {
-  const styles = {
-    Quote: ["#F3F4F6", "#4B5563"],
-    New: ["#F3F4F6", "#4B5563"],
-    Booked: ["#DBEAFE", "#1D4ED8"],
-    Measuring: ["#E0F2FE", "#0369A1"],
-    Pattern: ["#EDE9FE", "#6D28D9"],
-    Cutting: ["#FFEDD5", "#C2410C"],
-    Sewing: ["#FEF3C7", "#92400E"],
-    Fitting: ["#FCE7F3", "#BE185D"],
-    Alterations: ["#FEF9C3", "#854D0E"],
-    Mending: ["#FEF3C7", "#92400E"],
-    Ready: ["#DCFCE7", "#166534"],
-    Collected: ["#D1FAE5", "#047857"],
-    Completed: ["#DCFCE7", "#166534"],
-    Cancelled: ["#E5E7EB", "#4B5563"],
-  };
-
-  const [background, color] =
-    styles[status] || [
-      "#F3F4F6",
-      "#4B5563",
-    ];
-
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        minHeight: 24,
-        padding: "0 9px",
+        minHeight: 28,
+        padding: "0 10px",
         borderRadius: 999,
-        background,
-        color,
-        fontSize: 11,
-        fontWeight: 800,
+        background: "#F8E8EE",
+        color: "#8B1E3F",
+        fontSize: 12,
+        fontWeight: 700,
       }}
     >
       {status}
@@ -1836,692 +1488,18 @@ function StatusBadge({ status }) {
   );
 }
 
-function SummaryPanel({
-  title,
-  children,
-}) {
-  return (
-    <section
-      style={{
-        background: "#FFFFFF",
-        border: "1px solid #E6E8EC",
-        borderRadius: 14,
-        padding: 16,
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          fontSize: 12,
-          fontWeight: 800,
-          color: "#8B1E3F",
-          textTransform: "uppercase",
-          letterSpacing: 0.8,
-          marginBottom: 12,
-        }}
-      >
-        {title}
-      </div>
-
-      {children}
-    </section>
-  );
+function FittingEditor() {
+  return null;
 }
 
-function SummaryValue({
-  label,
-  value,
-  icon,
-  status = false,
-  fullWidth = false,
-}) {
-  return (
-    <div
-      style={{
-        gridColumn:
-          fullWidth
-            ? "1 / -1"
-            : undefined,
-        minWidth: 0,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          color: "#8A9297",
-          fontSize: 10,
-          textTransform: "uppercase",
-          fontWeight: 700,
-          letterSpacing: 0.5,
-        }}
-      >
-        {icon && (
-          <span aria-hidden="true">
-            {icon}
-          </span>
-        )}
-        {label}
-      </div>
-
-      <div
-        style={{
-          marginTop: 4,
-          color: status
-            ? "#8B1E3F"
-            : "#2F3A3F",
-          fontSize: 13,
-          fontWeight: 700,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-        }}
-        title={String(value)}
-      >
-        {value}
-      </div>
-    </div>
-  );
+function PhotoForm() {
+  return null;
 }
 
-const summaryGridStyle = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(2, minmax(0, 1fr))",
-  gap: "12px 14px",
-};
-
-function formatDate(value) {
-  if (!value) return "";
-
-  const text = String(value);
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    const [year, month, day] =
-      text.split("-").map(Number);
-
-    return new Date(
-      year,
-      month - 1,
-      day
-    ).toLocaleDateString("en-AU", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
-    const [day, month, year] =
-      text.split("/").map(Number);
-
-    return new Date(
-      year,
-      month - 1,
-      day
-    ).toLocaleDateString("en-AU", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  const date = new Date(text);
-
-  return Number.isNaN(date.getTime())
-    ? text
-    : date.toLocaleDateString("en-AU", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+function PhotoLightbox() {
+  return null;
 }
 
-function FittingForm({
-  fitting,
-  onSave,
-  onCancel,
-}) {
-  const [title, setTitle] =
-    useState(
-      fitting?.title || ""
-    );
-
-  const [date, setDate] =
-    useState(fitting?.date || "");
-
-  const [time, setTime] =
-    useState(fitting?.time || "");
-
-  const [status, setStatus] =
-    useState(
-      fitting?.status || "Scheduled"
-    );
-
-  const [notes, setNotes] =
-    useState(fitting?.notes || "");
-
-  return (
-    <div style={modalOverlayStyle}>
-      <div style={modalCardStyle}>
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              FITTING
-            </div>
-            <h2 style={modalTitleStyle}>
-              {fitting
-                ? "Edit Fitting"
-                : "Add Fitting"}
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            style={modalCloseStyle}
-            aria-label="Close fitting form"
-          >
-            ×
-          </button>
-        </div>
-
-        <div style={modalBodyStyle}>
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Fitting Title
-            </span>
-            <input
-              value={title}
-              onChange={(event) =>
-                setTitle(
-                  event.target.value
-                )
-              }
-              placeholder="First fitting"
-              style={inputStyle}
-            />
-          </label>
-
-          <div style={twoColumnStyle}>
-            <label style={fieldStyle}>
-              <span style={labelStyle}>
-                Date
-              </span>
-              <input
-                type="date"
-                value={date}
-                onChange={(event) =>
-                  setDate(
-                    event.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-            </label>
-
-            <label style={fieldStyle}>
-              <span style={labelStyle}>
-                Time
-              </span>
-              <input
-                type="time"
-                value={time}
-                onChange={(event) =>
-                  setTime(
-                    event.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-            </label>
-          </div>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Status
-            </span>
-            <select
-              value={status}
-              onChange={(event) =>
-                setStatus(
-                  event.target.value
-                )
-              }
-              style={inputStyle}
-            >
-              <option value="Scheduled">
-                Scheduled
-              </option>
-              <option value="Completed">
-                Completed
-              </option>
-              <option value="Cancelled">
-                Cancelled
-              </option>
-            </select>
-          </label>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Notes
-            </span>
-            <textarea
-              value={notes}
-              onChange={(event) =>
-                setNotes(
-                  event.target.value
-                )
-              }
-              rows={5}
-              placeholder="Fitting notes, changes required or client comments..."
-              style={textareaStyle}
-            />
-          </label>
-        </div>
-
-        <div style={modalFooterStyle}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() =>
-              onSave?.({
-                title,
-                date,
-                time,
-                status,
-                notes,
-              })
-            }
-          >
-            Save Fitting
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
+function PhotoEditDialog() {
+  return null;
 }
-
-function PhotoForm({
-  onSave,
-  onCancel,
-}) {
-  const [caption, setCaption] =
-    useState("");
-
-  const [url, setUrl] =
-    useState("");
-
-  return (
-    <div style={modalOverlayStyle}>
-      <div style={modalCardStyle}>
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              JOB PHOTO
-            </div>
-            <h2 style={modalTitleStyle}>
-              Add Photo
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            style={modalCloseStyle}
-            aria-label="Close photo form"
-          >
-            ×
-          </button>
-        </div>
-
-        <div style={modalBodyStyle}>
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Photo URL
-            </span>
-            <input
-              value={url}
-              onChange={(event) =>
-                setUrl(
-                  event.target.value
-                )
-              }
-              placeholder="https://..."
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Caption
-            </span>
-            <input
-              value={caption}
-              onChange={(event) =>
-                setCaption(
-                  event.target.value
-                )
-              }
-              placeholder="Front view"
-              style={inputStyle}
-            />
-          </label>
-        </div>
-
-        <div style={modalFooterStyle}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() =>
-              onSave?.({
-                id: crypto.randomUUID(),
-                url,
-                caption,
-                createdAt:
-                  new Date().toISOString(),
-              })
-            }
-          >
-            Add Photo
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PhotoEditForm({
-  photo,
-  onSave,
-  onCancel,
-}) {
-  const [caption, setCaption] =
-    useState(photo?.caption || "");
-
-  const [url, setUrl] =
-    useState(photo?.url || "");
-
-  return (
-    <div style={modalOverlayStyle}>
-      <div style={modalCardStyle}>
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              JOB PHOTO
-            </div>
-            <h2 style={modalTitleStyle}>
-              Edit Photo
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            style={modalCloseStyle}
-            aria-label="Close photo editor"
-          >
-            ×
-          </button>
-        </div>
-
-        <div style={modalBodyStyle}>
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Photo URL
-            </span>
-            <input
-              value={url}
-              onChange={(event) =>
-                setUrl(
-                  event.target.value
-                )
-              }
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Caption
-            </span>
-            <input
-              value={caption}
-              onChange={(event) =>
-                setCaption(
-                  event.target.value
-                )
-              }
-              style={inputStyle}
-            />
-          </label>
-        </div>
-
-        <div style={modalFooterStyle}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() =>
-              onSave?.({
-                ...photo,
-                url,
-                caption,
-                updatedAt:
-                  new Date().toISOString(),
-              })
-            }
-          >
-            Save Changes
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PhotoPreview({
-  photo,
-  onClose,
-}) {
-  return (
-    <div style={modalOverlayStyle}>
-      <div
-        style={{
-          ...modalCardStyle,
-          maxWidth: 900,
-        }}
-      >
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              JOB PHOTO
-            </div>
-            <h2 style={modalTitleStyle}>
-              {photo?.caption ||
-                "Photo Preview"}
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            style={modalCloseStyle}
-            aria-label="Close photo preview"
-          >
-            ×
-          </button>
-        </div>
-
-        <div
-          style={{
-            padding: 20,
-            display: "flex",
-            justifyContent: "center",
-            background: "#F7F5F2",
-          }}
-        >
-          {photo?.url ? (
-            <img
-              src={photo.url}
-              alt={
-                photo.caption ||
-                "Job photo"
-              }
-              style={{
-                maxWidth: "100%",
-                maxHeight: "70vh",
-                borderRadius: 10,
-                objectFit: "contain",
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                padding: 40,
-                color: "#777",
-              }}
-            >
-              No image URL provided.
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const modalOverlayStyle = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 1000,
-  background: "rgba(31,41,51,.45)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 20,
-  boxSizing: "border-box",
-};
-
-const modalCardStyle = {
-  width: "100%",
-  maxWidth: 620,
-  maxHeight: "calc(100vh - 40px)",
-  overflowY: "auto",
-  background: "#FFFFFF",
-  borderRadius: 16,
-  boxShadow: "0 24px 70px rgba(31,41,51,.24)",
-};
-
-const modalHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: 16,
-  padding: "20px 22px",
-  borderBottom: "1px solid #ECECEC",
-};
-
-const modalEyebrowStyle = {
-  color: "#8B1E3F",
-  fontSize: 10,
-  fontWeight: 800,
-  letterSpacing: 1,
-  textTransform: "uppercase",
-};
-
-const modalTitleStyle = {
-  margin: "4px 0 0",
-  color: "#2F3A3F",
-  fontSize: 20,
-};
-
-const modalCloseStyle = {
-  width: 36,
-  height: 36,
-  border: "1px solid #D9DDE1",
-  borderRadius: 9,
-  background: "#FFFFFF",
-  color: "#374151",
-  fontSize: 20,
-  cursor: "pointer",
-  flexShrink: 0,
-};
-
-const modalBodyStyle = {
-  padding: 22,
-  display: "flex",
-  flexDirection: "column",
-  gap: 16,
-};
-
-const modalFooterStyle = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 10,
-  padding: "16px 22px",
-  borderTop: "1px solid #ECECEC",
-};
-
-const twoColumnStyle = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(2, minmax(0, 1fr))",
-  gap: 14,
-};
-
-const fieldStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-};
-
-const labelStyle = {
-  color: "#4F585E",
-  fontSize: 11,
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: 0.5,
-};
-
-const inputStyle = {
-  width: "100%",
-  minHeight: 40,
-  boxSizing: "border-box",
-  border: "1px solid #D9DDE1",
-  borderRadius: 8,
-  padding: "9px 11px",
-  fontSize: 13,
-  color: "#2F3A3F",
-  background: "#FFFFFF",
-  outline: "none",
-};
-
-const textareaStyle = {
-  ...inputStyle,
-  minHeight: 110,
-  resize: "vertical",
-  fontFamily: "inherit",
-  lineHeight: 1.45,
-};
