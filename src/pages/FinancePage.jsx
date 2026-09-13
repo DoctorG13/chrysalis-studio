@@ -30,6 +30,7 @@ const EMPTY_LINE = {
   rate: 0,
 };
 
+const DEFAULT_GST_RATE = 0;
 const DEFAULT_DEPOSIT_PERCENT = 25;
 
 function today() {
@@ -252,6 +253,11 @@ export default function FinancePage({
     setPaymentsLoading,
   ] = useState(true);
 
+  const [financialDefaults, setFinancialDefaults] = useState({
+    gstRate: DEFAULT_GST_RATE,
+    depositPercent: DEFAULT_DEPOSIT_PERCENT,
+  });
+
   async function loadInvoices() {
     setLoading(true);
     setError("");
@@ -345,6 +351,45 @@ export default function FinancePage({
     loadFinancePayments();
   }, [jobs]);
 
+  useEffect(() => {
+    let active = true;
+
+    async function loadFinancialDefaults() {
+      try {
+        const response = await fetch("/api/settings", {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        const financial = payload?.settings?.financial || {};
+
+        if (!active) return;
+
+        setFinancialDefaults({
+          gstRate: DEFAULT_GST_RATE,
+          depositPercent: Math.min(
+            Math.max(
+              Number(financial.depositPercent ?? DEFAULT_DEPOSIT_PERCENT) || 0,
+              0
+            ),
+            100
+          ),
+        });
+      } catch (error) {
+        console.warn("Unable to load financial defaults.", error);
+      }
+    }
+
+    loadFinancialDefaults();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const financeJobs =
     useMemo(() => {
       return jobs
@@ -376,7 +421,7 @@ export default function FinancePage({
               Math.max(
                 Number(
                   job.depositPercent ??
-                    DEFAULT_DEPOSIT_PERCENT
+                    financialDefaults.depositPercent
                 ) || 0,
                 0
               ),
@@ -437,6 +482,7 @@ export default function FinancePage({
       jobs,
       clients,
       jobPayments,
+      financialDefaults.depositPercent,
     ]);
 
   const financeSummary =
@@ -532,7 +578,7 @@ export default function FinancePage({
       dueDate: "",
       status: "Draft",
       notes: "",
-      gstRate: 10,
+      gstRate: DEFAULT_GST_RATE,
       lineItems: [
         { ...EMPTY_LINE },
       ],
@@ -555,8 +601,8 @@ export default function FinancePage({
       validUntil: addDays(issueDate, 30),
       status: "Draft",
       notes: "",
-      gstRate: 10,
-      depositPercent: DEFAULT_DEPOSIT_PERCENT,
+      gstRate: DEFAULT_GST_RATE,
+      depositPercent: financialDefaults.depositPercent,
       lineItems: [
         { ...EMPTY_LINE },
       ],
@@ -572,11 +618,11 @@ export default function FinancePage({
       ...quote,
       type: "quote",
       gstRate: Number(
-        quote.gstRate ?? 10
+        quote.gstRate ?? DEFAULT_GST_RATE
       ),
       depositPercent: Number(
         quote.depositPercent ??
-          DEFAULT_DEPOSIT_PERCENT
+          financialDefaults.depositPercent
       ),
       lineItems:
         normaliseLineItems(
@@ -593,7 +639,7 @@ export default function FinancePage({
     setForm({
       ...invoice,
       gstRate: Number(
-        invoice.gstRate ?? 10
+        invoice.gstRate ?? DEFAULT_GST_RATE
       ),
       lineItems:
         normaliseLineItems(
@@ -731,7 +777,7 @@ export default function FinancePage({
     total *
     (Number(
       form?.depositPercent ??
-        DEFAULT_DEPOSIT_PERCENT
+        financialDefaults.depositPercent
     ) / 100);
 
   async function save() {
@@ -1937,28 +1983,24 @@ export default function FinancePage({
                           gap: 5,
                         }}
                       >
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.1"
+                        <select
                           value={
-                            form.gstRate
+                            Number(form.gstRate ?? DEFAULT_GST_RATE)
                           }
                           onChange={(e) =>
                             updateField(
                               "gstRate",
-                              e.target
-                                .value
+                              Number(e.target.value)
                             )
                           }
                           style={{
                             ...input,
-                            width: 75,
-                            textAlign:
-                              "right",
+                            width: 90,
                           }}
-                        />
-                        <span>%</span>
+                        >
+                          <option value="0">0% — No GST</option>
+                          <option value="10">10% — GST</option>
+                        </select>
                       </div>
                     </div>
 
@@ -2015,7 +2057,7 @@ export default function FinancePage({
                           step="1"
                           value={
                             form.depositPercent ??
-                            DEFAULT_DEPOSIT_PERCENT
+                            financialDefaults.depositPercent
                           }
                           onChange={(e) =>
                             updateField(
@@ -2717,31 +2759,24 @@ export default function FinancePage({
                       GST
                     </span>
 
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
+                    <select
                       value={
-                        form.gstRate
+                        Number(form.gstRate ?? DEFAULT_GST_RATE)
                       }
                       onChange={(e) =>
                         updateField(
                           "gstRate",
-                          e.target
-                            .value
+                          Number(e.target.value)
                         )
                       }
                       style={{
                         ...input,
-                        width: 90,
-                        textAlign:
-                          "right",
+                        width: 150,
                       }}
-                    />
-
-                    <span>
-                      %
-                    </span>
+                    >
+                      <option value="0">0% — No GST</option>
+                      <option value="10">10% — GST</option>
+                    </select>
                   </div>
 
                   <SummaryRow
