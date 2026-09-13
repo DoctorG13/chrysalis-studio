@@ -132,9 +132,10 @@ function validateImportedDatabase(filePath) {
       );
     }
 
-    database
-      .prepare("PRAGMA integrity_check")
-      .get();
+    const integrity = database.prepare("PRAGMA integrity_check").get();
+    if (integrity?.integrity_check !== "ok") {
+      throw new Error("This file failed the SQLite integrity check.");
+    }
   } finally {
     database.close();
   }
@@ -191,9 +192,7 @@ function writeUpload(request, destination) {
 }
 
 function getPublicForwardingHeaders(request) {
-  const forwardedHost = String(
-    request.headers["x-forwarded-host"] || request.headers.host || ""
-  )
+  const publicHost = String(request.headers.host || "")
     .split(",")[0]
     .trim();
   const forwardedProto = String(
@@ -203,12 +202,14 @@ function getPublicForwardingHeaders(request) {
     .trim();
 
   return {
-    "x-forwarded-host": forwardedHost,
+    "x-forwarded-host": publicHost,
     "x-forwarded-proto": forwardedProto,
   };
 }
 
 function proxyToInternal(request, response, path) {
+  const publicForwardingHeaders = getPublicForwardingHeaders(request);
+
   const proxy = httpRequest(
     {
       hostname: "127.0.0.1",
@@ -217,8 +218,8 @@ function proxyToInternal(request, response, path) {
       method: request.method,
       headers: {
         ...request.headers,
-        ...getPublicForwardingHeaders(request),
-        host: `127.0.0.1:${INTERNAL_PORT}`,
+        ...publicForwardingHeaders,
+        host: publicForwardingHeaders["x-forwarded-host"],
         connection: "close",
       },
     },
