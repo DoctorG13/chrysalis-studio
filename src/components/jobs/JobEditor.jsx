@@ -18,7 +18,9 @@ import JobFittings from "./JobFittings";
 import JobPhotos from "./JobPhotos";
 
 const WORKFLOW_STAGES = JOB_WORKFLOW;
-const LABOUR_WORKFLOW_STAGES = PRODUCTION_WORKFLOW;
+const LABOUR_WORKFLOW_STAGES = PRODUCTION_WORKFLOW.filter(
+  (stage) => stage !== "Ready"
+);
 
 const CHECKLIST_ITEMS = [
   ["measurements", "Measurements confirmed"],
@@ -694,157 +696,67 @@ export default function JobEditor({
               title="Close job"
               style={{
                 flexShrink: 0,
-                width: 42,
-                height: 42,
-                border:
-                  "1px solid #D9DDE1",
-                borderRadius: 10,
+                border: "1px solid #E0E3E6",
                 background: "#FFFFFF",
-                color: "#374151",
-                fontSize: 20,
+                color: "#59636A",
+                borderRadius: 10,
+                minHeight: 40,
+                padding: "0 14px",
                 cursor: "pointer",
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 22,
-              marginTop: 18,
-              paddingTop: 16,
-              borderTop:
-                "1px solid #ECECEC",
-              color: "#666",
-              fontSize: 14,
-            }}
-          >
-            <div
-              style={{
-                color: "#2F3A3F",
                 fontWeight: 700,
               }}
             >
-              👤{" "}
-              {editedJob.clientName ||
-                "No client assigned"}
-            </div>
-
-            <div>
-              👗{" "}
-              {editedJob.garmentType ||
-                "General Job"}
-            </div>
-
-            {editedJob.dueDate && (
-              <div>
-                📅{" "}
-                {formatDate(
-                  editedJob.dueDate
-                )}
-              </div>
-            )}
-
-            {editedJob.priority && (
-              <div>
-                🎯{" "}
-                {editedJob.priority}
-              </div>
-            )}
+              Close
+            </button>
           </div>
         </div>
 
-        {/* =====================================================
-            TABS
-        ====================================================== */}
+        {saveFeedback && (
+          <div
+            style={{
+              padding: "11px 14px",
+              borderRadius: 10,
+              background:
+                saveFeedback.type === "success"
+                  ? "#F0FDF4"
+                  : "#FFF5F5",
+              border:
+                saveFeedback.type === "success"
+                  ? "1px solid #B7DFC5"
+                  : "1px solid #F0B8B8",
+              color:
+                saveFeedback.type === "success"
+                  ? "#34724B"
+                  : "#A33A3A",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            {saveFeedback.message}
+          </div>
+        )}
+
         <JobTabs
           activeTab={activeTab}
           onChange={setActiveTab}
         />
 
-        {/* =====================================================
-            CONTENT
-        ====================================================== */}
         {renderTab()}
-
-        {/* =====================================================
-            SAVE CONFIRMATION + STICKY ACTION BAR
-        ====================================================== */}
-        {saveFeedback && (
-          <div
-            role="status"
-            aria-live="polite"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              width: "100%",
-              boxSizing: "border-box",
-              marginTop: -2,
-              padding: "12px 16px",
-              borderRadius: 12,
-              background:
-                saveFeedback.type === "success"
-                  ? "#ECFDF5"
-                  : "#FEF2F2",
-              border:
-                saveFeedback.type === "success"
-                  ? "1px solid #86EFAC"
-                  : "1px solid #FCA5A5",
-              color:
-                saveFeedback.type === "success"
-                  ? "#166534"
-                  : "#991B1B",
-              fontSize: 14,
-              fontWeight: 700,
-              textAlign: "center",
-            }}
-          >
-            <span
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background:
-                  saveFeedback.type === "success"
-                    ? "#D1FAE5"
-                    : "#FEE2E2",
-                fontSize: 15,
-              }}
-            >
-              {saveFeedback.type === "success"
-                ? "✓"
-                : "!"}
-            </span>
-            <span>{saveFeedback.message}</span>
-          </div>
-        )}
 
         <div
           style={{
-            position: "sticky",
-            bottom: 0,
-            zIndex: 20,
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             gap: 12,
-            padding: "14px 0 2px",
-            background:
-              "linear-gradient(to bottom, rgba(247,245,242,0), #F7F5F2 18px)",
+            flexWrap: "wrap",
+            paddingTop: 2,
           }}
         >
           <Button
-            type="button"
             variant="danger"
             onClick={handleDelete}
+            disabled={isSaving}
           >
             Delete Job
           </Button>
@@ -856,29 +768,27 @@ export default function JobEditor({
             }}
           >
             <Button
-              type="button"
               variant="secondary"
               onClick={onCancel}
+              disabled={isSaving}
             >
               Cancel
             </Button>
 
             <Button
-              type="button"
-              variant="primary"
               onClick={handleSave}
               disabled={isSaving}
             >
               {isSaving
-                ? "⏳ Saving..."
-                : "💾 Save"}
+                ? "Saving..."
+                : "Save"}
             </Button>
           </div>
         </div>
       </div>
 
       {showFittingForm && (
-        <FittingForm
+        <FittingEditor
           fitting={editingFitting}
           onSave={handleSaveFitting}
           onCancel={() => {
@@ -891,28 +801,22 @@ export default function JobEditor({
       {showPhotoForm && (
         <PhotoForm
           onSave={handleSavePhoto}
-          onCancel={() =>
-            setShowPhotoForm(false)
-          }
-        />
-      )}
-
-      {editingPhoto && (
-        <PhotoEditForm
-          photo={editingPhoto}
-          onSave={handleSavePhotoEdit}
-          onCancel={() =>
-            setEditingPhoto(null)
-          }
+          onCancel={() => setShowPhotoForm(false)}
         />
       )}
 
       {selectedPhoto && (
-        <PhotoPreview
+        <PhotoViewer
           photo={selectedPhoto}
-          onClose={() =>
-            setSelectedPhoto(null)
-          }
+          onClose={() => setSelectedPhoto(null)}
+        />
+      )}
+
+      {editingPhoto && (
+        <PhotoEditor
+          photo={editingPhoto}
+          onSave={handleSavePhotoEdit}
+          onCancel={() => setEditingPhoto(null)}
         />
       )}
 
@@ -926,7 +830,7 @@ function JobWorkspaceOverview({
   onWorkflowStage,
   onChecklistToggle,
   onWorkflowNotesChange,
-  defaultLabourRate = 0,
+  defaultLabourRate,
   onWorkflowLabourRateChange,
   onWorkflowHoursChange,
 }) {
@@ -1033,14 +937,12 @@ function JobWorkspaceOverview({
                 fontSize: 12,
                 fontWeight: 800,
                 letterSpacing: 1,
-                textTransform:
-                  "uppercase",
+                textTransform: "uppercase",
                 color: "#8B1E3F",
               }}
             >
-              Garment Workflow
+              Workflow
             </div>
-
             <div
               style={{
                 marginTop: 5,
@@ -1048,48 +950,43 @@ function JobWorkspaceOverview({
                 fontSize: 13,
               }}
             >
-              Move the job through
-              production as work is
-              completed.
+              Move the job through the shared production workflow.
             </div>
           </div>
 
-          {job.status && (
-            <StatusBadge
-              status={job.status}
-            />
-          )}
+          <div
+            style={{
+              fontSize: 12,
+              color: "#666",
+              fontWeight: 700,
+            }}
+          >
+            {job.status || "Unassigned"}
+          </div>
         </div>
 
         <div
           style={{
             display: "grid",
             gridTemplateColumns:
-              "repeat(12, minmax(82px, 1fr))",
-            gap: 7,
-            overflowX: "auto",
-            paddingBottom: 3,
+              "repeat(auto-fit, minmax(82px, 1fr))",
+            gap: 8,
           }}
         >
           {WORKFLOW_STAGES.map(
             (stage, index) => {
               const isCurrent =
-                job.status === stage;
-
+                stage === job.status;
               const isComplete =
-                currentStageIndex >=
-                  0 &&
-                index <
-                  currentStageIndex;
+                currentStageIndex >= 0 &&
+                index < currentStageIndex;
 
               return (
                 <button
-                  key={stage}
                   type="button"
+                  key={stage}
                   onClick={() =>
-                    onWorkflowStage(
-                      stage
-                    )
+                    onWorkflowStage(stage)
                   }
                   title={`Set workflow stage to ${stage}`}
                   style={{
@@ -1206,7 +1103,8 @@ function JobWorkspaceOverview({
               fontSize: 12,
             }}
           >
-            ⚠️ This job is currently{" "}
+            ⚠️ This job is
+            currently{" "}
             <strong>
               Cancelled
             </strong>
@@ -1667,21 +1565,19 @@ function JobWorkspaceOverview({
               label="Client"
               value={
                 job.clientName ||
-                "Unassigned"
+                job.client ||
+                "-"
               }
-              icon="👤"
-              fullWidth
+              icon="♟"
             />
 
             <SummaryValue
               label="Due Date"
               value={
-                formatDate(
-                  job.dueDate
-                ) || "-"
+                job.dueDate ||
+                "-"
               }
-              icon="📅"
-              fullWidth
+              icon="▣"
             />
           </div>
         </SummaryPanel>
@@ -1706,8 +1602,8 @@ function JobWorkspaceOverview({
             <SummaryValue
               label="Outstanding"
               value={`$${outstanding.toFixed(2)}`}
-              icon="⏳"
-              fullWidth
+              icon="⌛"
+              status={outstanding > 0}
             />
           </div>
         </SummaryPanel>
@@ -1720,13 +1616,14 @@ function JobWorkspaceOverview({
             <SummaryValue
               label="Progress"
               value={`${checklistPercent}%`}
-              icon="⚙️"
+              icon="⚙"
             />
 
             <SummaryValue
               label="Next Action"
               value={
-                getNextAction(job)
+                getNextAction(job) ||
+                "-"
               }
               icon="→"
             />
@@ -1734,103 +1631,12 @@ function JobWorkspaceOverview({
             <SummaryValue
               label="Workflow Hours"
               value={`${workflowTotals.actualHours.toFixed(2)} hrs`}
-              icon="⏱"
-              fullWidth
+              icon="◷"
             />
           </div>
         </SummaryPanel>
       </div>
     </div>
-  );
-}
-
-function LabourSummary({ label, value, emphasis = "#2F3A3F" }) {
-  return (
-    <div
-      style={{
-        padding: "10px 11px",
-        border: "1px solid #E8EAED",
-        borderRadius: 9,
-        background: "#FAFAFA",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 9,
-          fontWeight: 800,
-          color: "#7A8287",
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          marginTop: 4,
-          fontSize: 14,
-          fontWeight: 800,
-          color: emphasis,
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-const workflowHoursInputStyle = {
-  width: "100%",
-  minHeight: 34,
-  padding: "6px 8px",
-  border: "1px solid #D9DDE1",
-  borderRadius: 7,
-  fontSize: 12,
-  color: "#2F3A3F",
-  background: "#FFFFFF",
-  boxSizing: "border-box",
-};
-
-function StatusBadge({ status }) {
-  const styles = {
-    Quote: ["#F3F4F6", "#4B5563"],
-    New: ["#F3F4F6", "#4B5563"],
-    Booked: ["#DBEAFE", "#1D4ED8"],
-    Measuring: ["#E0F2FE", "#0369A1"],
-    Pattern: ["#EDE9FE", "#6D28D9"],
-    Cutting: ["#FFEDD5", "#C2410C"],
-    Sewing: ["#FEF3C7", "#92400E"],
-    Fitting: ["#FCE7F3", "#BE185D"],
-    Alterations: ["#FEF9C3", "#854D0E"],
-    Mending: ["#FEF3C7", "#92400E"],
-    Ready: ["#DCFCE7", "#166534"],
-    Collected: ["#D1FAE5", "#047857"],
-    Completed: ["#DCFCE7", "#166534"],
-    Cancelled: ["#E5E7EB", "#4B5563"],
-  };
-
-  const [background, color] =
-    styles[status] || [
-      "#F3F4F6",
-      "#4B5563",
-    ];
-
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        minHeight: 24,
-        padding: "0 9px",
-        borderRadius: 999,
-        background,
-        color,
-        fontSize: 11,
-        fontWeight: 800,
-      }}
-    >
-      {status}
-    </span>
   );
 }
 
@@ -1842,20 +1648,20 @@ function SummaryPanel({
     <section
       style={{
         background: "#FFFFFF",
-        border: "1px solid #E6E8EC",
-        borderRadius: 14,
-        padding: 16,
+        border: "1px solid #E1E4E7",
+        borderRadius: 16,
+        padding: 20,
         minWidth: 0,
       }}
     >
       <div
         style={{
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: 800,
-          color: "#8B1E3F",
+          letterSpacing: 0.7,
           textTransform: "uppercase",
-          letterSpacing: 0.8,
-          marginBottom: 12,
+          color: "#8B1E3F",
+          marginBottom: 14,
         }}
       >
         {title}
@@ -1871,15 +1677,10 @@ function SummaryValue({
   value,
   icon,
   status = false,
-  fullWidth = false,
 }) {
   return (
     <div
       style={{
-        gridColumn:
-          fullWidth
-            ? "1 / -1"
-            : undefined,
         minWidth: 0,
       }}
     >
@@ -1887,35 +1688,70 @@ function SummaryValue({
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 6,
-          color: "#8A9297",
-          fontSize: 10,
+          gap: 7,
+          fontSize: 11,
+          color: "#7A8388",
           textTransform: "uppercase",
+          letterSpacing: 0.6,
           fontWeight: 700,
-          letterSpacing: 0.5,
         }}
       >
-        {icon && (
-          <span aria-hidden="true">
-            {icon}
-          </span>
-        )}
-        {label}
+        <span>{icon}</span>
+        <span>{label}</span>
       </div>
 
       <div
         style={{
-          marginTop: 4,
+          marginTop: 5,
+          fontSize: 15,
+          lineHeight: 1.3,
+          fontWeight: 700,
           color: status
             ? "#8B1E3F"
             : "#2F3A3F",
-          fontSize: 13,
-          fontWeight: 700,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          overflowWrap:
+            "anywhere",
         }}
-        title={String(value)}
+      >
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function LabourSummary({
+  label,
+  value,
+  emphasis = "#2F3A3F",
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid #E5E7EB",
+        borderRadius: 10,
+        padding: "10px 11px",
+        background: "#FAFAFA",
+        minWidth: 0,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          fontWeight: 800,
+          textTransform: "uppercase",
+          letterSpacing: 0.6,
+          color: "#7A8388",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: 5,
+          fontSize: 14,
+          fontWeight: 800,
+          color: emphasis,
+        }}
       >
         {value}
       </div>
@@ -1927,224 +1763,105 @@ const summaryGridStyle = {
   display: "grid",
   gridTemplateColumns:
     "repeat(2, minmax(0, 1fr))",
-  gap: "12px 14px",
+  gap: 16,
 };
 
-function formatDate(value) {
-  if (!value) return "";
+const workflowHoursInputStyle = {
+  width: "100%",
+  minHeight: 34,
+  boxSizing: "border-box",
+  border: "1px solid #D9DDE1",
+  borderRadius: 8,
+  padding: "7px 8px",
+  fontSize: 12,
+  color: "#2F3A3F",
+  background: "#FFFFFF",
+};
 
-  const text = String(value);
+function StatusBadge({
+  status,
+}) {
+  const colourMap = {
+    Quote: ["#F1F5F9", "#475569"],
+    Booked: ["#DBEAFE", "#1D4ED8"],
+    Measuring: ["#E0F2FE", "#0369A1"],
+    Pattern: ["#EDE9FE", "#6D28D9"],
+    Cutting: ["#FFEDD5", "#C2410C"],
+    Sewing: ["#FEF3C7", "#B45309"],
+    Fitting: ["#FCE7F3", "#BE185D"],
+    Alterations: ["#FEF9C3", "#A16207"],
+    Mending: ["#FDE68A", "#92400E"],
+    Ready: ["#DCFCE7", "#166534"],
+    Collected: ["#D1FAE5", "#047857"],
+    Cancelled: ["#F3F4F6", "#4B5563"],
+  };
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-    const [year, month, day] =
-      text.split("-").map(Number);
+  const [background, color] =
+    colourMap[status] || [
+      "#F3F4F6",
+      "#4B5563",
+    ];
 
-    return new Date(
-      year,
-      month - 1,
-      day
-    ).toLocaleDateString("en-AU", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
-    const [day, month, year] =
-      text.split("/").map(Number);
-
-    return new Date(
-      year,
-      month - 1,
-      day
-    ).toLocaleDateString("en-AU", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  const date = new Date(text);
-
-  return Number.isNaN(date.getTime())
-    ? text
-    : date.toLocaleDateString("en-AU", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        minHeight: 26,
+        padding: "0 9px",
+        borderRadius: 999,
+        background,
+        color,
+        fontSize: 11,
+        fontWeight: 800,
+        border: `1px solid ${color}22`,
+      }}
+    >
+      {status}
+    </span>
+  );
 }
 
-function FittingForm({
+function FittingEditor({
   fitting,
   onSave,
   onCancel,
 }) {
   const [title, setTitle] =
-    useState(
-      fitting?.title || ""
-    );
-
+    useState(fitting?.title || "");
   const [date, setDate] =
     useState(fitting?.date || "");
-
-  const [time, setTime] =
-    useState(fitting?.time || "");
-
-  const [status, setStatus] =
-    useState(
-      fitting?.status || "Scheduled"
-    );
-
   const [notes, setNotes] =
     useState(fitting?.notes || "");
 
   return (
-    <div style={modalOverlayStyle}>
-      <div style={modalCardStyle}>
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              FITTING
-            </div>
-            <h2 style={modalTitleStyle}>
-              {fitting
-                ? "Edit Fitting"
-                : "Add Fitting"}
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            style={modalCloseStyle}
-            aria-label="Close fitting form"
-          >
-            ×
-          </button>
-        </div>
-
-        <div style={modalBodyStyle}>
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Fitting Title
-            </span>
-            <input
-              value={title}
-              onChange={(event) =>
-                setTitle(
-                  event.target.value
-                )
-              }
-              placeholder="First fitting"
-              style={inputStyle}
-            />
-          </label>
-
-          <div style={twoColumnStyle}>
-            <label style={fieldStyle}>
-              <span style={labelStyle}>
-                Date
-              </span>
-              <input
-                type="date"
-                value={date}
-                onChange={(event) =>
-                  setDate(
-                    event.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-            </label>
-
-            <label style={fieldStyle}>
-              <span style={labelStyle}>
-                Time
-              </span>
-              <input
-                type="time"
-                value={time}
-                onChange={(event) =>
-                  setTime(
-                    event.target.value
-                  )
-                }
-                style={inputStyle}
-              />
-            </label>
-          </div>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Status
-            </span>
-            <select
-              value={status}
-              onChange={(event) =>
-                setStatus(
-                  event.target.value
-                )
-              }
-              style={inputStyle}
-            >
-              <option value="Scheduled">
-                Scheduled
-              </option>
-              <option value="Completed">
-                Completed
-              </option>
-              <option value="Cancelled">
-                Cancelled
-              </option>
-            </select>
-          </label>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Notes
-            </span>
-            <textarea
-              value={notes}
-              onChange={(event) =>
-                setNotes(
-                  event.target.value
-                )
-              }
-              rows={5}
-              placeholder="Fitting notes, changes required or client comments..."
-              style={textareaStyle}
-            />
-          </label>
-        </div>
-
-        <div style={modalFooterStyle}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() =>
-              onSave?.({
-                title,
-                date,
-                time,
-                status,
-                notes,
-              })
-            }
-          >
-            Save Fitting
-          </Button>
-        </div>
-      </div>
-    </div>
+    <ModalShell title={fitting ? "Edit Fitting" : "Add Fitting"} onClose={onCancel}>
+      <Field label="Title">
+        <input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          style={modalInputStyle}
+          placeholder="First fitting"
+        />
+      </Field>
+      <Field label="Date">
+        <input
+          type="date"
+          value={date}
+          onChange={(event) => setDate(event.target.value)}
+          style={modalInputStyle}
+        />
+      </Field>
+      <Field label="Notes">
+        <textarea
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+          style={{ ...modalInputStyle, minHeight: 90, resize: "vertical" }}
+          placeholder="Fitting notes..."
+        />
+      </Field>
+      <ModalActions onCancel={onCancel} onSave={() => onSave({ title, date, notes })} />
+    </ModalShell>
   );
 }
 
@@ -2154,372 +1871,241 @@ function PhotoForm({
 }) {
   const [caption, setCaption] =
     useState("");
-
   const [url, setUrl] =
     useState("");
 
   return (
-    <div style={modalOverlayStyle}>
-      <div style={modalCardStyle}>
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              JOB PHOTO
-            </div>
-            <h2 style={modalTitleStyle}>
-              Add Photo
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            style={modalCloseStyle}
-            aria-label="Close photo form"
-          >
-            ×
-          </button>
-        </div>
-
-        <div style={modalBodyStyle}>
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Photo URL
-            </span>
-            <input
-              value={url}
-              onChange={(event) =>
-                setUrl(
-                  event.target.value
-                )
-              }
-              placeholder="https://..."
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Caption
-            </span>
-            <input
-              value={caption}
-              onChange={(event) =>
-                setCaption(
-                  event.target.value
-                )
-              }
-              placeholder="Front view"
-              style={inputStyle}
-            />
-          </label>
-        </div>
-
-        <div style={modalFooterStyle}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() =>
-              onSave?.({
-                id: crypto.randomUUID(),
-                url,
-                caption,
-                createdAt:
-                  new Date().toISOString(),
-              })
-            }
-          >
-            Add Photo
-          </Button>
-        </div>
-      </div>
-    </div>
+    <ModalShell title="Add Job Photo" onClose={onCancel}>
+      <Field label="Image URL">
+        <input
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          style={modalInputStyle}
+          placeholder="https://..."
+        />
+      </Field>
+      <Field label="Caption">
+        <input
+          value={caption}
+          onChange={(event) => setCaption(event.target.value)}
+          style={modalInputStyle}
+          placeholder="Front fitting photo"
+        />
+      </Field>
+      <ModalActions
+        onCancel={onCancel}
+        onSave={() =>
+          onSave({
+            id: crypto.randomUUID(),
+            url,
+            caption,
+          })
+        }
+      />
+    </ModalShell>
   );
 }
 
-function PhotoEditForm({
+function PhotoEditor({
   photo,
   onSave,
   onCancel,
 }) {
   const [caption, setCaption] =
     useState(photo?.caption || "");
-
   const [url, setUrl] =
     useState(photo?.url || "");
 
   return (
-    <div style={modalOverlayStyle}>
-      <div style={modalCardStyle}>
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              JOB PHOTO
-            </div>
-            <h2 style={modalTitleStyle}>
-              Edit Photo
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={onCancel}
-            style={modalCloseStyle}
-            aria-label="Close photo editor"
-          >
-            ×
-          </button>
-        </div>
-
-        <div style={modalBodyStyle}>
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Photo URL
-            </span>
-            <input
-              value={url}
-              onChange={(event) =>
-                setUrl(
-                  event.target.value
-                )
-              }
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={fieldStyle}>
-            <span style={labelStyle}>
-              Caption
-            </span>
-            <input
-              value={caption}
-              onChange={(event) =>
-                setCaption(
-                  event.target.value
-                )
-              }
-              style={inputStyle}
-            />
-          </label>
-        </div>
-
-        <div style={modalFooterStyle}>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() =>
-              onSave?.({
-                ...photo,
-                url,
-                caption,
-                updatedAt:
-                  new Date().toISOString(),
-              })
-            }
-          >
-            Save Changes
-          </Button>
-        </div>
-      </div>
-    </div>
+    <ModalShell title="Edit Job Photo" onClose={onCancel}>
+      <Field label="Image URL">
+        <input
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          style={modalInputStyle}
+        />
+      </Field>
+      <Field label="Caption">
+        <input
+          value={caption}
+          onChange={(event) => setCaption(event.target.value)}
+          style={modalInputStyle}
+        />
+      </Field>
+      <ModalActions
+        onCancel={onCancel}
+        onSave={() => onSave({ ...photo, url, caption })}
+      />
+    </ModalShell>
   );
 }
 
-function PhotoPreview({
+function PhotoViewer({
   photo,
   onClose,
 }) {
   return (
-    <div style={modalOverlayStyle}>
+    <ModalShell title={photo?.caption || "Job Photo"} onClose={onClose} wide>
       <div
         style={{
-          ...modalCardStyle,
-          maxWidth: 900,
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 320,
+          background: "#F7F8F9",
+          borderRadius: 12,
+          overflow: "hidden",
         }}
       >
-        <div style={modalHeaderStyle}>
-          <div>
-            <div style={modalEyebrowStyle}>
-              JOB PHOTO
-            </div>
-            <h2 style={modalTitleStyle}>
-              {photo?.caption ||
-                "Photo Preview"}
-            </h2>
-          </div>
+        {photo?.url ? (
+          <img
+            src={photo.url}
+            alt={photo.caption || "Job"}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "70vh",
+              objectFit: "contain",
+            }}
+          />
+        ) : (
+          <span style={{ color: "#777" }}>
+            No image available.
+          </span>
+        )}
+      </div>
+    </ModalShell>
+  );
+}
 
+function ModalShell({
+  title,
+  onClose,
+  children,
+  wide = false,
+}) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "rgba(15, 23, 42, 0.38)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 20,
+      }}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose?.();
+        }
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: wide ? 900 : 560,
+          maxHeight: "90vh",
+          overflowY: "auto",
+          background: "#FFFFFF",
+          borderRadius: 16,
+          border: "1px solid #E1E4E7",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.18)",
+          padding: 22,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 18,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 18,
+              color: "#2F3A3F",
+            }}
+          >
+            {title}
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            style={modalCloseStyle}
-            aria-label="Close photo preview"
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "#687178",
+              fontSize: 22,
+              cursor: "pointer",
+            }}
+            aria-label="Close"
           >
             ×
           </button>
         </div>
 
-        <div
-          style={{
-            padding: 20,
-            display: "flex",
-            justifyContent: "center",
-            background: "#F7F5F2",
-          }}
-        >
-          {photo?.url ? (
-            <img
-              src={photo.url}
-              alt={
-                photo.caption ||
-                "Job photo"
-              }
-              style={{
-                maxWidth: "100%",
-                maxHeight: "70vh",
-                borderRadius: 10,
-                objectFit: "contain",
-              }}
-            />
-          ) : (
-            <div
-              style={{
-                padding: 40,
-                color: "#777",
-              }}
-            >
-              No image URL provided.
-            </div>
-          )}
-        </div>
+        {children}
       </div>
     </div>
   );
 }
 
-const modalOverlayStyle = {
-  position: "fixed",
-  inset: 0,
-  zIndex: 1000,
-  background: "rgba(31,41,51,.45)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  padding: 20,
-  boxSizing: "border-box",
-};
+function Field({
+  label,
+  children,
+}) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 7,
+        marginBottom: 14,
+        fontSize: 12,
+        fontWeight: 800,
+        color: "#555",
+      }}
+    >
+      {label}
+      {children}
+    </label>
+  );
+}
 
-const modalCardStyle = {
+function ModalActions({
+  onCancel,
+  onSave,
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 10,
+        marginTop: 18,
+      }}
+    >
+      <Button variant="secondary" onClick={onCancel}>
+        Cancel
+      </Button>
+      <Button onClick={onSave}>
+        Save
+      </Button>
+    </div>
+  );
+}
+
+const modalInputStyle = {
   width: "100%",
-  maxWidth: 620,
-  maxHeight: "calc(100vh - 40px)",
-  overflowY: "auto",
-  background: "#FFFFFF",
-  borderRadius: 16,
-  boxShadow: "0 24px 70px rgba(31,41,51,.24)",
-};
-
-const modalHeaderStyle = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: 16,
-  padding: "20px 22px",
-  borderBottom: "1px solid #ECECEC",
-};
-
-const modalEyebrowStyle = {
-  color: "#8B1E3F",
-  fontSize: 10,
-  fontWeight: 800,
-  letterSpacing: 1,
-  textTransform: "uppercase",
-};
-
-const modalTitleStyle = {
-  margin: "4px 0 0",
-  color: "#2F3A3F",
-  fontSize: 20,
-};
-
-const modalCloseStyle = {
-  width: 36,
-  height: 36,
+  boxSizing: "border-box",
   border: "1px solid #D9DDE1",
   borderRadius: 9,
-  background: "#FFFFFF",
-  color: "#374151",
-  fontSize: 20,
-  cursor: "pointer",
-  flexShrink: 0,
-};
-
-const modalBodyStyle = {
-  padding: 22,
-  display: "flex",
-  flexDirection: "column",
-  gap: 16,
-};
-
-const modalFooterStyle = {
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: 10,
-  padding: "16px 22px",
-  borderTop: "1px solid #ECECEC",
-};
-
-const twoColumnStyle = {
-  display: "grid",
-  gridTemplateColumns:
-    "repeat(2, minmax(0, 1fr))",
-  gap: 14,
-};
-
-const fieldStyle = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 6,
-};
-
-const labelStyle = {
-  color: "#4F585E",
-  fontSize: 11,
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: 0.5,
-};
-
-const inputStyle = {
-  width: "100%",
-  minHeight: 40,
-  boxSizing: "border-box",
-  border: "1px solid #D9DDE1",
-  borderRadius: 8,
-  padding: "9px 11px",
+  padding: "10px 11px",
   fontSize: 13,
   color: "#2F3A3F",
   background: "#FFFFFF",
-  outline: "none",
-};
-
-const textareaStyle = {
-  ...inputStyle,
-  minHeight: 110,
-  resize: "vertical",
-  fontFamily: "inherit",
-  lineHeight: 1.45,
 };
