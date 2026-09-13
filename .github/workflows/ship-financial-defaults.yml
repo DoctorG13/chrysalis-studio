@@ -1,0 +1,70 @@
+name: Ship financial defaults
+
+on:
+  push:
+    branches:
+      - feature/invoice-management-ui
+    paths:
+      - .github/workflows/ship-financial-defaults.yml
+
+permissions:
+  contents: write
+
+jobs:
+  ship:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/invoice-management-ui
+          fetch-depth: 0
+
+      - name: Apply complete FinancePage replacement
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = 'src/pages/FinancePage.jsx';
+          let s = fs.readFileSync(path, 'utf8');
+
+          const replacements = [
+            ['const DEFAULT_DEPOSIT_PERCENT = 25;', 'const DEFAULT_GST_RATE = 0;\nconst DEFAULT_DEPOSIT_PERCENT = 25;'],
+            ['  const [\n    paymentsLoading,\n    setPaymentsLoading,\n  ] = useState(true);', '  const [\n    paymentsLoading,\n    setPaymentsLoading,\n  ] = useState(true);\n\n  const [financialDefaults, setFinancialDefaults] = useState({\n    gstRate: DEFAULT_GST_RATE,\n    depositPercent: DEFAULT_DEPOSIT_PERCENT,\n  });'],
+            ['  useEffect(() => {\n    loadFinancePayments();\n  }, [jobs]);', '  useEffect(() => {\n    loadFinancePayments();\n  }, [jobs]);\n\n  useEffect(() => {\n    let active = true;\n\n    async function loadFinancialDefaults() {\n      try {\n        const response = await fetch("/api/settings", {\n          credentials: "same-origin",\n          cache: "no-store",\n        });\n\n        if (!response.ok) return;\n\n        const payload = await response.json();\n        const financial = payload?.settings?.financial || {};\n\n        if (!active) return;\n\n        setFinancialDefaults({\n          gstRate: DEFAULT_GST_RATE,\n          depositPercent: Math.min(\n            Math.max(\n              Number(financial.depositPercent ?? DEFAULT_DEPOSIT_PERCENT) || 0,\n              0\n            ),\n            100\n          ),\n        });\n      } catch (error) {\n        console.warn("Unable to load financial defaults.", error);\n      }\n    }\n\n    loadFinancialDefaults();\n\n    return () => {\n      active = false;\n    };\n  }, []);'],
+            ['                  job.depositPercent ??\n                    DEFAULT_DEPOSIT_PERCENT', '                  job.depositPercent ??\n                    financialDefaults.depositPercent'],
+            ['      jobPayments,\n    ]);', '      jobPayments,\n      financialDefaults.depositPercent,\n    ]);'],
+            ['      gstRate: 10,\n      lineItems: [', '      gstRate: DEFAULT_GST_RATE,\n      lineItems: ['],
+            ['      gstRate: 10,\n      depositPercent: DEFAULT_DEPOSIT_PERCENT,\n      lineItems: [', '      gstRate: DEFAULT_GST_RATE,\n      depositPercent: financialDefaults.depositPercent,\n      lineItems: ['],
+            ['      gstRate: Number(\n        quote.gstRate ?? 10\n      ),\n      depositPercent: Number(\n        quote.depositPercent ??\n          DEFAULT_DEPOSIT_PERCENT\n      ),', '      gstRate: Number(\n        quote.gstRate ?? DEFAULT_GST_RATE\n      ),\n      depositPercent: Number(\n        quote.depositPercent ??\n          financialDefaults.depositPercent\n      ),'],
+            ['      gstRate: Number(\n        invoice.gstRate ?? 10\n      ),', '      gstRate: Number(\n        invoice.gstRate ?? DEFAULT_GST_RATE\n      ),'],
+            ['      form?.depositPercent ??\n        DEFAULT_DEPOSIT_PERCENT', '      form?.depositPercent ??\n        financialDefaults.depositPercent'],
+            ['                        <input\n                          type="number"\n                          min="0"\n                          step="0.1"\n                          value={\n                            form.gstRate\n                          }\n                          onChange={(e) =>\n                            updateField(\n                              "gstRate",\n                              e.target\n                                .value\n                            )\n                          }\n                          style={{\n                            ...input,\n                            width: 75,\n                            textAlign:\n                              "right",\n                          }}\n                        />\n                        <span>%</span>', '                        <select\n                          value={\n                            Number(form.gstRate ?? DEFAULT_GST_RATE)\n                          }\n                          onChange={(e) =>\n                            updateField(\n                              "gstRate",\n                              Number(e.target.value)\n                            )\n                          }\n                          style={{\n                            ...input,\n                            width: 90,\n                          }}\n                        >\n                          <option value="0">0% — No GST</option>\n                          <option value="10">10% — GST</option>\n                        </select>'],
+            ['                    <input\n                      type="number"\n                      min="0"\n                      step="0.1"\n                      value={\n                        form.gstRate\n                      }\n                      onChange={(e) =>\n                        updateField(\n                          "gstRate",\n                          e.target\n                            .value\n                        )\n                      }\n                      style={{\n                        ...input,\n                        width: 90,\n                        textAlign:\n                          "right",\n                      }}\n                    />\n\n                    <span>\n                      %\n                    </span>', '                    <select\n                      value={\n                        Number(form.gstRate ?? DEFAULT_GST_RATE)\n                      }\n                      onChange={(e) =>\n                        updateField(\n                          "gstRate",\n                          Number(e.target.value)\n                        )\n                      }\n                      style={{\n                        ...input,\n                        width: 150,\n                      }}\n                    >\n                      <option value="0">0% — No GST</option>\n                      <option value="10">10% — GST</option>\n                    </select>'],
+            ['                          form.depositPercent ??\n                            DEFAULT_DEPOSIT_PERCENT', '                          form.depositPercent ??\n                            financialDefaults.depositPercent'],
+          ];
+
+          for (const [from, to] of replacements) {
+            if (!s.includes(from)) {
+              throw new Error(`Expected FinancePage block not found: ${from.slice(0, 80)}`);
+            }
+            s = s.replace(from, to);
+          }
+
+          fs.writeFileSync(path, s);
+          NODE
+
+      - name: Verify build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Commit shipped change and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/ship-financial-defaults.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/pages/FinancePage.jsx .github/workflows/ship-financial-defaults.yml
+          git commit -m "feat: use financial defaults and GST selector"
+          git push origin feature/invoice-management-ui
