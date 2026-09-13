@@ -25,6 +25,7 @@ import "../components/invoices/invoicePrint.css";
 import "../components/quotes/quotePrint.css";
 
 const EMPTY_LINE = {
+  garmentType: "Wedding Dress",
   description: "",
   quantity: 1,
   rate: 0,
@@ -32,6 +33,16 @@ const EMPTY_LINE = {
 
 const DEFAULT_GST_RATE = 0;
 const DEFAULT_DEPOSIT_PERCENT = 25;
+
+const GARMENT_TYPES = [
+  ["Wedding Dress", "Wedding Dress"],
+  ["Bridesmaid Dress", "Bridesmaid Dress"],
+  ["Evening Gown", "Evening Gown"],
+  ["Formal Dress", "Formal Dress"],
+  ["Alteration", "Alteration"],
+  ["Accessories", "Accessories"],
+  ["Other", "Other (add your own)"],
+];
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -114,6 +125,11 @@ function normaliseLineItems(items) {
     ? items
     : []
   ).map((item) => ({
+    garmentType: GARMENT_TYPES.some(
+      ([value]) => value === item.garmentType
+    )
+      ? item.garmentType
+      : "Other",
     description: String(
       item.description || ""
     ),
@@ -1797,7 +1813,7 @@ export default function FinancePage({
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "1fr 100px 130px 120px 40px",
+                        "170px 1fr 100px 130px 120px 40px",
                       gap: 8,
                       padding:
                         "0 0 8px",
@@ -1806,6 +1822,9 @@ export default function FinancePage({
                       fontWeight: 700,
                     }}
                   >
+                    <span>
+                      Garment Type
+                    </span>
                     <span>
                       Description
                     </span>
@@ -1822,16 +1841,46 @@ export default function FinancePage({
                         style={{
                           display: "grid",
                           gridTemplateColumns:
-                            "1fr 100px 130px 120px 40px",
+                            "170px 1fr 100px 130px 120px 40px",
                           gap: 8,
                           marginBottom: 8,
                         }}
                       >
+                        <select
+                          value={
+                            item.garmentType || "Wedding Dress"
+                          }
+                          onChange={(e) =>
+                            updateLine(
+                              index,
+                              "garmentType",
+                              e.target.value
+                            )
+                          }
+                          style={input}
+                          aria-label="Garment type"
+                        >
+                          {GARMENT_TYPES.map(
+                            ([value, label]) => (
+                              <option
+                                key={value}
+                                value={value}
+                              >
+                                {label}
+                              </option>
+                            )
+                          )}
+                        </select>
+
                         <input
                           value={
                             item.description
                           }
-                          placeholder="Service or garment"
+                          placeholder={
+                            item.garmentType === "Other"
+                              ? "Enter garment or service"
+                              : "Description or details"
+                          }
                           onChange={(e) =>
                             updateLine(
                               index,
@@ -1995,7 +2044,7 @@ export default function FinancePage({
                           }
                           style={{
                             ...input,
-                            width: 90,
+                            width: 175,
                           }}
                         >
                           <option value="0">0% — No GST</option>
@@ -2068,7 +2117,7 @@ export default function FinancePage({
                           }
                           style={{
                             ...input,
-                            width: 75,
+                            width: 105,
                             textAlign:
                               "right",
                           }}
@@ -2562,7 +2611,7 @@ export default function FinancePage({
                     display:
                       "grid",
                     gridTemplateColumns:
-                      "1fr 100px 130px 120px 40px",
+                      "170px 1fr 100px 130px 120px 40px",
                     gap: 8,
                     padding:
                       "0 0 8px",
@@ -2571,6 +2620,9 @@ export default function FinancePage({
                     fontWeight: 700,
                   }}
                 >
+                  <span>
+                    Garment Type
+                  </span>
                   <span>
                     Description
                   </span>
@@ -2597,17 +2649,47 @@ export default function FinancePage({
                         display:
                           "grid",
                         gridTemplateColumns:
-                          "1fr 100px 130px 120px 40px",
+                          "170px 1fr 100px 130px 120px 40px",
                         gap: 8,
                         marginBottom:
                           8,
                       }}
                     >
+                      <select
+                        value={
+                          item.garmentType || "Wedding Dress"
+                        }
+                        onChange={(e) =>
+                          updateLine(
+                            index,
+                            "garmentType",
+                            e.target.value
+                          )
+                        }
+                        style={input}
+                        aria-label="Garment type"
+                      >
+                        {GARMENT_TYPES.map(
+                          ([value, label]) => (
+                            <option
+                              key={value}
+                              value={value}
+                            >
+                              {label}
+                            </option>
+                          )
+                        )}
+                      </select>
+
                       <input
                         value={
                           item.description
                         }
-                        placeholder="Service or garment"
+                        placeholder={
+                          item.garmentType === "Other"
+                            ? "Enter garment or service"
+                            : "Description or details"
+                        }
                         onChange={(e) =>
                           updateLine(
                             index,
@@ -2771,7 +2853,7 @@ export default function FinancePage({
                       }
                       style={{
                         ...input,
-                        width: 150,
+                        width: 175,
                       }}
                     >
                       <option value="0">0% — No GST</option>
