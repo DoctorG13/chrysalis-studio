@@ -1,150 +1,241 @@
 import { useState } from "react";
 
 const plans = [
-  {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "A simple way to get started with THRIVE.",
-    features: ["Clients & contacts", "Basic job management", "Calendar", "Essential business dashboard"],
-  },
-  {
-    name: "Musician",
-    price: "$9",
-    period: "per month",
-    description: "For independent performers and creative professionals.",
-    features: ["Everything in Free", "Advanced scheduling", "Payments & invoices", "More automation"],
-  },
-  {
-    name: "Band",
-    price: "$19",
-    period: "per month",
-    description: "For small teams that need to stay coordinated.",
-    features: ["Everything in Musician", "Shared workspace", "Team workflow", "Production tracking"],
-    popular: true,
-  },
-  {
-    name: "Pro",
-    price: "$39",
-    period: "per month",
-    description: "The complete THRIVE experience for growing businesses.",
-    features: ["Everything in Band", "Advanced reporting", "Priority features", "Professional controls"],
-  },
+  { name: "Free", price: "$0", period: "forever", description: "Get started with the essentials.", features: ["People & contacts", "Basic jobs", "Calendar", "Dashboard"] },
+  { name: "Musician", price: "$9", period: "/ month", description: "For independent professionals.", features: ["Everything in Free", "Advanced scheduling", "Payments & invoices", "Automation"] },
+  { name: "Band", price: "$19", period: "/ month", description: "For small teams and bands.", features: ["Everything in Musician", "Shared workspace", "Team workflow", "Production tracking"], popular: true },
+  { name: "Pro", price: "$39", period: "/ month", description: "For growing businesses.", features: ["Everything in Band", "Advanced reporting", "Priority features", "Professional controls"] },
 ];
 
 const features = [
-  ["People", "Keep client and contact information organised and easy to find."],
-  ["Jobs", "Manage work from the first quote through to completion."],
-  ["Production", "See what needs attention and keep work moving through each stage."],
-  ["Calendar", "Keep appointments, fittings and important dates together."],
-  ["Finance", "Bring quotes, invoices, payments and outstanding balances into one place."],
-  ["Reports", "Turn day-to-day business activity into useful information."],
+  ["01", "People", "Clients, contacts and history in one place."],
+  ["02", "Jobs", "Take work from quote to completion."],
+  ["03", "Production", "See what needs doing and what comes next."],
+  ["04", "Calendar", "Appointments, fittings and important dates."],
+  ["05", "Finance", "Quotes, invoices, payments and balances."],
+  ["06", "Reports", "Useful information about your business."],
 ];
 
-function Logo() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <span style={{ width: 38, height: 38, border: "2px solid #FFFFFF", borderRadius: 11, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 17, fontWeight: 800, transform: "rotate(45deg)" }}>
-        <span style={{ transform: "rotate(-45deg)" }}>T</span>
-      </span>
-      <span style={{ fontSize: 25, fontWeight: 850, letterSpacing: 3 }}>THRIVE</span>
-    </div>
-  );
-}
+const buttonBase = {
+  borderRadius: 9,
+  minHeight: 44,
+  padding: "0 18px",
+  fontWeight: 800,
+  fontSize: 13,
+  cursor: "pointer",
+  transition: "transform .18s ease, box-shadow .18s ease, background .18s ease",
+};
 
 function scrollToId(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function Logo({ compact = false }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <span style={{ width: compact ? 28 : 34, height: compact ? 28 : 34, border: "2px solid #FFFFFF", borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: compact ? 13 : 15, fontWeight: 900, transform: "rotate(45deg)" }}>
+        <span style={{ transform: "rotate(-45deg)" }}>T</span>
+      </span>
+      <span style={{ fontSize: compact ? 21 : 24, fontWeight: 900, letterSpacing: 2.5 }}>THRIVE</span>
+    </div>
+  );
+}
+
+function CtaButton({ children, secondary = false, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        ...buttonBase,
+        border: secondary ? "1px solid rgba(255,255,255,.28)" : "none",
+        background: secondary ? "rgba(255,255,255,.06)" : "#C96A83",
+        color: "#FFFFFF",
+        boxShadow: secondary ? "none" : "0 8px 22px rgba(201,106,131,.25)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function ThriveLandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const goPricing = () => scrollToId("pricing");
+
   return (
-    <div style={{ minHeight: "100vh", background: "#F8F6F3", color: "#2F3A3F", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-      <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(47,58,63,.96)", backdropFilter: "blur(12px)", color: "#FFFFFF", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18 }}>
-          <Logo />
-          <nav style={{ display: "flex", alignItems: "center", gap: 22 }}>
-            {["why", "features", "pricing"].map((id) => <button key={id} onClick={() => scrollToId(id)} style={navButton}>{id === "why" ? "Why THRIVE" : id[0].toUpperCase() + id.slice(1)}</button>)}
-            <button onClick={() => scrollToId("pricing")} style={topCta}>Start Free</button>
+    <div style={{ minHeight: "100vh", background: "#F5F3F0", color: "#2F3A3F", fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+      <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(47,58,63,.97)", color: "#FFFFFF", borderBottom: "1px solid rgba(255,255,255,.09)", backdropFilter: "blur(10px)" }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18 }}>
+          <Logo compact />
+          <nav style={{ display: "flex", alignItems: "center", gap: 18 }} className="thrive-desktop-nav">
+            <button type="button" onClick={() => scrollToId("why")} style={navButton}>Why THRIVE</button>
+            <button type="button" onClick={() => scrollToId("features")} style={navButton}>Features</button>
+            <button type="button" onClick={goPricing} style={navButton}>Pricing</button>
+            <CtaButton onClick={goPricing}>Start Free →</CtaButton>
           </nav>
-          <button aria-label="Open navigation" onClick={() => setMobileOpen((value) => !value)} style={{ ...mobileButton, display: "none" }}>☰</button>
+          <button type="button" aria-label="Open navigation" onClick={() => setMobileOpen((value) => !value)} style={{ ...mobileButton, display: "none" }} className="thrive-mobile-button">☰</button>
         </div>
-        {mobileOpen && <div style={{ padding: "0 24px 18px", display: "grid", gap: 10 }}>{["why", "features", "pricing"].map((id) => <button key={id} onClick={() => { setMobileOpen(false); scrollToId(id); }} style={mobileNav}>{id === "why" ? "Why THRIVE" : id[0].toUpperCase() + id.slice(1)}</button>)}</div>}
+        {mobileOpen && (
+          <div style={{ padding: "0 22px 14px", display: "grid", gap: 7 }}>
+            <button type="button" onClick={() => { setMobileOpen(false); scrollToId("why"); }} style={mobileNav}>Why THRIVE</button>
+            <button type="button" onClick={() => { setMobileOpen(false); scrollToId("features"); }} style={mobileNav}>Features</button>
+            <button type="button" onClick={() => { setMobileOpen(false); goPricing(); }} style={mobileNav}>Pricing</button>
+            <button type="button" onClick={() => { setMobileOpen(false); goPricing(); }} style={mobileCta}>Start Free →</button>
+          </div>
+        )}
       </header>
 
       <main>
-        <section style={{ background: "#2F3A3F", color: "#FFFFFF", padding: "110px 24px 90px", textAlign: "center" }}>
+        <section style={{ background: "#2F3A3F", color: "#FFFFFF", padding: "72px 22px 54px", textAlign: "center" }}>
           <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-            <div style={{ display: "inline-flex", padding: "7px 13px", borderRadius: 999, background: "rgba(201,106,131,.16)", color: "#F0AFC0", fontSize: 12, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase" }}>Business management, simplified</div>
-            <h1 style={{ margin: "24px auto 0", maxWidth: 850, fontSize: "clamp(42px, 7vw, 78px)", lineHeight: 1.02, letterSpacing: -2.5 }}>Run your business.<br /><span style={{ color: "#C96A83" }}>Thrive.</span></h1>
-            <p style={{ maxWidth: 700, margin: "26px auto 0", color: "#D6DADC", fontSize: 19, lineHeight: 1.7 }}>THRIVE brings the everyday parts of your business together, so you can spend less time managing the work and more time doing it.</p>
-            <div style={{ marginTop: 34, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-              <button onClick={() => scrollToId("pricing")} style={heroCta}>Start with THRIVE Free →</button>
-              <button onClick={() => scrollToId("features")} style={heroSecondary}>See how it works</button>
+            <div style={eyebrowDark}>BUSINESS MANAGEMENT, SIMPLIFIED</div>
+            <h1 style={{ margin: "15px auto 0", maxWidth: 780, fontSize: "clamp(40px, 6vw, 68px)", lineHeight: 1.02, letterSpacing: -2.5 }}>Run your business.<br /><span style={{ color: "#C96A83" }}>Thrive.</span></h1>
+            <p style={{ maxWidth: 650, margin: "18px auto 0", color: "#D6DADC", fontSize: 16, lineHeight: 1.55 }}>One clear workspace for your people, jobs, production, calendar and money.</p>
+            <div style={{ marginTop: 24, display: "flex", justifyContent: "center", gap: 9, flexWrap: "wrap" }}>
+              <CtaButton onClick={goPricing}>Start with THRIVE Free →</CtaButton>
+              <CtaButton secondary onClick={() => scrollToId("features")}>Explore THRIVE</CtaButton>
             </div>
-            <div style={{ marginTop: 58, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, textAlign: "left" }}>
-              {[['01', 'One place', 'Your people, work and business information together.'], ['02', 'Clear workflow', 'Know what is happening, what is next and what needs attention.'], ['03', 'Less admin', 'Simple tools that help you keep the business moving.']].map(([n, title, text]) => <div key={n} style={heroCard}><span style={{ color: "#C96A83", fontWeight: 800, fontSize: 12 }}>{n}</span><strong style={{ display: "block", marginTop: 13, fontSize: 17 }}>{title}</strong><span style={{ display: "block", marginTop: 7, color: "#BFC5C7", fontSize: 13, lineHeight: 1.55 }}>{text}</span></div>)}
+
+            <div className="thrive-hero-grid" style={{ marginTop: 34, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, textAlign: "left" }}>
+              {[
+                ["ONE PLACE", "Everything together", "Stop jumping between spreadsheets, notes and messages."],
+                ["CLEAR WORKFLOW", "Know what is next", "Keep work moving from first contact to completion."],
+                ["LESS ADMIN", "Get time back", "Simple tools designed around everyday business work."],
+              ].map(([label, title, text]) => (
+                <div key={label} style={heroCard}>
+                  <div style={{ color: "#C96A83", fontSize: 10, fontWeight: 900, letterSpacing: 1 }}>{label}</div>
+                  <strong style={{ display: "block", marginTop: 7, fontSize: 15 }}>{title}</strong>
+                  <p style={{ margin: "5px 0 0", color: "#BFC5C7", fontSize: 12, lineHeight: 1.45 }}>{text}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         <section id="why" style={section}>
           <div style={eyebrow}>WHY THRIVE</div>
-          <h2 style={heading}>Built around the way<br />small businesses actually work.</h2>
-          <p style={lead}>You shouldn't need five different systems to know who your clients are, what you're making, what is due, or whether you've been paid. THRIVE gives you one clear workspace for the whole operation.</p>
-          <div style={{ marginTop: 42, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
-            {["Clarity", "Control", "Confidence"].map((title, i) => <div key={title} style={valueCard}><div style={{ width: 42, height: 42, borderRadius: 12, background: "#F3DDE4", color: "#8B1E3F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>{i + 1}</div><h3 style={{ margin: "18px 0 8px", fontSize: 21 }}>{title}</h3><p style={{ margin: 0, color: "#687178", lineHeight: 1.65 }}>{["See the important information without hunting through spreadsheets, notes and messages.", "Keep jobs, schedules, payments and business processes moving from one organised system.", "Know where your business stands and make decisions with the information in front of you."][i]}</p></div>)}
+          <h2 style={heading}>Everything your business needs.<br />In one place.</h2>
+          <p style={lead}>THRIVE is built to make the everyday running of a business clearer, faster and easier to manage.</p>
+          <div className="thrive-three-grid" style={{ marginTop: 25, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+            {[
+              ["Clarity", "See the information that matters without digging through systems."],
+              ["Control", "Keep jobs, schedules, payments and processes organised."],
+              ["Confidence", "Know where your work and business stand at a glance."],
+            ].map(([title, text], index) => (
+              <article key={title} style={valueCard}>
+                <div style={numberBadge}>{index + 1}</div>
+                <h3 style={{ margin: "13px 0 5px", fontSize: 18 }}>{title}</h3>
+                <p style={{ margin: 0, color: "#687178", fontSize: 13, lineHeight: 1.55 }}>{text}</p>
+              </article>
+            ))}
+          </div>
+          <div style={{ marginTop: 18, textAlign: "center" }}><button type="button" onClick={goPricing} style={inlineCta}>See plans & pricing →</button></div>
+        </section>
+
+        <section id="features" style={{ ...wideSection, background: "#FFFFFF" }}>
+          <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+            <div style={eyebrow}>YOUR BUSINESS. YOUR WORKSPACE.</div>
+            <h2 style={heading}>Six essentials.<br />One simple system.</h2>
+            <div className="thrive-feature-grid" style={{ marginTop: 25, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 11 }}>
+              {features.map(([number, title, text]) => (
+                <article key={title} style={featureCard}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ color: "#8B1E3F", fontSize: 10, fontWeight: 900, letterSpacing: 1 }}>THRIVE</span>
+                    <span style={{ color: "#A6ADB0", fontSize: 11, fontWeight: 800 }}>{number}</span>
+                  </div>
+                  <h3 style={{ margin: "10px 0 5px", fontSize: 17 }}>{title}</h3>
+                  <p style={{ margin: 0, color: "#687178", fontSize: 12.5, lineHeight: 1.5 }}>{text}</p>
+                </article>
+              ))}
+            </div>
+            <div style={{ marginTop: 20, textAlign: "center" }}><button type="button" onClick={goPricing} style={darkCta}>Choose your THRIVE plan →</button></div>
           </div>
         </section>
 
-        <section id="features" style={{ ...section, background: "#FFFFFF", maxWidth: "none", paddingLeft: "max(24px, calc((100% - 1080px) / 2))", paddingRight: "max(24px, calc((100% - 1080px) / 2))" }}>
-          <div style={eyebrow}>EVERYTHING IN ONE WORKSPACE</div>
-          <h2 style={heading}>The tools you need.<br />Nothing you don't.</h2>
-          <div style={{ marginTop: 42, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {features.map(([title, text]) => <article key={title} style={featureCard}><div style={{ color: "#8B1E3F", fontSize: 13, fontWeight: 850, letterSpacing: .8, textTransform: "uppercase" }}>THRIVE / {title}</div><h3 style={{ margin: "14px 0 8px", fontSize: 21 }}>{title}</h3><p style={{ margin: 0, color: "#687178", lineHeight: 1.65 }}>{text}</p></article>)}
+        <section id="pricing" style={{ ...wideSection, background: "#ECE8E3" }}>
+          <div style={{ maxWidth: 1080, margin: "0 auto" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={eyebrow}>SIMPLE PRICING</div>
+              <h2 style={{ ...heading, marginLeft: "auto", marginRight: "auto" }}>Start free.<br />Grow when you're ready.</h2>
+              <p style={{ ...lead, marginLeft: "auto", marginRight: "auto" }}>Choose the workspace that fits the way you work.</p>
+            </div>
+
+            <div className="thrive-plan-grid" style={{ marginTop: 25, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 11, alignItems: "stretch" }}>
+              {plans.map((plan) => (
+                <article key={plan.name} style={{ ...planCard, border: plan.popular ? "2px solid #8B1E3F" : "1px solid #D7D1CB", boxShadow: plan.popular ? "0 12px 28px rgba(139,30,63,.12)" : "0 7px 20px rgba(47,58,63,.06)" }}>
+                  {plan.popular && <div style={{ margin: "-2px -2px 14px", padding: "6px 9px", background: "#8B1E3F", color: "#FFFFFF", textAlign: "center", fontSize: 9, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>Most popular</div>}
+                  <h3 style={{ margin: 0, fontSize: 19 }}>{plan.name}</h3>
+                  <div style={{ marginTop: 11, display: "flex", alignItems: "baseline", gap: 4 }}><strong style={{ fontSize: 31 }}>{plan.price}</strong><span style={{ color: "#7A8184", fontSize: 10 }}>{plan.period}</span></div>
+                  <p style={{ minHeight: 43, margin: "8px 0 13px", color: "#687178", fontSize: 11.5, lineHeight: 1.45 }}>{plan.description}</p>
+                  <div style={{ display: "grid", gap: 7 }}>
+                    {plan.features.map((feature) => <div key={feature} style={{ display: "flex", gap: 6, fontSize: 11.5, lineHeight: 1.35 }}><span style={{ color: "#8B1E3F", fontWeight: 900 }}>✓</span>{feature}</div>)}
+                  </div>
+                  <button type="button" onClick={goPricing} style={{ width: "100%", marginTop: 17, minHeight: 40, border: plan.popular ? "none" : "1px solid #CFC8C2", borderRadius: 8, background: plan.popular ? "#8B1E3F" : "#FFFFFF", color: plan.popular ? "#FFFFFF" : "#2F3A3F", fontWeight: 850, fontSize: 11.5, cursor: "pointer" }}>{plan.name === "Free" ? "Start Free →" : `Choose ${plan.name} →`}</button>
+                </article>
+              ))}
+            </div>
+            <div style={{ marginTop: 14, textAlign: "center", color: "#7A8184", fontSize: 10.5 }}>Development pricing only — billing and account subscriptions will be connected next.</div>
           </div>
         </section>
 
-        <section id="pricing" style={{ ...section, background: "#F2EFEB", maxWidth: "none", paddingLeft: "max(24px, calc((100% - 1080px) / 2))", paddingRight: "max(24px, calc((100% - 1080px) / 2))" }}>
-          <div style={{ textAlign: "center" }}><div style={eyebrow}>SIMPLE PRICING</div><h2 style={{ ...heading, marginLeft: "auto", marginRight: "auto" }}>Start free. Grow when you're ready.</h2><p style={{ ...lead, marginLeft: "auto", marginRight: "auto" }}>No complicated setup. No long-term commitment. Choose the level that fits your business.</p></div>
-          <div style={{ marginTop: 42, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, alignItems: "stretch" }}>
-            {plans.map((plan) => <article key={plan.name} style={{ ...planCard, border: plan.popular ? "2px solid #8B1E3F" : "1px solid #DDD8D3" }}>
-              {plan.popular && <div style={{ margin: "-2px -2px 18px", padding: "7px 12px", background: "#8B1E3F", color: "#FFFFFF", textAlign: "center", fontSize: 11, fontWeight: 850, letterSpacing: 1, textTransform: "uppercase" }}>Most popular</div>}
-              <h3 style={{ margin: 0, fontSize: 22 }}>{plan.name}</h3><div style={{ marginTop: 18, display: "flex", alignItems: "baseline", gap: 6 }}><strong style={{ fontSize: 38 }}>{plan.price}</strong><span style={{ color: "#7A8184", fontSize: 12 }}>{plan.period}</span></div><p style={{ minHeight: 66, color: "#687178", fontSize: 13, lineHeight: 1.55 }}>{plan.description}</p><div style={{ display: "grid", gap: 10, minHeight: 130 }}>{plan.features.map((feature) => <div key={feature} style={{ display: "flex", gap: 8, fontSize: 13 }}><span style={{ color: "#8B1E3F", fontWeight: 900 }}>✓</span>{feature}</div>)}</div><button onClick={() => alert(`THRIVE ${plan.name} signup will be connected in the account/subscription stage.`)} style={{ width: "100%", marginTop: 22, minHeight: 44, border: plan.popular ? "none" : "1px solid #CFC8C2", borderRadius: 9, background: plan.popular ? "#8B1E3F" : "#FFFFFF", color: plan.popular ? "#FFFFFF" : "#2F3A3F", fontWeight: 800, cursor: "pointer" }}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button>
-            </article>)}
+        <section style={{ background: "#2F3A3F", color: "#FFFFFF", padding: "54px 22px" }}>
+          <div style={{ maxWidth: 760, margin: "0 auto", textAlign: "center" }}>
+            <div style={eyebrowDark}>READY TO THRIVE?</div>
+            <h2 style={{ margin: "10px 0 0", fontSize: "clamp(30px, 5vw, 46px)", lineHeight: 1.08 }}>Less admin.<br />More time for your business.</h2>
+            <p style={{ margin: "12px auto 0", maxWidth: 560, color: "#C7CDCF", fontSize: 13.5, lineHeight: 1.55 }}>Start with THRIVE Free and move up when you need more.</p>
+            <div style={{ marginTop: 20, display: "flex", justifyContent: "center", gap: 9, flexWrap: "wrap" }}>
+              <CtaButton onClick={goPricing}>Start Free →</CtaButton>
+              <CtaButton secondary onClick={() => scrollToId("features")}>View Features</CtaButton>
+            </div>
           </div>
-          <p style={{ textAlign: "center", margin: "22px 0 0", color: "#7A8184", fontSize: 12 }}>Prices shown are mock pricing for the THRIVE development site and are not yet connected to billing.</p>
-        </section>
-
-        <section style={{ background: "#2F3A3F", color: "#FFFFFF", padding: "80px 24px" }}>
-          <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}><div style={{ color: "#C96A83", fontWeight: 850, letterSpacing: 1, fontSize: 12 }}>READY WHEN YOU ARE</div><h2 style={{ margin: "15px 0 0", fontSize: "clamp(32px, 5vw, 52px)" }}>Your business has enough to manage.<br />THRIVE makes it simpler.</h2><button onClick={() => scrollToId("pricing")} style={{ ...heroCta, marginTop: 30 }}>Start for free →</button></div>
         </section>
       </main>
 
-      <footer style={{ background: "#232C30", color: "#BFC5C7", padding: "34px 24px" }}>
-        <div style={{ maxWidth: 1080, margin: "0 auto", display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap", alignItems: "center" }}>
-          <div><div style={{ color: "#FFFFFF", fontWeight: 850, letterSpacing: 2 }}>THRIVE</div><div style={{ marginTop: 6, fontSize: 12 }}>Streamline your business. Simplify your work.</div></div>
-          <div style={{ fontSize: 11, textAlign: "right" }}>Terms & Conditions &nbsp; · &nbsp; Privacy &nbsp; · &nbsp; © {new Date().getFullYear()} THRIVE. All rights reserved.</div>
+      <footer style={{ background: "#232C30", color: "#AEB6B9", padding: "24px 22px" }}>
+        <div style={{ maxWidth: 1080, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
+          <div><Logo compact /><div style={{ marginTop: 7, fontSize: 10.5 }}>Streamline your business. Simplify your work.</div></div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", justifyContent: "flex-end", fontSize: 10.5 }}>
+            <button type="button" onClick={goPricing} style={footerLink}>Plans & Subscription</button>
+            <span>Terms</span><span>Privacy</span><span>© {new Date().getFullYear()} THRIVE</span>
+          </div>
         </div>
       </footer>
 
-      <style>{`@media (max-width: 900px){header nav{display:none!important}header button[style*="display: none"]{display:block!important}section{padding-top:64px!important;padding-bottom:72px!important}h1{letter-spacing:-1.5px!important}.thrive-grid{grid-template-columns:1fr!important}}@media (max-width: 760px){main section>div>div[style*="repeat(3"]{grid-template-columns:1fr!important}main section>div>div[style*="repeat(4"]{grid-template-columns:1fr!important}}button,a{font:inherit}`}</style>
+      <style>{`
+        html { scroll-behavior: smooth; }
+        @media (max-width: 900px) {
+          .thrive-desktop-nav { display: none !important; }
+          .thrive-mobile-button { display: block !important; }
+          .thrive-hero-grid, .thrive-three-grid, .thrive-feature-grid { grid-template-columns: 1fr !important; }
+          .thrive-plan-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 560px) {
+          .thrive-plan-grid { grid-template-columns: 1fr !important; }
+        }
+        button:hover { transform: translateY(-1px); }
+        button:focus-visible { outline: 2px solid #C96A83; outline-offset: 2px; }
+      `}</style>
     </div>
   );
 }
 
-const navButton = { color: "#D6DADC", background: "transparent", border: "none", textDecoration: "none", fontSize: 13, fontWeight: 650, cursor: "pointer" };
-const topCta = { border: "none", borderRadius: 8, padding: "10px 15px", background: "#C96A83", color: "#FFFFFF", fontWeight: 800, fontSize: 12, cursor: "pointer" };
-const mobileButton = { border: "1px solid rgba(255,255,255,.2)", borderRadius: 8, padding: "8px 11px", background: "transparent", color: "#FFFFFF", cursor: "pointer" };
-const mobileNav = { textAlign: "left", border: "none", background: "transparent", color: "#FFFFFF", padding: 4, cursor: "pointer" };
-const heroCta = { border: "none", borderRadius: 9, padding: "14px 20px", background: "#C96A83", color: "#FFFFFF", fontWeight: 850, cursor: "pointer" };
-const heroSecondary = { border: "1px solid rgba(255,255,255,.25)", borderRadius: 9, padding: "14px 20px", background: "transparent", color: "#FFFFFF", fontWeight: 750, cursor: "pointer" };
-const heroCard = { padding: 20, borderRadius: 13, background: "rgba(255,255,255,.055)", border: "1px solid rgba(255,255,255,.09)" };
-const section = { maxWidth: 1080, margin: "0 auto", padding: "90px 24px" };
-const eyebrow = { color: "#8B1E3F", fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: "uppercase" };
-const heading = { margin: "14px 0 0", fontSize: "clamp(32px, 4vw, 48px)", lineHeight: 1.1, letterSpacing: -1.2 };
-const lead = { maxWidth: 700, marginTop: 18, color: "#687178", fontSize: 16, lineHeight: 1.7 };
-const valueCard = { padding: 26, borderRadius: 15, background: "#FFFFFF", border: "1px solid #E7E2DE" };
-const featureCard = { padding: 25, borderRadius: 14, background: "#F8F6F3", border: "1px solid #E7E2DE", minHeight: 155 };
-const planCard = { position: "relative", overflow: "hidden", borderRadius: 14, background: "#FFFFFF", padding: 22, boxSizing: "border-box" };
+const navButton = { color: "#D6DADC", background: "transparent", border: "none", fontSize: 12, fontWeight: 700, cursor: "pointer" };
+const mobileButton = { border: "1px solid rgba(255,255,255,.22)", borderRadius: 8, padding: "7px 10px", background: "transparent", color: "#FFFFFF", cursor: "pointer" };
+const mobileNav = { textAlign: "left", border: "none", borderRadius: 7, background: "rgba(255,255,255,.06)", color: "#FFFFFF", padding: "9px 10px", cursor: "pointer", fontSize: 12, fontWeight: 700 };
+const mobileCta = { border: "none", borderRadius: 8, background: "#C96A83", color: "#FFFFFF", padding: "10px", cursor: "pointer", fontWeight: 800 };
+const eyebrow = { color: "#8B1E3F", fontSize: 10, fontWeight: 900, letterSpacing: 1.2 };
+const eyebrowDark = { color: "#C96A83", fontSize: 10, fontWeight: 900, letterSpacing: 1.2 };
+const section = { maxWidth: 1080, margin: "0 auto", padding: "52px 22px" };
+const wideSection = { padding: "52px 22px" };
+const heading = { margin: "9px 0 0", maxWidth: 720, fontSize: "clamp(28px, 4vw, 42px)", lineHeight: 1.08, letterSpacing: -1.2, color: "#2F3A3F" };
+const lead = { maxWidth: 650, margin: "12px 0 0", color: "#687178", fontSize: 13.5, lineHeight: 1.55 };
+const heroCard = { padding: "15px 16px", border: "1px solid rgba(255,255,255,.13)", borderRadius: 11, background: "rgba(255,255,255,.065)", boxShadow: "0 8px 24px rgba(0,0,0,.13)" };
+const valueCard = { padding: 19, borderRadius: 12, background: "#FFFFFF", border: "1px solid #E0DBD6", boxShadow: "0 8px 22px rgba(47,58,63,.055)" };
+const featureCard = { padding: 18, borderRadius: 11, background: "#F8F6F3", border: "1px solid #DDD8D2", boxShadow: "0 7px 18px rgba(47,58,63,.055)" };
+const planCard = { position: "relative", overflow: "hidden", borderRadius: 12, background: "#FFFFFF", padding: 17, boxSizing: "border-box" };
+const numberBadge = { width: 31, height: 31, borderRadius: 9, background: "#F3DDE4", color: "#8B1E3F", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 12 };
+const inlineCta = { border: "none", background: "transparent", color: "#8B1E3F", fontWeight: 850, fontSize: 12, cursor: "pointer", padding: "7px 10px" };
+const darkCta = { border: "none", borderRadius: 8, minHeight: 40, padding: "0 17px", background: "#8B1E3F", color: "#FFFFFF", fontWeight: 800, fontSize: 11.5, cursor: "pointer" };
+const footerLink = { border: "none", background: "transparent", padding: 0, color: "#FFFFFF", fontWeight: 800, fontSize: 10.5, cursor: "pointer" };
