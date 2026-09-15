@@ -15,6 +15,7 @@ import SettingsPage from "./pages/SettingsPage";
 import LabourSettingsPanel from "./components/settings/LabourSettingsPanel";
 import BackupTransferPanel from "./components/settings/BackupTransferPanel";
 import GarmentSchedulePanel from "./components/garments/GarmentSchedulePanel";
+import ThriveLandingPage from "./pages/ThriveLandingPage";
 
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import JobsWorkspace from "./components/jobs/JobsWorkspace";
@@ -479,6 +480,12 @@ function ChrysalisApplication({ authenticatedUser }) {
 }
 
 export default function App() {
+  const pathname = window.location.pathname.replace(/\/$/, "") || "/";
+
+  if (pathname === "/thrive" || pathname.startsWith("/thrive/")) {
+    return <ThriveLandingPage />;
+  }
+
   return (
     <AuthenticationGate>
       {(authenticatedUser) => (
