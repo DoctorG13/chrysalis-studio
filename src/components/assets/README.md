@@ -1,0 +1,1 @@
+Asset management UI: upload, rename, categorise, describe, preview and delete client/job assets.

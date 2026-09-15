@@ -4,13 +4,14 @@ export function createJob({
   priority = "Normal",
   status = "Quote",
   description = "",
+  reference = "",
 }) {
   const now = new Date().toISOString();
 
   return {
     id: crypto.randomUUID(),
 
-    reference: "",
+    reference,
 
     name,
 

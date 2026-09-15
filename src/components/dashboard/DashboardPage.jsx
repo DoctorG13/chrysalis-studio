@@ -1,63 +1,550 @@
+import { useMemo } from "react";
+
 import WelcomeCard from "./WelcomeCard";
-import StatsGrid from "./StatsGrid";
-import TodaysPriorities from "./TodaysPriorities";
 import JobsDueThisWeek from "./JobsDueThisWeek";
-import QuickActions from "./QuickActions";
 import RecentActivity from "./RecentActivity";
+import TodaysWorkPanel from "./TodaysWorkPanel";
+import QuickJobFinder from "./QuickJobFinder";
 
 export default function DashboardPage({
   clients = [],
-
-  onNewClient,
-
-  onClientsClick,
-  onJobsClick,
-  onAppointmentsClick,
-  onPaymentsClick,
+  jobs = [],
+  ownerName = "Donna",
+  onSelectJob,
+  onOpenCalendar,
 }) {
+  const allJobs = useMemo(() => {
+    if (jobs.length > 0) return jobs;
+
+    return clients.flatMap((client) => client.jobs ?? []);
+  }, [clients, jobs]);
+
+  const activeJobs = allJobs.filter(
+    (job) =>
+      !["Completed", "Cancelled", "Archived"].includes(
+        String(job.status || "").trim()
+      )
+  );
+
+  const outstanding = allJobs.reduce(
+    (sum, job) => sum + getOutstanding(job),
+    0
+  );
+
+  const todayKey = new Date().toDateString();
+
+  const appointmentCount = clients.reduce(
+    (count, client) =>
+      count +
+      (client.appointments || []).filter(
+        (item) => new Date(item.date).toDateString() === todayKey
+      ).length,
+    0
+  );
+
+  const fittingCount = clients.reduce(
+    (count, client) =>
+      count +
+      (client.fittings || []).filter(
+        (item) => new Date(item.date).toDateString() === todayKey
+      ).length,
+    0
+  );
+
+  const attentionJobs = allJobs.filter(
+    (job) => job.overdue || job.dueToday || job.needsAttention
+  );
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 30,
-        marginBottom: 40,
+    <main style={dashboardStyle}>
+      <WelcomeCard ownerName={ownerName} />
+
+      <section style={metricsStyle} aria-label="Dashboard summary">
+        <Metric
+          icon="📅"
+          label="Appointments"
+          value={appointmentCount}
+          onClick={onOpenCalendar}
+        />
+
+        <Metric
+          icon="✂️"
+          label="Fittings"
+          value={fittingCount}
+          onClick={onOpenCalendar}
+        />
+
+        <Metric
+          icon="💼"
+          label="Active Jobs"
+          value={activeJobs.length}
+          onClick={
+            activeJobs.length
+              ? () => onSelectJob?.(activeJobs[0])
+              : undefined
+          }
+        />
+
+        <Metric
+          icon="💰"
+          label="Outstanding"
+          value={formatCurrency(outstanding)}
+          onClick={
+            outstanding > 0
+              ? () =>
+                  onSelectJob?.(
+                    allJobs.find(
+                      (job) => getOutstanding(job) > 0
+                    )
+                  )
+              : undefined
+          }
+          last
+        />
+      </section>
+
+      <QuickJobFinder
+        jobs={allJobs}
+        clients={clients}
+        onSelectJob={onSelectJob}
+      />
+
+      <div style={mainGridStyle}>
+        <div style={leftColumnStyle}>
+          <section style={sectionStyle}>
+            <SectionHeader title="Today's Priorities" />
+
+            <TodaysWorkPanel
+              clients={clients}
+              jobs={allJobs}
+              onSelectJob={onSelectJob}
+            />
+          </section>
+        </div>
+
+        <div style={rightColumnStyle}>
+          <JobsDueThisWeek
+            jobs={allJobs}
+            onSelectJob={onSelectJob}
+          />
+
+          <RecentActivity
+            clients={clients}
+            jobs={allJobs}
+          />
+
+          {attentionJobs.length > 0 && (
+            <NeedsAttention
+              jobs={attentionJobs}
+              clients={clients}
+              onSelectJob={onSelectJob}
+            />
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function Metric({
+  icon,
+  label,
+  value,
+  onClick,
+  last = false,
+}) {
+  const content = (
+    <>
+      <span style={metricIconStyle} aria-hidden="true">
+        {icon}
+      </span>
+      <span style={metricLabelStyle}>{label}</span>
+      <strong style={metricValueStyle}>{value}</strong>
+    </>
+  );
+
+  const sharedStyle = {
+    ...metricStyle,
+    borderRight: last ? 0 : "1px solid #D9DEE2",
+  };
+
+  if (!onClick) {
+    return <div style={sharedStyle}>{content}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${label}: ${value}`}
+      style={sharedStyle}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.background = "#FFF9FB";
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.background = "#FFFFFF";
       }}
     >
-      <WelcomeCard clients={clients} />
+      {content}
+    </button>
+  );
+}
 
-      <StatsGrid
-        clients={clients}
-        onClientsClick={onClientsClick}
-        onJobsClick={onJobsClick}
-        onAppointmentsClick={onAppointmentsClick}
-        onPaymentsClick={onPaymentsClick}
-      />
+function NeedsAttention({
+  jobs,
+  clients,
+  onSelectJob,
+}) {
+  const overdueJobs = jobs.filter(
+    (job) => job.overdue
+  );
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(420px,1fr))",
-          gap: 24,
-        }}
-      >
-        <TodaysPriorities
-          clients={clients}
-        />
+  const primaryJob =
+    overdueJobs[0] || jobs[0];
 
-        <JobsDueThisWeek
-          clients={clients}
-        />
+  const count = overdueJobs.length;
 
-        <RecentActivity
-          clients={clients}
-        />
+  if (!primaryJob) return null;
+
+  const client = clients.find(
+    (item) =>
+      String(item.id) ===
+      String(primaryJob.clientId)
+  );
+
+  return (
+    <section style={attentionStyle}>
+      <div style={attentionHeaderStyle}>
+        <h2 style={attentionTitleStyle}>
+          <span aria-hidden="true">!</span>
+          <span>Needs Attention</span>
+        </h2>
       </div>
 
-      <QuickActions
-        onNewClient={onNewClient}
-      />
+      <div style={attentionBodyStyle}>
+        <div style={attentionRowStyle}>
+          <span
+            style={attentionDotStyle}
+            aria-hidden="true"
+          >
+            •
+          </span>
+
+          <div style={attentionContentStyle}>
+            <strong>
+              {count > 1
+                ? `${count} garments are overdue`
+                : primaryJob.reference ||
+                  primaryJob.name ||
+                  primaryJob.title ||
+                  "Job needs attention"}
+            </strong>
+
+            <span>
+              {count > 1
+                ? "Please review and update"
+                : `${getClientName(client)} — ${
+                    primaryJob.nextAction ||
+                    "Please review and update"
+                  }`}
+            </span>
+          </div>
+
+          <OpenButton
+            onClick={() =>
+              onSelectJob?.(primaryJob)
+            }
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function SectionHeader({ title }) {
+  return (
+    <div style={sectionHeaderStyle}>
+      <h2 style={sectionTitleStyle}>
+        {title}
+      </h2>
     </div>
   );
 }
+
+function OpenButton({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={openButtonStyle}
+      onMouseEnter={(event) => {
+        event.currentTarget.style.background =
+          "#8B1E3F";
+        event.currentTarget.style.color =
+          "#FFFFFF";
+        event.currentTarget.style.boxShadow =
+          "0 3px 8px rgba(139,30,63,.18)";
+        event.currentTarget.style.transform =
+          "translateY(-1px)";
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.background =
+          "#FFFFFF";
+        event.currentTarget.style.color =
+          "#8B1E3F";
+        event.currentTarget.style.boxShadow =
+          "0 1px 2px rgba(0,0,0,.04)";
+        event.currentTarget.style.transform =
+          "translateY(0)";
+      }}
+    >
+      Open →
+    </button>
+  );
+}
+
+function getClientName(client) {
+  if (!client) return "Unknown client";
+
+  return (
+    client.name ||
+    [client.firstName, client.lastName]
+      .filter(Boolean)
+      .join(" ") ||
+    "Unknown client"
+  );
+}
+
+function getOutstanding(job) {
+  if (
+    job.balance !== undefined &&
+    job.balance !== null
+  ) {
+    return Math.max(
+      Number(job.balance) || 0,
+      0
+    );
+  }
+
+  if (
+    job.outstanding !== undefined &&
+    job.outstanding !== null
+  ) {
+    return Math.max(
+      Number(job.outstanding) || 0,
+      0
+    );
+  }
+
+  if (
+    Array.isArray(job.invoices) &&
+    job.invoices.length
+  ) {
+    return Math.max(
+      job.invoices.reduce(
+        (sum, invoice) =>
+          sum +
+          Number(invoice.balance ?? 0),
+        0
+      ),
+      0
+    );
+  }
+
+  const price = Number(job.price || 0);
+
+  const paid = (job.payments || []).reduce(
+    (sum, payment) =>
+      sum + Number(payment.amount || 0),
+    0
+  );
+
+  return Math.max(price - paid, 0);
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
+}
+
+const dashboardStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+  width: "100%",
+  maxWidth: 1280,
+  marginBottom: 16,
+};
+
+const metricsStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  background: "#FFFFFF",
+  border: "1px solid #D9DEE2",
+  borderRadius: 8,
+  overflow: "hidden",
+  boxShadow: "0 1px 3px rgba(31,41,51,.025)",
+};
+
+const metricStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 8,
+  minWidth: 0,
+  minHeight: 52,
+  padding: "7px 14px",
+  boxSizing: "border-box",
+  borderTop: 0,
+  borderBottom: 0,
+  borderLeft: 0,
+  background: "#FFFFFF",
+  color: "#20262B",
+  cursor: "pointer",
+  fontFamily: "inherit",
+  textAlign: "left",
+};
+
+const metricIconStyle = {
+  fontSize: 13,
+  lineHeight: 1,
+  flexShrink: 0,
+};
+
+const metricLabelStyle = {
+  color: "#687178",
+  fontSize: 10,
+  fontWeight: 700,
+  whiteSpace: "nowrap",
+};
+
+const metricValueStyle = {
+  color: "#171D22",
+  fontSize: 17,
+  lineHeight: 1,
+  whiteSpace: "nowrap",
+};
+
+const mainGridStyle = {
+  display: "grid",
+  gridTemplateColumns:
+    "minmax(0, 1fr) minmax(0, 1fr)",
+  gap: 10,
+  alignItems: "start",
+};
+
+const leftColumnStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+  minWidth: 0,
+};
+
+const rightColumnStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 10,
+  minWidth: 0,
+};
+
+const sectionStyle = {
+  background: "#FFFFFF",
+  border: "1px solid #D9DEE2",
+  borderRadius: 8,
+  overflow: "hidden",
+  boxShadow:
+    "0 1px 4px rgba(31,41,51,.025)",
+};
+
+const sectionHeaderStyle = {
+  minHeight: 50,
+  display: "flex",
+  alignItems: "center",
+  padding: "0 20px",
+  borderBottom: "1px solid #D9DEE2",
+};
+
+const sectionTitleStyle = {
+  margin: 0,
+  color: "#20262B",
+  fontSize: 18,
+  lineHeight: 1.2,
+};
+
+const attentionStyle = {
+  background: "#FFF9FB",
+  border: "1px solid #E3C3CB",
+  borderRadius: 8,
+  overflow: "hidden",
+  boxShadow:
+    "0 1px 3px rgba(31,41,51,.02)",
+};
+
+const attentionHeaderStyle = {
+  minHeight: 48,
+  display: "flex",
+  alignItems: "center",
+  padding: "0 20px",
+  borderBottom: "1px solid #E8D5DA",
+};
+
+const attentionTitleStyle = {
+  margin: 0,
+  display: "flex",
+  alignItems: "center",
+  gap: 9,
+  color: "#8B1E3F",
+  fontSize: 17,
+};
+
+const attentionBodyStyle = {
+  padding: "0 20px",
+};
+
+const attentionRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  minHeight: 84,
+};
+
+const attentionDotStyle = {
+  color: "#D95773",
+  fontSize: 25,
+  lineHeight: 1,
+};
+
+const attentionContentStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 5,
+  minWidth: 0,
+  flex: 1,
+};
+
+const openButtonStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 6,
+  flexShrink: 0,
+  minWidth: 88,
+  height: 38,
+  padding: "0 15px",
+  border: "1px solid #C96A83",
+  borderRadius: 999,
+  background: "#FFFFFF",
+  color: "#8B1E3F",
+  fontSize: 13,
+  fontWeight: 700,
+  lineHeight: 1,
+  cursor: "pointer",
+  boxShadow:
+    "0 1px 2px rgba(31,41,51,.035)",
+  transition:
+    "background 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease",
+};

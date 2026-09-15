@@ -1,0 +1,1 @@
+Asset Management & Editing implementation branch. Adds editable asset metadata UI and SQLite API client support.

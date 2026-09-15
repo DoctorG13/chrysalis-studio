@@ -1,19 +1,108 @@
+import { useEffect, useState } from "react";
+
+import { getPayments } from "../../services/paymentApi";
+import { useChrysalis } from "../../context/ChrysalisProvider";
+
 export default function ClientWorkspaceHeader({
   client,
+  jobs = [],
+  appointments = [],
 }) {
+  const { closeWorkspace } = useChrysalis();
+  const [outstanding, setOutstanding] = useState(0);
+
+  const clientJobs = jobs.filter(
+    (job) =>
+      String(job.clientId) === String(client?.id)
+  );
+
+  const clientJobIds = clientJobs
+    .map((job) => String(job.id))
+    .join("|");
+
+  const activeJobs = clientJobs.filter(
+    (job) =>
+      !["Completed", "Cancelled", "Archived"].includes(
+        String(job.status || "").trim()
+      )
+  ).length;
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadOutstanding() {
+      if (!clientJobs.length) {
+        setOutstanding(0);
+        return;
+      }
+
+      try {
+        const paymentGroups = await Promise.all(
+          clientJobs.map(async (job) => {
+            const payments = await getPayments(job.id);
+            const totalPaid = payments.reduce(
+              (total, payment) =>
+                total + (Number(payment.amount) || 0),
+              0
+            );
+
+            const quotedPrice = Number(job.price) || 0;
+
+            return Math.max(0, quotedPrice - totalPaid);
+          })
+        );
+
+        if (active) {
+          setOutstanding(
+            paymentGroups.reduce(
+              (total, balance) => total + balance,
+              0
+            )
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Unable to load client outstanding balance.",
+          error
+        );
+
+        if (active) {
+          setOutstanding(0);
+        }
+      }
+    }
+
+    loadOutstanding();
+
+    return () => {
+      active = false;
+    };
+    // The joined IDs are a stable representation of the job set.
+    // Payment changes are persisted and reflected when the workspace is reopened.
+  }, [clientJobIds]);
+
   if (!client) return null;
 
-  const activeJobs = client.jobs?.length || 0;
+  const upcomingAppointments = [...appointments]
+    .filter((appointment) => {
+      if (!appointment?.date) return false;
 
-  const outstanding =
-    (client.jobs || []).reduce(
-      (total, job) =>
-        total + (Number(job.balance) || 0),
-      0
+      const date = new Date(appointment.date);
+
+      return !Number.isNaN(date.getTime());
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.date).getTime() -
+        new Date(b.date).getTime()
     );
 
   const nextAppointment =
-    client.appointments?.[0]?.date || "None Scheduled";
+    upcomingAppointments[0]?.date || null;
+
+  const formattedNextAppointment = nextAppointment
+    ? formatAppointmentDate(nextAppointment)
+    : "None scheduled";
 
   return (
     <div
@@ -25,89 +114,144 @@ export default function ClientWorkspaceHeader({
         marginBottom: 20,
       }}
     >
-      <h2
-        style={{
-          margin: 0,
-          marginBottom: 8,
-        }}
-      >
-        👤 {client.firstName} {client.lastName}
-      </h2>
-
       <div
         style={{
-          color: "#666",
-          marginBottom: 20,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 16,
+          marginBottom: 12,
         }}
       >
-        📞 {client.phone || "No Phone"}
+        <div>
+          <h2 style={{ margin: 0 }}>
+            👤 {client.firstName} {client.lastName}
+          </h2>
 
-        <br />
+          <div
+            style={{
+              color: "#666",
+              marginTop: 8,
+              lineHeight: 1.6,
+            }}
+          >
+            📞 {client.phone || "No Phone"}
+            <br />
+            ✉️ {client.email || "No Email"}
+          </div>
+        </div>
 
-        ✉️ {client.email || "No Email"}
+        <button
+          type="button"
+          onClick={closeWorkspace}
+          style={{
+            border: "1px solid #d9dde2",
+            background: "#ffffff",
+            color: "#2F3A3F",
+            borderRadius: 8,
+            padding: "8px 14px",
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          ✕ Close Client
+        </button>
       </div>
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(180px,1fr))",
-          gap: 15,
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 0,
+          padding: "12px 14px",
+          background: "#f7f7f7",
+          borderRadius: 8,
+          border: "1px solid #ececec",
         }}
       >
-        <SummaryCard
-          title="Active Jobs"
-          value={activeJobs}
+        <SnapshotItem
           icon="💼"
+          label={`${activeJobs} Active Job${
+            activeJobs === 1 ? "" : "s"
+          }`}
         />
 
-        <SummaryCard
-          title="Next Appointment"
-          value={nextAppointment}
+        <SnapshotDivider />
+
+        <SnapshotItem
           icon="📅"
+          label={`Next: ${formattedNextAppointment}`}
         />
 
-        <SummaryCard
-          title="Outstanding"
-          value={`$${outstanding}`}
+        <SnapshotDivider />
+
+        <SnapshotItem
           icon="💰"
+          label={`${formatCurrency(
+            outstanding
+          )} outstanding`}
+          emphasis={outstanding > 0}
         />
       </div>
     </div>
   );
 }
 
-function SummaryCard({
-  title,
-  value,
+function SnapshotItem({
   icon,
+  label,
+  emphasis = false,
 }) {
   return (
     <div
       style={{
-        background: "#f7f7f7",
-        padding: 15,
-        borderRadius: 8,
+        display: "flex",
+        alignItems: "center",
+        gap: 7,
+        padding: "2px 10px",
+        color: emphasis ? "#8A4B5C" : "#555",
+        fontSize: 14,
+        fontWeight: emphasis ? 600 : 500,
+        whiteSpace: "nowrap",
       }}
     >
-      <div
-        style={{
-          fontSize: 14,
-          color: "#777",
-        }}
-      >
-        {icon} {title}
-      </div>
-
-      <div
-        style={{
-          fontSize: 22,
-          fontWeight: "bold",
-          marginTop: 6,
-        }}
-      >
-        {value}
-      </div>
+      <span>{icon}</span>
+      <span>{label}</span>
     </div>
   );
+}
+
+function SnapshotDivider() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 1,
+        height: 20,
+        background: "#dcdcdc",
+        margin: "0 4px",
+      }}
+    />
+  );
+}
+
+function formatCurrency(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function formatAppointmentDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "None scheduled";
+  }
+
+  return date.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }

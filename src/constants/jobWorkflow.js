@@ -1,0 +1,201 @@
+export const JOB_WORKFLOW = [
+  "Quote",
+  "Booked",
+  "Measuring",
+  "Pattern",
+  "Cutting",
+  "Sewing",
+  "Fitting",
+  "Alterations",
+  "Mending",
+  "Ready",
+  "Collected",
+  "Cancelled",
+];
+
+export const PRODUCTION_WORKFLOW = JOB_WORKFLOW.filter(
+  (stage) => !["Quote", "Booked", "Cancelled", "Collected"].includes(stage)
+);
+
+export const JOB_STATUS_COLOURS = {
+  Quote: "#94A3B8",
+  Booked: "#3B82F6",
+  Pattern: "#8B5CF6",
+  Cutting: "#F97316",
+  Sewing: "#F59E0B",
+  Fitting: "#EC4899",
+  Alterations: "#EAB308",
+  Mending: "#92400E",
+  Ready: "#10B981",
+  Collected: "#059669",
+  Completed: "#16A34A",
+  Cancelled: "#6B7280",
+};
+
+export function parseJobDate(dateValue) {
+  if (!dateValue) return null;
+
+  if (dateValue instanceof Date) {
+    return Number.isNaN(dateValue.getTime())
+      ? null
+      : new Date(dateValue.getTime());
+  }
+
+  const value = String(dateValue).trim();
+
+  if (!value) return null;
+
+  const australianMatch = value.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+  );
+
+  if (australianMatch) {
+    const [, day, month, year] = australianMatch;
+
+    const date = new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day)
+    );
+
+    if (
+      date.getFullYear() === Number(year) &&
+      date.getMonth() === Number(month) - 1 &&
+      date.getDate() === Number(day)
+    ) {
+      return date;
+    }
+
+    return null;
+  }
+
+  const parsed = new Date(value);
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+export function getWorkflowProgress(status) {
+  const index = JOB_WORKFLOW.indexOf(status);
+
+  if (index < 0) return 0;
+
+  return Math.round(
+    (index / (JOB_WORKFLOW.length - 1)) * 100
+  );
+}
+
+export function getWorkflowIndex(status) {
+  const index = JOB_WORKFLOW.indexOf(status);
+  return index < 0 ? 0 : index;
+}
+
+export function getNextWorkflowStep(status) {
+  const index = getWorkflowIndex(status);
+
+  if (index >= JOB_WORKFLOW.length - 1) return null;
+
+  return JOB_WORKFLOW[index + 1];
+}
+
+export function isCompleted(status) {
+  return status === "Collected";
+}
+
+export function isReadyForCollection(status) {
+  return status === "Ready";
+}
+
+export function isCollected(status) {
+  return status === "Collected";
+}
+
+export function isCancelled(status) {
+  return status === "Cancelled";
+}
+
+export function isOverdue(job) {
+  const dueDate = parseJobDate(job?.dueDate);
+
+  if (!dueDate) return false;
+
+  if (
+    isCompleted(job.status) ||
+    isCollected(job.status) ||
+    isCancelled(job.status)
+  ) {
+    return false;
+  }
+
+  const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  return dueDate < startOfToday;
+}
+
+export function needsAttention(job) {
+  if (!job) return false;
+
+  if (isOverdue(job)) return true;
+
+  const outstanding = Number(
+    job.balance ?? job.outstanding ?? 0
+  );
+
+  return outstanding > 0 && job.status === "Ready";
+}
+
+export function isDueToday(job) {
+  const dueDate = parseJobDate(job?.dueDate);
+
+  if (!dueDate) return false;
+
+  if (
+    isCompleted(job?.status) ||
+    isCollected(job?.status) ||
+    isCancelled(job?.status)
+  ) {
+    return false;
+  }
+
+  const today = new Date();
+
+  return (
+    today.getFullYear() === dueDate.getFullYear() &&
+    today.getMonth() === dueDate.getMonth() &&
+    today.getDate() === dueDate.getDate()
+  );
+}
+
+export function getNextAction(job) {
+  switch (job.status) {
+    case "Quote": return "Book client";
+    case "Booked": return "Take measurements";
+    case "Measuring": return "Draft pattern";
+    case "Pattern": return "Cut fabric";
+    case "Cutting": return "Begin sewing";
+    case "Sewing": return "Schedule fitting";
+    case "Fitting": return "Complete alterations";
+    case "Alterations": return "Finish mending";
+    case "Mending": return "Prepare for collection";
+    case "Ready": return "Await collection";
+    case "Collected": return "Archive job";
+    default: return "";
+  }
+}
+
+export function enrichJob(job) {
+  return {
+    ...job,
+    progress: getWorkflowProgress(job.status),
+    workflowIndex: getWorkflowIndex(job.status),
+    overdue: isOverdue(job),
+    dueToday: isDueToday(job),
+    needsAttention: needsAttention(job),
+    nextAction: getNextAction(job),
+    nextStep: getNextWorkflowStep(job.status),
+  };
+}

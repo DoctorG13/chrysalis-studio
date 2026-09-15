@@ -18,16 +18,7 @@ export default function StatCard({
 
   return (
     <div
-      //onClick={onClick}
-      onClick={() => {
-  alert("Card clicked");
-
-  if (onClick) {
-    onClick();
-  }
-}}
-
-
+      onClick={clickable ? onClick : undefined}
       style={{
         background: colours.surface,
         border: `1px solid ${colours.border}`,

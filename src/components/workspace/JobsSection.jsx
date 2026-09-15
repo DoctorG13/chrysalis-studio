@@ -1,17 +1,30 @@
 import JobCard from "./JobCard";
 import Button from "../common/Button";
+import { useChrysalis } from "../../context/ChrysalisProvider";
 
 export default function JobsSection({
-  jobs = [],
   onNewJob,
   onOpenJob,
 }) {
+  const { jobs = [] } = useChrysalis();
+
   const activeJobs = jobs.filter(
     (job) => job.status !== "Completed"
   );
 
   const completedJobs = jobs.filter(
     (job) => job.status === "Completed"
+  );
+
+  const outstanding = jobs.reduce(
+    (total, job) =>
+      total +
+      Math.max(
+        0,
+        Number(job.price || 0) -
+          Number(job.deposit || 0)
+      ),
+    0
   );
 
   return (
@@ -22,8 +35,6 @@ export default function JobsSection({
         gap: 24,
       }}
     >
-      {/* Header */}
-
       <div
         style={{
           display: "flex",
@@ -56,8 +67,6 @@ export default function JobsSection({
         </Button>
       </div>
 
-      {/* Summary */}
-
       <div
         style={{
           display: "grid",
@@ -83,22 +92,9 @@ export default function JobsSection({
 
         <SummaryCard
           title="Outstanding"
-          value={`$${jobs
-            .reduce(
-              (total, job) =>
-                total +
-                Math.max(
-                  0,
-                  Number(job.price || 0) -
-                    Number(job.deposit || 0)
-                ),
-              0
-            )
-            .toFixed(2)}`}
+          value={`$${outstanding.toFixed(2)}`}
         />
       </div>
-
-      {/* Job Cards */}
 
       {jobs.length === 0 ? (
         <div

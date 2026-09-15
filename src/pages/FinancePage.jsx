@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ThriveDialog, useThriveDialog } from "../components/common/ThriveDialog";
 
 import {
   createInvoice,
@@ -11,16 +12,37 @@ import {
   getPayments,
 } from "../services/paymentApi";
 
+import {
+  createQuote,
+  deleteQuote,
+  getQuotes,
+  updateQuote,
+} from "../services/quoteApi";
+
 import InvoicePrintView from "../components/invoices/InvoicePrintView";
+import QuotePrintView from "../components/quotes/QuotePrintView";
 import "../components/invoices/invoicePrint.css";
+import "../components/quotes/quotePrint.css";
 
 const EMPTY_LINE = {
+  garmentType: "Wedding Dress",
   description: "",
   quantity: 1,
   rate: 0,
 };
 
+const DEFAULT_GST_RATE = 0;
 const DEFAULT_DEPOSIT_PERCENT = 25;
+
+const GARMENT_TYPES = [
+  ["Wedding Dress", "Wedding Dress"],
+  ["Bridesmaid Dress", "Bridesmaid Dress"],
+  ["Evening Gown", "Evening Gown"],
+  ["Formal Dress", "Formal Dress"],
+  ["Alteration", "Alteration"],
+  ["Accessories", "Accessories"],
+  ["Other", "Other (add your own)"],
+];
 
 function today() {
   return new Date().toISOString().slice(0, 10);
@@ -51,6 +73,43 @@ function nextInvoiceNumber(invoices) {
   ).padStart(4, "0")}`;
 }
 
+function addDays(dateValue, days) {
+  const date = new Date(
+    `${dateValue}T00:00:00`
+  );
+
+  date.setDate(
+    date.getDate() + days
+  );
+
+  return date.toISOString().slice(0, 10);
+}
+
+function nextQuoteNumber(quotes) {
+  const year = new Date().getFullYear();
+
+  const numbers = quotes
+    .map((quote) =>
+      String(quote.number || "").match(
+        /^QUO-(\d{4})-(\d+)$/
+      )
+    )
+    .filter(Boolean)
+    .filter(
+      (match) =>
+        Number(match[1]) === year
+    )
+    .map((match) => Number(match[2]));
+
+  const next = numbers.length
+    ? Math.max(...numbers) + 1
+    : 1;
+
+  return `QUO-${year}-${String(
+    next
+  ).padStart(4, "0")}`;
+}
+
 function money(value) {
   return Number(value || 0).toLocaleString(
     "en-AU",
@@ -66,6 +125,11 @@ function normaliseLineItems(items) {
     ? items
     : []
   ).map((item) => ({
+    garmentType: GARMENT_TYPES.some(
+      ([value]) => value === item.garmentType
+    )
+      ? item.garmentType
+      : "Other",
     description: String(
       item.description || ""
     ),
@@ -163,9 +227,13 @@ function isDepositPayment(payment) {
 export default function FinancePage({
   clients = [],
   jobs = [],
-  onOpenJob,
 }) {
+  const [financeTab, setFinanceTab] = useState("overview");
+  const { confirm, dialogProps } = useThriveDialog();
   const [invoices, setInvoices] =
+    useState([]);
+
+  const [quotes, setQuotes] =
     useState([]);
 
   const [
@@ -175,6 +243,12 @@ export default function FinancePage({
 
   const [loading, setLoading] =
     useState(true);
+
+  const [quotesLoading, setQuotesLoading] =
+    useState(true);
+
+  const [documentType, setDocumentType] =
+    useState("invoice");
 
   const [saving, setSaving] =
     useState(false);
@@ -195,14 +269,10 @@ export default function FinancePage({
     setPaymentsLoading,
   ] = useState(true);
 
-  const [paymentSearch, setPaymentSearch] =
-    useState("");
-
-  const [paymentTypeFilter, setPaymentTypeFilter] =
-    useState("All");
-
-  const [paymentDateFilter, setPaymentDateFilter] =
-    useState("All");
+  const [financialDefaults, setFinancialDefaults] = useState({
+    gstRate: DEFAULT_GST_RATE,
+    depositPercent: DEFAULT_DEPOSIT_PERCENT,
+  });
 
   async function loadInvoices() {
     setLoading(true);
@@ -219,6 +289,21 @@ export default function FinancePage({
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadQuotes() {
+    setQuotesLoading(true);
+
+    try {
+      setQuotes(await getQuotes());
+    } catch (err) {
+      setError(
+        err.message ||
+          "Unable to load quotes."
+      );
+    } finally {
+      setQuotesLoading(false);
     }
   }
 
@@ -275,11 +360,51 @@ export default function FinancePage({
 
   useEffect(() => {
     loadInvoices();
+    loadQuotes();
   }, []);
 
   useEffect(() => {
     loadFinancePayments();
   }, [jobs]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadFinancialDefaults() {
+      try {
+        const response = await fetch("/api/settings", {
+          credentials: "same-origin",
+          cache: "no-store",
+        });
+
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        const financial = payload?.settings?.financial || {};
+
+        if (!active) return;
+
+        setFinancialDefaults({
+          gstRate: DEFAULT_GST_RATE,
+          depositPercent: Math.min(
+            Math.max(
+              Number(financial.depositPercent ?? DEFAULT_DEPOSIT_PERCENT) || 0,
+              0
+            ),
+            100
+          ),
+        });
+      } catch (error) {
+        console.warn("Unable to load financial defaults.", error);
+      }
+    }
+
+    loadFinancialDefaults();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const financeJobs =
     useMemo(() => {
@@ -312,7 +437,7 @@ export default function FinancePage({
               Math.max(
                 Number(
                   job.depositPercent ??
-                    DEFAULT_DEPOSIT_PERCENT
+                    financialDefaults.depositPercent
                 ) || 0,
                 0
               ),
@@ -373,6 +498,7 @@ export default function FinancePage({
       jobs,
       clients,
       jobPayments,
+      financialDefaults.depositPercent,
     ]);
 
   const financeSummary =
@@ -452,123 +578,6 @@ export default function FinancePage({
         .slice(0, 8);
     }, [financeJobs]);
 
-  const paymentHistory = useMemo(() => {
-    const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    ).getTime();
-
-    const startOfWeek = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() - now.getDay() + 1
-    ).getTime();
-
-    const startOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1
-    ).getTime();
-
-    const search = paymentSearch.trim().toLowerCase();
-
-    return financeJobs
-      .flatMap((item) =>
-        item.payments.map((payment) => ({
-          ...payment,
-          job: item.job,
-          client: item.client,
-        }))
-      )
-      .filter((payment) => {
-        if (
-          paymentTypeFilter === "Deposit" &&
-          !isDepositPayment(payment)
-        ) {
-          return false;
-        }
-
-        if (
-          paymentTypeFilter === "Payment" &&
-          isDepositPayment(payment)
-        ) {
-          return false;
-        }
-
-        if (paymentDateFilter !== "All") {
-          const date = paymentDate(payment);
-
-          if (!date) {
-            return false;
-          }
-
-          if (
-            paymentDateFilter === "Today" &&
-            date < startOfToday
-          ) {
-            return false;
-          }
-
-          if (
-            paymentDateFilter === "This Week" &&
-            date < startOfWeek
-          ) {
-            return false;
-          }
-
-          if (
-            paymentDateFilter === "This Month" &&
-            date < startOfMonth
-          ) {
-            return false;
-          }
-        }
-
-        if (!search) {
-          return true;
-        }
-
-        const haystack = [
-          payment.client?.name,
-          payment.client?.firstName,
-          payment.client?.lastName,
-          payment.job?.reference,
-          payment.job?.name,
-          payment.job?.title,
-          payment.paymentMethod,
-          payment.method,
-          payment.paymentType,
-          payment.notes,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return haystack.includes(search);
-      })
-      .sort(
-        (a, b) =>
-          paymentDate(b) - paymentDate(a)
-      );
-  }, [
-    financeJobs,
-    paymentSearch,
-    paymentTypeFilter,
-    paymentDateFilter,
-  ]);
-
-  const paymentHistoryTotal = useMemo(
-    () =>
-      paymentHistory.reduce(
-        (sum, payment) =>
-          sum + Number(payment.amount || 0),
-        0
-      ),
-    [paymentHistory]
-  );
-
   function startNew() {
     setSelectedId("");
     setError("");
@@ -585,21 +594,68 @@ export default function FinancePage({
       dueDate: "",
       status: "Draft",
       notes: "",
-      gstRate: 10,
+      gstRate: DEFAULT_GST_RATE,
       lineItems: [
         { ...EMPTY_LINE },
       ],
     });
   }
 
+  function startNewQuote() {
+    setSelectedId("");
+    setError("");
+    setDocumentType("quote");
+
+    const issueDate = today();
+
+    setForm({
+      type: "quote",
+      number: nextQuoteNumber(quotes),
+      clientId: clients[0]?.id || "",
+      jobId: "",
+      issueDate,
+      validUntil: addDays(issueDate, 30),
+      status: "Draft",
+      notes: "",
+      gstRate: DEFAULT_GST_RATE,
+      depositPercent: financialDefaults.depositPercent,
+      lineItems: [
+        { ...EMPTY_LINE },
+      ],
+    });
+  }
+
+  function editQuote(quote) {
+    setSelectedId(quote.id);
+    setError("");
+    setDocumentType("quote");
+
+    setForm({
+      ...quote,
+      type: "quote",
+      gstRate: Number(
+        quote.gstRate ?? DEFAULT_GST_RATE
+      ),
+      depositPercent: Number(
+        quote.depositPercent ??
+          financialDefaults.depositPercent
+      ),
+      lineItems:
+        normaliseLineItems(
+          quote.lineItems
+        ),
+    });
+  }
+
   function editInvoice(invoice) {
     setSelectedId(invoice.id);
+    setDocumentType("invoice");
     setError("");
 
     setForm({
       ...invoice,
       gstRate: Number(
-        invoice.gstRate ?? 10
+        invoice.gstRate ?? DEFAULT_GST_RATE
       ),
       lineItems:
         normaliseLineItems(
@@ -733,6 +789,13 @@ export default function FinancePage({
   const balance =
     total - paid;
 
+  const depositRequired =
+    total *
+    (Number(
+      form?.depositPercent ??
+        financialDefaults.depositPercent
+    ) / 100);
+
   async function save() {
     if (!form?.clientId) {
       setError(
@@ -741,9 +804,13 @@ export default function FinancePage({
       return;
     }
 
-    if (!form.number.trim()) {
+    if (!String(form.number || "").trim()) {
       setError(
-        "Please enter an invoice number."
+        `Please enter a ${
+          documentType === "quote"
+            ? "quote"
+            : "invoice"
+        } number.`
       );
       return;
     }
@@ -758,8 +825,6 @@ export default function FinancePage({
         subtotal,
         gst,
         total,
-        amountPaid: paid,
-        balance,
         lineItems:
           form.lineItems.map(
             (item) => ({
@@ -783,56 +848,73 @@ export default function FinancePage({
           ),
       };
 
-      const saved = form.id
-        ? await updateInvoice(
-            payload
-          )
-        : await createInvoice(
-            payload
-          );
+      if (documentType === "quote") {
+        payload.depositRequired =
+          depositRequired;
 
-      await loadInvoices();
+        const saved = form.id
+          ? await updateQuote(payload)
+          : await createQuote(payload);
 
-      setSelectedId(
-        saved.id
-      );
+        await loadQuotes();
 
-      editInvoice(saved);
+        setSelectedId(saved.id);
+        editQuote(saved);
+      } else {
+        payload.amountPaid = paid;
+        payload.balance = balance;
+
+        const saved = form.id
+          ? await updateInvoice(payload)
+          : await createInvoice(payload);
+
+        await loadInvoices();
+
+        setSelectedId(saved.id);
+        editInvoice(saved);
+      }
     } catch (err) {
       setError(
         err.message ||
-          "Unable to save invoice."
+          `Unable to save ${documentType}.`
       );
     } finally {
       setSaving(false);
     }
   }
 
-  async function removeInvoice() {
-    if (
-      !form?.id ||
-      !window.confirm(
-        `Delete ${form.number}?`
-      )
-    ) {
-      return;
-    }
+  async function removeDocument() {
+    if (!form?.id) return;
+
+    const documentLabel =
+      documentType === "quote" ? "Quote" : "Invoice";
+
+    const confirmed = await confirm({
+      title: `Delete ${documentLabel}`,
+      message: `Delete ${form.number}? This cannot be undone.`,
+      confirmLabel: `Delete ${documentLabel}`,
+      danger: true,
+    });
+
+    if (!confirmed) return;
 
     setSaving(true);
 
     try {
-      await deleteInvoice(
-        form.id
-      );
+      if (documentType === "quote") {
+        await deleteQuote(form.id);
+        await loadQuotes();
+      } else {
+        await deleteInvoice(form.id);
+        await loadInvoices();
+      }
 
       setForm(null);
       setSelectedId("");
-
-      await loadInvoices();
     } catch (err) {
       setError(
         err.message ||
-          "Unable to delete invoice."
+          `Unable to delete ${documentType}.`
       );
     } finally {
       setSaving(false);
@@ -850,11 +932,9 @@ export default function FinancePage({
       <div
         style={{
           display: "flex",
-          justifyContent:
-            "space-between",
-          alignItems:
-            "flex-start",
-          marginBottom: 28,
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          marginBottom: 22,
         }}
       >
         <div>
@@ -863,8 +943,7 @@ export default function FinancePage({
               fontSize: 13,
               fontWeight: 700,
               letterSpacing: 1,
-              textTransform:
-                "uppercase",
+              textTransform: "uppercase",
               color: "#8B1E3F",
             }}
           >
@@ -873,12 +952,17 @@ export default function FinancePage({
 
           <h1
             style={{
-              margin:
-                "6px 0 8px",
+              margin: "6px 0 8px",
               color: "#2F3A3F",
             }}
           >
-            Finance Overview
+            {financeTab === "overview"
+              ? "Finance Overview"
+              : financeTab === "quotes"
+                ? "Quotes"
+                : financeTab === "invoices"
+                  ? "Invoices"
+                  : "Payments"}
           </h1>
 
           <p
@@ -887,19 +971,40 @@ export default function FinancePage({
               color: "#777",
             }}
           >
-            Track payments,
-            deposits, balances
-            and invoices across
-            the studio.
+            {financeTab === "overview"
+              ? "Track payments, deposits, balances and invoices across the studio."
+              : financeTab === "quotes"
+                ? "Create, manage and print client quotes."
+                : financeTab === "invoices"
+                  ? "Create, manage and print client invoices."
+                  : "Review outstanding balances and recent payment activity."}
           </p>
         </div>
 
-        <button
-          onClick={startNew}
-          style={primaryButton}
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+          }}
         >
-          + New Invoice
-        </button>
+          {financeTab === "quotes" && (
+            <button
+              onClick={startNewQuote}
+              style={secondaryButton}
+            >
+              + New Quote
+            </button>
+          )}
+
+          {financeTab === "invoices" && (
+            <button
+              onClick={startNew}
+              style={primaryButton}
+            >
+              + New Invoice
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -908,7 +1013,58 @@ export default function FinancePage({
         </div>
       )}
 
+      <div
+        style={{
+          display: "flex",
+          gap: 4,
+          padding: 5,
+          marginBottom: 24,
+          background: "#F3F4F6",
+          borderRadius: 12,
+          border: "1px solid #E5E7EB",
+          overflowX: "auto",
+        }}
+      >
+        {[
+          ["overview", "Overview"],
+          ["quotes", "Quotes"],
+          ["invoices", "Invoices"],
+          ["payments", "Payments"],
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setFinanceTab(id)}
+            style={{
+              border: "none",
+              borderRadius: 9,
+              padding: "12px 14px",
+              background:
+                financeTab === id ? "#FFFFFF" : "transparent",
+              color:
+                financeTab === id ? "#8B1E3F" : "#555",
+              fontWeight:
+                financeTab === id ? 800 : 700,
+              flex: "1 1 0",
+              minWidth: 120,
+              whiteSpace: "nowrap",
+              fontSize: 14,
+              cursor: "pointer",
+              boxShadow:
+                financeTab === id
+                  ? "0 2px 8px rgba(0,0,0,.08)"
+                  : "none",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* FINANCE SUMMARY */}
+
+      {financeTab === "overview" && (
+        <>
 
       <section
         style={{
@@ -967,7 +1123,13 @@ export default function FinancePage({
         />
       </section>
 
-      {/* FINANCE DETAIL */}
+        </>
+      )}
+
+            {/* FINANCE DETAIL */}
+
+      {financeTab === "payments" && (
+        <>
 
       <section
         style={{
@@ -986,7 +1148,7 @@ export default function FinancePage({
           {paymentsLoading ? (
             <div style={muted}>
               Loading payment
-              information...
+              information…
             </div>
           ) : financeSummary
               .jobsOutstanding
@@ -1063,11 +1225,9 @@ export default function FinancePage({
                           fontSize: 12,
                         }}
                       >
-                        {item.job.reference
-                          ? `${item.job.reference} — `
-                          : ""}
                         {item.job.title ||
                           item.job.name ||
+                          item.job.reference ||
                           "Job"}
                       </div>
                     </div>
@@ -1119,7 +1279,7 @@ export default function FinancePage({
 
           {paymentsLoading ? (
             <div style={muted}>
-              Loading payments...
+              Loading payments…
             </div>
           ) : recentPayments.length ===
             0 ? (
@@ -1172,11 +1332,9 @@ export default function FinancePage({
                           color: "#777",
                         }}
                       >
-                        {payment.job?.reference
-                          ? `${payment.job.reference} — `
-                          : ""}
                         {payment.job?.title ||
                           payment.job?.name ||
+                          payment.job?.reference ||
                           "Job"}
                         {" • "}
                         {isDepositPayment(
@@ -1224,279 +1382,798 @@ export default function FinancePage({
         </section>
       </section>
 
-      {/* PAYMENT HISTORY */}
+        </>
+      )}
 
-      <section style={{ ...panel, marginBottom: 26 }}>
+            {/* QUOTE MANAGEMENT */}
+
+      {financeTab === "quotes" && (
+        <>
+
+      <section
+        style={{
+          marginBottom: 30,
+        }}
+      >
         <div
           style={{
             display: "flex",
+            alignItems: "center",
             justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 18,
-            marginBottom: 18,
-            flexWrap: "wrap",
+            marginBottom: 14,
           }}
         >
           <div>
-            <div style={sectionTitle}>
-              Payment History
+            <div style={eyebrow}>
+              Finance
             </div>
 
             <h2
               style={{
-                margin: "-6px 0 4px",
+                margin: "4px 0 0",
                 color: "#2F3A3F",
               }}
             >
-              All Payments
+              Quote Management
             </h2>
-
-            <div style={{ color: "#777", fontSize: 13 }}>
-              Every recorded payment and deposit across the studio.
-            </div>
           </div>
 
-          <div
-            style={{
-              minWidth: 170,
-              textAlign: "right",
-            }}
+          <button
+            onClick={startNewQuote}
+            style={secondaryButton}
           >
-            <div
-              style={{
-                fontSize: 11,
-                fontWeight: 800,
-                textTransform: "uppercase",
-                letterSpacing: 0.6,
-                color: "#888",
-              }}
-            >
-              Filtered Total
-            </div>
-
-            <div
-              style={{
-                marginTop: 3,
-                fontSize: 22,
-                fontWeight: 800,
-                color: "#2F3A3F",
-              }}
-            >
-              {money(paymentHistoryTotal)}
-            </div>
-          </div>
+            + New Quote
+          </button>
         </div>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "minmax(220px, 1fr) 150px 150px",
-            gap: 10,
-            marginBottom: 18,
+            gridTemplateColumns: "340px 1fr",
+            gap: 22,
+            alignItems: "start",
           }}
         >
-          <input
-            value={paymentSearch}
-            onChange={(e) =>
-              setPaymentSearch(e.target.value)
-            }
-            placeholder="Search client, job, method..."
-            style={input}
-          />
+          <section style={panel}>
+            <div style={sectionTitle}>
+              Quotes ({quotes.length})
+            </div>
 
-          <select
-            value={paymentTypeFilter}
-            onChange={(e) =>
-              setPaymentTypeFilter(e.target.value)
-            }
-            style={input}
-          >
-            <option value="All">All types</option>
-            <option value="Deposit">Deposits</option>
-            <option value="Payment">Payments</option>
-          </select>
-
-          <select
-            value={paymentDateFilter}
-            onChange={(e) =>
-              setPaymentDateFilter(e.target.value)
-            }
-            style={input}
-          >
-            <option value="All">All dates</option>
-            <option value="Today">Today</option>
-            <option value="This Week">This week</option>
-            <option value="This Month">This month</option>
-          </select>
-        </div>
-
-        {paymentsLoading ? (
-          <div style={muted}>
-            Loading payments...
-          </div>
-        ) : paymentHistory.length === 0 ? (
-          <div style={empty}>
-            No payments match the current filters.
-          </div>
-        ) : (
-          <div
-            style={{
-              border: "1px solid #E8EAED",
-              borderRadius: 12,
-              overflowX: "auto",
-            }}
-          >
-            <div style={{ minWidth: 820 }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    "120px minmax(150px, 1fr) minmax(150px, 1.2fr) 110px 120px 90px",
-                  gap: 12,
-                  padding: "10px 14px",
-                  background: "#F8F9FA",
-                  borderBottom: "1px solid #E8EAED",
-                  color: "#777",
-                  fontSize: 11,
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.4,
-                }}
-              >
-                <span>Date</span>
-                <span>Client</span>
-                <span>Job</span>
-                <span>Type</span>
-                <span>Method</span>
-                <span style={{ textAlign: "right" }}>
-                  Amount
+            {quotesLoading ? (
+              <div style={muted}>
+                Loading quotes…
+              </div>
+            ) : quotes.length === 0 ? (
+              <div style={empty}>
+                No quotes yet.
+                <br />
+                <span>
+                  Create the first quote above.
                 </span>
               </div>
-
-              {paymentHistory.map((payment, index) => {
-                const jobReference =
-                  payment.job?.reference ||
-                  payment.job?.title ||
-                  payment.job?.name ||
-                  "Job";
-
-                const paymentMethod =
-                  payment.paymentMethod ||
-                  payment.method ||
-                  "—";
-
-                return (
+            ) : (
+              quotes.map((quote) => (
+                <button
+                  key={quote.id}
+                  onClick={() =>
+                    editQuote(quote)
+                  }
+                  style={{
+                    ...invoiceRow,
+                    background:
+                      selectedId === quote.id &&
+                      documentType === "quote"
+                        ? "#FFF7E0"
+                        : "white",
+                  }}
+                >
                   <div
-                    key={
-                      payment.id ||
-                      `${payment.job?.id}-${paymentDate(payment)}-${index}`
-                    }
+                    style={{
+                      display: "flex",
+                      justifyContent:
+                        "space-between",
+                      gap: 10,
+                    }}
+                  >
+                    <strong>
+                      {quote.number ||
+                        "Draft Quote"}
+                    </strong>
+
+                    <span
+                      style={statusBadge(
+                        quote.status
+                      )}
+                    >
+                      {quote.status ||
+                        "Draft"}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 6,
+                      color: "#555",
+                    }}
+                  >
+                    {clientName(
+                      clients,
+                      quote.clientId
+                    )}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {money(
+                      quote.total ??
+                        quote.amount ??
+                        0
+                    )}
+                  </div>
+
+                  {quote.validUntil && (
+                    <div
+                      style={{
+                        marginTop: 4,
+                        fontSize: 11,
+                        color: "#888",
+                      }}
+                    >
+                      Valid until{" "}
+                      {quote.validUntil}
+                    </div>
+                  )}
+                </button>
+              ))
+            )}
+          </section>
+
+          <section style={panel}>
+            {!form ||
+            documentType !== "quote" ? (
+              <div
+                style={{
+                  padding: 50,
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 48,
+                  }}
+                >
+                  Quote
+                </div>
+
+                <h2
+                  style={{
+                    color: "#2F3A3F",
+                  }}
+                >
+                  Quote Management
+                </h2>
+
+                <p
+                  style={{
+                    color: "#777",
+                  }}
+                >
+                  Select a quote or create
+                  a new one.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent:
+                      "space-between",
+                    alignItems: "center",
+                    marginBottom: 22,
+                  }}
+                >
+                  <div>
+                    <div style={eyebrow}>
+                      Quote
+                    </div>
+
+                    <h2
+                      style={{
+                        margin: "4px 0",
+                        color: "#2F3A3F",
+                      }}
+                    >
+                      {form.number}
+                    </h2>
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        window.print()
+                      }
+                      style={secondaryButton}
+                      disabled={saving}
+                    >
+                      Print / PDF
+                    </button>
+
+                    {form.id && (
+                      <button
+                        onClick={
+                          removeDocument
+                        }
+                        style={dangerButton}
+                        disabled={saving}
+                      >
+                        Delete
+                      </button>
+                    )}
+
+                    <button
+                      onClick={save}
+                      style={primaryButton}
+                      disabled={saving}
+                    >
+                      {saving
+                        ? "Saving…"
+                        : "Save Quote"}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={grid2}>
+                  <Field label="Quote Number">
+                    <input
+                      value={
+                        form.number || ""
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "number",
+                          e.target.value
+                        )
+                      }
+                      style={input}
+                    />
+                  </Field>
+
+                  <Field label="Status">
+                    <select
+                      value={
+                        form.status ||
+                        "Draft"
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "status",
+                          e.target.value
+                        )
+                      }
+                      style={input}
+                    >
+                      <option>
+                        Draft
+                      </option>
+                      <option>
+                        Sent
+                      </option>
+                      <option>
+                        Accepted
+                      </option>
+                      <option>
+                        Declined
+                      </option>
+                      <option>
+                        Expired
+                      </option>
+                    </select>
+                  </Field>
+
+                  <Field label="Client">
+                    <select
+                      value={
+                        form.clientId ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "clientId",
+                          e.target.value
+                        )
+                      }
+                      style={input}
+                    >
+                      <option value="">
+                        Select client…
+                      </option>
+
+                      {clients.map(
+                        (client) => (
+                          <option
+                            key={
+                              client.id
+                            }
+                            value={
+                              client.id
+                            }
+                          >
+                            {client.name ||
+                              `${client.firstName || ""} ${
+                                client.lastName || ""
+                              }`.trim()}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </Field>
+
+                  <Field label="Job">
+                    <select
+                      value={
+                        form.jobId ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "jobId",
+                          e.target.value
+                        )
+                      }
+                      style={input}
+                    >
+                      <option value="">
+                        No job linked
+                      </option>
+
+                      {jobs
+                        .filter(
+                          (job) =>
+                            !form.clientId ||
+                            String(
+                              job.clientId
+                            ) ===
+                              String(
+                                form.clientId
+                              )
+                        )
+                        .map((job) => (
+                          <option
+                            key={job.id}
+                            value={job.id}
+                          >
+                            {job.reference
+                              ? `${job.reference} — `
+                              : ""}
+                            {job.name ||
+                              job.title ||
+                              "Job"}
+                          </option>
+                        ))}
+                    </select>
+                  </Field>
+
+                  <Field label="Issue Date">
+                    <input
+                      type="date"
+                      value={
+                        form.issueDate ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "issueDate",
+                          e.target.value
+                        )
+                      }
+                      style={input}
+                    />
+                  </Field>
+
+                  <Field label="Valid Until">
+                    <input
+                      type="date"
+                      value={
+                        form.validUntil ||
+                        ""
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "validUntil",
+                          e.target.value
+                        )
+                      }
+                      style={input}
+                    />
+                  </Field>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 28,
+                  }}
+                >
+                  <div
+                    style={sectionTitle}
+                  >
+                    Line Items
+                  </div>
+
+                  <div
                     style={{
                       display: "grid",
                       gridTemplateColumns:
-                        "120px minmax(150px, 1fr) minmax(150px, 1.2fr) 110px 120px 90px",
-                      gap: 12,
-                      alignItems: "center",
-                      padding: "12px 14px",
-                      borderBottom:
-                        index === paymentHistory.length - 1
-                          ? "none"
-                          : "1px solid #ECEEEF",
-                      fontSize: 13,
+                        "170px 1fr 100px 130px 120px 40px",
+                      gap: 8,
+                      padding:
+                        "0 0 8px",
+                      color: "#888",
+                      fontSize: 12,
+                      fontWeight: 700,
                     }}
                   >
-                    <span style={{ color: "#666" }}>
-                      {formatPaymentDate(payment) || "—"}
+                    <span>
+                      Garment Type
                     </span>
+                    <span>
+                      Description
+                    </span>
+                    <span>Qty</span>
+                    <span>Rate</span>
+                    <span>Total</span>
+                    <span />
+                  </div>
 
-                    <span
+                  {form.lineItems.map(
+                    (item, index) => (
+                      <div
+                        key={index}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "170px 1fr 100px 130px 120px 40px",
+                          gap: 8,
+                          marginBottom: 8,
+                        }}
+                      >
+                        <select
+                          value={
+                            item.garmentType || "Wedding Dress"
+                          }
+                          onChange={(e) =>
+                            updateLine(
+                              index,
+                              "garmentType",
+                              e.target.value
+                            )
+                          }
+                          style={input}
+                          aria-label="Garment type"
+                        >
+                          {GARMENT_TYPES.map(
+                            ([value, label]) => (
+                              <option
+                                key={value}
+                                value={value}
+                              >
+                                {label}
+                              </option>
+                            )
+                          )}
+                        </select>
+
+                        <input
+                          value={
+                            item.description
+                          }
+                          placeholder={
+                            item.garmentType === "Other"
+                              ? "Enter garment or service"
+                              : "Description or details"
+                          }
+                          onChange={(e) =>
+                            updateLine(
+                              index,
+                              "description",
+                              e.target
+                                .value
+                            )
+                          }
+                          style={input}
+                        />
+
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={
+                            item.quantity
+                          }
+                          onChange={(e) =>
+                            updateLine(
+                              index,
+                              "quantity",
+                              e.target
+                                .value
+                            )
+                          }
+                          style={input}
+                        />
+
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.rate}
+                          onChange={(e) =>
+                            updateLine(
+                              index,
+                              "rate",
+                              e.target
+                                .value
+                            )
+                          }
+                          style={input}
+                        />
+
+                        <div
+                          style={
+                            totalCell
+                          }
+                        >
+                          {money(
+                            Number(
+                              item.quantity ||
+                                0
+                            ) *
+                              Number(
+                                item.rate ||
+                                  0
+                              )
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() =>
+                            removeLine(
+                              index
+                            )
+                          }
+                          style={
+                            iconButton
+                          }
+                          title="Remove line"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
+                  )}
+
+                  <button
+                    onClick={addLine}
+                    style={
+                      secondaryButton
+                    }
+                  >
+                    + Add Line Item
+                  </button>
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 28,
+                    display: "grid",
+                    gridTemplateColumns:
+                      "1fr 340px",
+                    gap: 30,
+                  }}
+                >
+                  <Field label="Notes">
+                    <textarea
+                      value={
+                        form.notes || ""
+                      }
+                      onChange={(e) =>
+                        updateField(
+                          "notes",
+                          e.target.value
+                        )
+                      }
+                      rows={6}
                       style={{
-                        fontWeight: 700,
-                        color: "#2F3A3F",
+                        ...input,
+                        resize:
+                          "vertical",
+                      }}
+                      placeholder="Scope, inclusions, exclusions or client notes"
+                    />
+                  </Field>
+
+                  <div style={summary}>
+                    <SummaryRow
+                      label="Subtotal"
+                      value={money(
+                        subtotal
+                      )}
+                    />
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        alignItems:
+                          "center",
+                        padding:
+                          "10px 0",
                       }}
                     >
-                      {payment.client
-                        ? clientName(
-                            clients,
-                            payment.client.id
-                          )
-                        : "Unknown client"}
-                    </span>
+                      <span>
+                        GST
+                      </span>
 
-                    <div style={{ minWidth: 0 }}>
                       <div
                         style={{
-                          fontWeight: 700,
-                          color: "#2F3A3F",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
+                          display:
+                            "flex",
+                          alignItems:
+                            "center",
+                          gap: 5,
                         }}
-                        title={jobReference}
                       >
-                        {jobReference}
-                      </div>
-
-                      {onOpenJob && payment.job?.id && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onOpenJob(payment.job)
+                        <select
+                          value={
+                            Number(form.gstRate ?? DEFAULT_GST_RATE)
                           }
-                          style={historyLinkButton}
+                          onChange={(e) =>
+                            updateField(
+                              "gstRate",
+                              Number(e.target.value)
+                            )
+                          }
+                          style={{
+                            ...input,
+                            width: 175,
+                          }}
                         >
-                          Open Job
-                        </button>
-                      )}
+                          <option value="0">0% — No GST</option>
+                          <option value="10">10% — GST</option>
+                        </select>
+                      </div>
                     </div>
 
-                    <span>
-                      <span
-                        style={{
-                          display: "inline-block",
-                          padding: "4px 8px",
-                          borderRadius: 999,
-                          background: isDepositPayment(payment)
-                            ? "#FFF7E0"
-                            : "#F3F4F6",
-                          color: isDepositPayment(payment)
-                            ? "#8A5A00"
-                            : "#555",
-                          fontSize: 10,
-                          fontWeight: 800,
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        {isDepositPayment(payment)
-                          ? "Deposit"
-                          : "Payment"}
-                      </span>
-                    </span>
+                    <SummaryRow
+                      label="GST Amount"
+                      value={money(gst)}
+                    />
 
-                    <span style={{ color: "#666" }}>
-                      {paymentMethod}
-                    </span>
-
-                    <span
+                    <div
                       style={{
-                        textAlign: "right",
-                        fontWeight: 800,
-                        color: "#2F3A3F",
-                        whiteSpace: "nowrap",
+                        borderTop:
+                          "1px solid #ddd",
+                        marginTop: 6,
+                        paddingTop: 12,
                       }}
                     >
-                      {money(payment.amount)}
-                    </span>
+                      <SummaryRow
+                        label="Total"
+                        value={money(
+                          total
+                        )}
+                        strong
+                      />
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent:
+                          "space-between",
+                        alignItems:
+                          "center",
+                        padding:
+                          "10px 0",
+                      }}
+                    >
+                      <span>
+                        Deposit
+                      </span>
+
+                      <div
+                        style={{
+                          display:
+                            "flex",
+                          alignItems:
+                            "center",
+                          gap: 5,
+                        }}
+                      >
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          value={
+                            form.depositPercent ??
+                            financialDefaults.depositPercent
+                          }
+                          onChange={(e) =>
+                            updateField(
+                              "depositPercent",
+                              e.target
+                                .value
+                            )
+                          }
+                          style={{
+                            ...input,
+                            width: 105,
+                            textAlign:
+                              "right",
+                          }}
+                        />
+                        <span>%</span>
+                      </div>
+                    </div>
+
+                    <SummaryRow
+                      label="Deposit Required"
+                      value={money(
+                        depositRequired
+                      )}
+                      strong
+                    />
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                </div>
+
+                <QuotePrintView
+                  quote={{
+                    ...form,
+                    subtotal,
+                    gst,
+                    total,
+                    depositRequired,
+                  }}
+                  client={clients.find(
+                    (client) =>
+                      String(
+                        client.id
+                      ) ===
+                      String(
+                        form.clientId
+                      )
+                  )}
+                  job={
+                    jobs.find(
+                      (job) =>
+                        String(job.id) ===
+                        String(form.jobId)
+                    )
+                  }
+                />
+              </>
+            )}
+          </section>
+        </div>
       </section>
 
-      {/* INVOICE MANAGEMENT */}
+        </>
+      )}
+
+            {/* INVOICE MANAGEMENT */}
+
+      {financeTab === "invoices" && (
+        <>
 
       <section
         style={{
@@ -1544,7 +2221,7 @@ export default function FinancePage({
 
           {loading ? (
             <div style={muted}>
-              Loading invoices...
+              Loading invoices…
             </div>
           ) : invoices.length ===
             0 ? (
@@ -1640,7 +2317,7 @@ export default function FinancePage({
                   fontSize: 48,
                 }}
               >
-                🧾
+                Invoice
               </div>
 
               <h2
@@ -1718,7 +2395,7 @@ export default function FinancePage({
                   {form.id && (
                     <button
                       onClick={
-                        removeInvoice
+                        removeDocument
                       }
                       style={
                         dangerButton
@@ -1741,7 +2418,7 @@ export default function FinancePage({
                     }
                   >
                     {saving
-                      ? "Saving..."
+                      ? "Saving…"
                       : "Save Invoice"}
                   </button>
                 </div>
@@ -1807,7 +2484,7 @@ export default function FinancePage({
                     style={input}
                   >
                     <option value="">
-                      Select client...
+                      Select client…
                     </option>
 
                     {clients.map(
@@ -1934,7 +2611,7 @@ export default function FinancePage({
                     display:
                       "grid",
                     gridTemplateColumns:
-                      "1fr 100px 130px 120px 40px",
+                      "170px 1fr 100px 130px 120px 40px",
                     gap: 8,
                     padding:
                       "0 0 8px",
@@ -1943,6 +2620,9 @@ export default function FinancePage({
                     fontWeight: 700,
                   }}
                 >
+                  <span>
+                    Garment Type
+                  </span>
                   <span>
                     Description
                   </span>
@@ -1969,17 +2649,47 @@ export default function FinancePage({
                         display:
                           "grid",
                         gridTemplateColumns:
-                          "1fr 100px 130px 120px 40px",
+                          "170px 1fr 100px 130px 120px 40px",
                         gap: 8,
                         marginBottom:
                           8,
                       }}
                     >
+                      <select
+                        value={
+                          item.garmentType || "Wedding Dress"
+                        }
+                        onChange={(e) =>
+                          updateLine(
+                            index,
+                            "garmentType",
+                            e.target.value
+                          )
+                        }
+                        style={input}
+                        aria-label="Garment type"
+                      >
+                        {GARMENT_TYPES.map(
+                          ([value, label]) => (
+                            <option
+                              key={value}
+                              value={value}
+                            >
+                              {label}
+                            </option>
+                          )
+                        )}
+                      </select>
+
                       <input
                         value={
                           item.description
                         }
-                        placeholder="Service or garment"
+                        placeholder={
+                          item.garmentType === "Other"
+                            ? "Enter garment or service"
+                            : "Description or details"
+                        }
                         onChange={(e) =>
                           updateLine(
                             index,
@@ -2131,31 +2841,24 @@ export default function FinancePage({
                       GST
                     </span>
 
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.1"
+                    <select
                       value={
-                        form.gstRate
+                        Number(form.gstRate ?? DEFAULT_GST_RATE)
                       }
                       onChange={(e) =>
                         updateField(
                           "gstRate",
-                          e.target
-                            .value
+                          Number(e.target.value)
                         )
                       }
                       style={{
                         ...input,
-                        width: 90,
-                        textAlign:
-                          "right",
+                        width: 175,
                       }}
-                    />
-
-                    <span>
-                      %
-                    </span>
+                    >
+                      <option value="0">0% — No GST</option>
+                      <option value="10">10% — GST</option>
+                    </select>
                   </div>
 
                   <SummaryRow
@@ -2226,7 +2929,11 @@ export default function FinancePage({
           )}
         </section>
       </div>
-    </div>
+        </>
+      )}
+
+      <ThriveDialog {...dialogProps} />
+          </div>
   );
 }
 
@@ -2447,17 +3154,6 @@ const financeJobRow = {
     "13px 0",
   borderBottom:
     "1px solid #ECEEEF",
-};
-
-const historyLinkButton = {
-  border: "none",
-  background: "transparent",
-  padding: 0,
-  marginTop: 3,
-  color: "#8B1E3F",
-  fontSize: 11,
-  fontWeight: 800,
-  cursor: "pointer",
 };
 
 const recentPaymentRow = {

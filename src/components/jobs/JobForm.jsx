@@ -3,7 +3,20 @@ import { useState } from "react";
 import Button from "../common/Button";
 import TextInput from "../common/TextInput";
 
-import { createJob } from "../../models/Job";
+import { createJob } from "../../models/job";
+
+const selectStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "12px 14px",
+  marginTop: 6,
+  border: "1px solid #DDD",
+  borderRadius: 10,
+  fontSize: 16,
+  outline: "none",
+  backgroundColor: "#FFF",
+  color: "#2F3A3F",
+};
 
 export default function JobForm({
   onSave,
@@ -47,6 +60,7 @@ export default function JobForm({
         label="Job Name"
         value={name}
         onChange={setName}
+        placeholder="e.g. Wedding Dress"
       />
 
       <TextInput
@@ -57,54 +71,88 @@ export default function JobForm({
       />
 
       <div style={{ marginBottom: 20 }}>
-        <label>Priority</label>
+        <label
+          style={{
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+          }}
+        >
+          Priority
+        </label>
 
         <select
           value={priority}
           onChange={(e) => setPriority(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 6,
-            borderRadius: 8,
-          }}
+          style={selectStyle}
         >
-          <option>Low</option>
-          <option>Normal</option>
-          <option>High</option>
-          <option>Urgent</option>
+          <option value="Low">Low</option>
+          <option value="Normal">Normal</option>
+          <option value="High">High</option>
+          <option value="Urgent">Urgent</option>
         </select>
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label>Status</label>
+        <label
+          style={{
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+          }}
+        >
+          Status
+        </label>
 
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 6,
-            borderRadius: 8,
-          }}
+          style={selectStyle}
         >
-          <option>Quote</option>
-          <option>Accepted</option>
-          <option>In Progress</option>
-          <option>Awaiting Fitting</option>
-          <option>Ready</option>
-          <option>Collected</option>
-          <option>Completed</option>
-          <option>Cancelled</option>
+          <option value="Quote">Quote</option>
+          <option value="Accepted">Accepted</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Awaiting Fitting">Awaiting Fitting</option>
+          <option value="Ready">Ready</option>
+          <option value="Collected">Collected</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
         </select>
       </div>
 
-      <TextInput
-        label="Description"
-        value={description}
-        onChange={setDescription}
-      />
+      <div style={{ marginBottom: 20 }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+            marginBottom: 6,
+          }}
+        >
+          Description
+        </label>
+
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Add notes about this job..."
+          rows={4}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "12px 14px",
+            border: "1px solid #DDD",
+            borderRadius: 10,
+            fontSize: 16,
+            lineHeight: 1.5,
+            outline: "none",
+            resize: "vertical",
+            fontFamily: "inherit",
+            color: "#2F3A3F",
+          }}
+        />
+      </div>
 
       <div
         style={{

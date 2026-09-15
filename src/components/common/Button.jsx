@@ -1,20 +1,24 @@
 export default function Button({
   children,
   onClick,
+  type = "button",
 }) {
   return (
     <button
+      type={type}
       onClick={onClick}
       style={{
-        background: "#F4C542",
-        color: "#2F3A3F",
+        background:
+          "var(--brand-primary, #8B1E3F)",
+        color: "#FFFFFF",
         border: "none",
         borderRadius: 10,
         padding: "12px 22px",
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: 600,
         cursor: "pointer",
-        transition: "0.2s",
+        transition:
+          "opacity 0.2s, transform 0.2s",
       }}
     >
       {children}

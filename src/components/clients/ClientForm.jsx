@@ -44,35 +44,77 @@ export default function ClientForm({
         New Client
       </h2>
 
-      <TextInput
-        label="First Name"
-        value={firstName}
-        onChange={setFirstName}
-      />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "0 16px",
+        }}
+      >
+        <TextInput
+          label="First Name"
+          value={firstName}
+          onChange={setFirstName}
+          placeholder="First name"
+        />
 
-      <TextInput
-        label="Last Name"
-        value={lastName}
-        onChange={setLastName}
-      />
+        <TextInput
+          label="Last Name"
+          value={lastName}
+          onChange={setLastName}
+          placeholder="Last name"
+        />
 
-      <TextInput
-        label="Phone"
-        value={phone}
-        onChange={setPhone}
-      />
+        <TextInput
+          label="Phone"
+          type="tel"
+          value={phone}
+          onChange={setPhone}
+          placeholder="0400 000 000"
+        />
 
-      <TextInput
-        label="Email"
-        value={email}
-        onChange={setEmail}
-      />
+        <TextInput
+          label="Email"
+          type="email"
+          value={email}
+          onChange={setEmail}
+          placeholder="client@example.com"
+        />
+      </div>
 
-      <TextInput
-        label="Notes"
-        value={notes}
-        onChange={setNotes}
-      />
+      <div style={{ marginBottom: 20 }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+            marginBottom: 6,
+          }}
+        >
+          Notes
+        </label>
+
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add notes about this client..."
+          rows={4}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "12px 14px",
+            border: "1px solid #DDD",
+            borderRadius: 10,
+            fontSize: 16,
+            lineHeight: 1.5,
+            outline: "none",
+            resize: "vertical",
+            fontFamily: "inherit",
+            color: "#2F3A3F",
+          }}
+        />
+      </div>
 
       <div
         style={{

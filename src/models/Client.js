@@ -8,6 +8,7 @@ export function createClient({
   return {
     id: crypto.randomUUID(),
 
+    // Basic Details
     firstName,
     lastName,
 
@@ -16,12 +17,34 @@ export function createClient({
 
     notes,
 
-    created: new Date(),
+    created: new Date().toISOString(),
+    modified: new Date().toISOString(),
 
-    // New hierarchy
+    status: "Active",
+
+    // Measurements
+    measurements: {},
+
+    // Business Records
     jobs: [],
+    appointments: [],
+    payments: [],
+    invoices: [],
 
-    // Future features
-    history: [],
+    // Client History
+    timeline: [],
+
+    // Assets
+    photos: [],
+    documents: [],
+
+    // Internal
+    tags: [],
+
+    preferences: {},
+
+    reminders: [],
+
+    customFields: {},
   };
 }

@@ -1,168 +1,71 @@
-import Card from "../common/Card";
-
-import {
-  getActiveJobs,
-  getAppointmentsToday,
-  getJobsDueThisWeek,
-  getOutstandingPayments,
-} from "../../utils/dashboard";
-
-export default function WelcomeCard({
-  clients = [],
-}) {
-  const today = new Date();
+export default function WelcomeCard({ ownerName = "Donna" }) {
+  const now = new Date();
+  const hour = now.getHours();
 
   const greeting =
-    today.getHours() < 12
+    hour < 12
       ? "Good Morning"
-      : today.getHours() < 18
-      ? "Good Afternoon"
-      : "Good Evening";
+      : hour < 18
+        ? "Good Afternoon"
+        : "Good Evening";
 
-  const activeJobs =
-    getActiveJobs(clients);
-
-  const todaysAppointments =
-    getAppointmentsToday(clients);
-
-  const jobsDue =
-    getJobsDueThisWeek(clients);
-
-  const outstanding =
-    getOutstandingPayments(clients);
-
-  const formattedDate =
-    today.toLocaleDateString("en-AU", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+  const formattedDate = now.toLocaleDateString("en-AU", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   return (
-    <Card
-      title={`☀️ ${greeting}, Donna`}
-      subtitle={formattedDate}
-    >
-      <p
-        style={{
-          marginTop: 0,
-          lineHeight: 1.7,
-          color: "#555",
-        }}
-      >
-        Here's what's happening in your
-        studio today.
-      </p>
+    <header style={welcomeStyle}>
+      <div>
+        <div style={greetingStyle}>
+          <span aria-hidden="true" style={sunStyle}>
+            ☀
+          </span>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit,minmax(220px,1fr))",
-          gap: 18,
-          marginTop: 24,
-        }}
-      >
-        <SummaryCard
-          value={todaysAppointments.length}
-          label="Appointments Today"
-          icon="📅"
-        />
+          <h1 style={titleStyle}>
+            {greeting}, {ownerName}
+          </h1>
+        </div>
 
-        <SummaryCard
-          value={activeJobs.length}
-          label="Active Jobs"
-          icon="💼"
-        />
-
-        <SummaryCard
-          value={jobsDue.length}
-          label="Due This Week"
-          icon="🧵"
-        />
-
-        <SummaryCard
-          value={`$${outstanding.toFixed(2)}`}
-          label="Outstanding"
-          icon="💰"
-        />
+        <div style={dateStyle}>
+          {formattedDate}
+        </div>
       </div>
-
-      <div
-        style={{
-          marginTop: 28,
-          padding: 20,
-          background: "#F8F9FA",
-          borderRadius: 10,
-          border: "1px solid #E5E7EB",
-        }}
-      >
-        <strong>
-          Today's Goal
-        </strong>
-
-        <p
-          style={{
-            marginBottom: 0,
-            marginTop: 10,
-            lineHeight: 1.7,
-            color: "#666",
-          }}
-        >
-          Stay focused on today's
-          appointments, complete garments
-          due this week, and keep payments
-          up to date.
-        </p>
-      </div>
-    </Card>
+    </header>
   );
 }
 
-function SummaryCard({
-  icon,
-  value,
-  label,
-}) {
-  return (
-    <div
-      style={{
-        background: "#FFFFFF",
-        border: "1px solid #E5E7EB",
-        borderRadius: 10,
-        padding: 20,
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          fontSize: 28,
-        }}
-      >
-        {icon}
-      </div>
+const welcomeStyle = {
+  display: "flex",
+  alignItems: "center",
+  minHeight: 58,
+  padding: 0,
+};
 
-      <div
-        style={{
-          marginTop: 10,
-          fontSize: 28,
-          fontWeight: 700,
-          color: "#2F3A3F",
-        }}
-      >
-        {value}
-      </div>
+const greetingStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+};
 
-      <div
-        style={{
-          marginTop: 8,
-          color: "#666",
-          fontSize: 14,
-        }}
-      >
-        {label}
-      </div>
-    </div>
-  );
-}
+const sunStyle = {
+  color: "#9A2348",
+  fontSize: 29,
+  lineHeight: 1,
+};
+
+const titleStyle = {
+  margin: 0,
+  color: "#171D22",
+  fontSize: 30,
+  lineHeight: 1.05,
+};
+
+const dateStyle = {
+  marginTop: 5,
+  color: "#697178",
+  fontSize: 13,
+  lineHeight: 1.2,
+};

@@ -1,0 +1,199 @@
+.quote-print-document {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .quote-print-document,
+  .quote-print-document * {
+    visibility: visible !important;
+  }
+
+  .quote-print-document {
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    padding: 42px;
+    box-sizing: border-box;
+    background: white;
+    color: #2F3A3F;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  .quote-print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 30px;
+  }
+
+  .quote-brand {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #8B1E3F;
+  }
+
+  .quote-subtitle {
+    margin-top: 5px;
+    color: #777;
+    font-size: 12px;
+  }
+
+  .quote-title-block {
+    text-align: right;
+  }
+
+  .quote-title-block h1 {
+    margin: 0 0 4px;
+    font-size: 32px;
+    letter-spacing: 2px;
+  }
+
+  .quote-title-block strong {
+    color: #8B1E3F;
+    font-size: 14px;
+  }
+
+  .quote-print-rule {
+    height: 2px;
+    margin: 24px 0;
+    background: #8B1E3F;
+  }
+
+  .quote-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 40px;
+    margin-bottom: 20px;
+  }
+
+  .quote-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #8B1E3F;
+    margin-bottom: 6px;
+  }
+
+  .quote-client-name {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .quote-meta-right > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 4px 0;
+  }
+
+  .quote-meta-right span {
+    color: #777;
+  }
+
+  .quote-job-reference {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 20px;
+    background: #F7F3F4;
+    border-left: 4px solid #8B1E3F;
+  }
+
+  .quote-job-reference span {
+    font-size: 10px;
+    font-weight: 800;
+    color: #8B1E3F;
+  }
+
+  .quote-print-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+
+  .quote-print-table th {
+    padding: 10px 8px;
+    border-bottom: 2px solid #2F3A3F;
+    text-align: left;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .quote-print-table th:not(:first-child),
+  .quote-print-table td:not(:first-child) {
+    text-align: right;
+  }
+
+  .quote-print-table td {
+    padding: 11px 8px;
+    border-bottom: 1px solid #DDD;
+  }
+
+  .quote-print-bottom {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 40px;
+    margin-top: 30px;
+  }
+
+  .quote-notes p {
+    margin: 6px 0 18px;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  .quote-terms {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #666;
+  }
+
+  .quote-thanks {
+    margin-top: 25px;
+    font-weight: 700;
+    color: #8B1E3F;
+  }
+
+  .quote-totals > div {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    gap: 15px;
+  }
+
+  .quote-total {
+    margin-top: 5px;
+    padding-top: 12px !important;
+    border-top: 2px solid #2F3A3F;
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .quote-deposit {
+    margin-top: 8px;
+    padding: 10px !important;
+    background: #F7F3F4;
+    color: #8B1E3F;
+    font-weight: 800;
+  }
+
+  .quote-print-footer {
+    position: fixed;
+    bottom: 20px;
+    left: 42px;
+    right: 42px;
+    padding-top: 10px;
+    border-top: 1px solid #DDD;
+    text-align: center;
+    font-size: 9px;
+    color: #888;
+  }
+}

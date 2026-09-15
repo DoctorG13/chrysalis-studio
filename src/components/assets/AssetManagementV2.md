@@ -1,0 +1,1 @@
+Integration placeholder for the asset management UI.

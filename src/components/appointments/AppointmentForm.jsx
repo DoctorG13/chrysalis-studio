@@ -5,6 +5,19 @@ import TextInput from "../common/TextInput";
 
 import { createAppointment } from "../../models/Appointment";
 
+const selectStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "12px 14px",
+  marginTop: 6,
+  border: "1px solid #DDD",
+  borderRadius: 10,
+  fontSize: 16,
+  outline: "none",
+  backgroundColor: "#FFF",
+  color: "#2F3A3F",
+};
+
 export default function AppointmentForm({
   jobs = [],
   onSave,
@@ -51,17 +64,22 @@ export default function AppointmentForm({
       </h2>
 
       <div style={{ marginBottom: 20 }}>
-        <label>Appointment Type</label>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+            marginBottom: 6,
+          }}
+        >
+          Appointment Type
+        </label>
 
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 6,
-            borderRadius: 8,
-          }}
+          style={selectStyle}
         >
           <option>Initial Consultation</option>
           <option>First Fitting</option>
@@ -72,45 +90,67 @@ export default function AppointmentForm({
         </select>
       </div>
 
-      <TextInput
-        label="Date"
-        type="date"
-        value={date}
-        onChange={setDate}
-      />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.2fr 0.8fr",
+          gap: 16,
+        }}
+      >
+        <TextInput
+          label="Date"
+          type="date"
+          value={date}
+          onChange={setDate}
+        />
 
-      <TextInput
-        label="Time"
-        type="time"
-        value={time}
-        onChange={setTime}
-      />
+        <TextInput
+          label="Time"
+          type="time"
+          value={time}
+          onChange={setTime}
+        />
+      </div>
 
-      <TextInput
-        label="Duration (minutes)"
-        type="number"
-        value={duration}
-        onChange={setDuration}
-      />
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "0.7fr 1.3fr",
+          gap: 16,
+        }}
+      >
+        <TextInput
+          label="Duration (minutes)"
+          type="number"
+          value={duration}
+          onChange={setDuration}
+        />
 
-      <TextInput
-        label="Location"
-        value={location}
-        onChange={setLocation}
-      />
+        <TextInput
+          label="Location"
+          value={location}
+          onChange={setLocation}
+          placeholder="e.g. Studio"
+        />
+      </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label>Linked Job</label>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+            marginBottom: 6,
+          }}
+        >
+          Linked Job
+        </label>
 
         <select
           value={jobId}
           onChange={(e) => setJobId(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 6,
-            borderRadius: 8,
-          }}
+          style={selectStyle}
         >
           <option value="">None</option>
 
@@ -126,17 +166,22 @@ export default function AppointmentForm({
       </div>
 
       <div style={{ marginBottom: 20 }}>
-        <label>Status</label>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+            marginBottom: 6,
+          }}
+        >
+          Status
+        </label>
 
         <select
           value={status}
           onChange={(e) => setStatus(e.target.value)}
-          style={{
-            width: "100%",
-            padding: 10,
-            marginTop: 6,
-            borderRadius: 8,
-          }}
+          style={selectStyle}
         >
           <option>Scheduled</option>
           <option>Completed</option>
@@ -145,11 +190,39 @@ export default function AppointmentForm({
         </select>
       </div>
 
-      <TextInput
-        label="Notes"
-        value={notes}
-        onChange={setNotes}
-      />
+      <div style={{ marginBottom: 20 }}>
+        <label
+          style={{
+            display: "block",
+            fontSize: 14,
+            color: "#666",
+            fontWeight: 600,
+            marginBottom: 6,
+          }}
+        >
+          Notes
+        </label>
+
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Add notes about this appointment..."
+          rows={4}
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "12px 14px",
+            border: "1px solid #DDD",
+            borderRadius: 10,
+            fontSize: 16,
+            lineHeight: 1.5,
+            outline: "none",
+            resize: "vertical",
+            fontFamily: "inherit",
+            color: "#2F3A3F",
+          }}
+        />
+      </div>
 
       <div
         style={{
