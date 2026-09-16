@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 const PLATFORM_NAME = "BizziBuddi";
+const BRAND_RED = "#FF174F";
 
 const MENU_ITEMS = [
   { id: "studio", label: "Studio", icon: "S", submenu: [
@@ -54,9 +55,9 @@ const MENU_ITEMS = [
 ];
 
 export default function Sidebar({ currentPage, setCurrentPage, branding, onNavigate }) {
-  const primary = branding?.primaryColour || "#8B1E3F";
+  const primary = branding?.primaryColour || "#8F1238";
   const secondary = branding?.secondaryColour || "#2F3A3F";
-  const accent = branding?.accentColour || "#C96A83";
+  const accent = branding?.accentColour || BRAND_RED;
   const businessName = branding?.businessName || "Your Business";
   const logo = branding?.logo || "";
   const slogan = branding?.slogan?.trim() || "";
@@ -143,7 +144,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
                   {hasSubmenu && <span aria-hidden="true" style={{ fontSize: 12, lineHeight: 1, opacity: 0.72, transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform .18s ease" }}>›</span>}
                 </button>
 
-                <div aria-hidden={!expanded} onMouseEnter={cancelCloseTimer} onMouseLeave={scheduleClose} style={{ position: "fixed", left: 246, top: flyoutTop, width: 235, maxHeight: "calc(100vh - 24px)", padding: "12px 10px", boxSizing: "border-box", background: secondary, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, boxShadow: "0 18px 45px rgba(0,0,0,.22)", zIndex: 1000, opacity: expanded ? 1 : 0, visibility: expanded ? "visible" : "hidden", transform: expanded ? "translateX(0)" : "translateX(-14px)", pointerEvents: expanded ? "auto" : "none", transition: "opacity 420ms ease, transform 460ms ease, visibility 460ms ease" }}>
+                <div aria-hidden={!expanded} onMouseEnter={cancelCloseTimer} onMouseLeave={scheduleClose} style={{ position: "fixed", left: 246, top: flyoutTop, width: 235, maxHeight: "calc(100vh - 24px)", padding: "12px 10px", boxSizing: "border-box", background: secondary, border: `1px solid ${BRAND_RED}`, borderRadius: 12, boxShadow: "0 18px 45px rgba(0,0,0,.22)", zIndex: 1000, opacity: expanded ? 1 : 0, visibility: expanded ? "visible" : "hidden", transform: expanded ? "translateX(0)" : "translateX(-14px)", pointerEvents: expanded ? "auto" : "none", transition: "opacity 420ms ease, transform 460ms ease, visibility 460ms ease" }}>
                   <div style={{ padding: "5px 9px 10px", color: "#FFFFFF", fontSize: 11, fontWeight: 800, letterSpacing: 0.7, textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,.12)", marginBottom: 7 }}>{item.label}</div>
                   {item.submenu.map((subItem) => {
                     const subActive = currentPage === subItem.page;
@@ -161,11 +162,11 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
         </nav>
       </div>
 
-      <div style={{ flexShrink: 0, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 8 }}>
-        <a href="/bizzibuddi" target="_blank" rel="noopener noreferrer" aria-label="Visit BizziBuddi" style={{ display: "block", color: "#AEB4B7", fontSize: 9, lineHeight: 1.35, textAlign: "center", textDecoration: "none", borderRadius: 8, padding: "5px 6px", transition: "color .2s ease, background .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.color = "#FFFFFF"; event.currentTarget.style.background = "rgba(255,255,255,.06)"; }} onMouseLeave={(event) => { event.currentTarget.style.color = "#AEB4B7"; event.currentTarget.style.background = "transparent"; }}>
-          <div style={{ color: "inherit", fontWeight: 700 }}>Powered by {PLATFORM_NAME}</div>
-          <div style={{ marginTop: 2 }}>Business management, all in one place.</div>
-          <div style={{ marginTop: 4, color: "#858D91", fontSize: 8 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
+      <div style={{ flexShrink: 0, paddingTop: 14, borderTop: `2px solid ${BRAND_RED}`, marginTop: 10 }}>
+        <a href="/bizzibuddi" target="_blank" rel="noopener noreferrer" aria-label="Visit BizziBuddi" style={{ display: "block", color: "#FFFFFF", fontSize: 11, lineHeight: 1.5, textAlign: "center", textDecoration: "none", borderRadius: 10, padding: "12px 8px", background: "rgba(255,23,79,.10)", border: `1px solid ${BRAND_RED}`, transition: "color .2s ease, background .2s ease, transform .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.background = "rgba(255,23,79,.22)"; event.currentTarget.style.transform = "translateY(-1px)"; }} onMouseLeave={(event) => { event.currentTarget.style.background = "rgba(255,23,79,.10)"; event.currentTarget.style.transform = "translateY(0)"; }}>
+          <div style={{ color: BRAND_RED, fontWeight: 900, fontSize: 12, letterSpacing: 0.3 }}>Powered by {PLATFORM_NAME}</div>
+          <div style={{ marginTop: 3, color: "#FFFFFF", fontSize: 10.5 }}>Business management, all in one place.</div>
+          <div style={{ marginTop: 6, color: "#E4DDE1", fontSize: 9 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
         </a>
       </div>
     </aside>
