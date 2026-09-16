@@ -275,15 +275,15 @@ export function ThriveDialog({
         style={DIALOG_STYLE}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="thrive-dialog-title"
+        aria-labelledby="bizzibuddi-dialog-title"
         onMouseDown={(event) => event.stopPropagation()}
       >
         <div style={HEADER_STYLE}>
           <div style={EYEBROW_STYLE}>
-            THRIVE
+            bizzibuddi
           </div>
           <h2
-            id="thrive-dialog-title"
+            id="bizzibuddi-dialog-title"
             style={TITLE_STYLE}
           >
             {title}
@@ -297,7 +297,7 @@ export function ThriveDialog({
             <>
               {inputLabel && (
                 <label
-                  htmlFor="thrive-dialog-input"
+                  htmlFor="bizzibuddi-dialog-input"
                   style={{
                     display: "block",
                     marginTop: 16,
@@ -313,7 +313,7 @@ export function ThriveDialog({
 
               <input
                 ref={inputRef}
-                id="thrive-dialog-input"
+                id="bizzibuddi-dialog-input"
                 type="text"
                 value={inputValue}
                 onChange={(event) =>
