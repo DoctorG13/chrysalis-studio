@@ -1,0 +1,43 @@
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-card,
+body:has(.bizzibuddi-footer-grid) button,
+body:has(.bizzibuddi-footer-grid) a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body:has(.bizzibuddi-footer-grid) button {
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease, filter 180ms ease;
+}
+
+body:has(.bizzibuddi-footer-grid) button:hover,
+body:has(.bizzibuddi-footer-grid) button:focus-visible {
+  outline: none;
+  filter: none;
+}
+
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav button:not(:last-child):hover,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-mobile-button:hover {
+  color: #FF174F !important;
+  background: rgba(255, 23, 79, 0.16) !important;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #FF174F, 0 0 18px rgba(255, 23, 79, 0.18);
+}
+
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-footer-link:hover,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-footer-link:focus-visible {
+  color: #FFFFFF !important;
+  background: rgba(255, 23, 79, 0.18) !important;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px #FF174F;
+  filter: none !important;
+  outline: none;
+}
+
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-card:hover {
+  background-color: rgba(255, 23, 79, 0.10) !important;
+}
+
+body:has(.bizzibuddi-footer-grid) a:focus-visible,
+body:has(.bizzibuddi-footer-grid) button:focus-visible {
+  outline: 2px solid #FF174F;
+  outline-offset: 3px;
+}
