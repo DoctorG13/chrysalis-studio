@@ -118,20 +118,20 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
   }
 
   return (
-    <aside ref={sidebarRef} style={{ width: 240, height: "100vh", background: secondary, color: "#FFFFFF", display: "flex", flexDirection: "column", padding: "16px 14px", flexShrink: 0, boxSizing: "border-box", overflow: "visible" }}>
+    <aside ref={sidebarRef} style={{ width: 280, height: "100vh", background: secondary, color: "#FFFFFF", display: "flex", flexDirection: "column", padding: "18px 18px", flexShrink: 0, boxSizing: "border-box", overflow: "visible" }}>
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ flexShrink: 0, marginBottom: 14, textAlign: "center" }}>
+        <div style={{ flexShrink: 0, marginBottom: 18, textAlign: "center" }}>
           {logo ? (
-            <div style={{ width: "100%", height: 52, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-              <img src={logo} alt={`${businessName} logo`} style={{ maxWidth: "170px", maxHeight: "50px", objectFit: "contain" }} />
+            <div style={{ width: "100%", height: 78, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>
+              <img src={logo} alt={`${businessName} logo`} style={{ maxWidth: "220px", maxHeight: "76px", objectFit: "contain" }} />
             </div>
           ) : (
-            <div style={{ width: 48, height: 48, margin: "0 auto 10px", borderRadius: 12, background: primary, color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, boxShadow: `0 0 0 1px ${accent}` }}>
+            <div style={{ width: 64, height: 64, margin: "0 auto 12px", borderRadius: 14, background: primary, color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 800, boxShadow: `0 0 0 1px ${accent}` }}>
               {businessName.trim().charAt(0).toUpperCase() || "B"}
             </div>
           )}
-          <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2, overflowWrap: "anywhere" }}>{businessName}</div>
-          {slogan && <div style={{ color: "#BFC3C5", marginTop: 5, fontSize: 11, lineHeight: 1.4, maxWidth: 190, marginLeft: "auto", marginRight: "auto" }}>{slogan}</div>}
+          <div style={{ fontSize: 20, fontWeight: 600, lineHeight: 1.2, overflowWrap: "anywhere" }}>{businessName}</div>
+          {slogan && <div style={{ color: "#E4E7E9", marginTop: 8, fontSize: 13, fontWeight: 400, lineHeight: 1.5, maxWidth: 230, marginLeft: "auto", marginRight: "auto" }}>{slogan}</div>}
         </div>
 
         <nav aria-label="Main navigation" style={{ flex: 1, minHeight: 0, overflow: "visible" }}>
@@ -141,21 +141,21 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
             const hasSubmenu = item.submenu?.length > 0;
             const menuHovered = hoveredItem === item.id;
             return (
-              <div key={item.id} ref={(element) => { itemRefs.current[item.id] = element; }} onMouseEnter={() => { setHoveredItem(item.id); openMenu(item); }} onMouseLeave={() => { setHoveredItem(null); scheduleClose(); }} style={{ marginBottom: 3 }}>
-                <button type="button" aria-current={active ? "page" : undefined} aria-expanded={hasSubmenu ? expanded : undefined} onClick={() => handleMenuClick(item)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, textAlign: "left", padding: "8px 10px", border: `1px solid ${active || menuHovered ? BRAND_RED : "transparent"}`, borderRadius: expanded && hasSubmenu ? "10px 10px 7px 7px" : 10, cursor: "pointer", fontSize: 14, fontWeight: active ? 700 : 600, background: active ? BRAND_RED_DARK : menuHovered ? "rgba(255,23,79,.24)" : "transparent", color: "#FFFFFF", transition: "background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease", transform: menuHovered ? "translateX(2px)" : "translateX(0)", boxShadow: active || menuHovered ? `0 0 14px rgba(255,23,79,.16)` : "none", boxSizing: "border-box" }}>
-                  <span aria-hidden="true" style={{ width: 26, height: 26, borderRadius: 7, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: active || menuHovered ? BRAND_RED : "rgba(255,255,255,.10)", color: "#FFFFFF", fontSize: item.icon === "$" ? 16 : 11, fontWeight: 800 }}>{item.icon}</span>
+              <div key={item.id} ref={(element) => { itemRefs.current[item.id] = element; }} onMouseEnter={() => { setHoveredItem(item.id); openMenu(item); }} onMouseLeave={() => { setHoveredItem(null); scheduleClose(); }} style={{ marginBottom: 5 }}>
+                <button type="button" aria-current={active ? "page" : undefined} aria-expanded={hasSubmenu ? expanded : undefined} onClick={() => handleMenuClick(item)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 11, textAlign: "left", padding: "11px 12px", border: `1px solid ${active || menuHovered ? BRAND_RED : "transparent"}`, borderRadius: expanded && hasSubmenu ? "10px 10px 7px 7px" : 10, cursor: "pointer", fontSize: 16, fontWeight: active ? 700 : 500, background: active ? BRAND_RED_DARK : menuHovered ? BRAND_RED_DARK : "transparent", color: "#FFFFFF", transition: "background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease", transform: menuHovered ? "translateX(2px)" : "translateX(0)", boxShadow: active || menuHovered ? `0 0 14px rgba(255,23,79,.22)` : "none", boxSizing: "border-box" }}>
+                  <span aria-hidden="true" style={{ width: 32, height: 32, borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: active || menuHovered ? BRAND_RED : "rgba(255,255,255,.10)", color: "#FFFFFF", fontSize: item.icon === "$" ? 18 : 13, fontWeight: 800 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
-                  {hasSubmenu && <span aria-hidden="true" style={{ fontSize: 12, lineHeight: 1, opacity: 1, color: BRAND_RED, transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform .18s ease" }}>›</span>}
+                  {hasSubmenu && <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1, opacity: 1, color: BRAND_RED, transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform .18s ease" }}>›</span>}
                 </button>
 
-                <div aria-hidden={!expanded} onMouseEnter={cancelCloseTimer} onMouseLeave={scheduleClose} style={{ position: "fixed", left: 246, top: flyoutTop, width: 235, maxHeight: "calc(100vh - 24px)", padding: "12px 10px", boxSizing: "border-box", background: secondary, border: `1px solid ${BRAND_RED}`, borderRadius: 12, boxShadow: "0 18px 45px rgba(0,0,0,.35)", zIndex: 1000, opacity: expanded ? 1 : 0, visibility: expanded ? "visible" : "hidden", transform: expanded ? "translateX(0)" : "translateX(-14px)", pointerEvents: expanded ? "auto" : "none", transition: "opacity 220ms ease, transform 220ms ease, visibility 220ms ease" }}>
-                  <div style={{ padding: "5px 9px 10px", color: BRAND_RED, fontSize: 11, fontWeight: 900, letterSpacing: 0.7, textTransform: "uppercase", borderBottom: `1px solid ${BRAND_RED}`, marginBottom: 7 }}>{item.label}</div>
+                <div aria-hidden={!expanded} onMouseEnter={cancelCloseTimer} onMouseLeave={scheduleClose} style={{ position: "fixed", left: 286, top: flyoutTop, width: 255, maxHeight: "calc(100vh - 24px)", padding: "14px 12px", boxSizing: "border-box", background: secondary, border: `1px solid ${BRAND_RED}`, borderRadius: 12, boxShadow: "0 18px 45px rgba(0,0,0,.35)", zIndex: 1000, opacity: expanded ? 1 : 0, visibility: expanded ? "visible" : "hidden", transform: expanded ? "translateX(0)" : "translateX(-14px)", pointerEvents: expanded ? "auto" : "none", transition: "opacity 220ms ease, transform 220ms ease, visibility 220ms ease" }}>
+                  <div style={{ padding: "6px 10px 12px", color: BRAND_RED, fontSize: 12, fontWeight: 800, letterSpacing: 0.7, textTransform: "uppercase", borderBottom: `1px solid ${BRAND_RED}`, marginBottom: 8 }}>{item.label}</div>
                   {item.submenu.map((subItem) => {
                     const subActive = currentPage === subItem.page;
                     const subKey = `${item.id}-${subItem.label}`;
                     const subHovered = hoveredSubItem === subKey;
                     return (
-                      <button key={subKey} type="button" onMouseEnter={() => setHoveredSubItem(subKey)} onMouseLeave={() => setHoveredSubItem(null)} onClick={() => handleSubmenuClick(subItem, item.id)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "9px 10px", margin: "2px 0", border: `1px solid ${subActive || subHovered ? BRAND_RED : "transparent"}`, borderRadius: 8, background: subActive ? BRAND_RED_DARK : subHovered ? "rgba(255,23,79,.24)" : "transparent", color: "#FFFFFF", textAlign: "left", fontSize: 12, fontWeight: subActive || subHovered ? 800 : 600, cursor: "pointer", transition: "background .18s ease, color .18s ease, border-color .18s ease" }}>
+                      <button key={subKey} type="button" onMouseEnter={() => setHoveredSubItem(subKey)} onMouseLeave={() => setHoveredSubItem(null)} onClick={() => handleSubmenuClick(subItem, item.id)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "12px 12px", margin: "3px 0", border: `1px solid ${subActive || subHovered ? BRAND_RED : "transparent"}`, borderRadius: 8, background: subActive ? BRAND_RED_DARK : subHovered ? BRAND_RED_DARK : "transparent", color: "#FFFFFF", textAlign: "left", fontSize: 13, fontWeight: subActive || subHovered ? 700 : 400, cursor: "pointer", transition: "background .18s ease, color .18s ease, border-color .18s ease" }}>
                         <span><span aria-hidden="true" style={{ display: "inline-block", width: 12, color: BRAND_RED }}>•</span>{subItem.label}</span>
                         <span aria-hidden="true" style={{ color: BRAND_RED, opacity: 1 }}>›</span>
                       </button>
@@ -168,14 +168,14 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
         </nav>
       </div>
 
-      <div style={{ flexShrink: 0, paddingTop: 14, borderTop: `2px solid ${BRAND_RED}`, marginTop: 10 }}>
-        <a href="/bizzibuddi" target="_blank" rel="noopener noreferrer" aria-label="Visit BizziBuddi" style={{ display: "block", color: "#FFFFFF", fontSize: 11, lineHeight: 1.5, textAlign: "center", textDecoration: "none", borderRadius: 10, padding: "12px 8px", background: "rgba(255,23,79,.10)", border: `1px solid ${BRAND_RED}`, transition: "color .2s ease, background .2s ease, transform .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.background = "rgba(255,23,79,.24)"; event.currentTarget.style.transform = "translateY(-1px)"; }} onMouseLeave={(event) => { event.currentTarget.style.background = "rgba(255,23,79,.10)"; event.currentTarget.style.transform = "translateY(0)"; }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 9, marginBottom: 9 }}>
-            <span aria-hidden="true" style={{ width: 30, height: 30, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 9, border: `2px solid ${BRAND_RED}`, background: BRAND_RED_DARK, color: "#FFFFFF", fontSize: 15, fontWeight: 900 }}>B</span>
-            <span style={{ color: BRAND_RED, fontWeight: 900, fontSize: 13, letterSpacing: 0.2 }}>{PLATFORM_NAME}</span>
+      <div style={{ flexShrink: 0, paddingTop: 18, borderTop: `2px solid ${BRAND_RED}`, marginTop: 14 }}>
+        <a href="/bizzibuddi" target="_blank" rel="noopener noreferrer" aria-label="Visit BizziBuddi" style={{ display: "block", color: "#FFFFFF", fontSize: 13, lineHeight: 1.6, textAlign: "center", textDecoration: "none", borderRadius: 12, padding: "18px 14px", background: "#20252B", border: `1px solid ${BRAND_RED}`, transition: "color .2s ease, background .2s ease, transform .2s ease, box-shadow .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.background = BRAND_RED_DARK; event.currentTarget.style.transform = "translateY(-2px)"; event.currentTarget.style.boxShadow = `0 8px 22px rgba(255,23,79,.24)`; }} onMouseLeave={(event) => { event.currentTarget.style.background = "#20252B"; event.currentTarget.style.transform = "translateY(0)"; event.currentTarget.style.boxShadow = "none"; }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 12 }}>
+            <span aria-hidden="true" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 11, border: `2px solid ${BRAND_RED}`, background: BRAND_RED, color: "#FFFFFF", fontSize: 22, fontWeight: 900 }}>B</span>
+            <span style={{ color: "#FFFFFF", fontWeight: 700, fontSize: 18, letterSpacing: 0.2 }}>{PLATFORM_NAME}</span>
           </div>
-          <div style={{ color: "#FFFFFF", fontWeight: 800, fontSize: 10.5 }}>Business management, all in one place.</div>
-          <div style={{ marginTop: 6, color: "#FFFFFF", fontSize: 9 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
+          <div style={{ color: "#FFFFFF", fontWeight: 400, fontSize: 13 }}>Business management, all in one place.</div>
+          <div style={{ marginTop: 9, color: "#FFFFFF", fontSize: 11, fontWeight: 400 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
         </a>
       </div>
     </aside>
