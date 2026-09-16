@@ -17,30 +17,30 @@ const plans = [
 ];
 
 const features = [
-  ["01", "People", "Clients, contacts and history in one place."],
-  ["02", "Jobs", "Take work from quote to completion."],
-  ["03", "Production", "See what needs doing and what comes next."],
-  ["04", "Calendar", "Appointments, bookings and important dates."],
-  ["05", "Finance", "Quotes, invoices, payments and balances."],
-  ["06", "Reports", "Useful information about your business."],
+  ["01", "People", "Keep every client, contact detail and piece of history organised in one accessible workspace."],
+  ["02", "Jobs", "Manage every job from the first enquiry and quote through to delivery and completion."],
+  ["03", "Production", "Track tasks, stages and deadlines so you always know what needs attention next."],
+  ["04", "Calendar", "Bring appointments, bookings, deadlines and important dates together in one clear view."],
+  ["05", "Finance", "Stay on top of quotes, invoices, payments and outstanding balances without the guesswork."],
+  ["06", "Reports", "Turn everyday business activity into clear information that helps you plan and make decisions."],
 ];
 
 const buttonBase = {
   borderRadius: 10,
   minHeight: 44,
   padding: "0 18px",
-  fontWeight: 800,
+  fontWeight: 600,
   fontSize: 13,
   cursor: "pointer",
   transition: "transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease",
 };
 
-const eyebrow = { color: RED, fontSize: 10, fontWeight: 900, letterSpacing: 1.5 };
+const eyebrow = { color: RED, fontSize: 10, fontWeight: 600, letterSpacing: 1.5 };
 const heading = { margin: "10px 0 0", fontSize: "clamp(30px, 4vw, 46px)", lineHeight: 1.08, letterSpacing: -1.2, color: TEXT };
 const lead = { maxWidth: 650, margin: "12px 0 0", color: MUTED, fontSize: 14, lineHeight: 1.6 };
 const panel = { background: SURFACE, border: `1px solid ${RED}`, borderRadius: 20, boxShadow: "0 20px 48px rgba(0,0,0,.42)", position: "relative", overflow: "hidden", color: TEXT };
-const footerLink = { color: RED, textDecoration: "none", fontWeight: 900 };
-const footerButton = { border: "none", background: "transparent", color: RED, padding: 0, textAlign: "left", font: "inherit", fontWeight: 900, cursor: "pointer" };
+const footerLink = { color: RED, textDecoration: "none", fontWeight: 400 };
+const footerButton = { border: "none", background: "transparent", color: RED, padding: 0, textAlign: "left", font: "inherit", fontWeight: 400, cursor: "pointer" };
 
 function scrollToId(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -49,10 +49,10 @@ function scrollToId(id) {
 function Logo() {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
-      <span style={{ width: 30, height: 30, border: "2px solid #FFF", borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, transform: "rotate(45deg)", background: RED_DARK }}>
+      <span style={{ width: 30, height: 30, border: "2px solid #FFF", borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, transform: "rotate(45deg)", background: RED_DARK }}>
         <span style={{ transform: "rotate(-45deg)" }}>B</span>
       </span>
-      <span style={{ fontSize: 21, fontWeight: 900, letterSpacing: 1.8 }}>BizziBuddi</span>
+      <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: 1.8 }}>BizziBuddi</span>
     </div>
   );
 }
@@ -73,10 +73,10 @@ function Footer() {
           <div>
             <Logo />
             <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.7, color: "#FFFFFF" }}>Streamline your business.<br />Simplify your work.</div>
-            <div style={{ marginTop: 18, color: RED, fontSize: 12, fontWeight: 900, letterSpacing: 1.1 }}>BUSINESS MANAGEMENT, ALL IN ONE PLACE.</div>
+            <div style={{ marginTop: 18, color: RED, fontSize: 12, fontWeight: 600, letterSpacing: 1.1 }}>BUSINESS MANAGEMENT, ALL IN ONE PLACE.</div>
           </div>
           <div>
-            <div style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Quick Links</div>
+            <div style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 600, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Quick Links</div>
             <div style={{ display: "grid", gap: 12, fontSize: 14 }}>
               <a href="/bizzibuddi" style={footerLink} className="bizzibuddi-footer-link">Home</a>
               <button type="button" onClick={() => scrollToId("why")} style={footerButton} className="bizzibuddi-footer-link">Why BizziBuddi</button>
@@ -85,7 +85,7 @@ function Footer() {
             </div>
           </div>
           <div>
-            <div style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 900, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Account</div>
+            <div style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 600, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Account</div>
             <div style={{ display: "grid", gap: 12, fontSize: 14 }}>
               <a href="/login" style={footerLink} className="bizzibuddi-footer-link">Sign In</a>
               <a href="#pricing" style={footerLink} className="bizzibuddi-footer-link">Start Free</a>
@@ -110,7 +110,7 @@ export default function BizzibuddiLandingPage() {
   if (pathname === "/bizzibuddi/privacy") return <BizzibuddiPrivacyPage />;
 
   const goPricing = () => scrollToId("pricing");
-  const nav = { border: "none", background: "transparent", color: "#FFFFFF", fontWeight: 900, fontSize: 13, cursor: "pointer", padding: "10px 4px" };
+  const nav = { border: "none", background: "transparent", color: "#FFFFFF", fontWeight: 500, fontSize: 13, cursor: "pointer", padding: "10px 4px" };
   const pillars = [["ONE PLACE", "Everything together", "Stop jumping between spreadsheets, notes and messages."], ["CLEAR WORKFLOW", "Know what is next", "Keep work moving from first contact to completion."], ["LESS ADMIN", "Get time back", "Simple tools designed around everyday business work."]];
   const reasons = [["Clarity", "See the information that matters without digging through systems."], ["Control", "Keep jobs, schedules, payments and processes organised."], ["Confidence", "Know where your work and business stand at a glance."]];
 
@@ -144,16 +144,16 @@ export default function BizzibuddiLandingPage() {
       <main>
         <section style={{ background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #16000A 100%)`, color: "#FFF", padding: "76px 22px 64px" }}>
           <div style={{ maxWidth: 1080, margin: "0 auto", textAlign: "center" }}>
-            <div style={eyebrow}>BUSINESS MANAGEMENT, SIMPLIFIED</div>
-            <h1 style={{ margin: "15px auto 0", maxWidth: 800, fontSize: "clamp(42px, 7vw, 74px)", lineHeight: .99, letterSpacing: -3 }}>Run your business.<br /><span style={{ color: RED }}>With BizziBuddi.</span></h1>
-            <p style={{ maxWidth: 680, margin: "20px auto 0", color: "#FFFFFF", fontSize: 16, lineHeight: 1.6 }}>One clear workspace for your people, jobs, production, calendar and money.</p>
+            <div style={{ ...eyebrow, fontSize: 15, fontWeight: 600, letterSpacing: 2.2 }}>BUSINESS MANAGEMENT, SIMPLIFIED</div>
+            <div style={{ margin: "18px auto 0", color: MUTED, fontSize: "clamp(18px, 2.4vw, 28px)", fontWeight: 400, letterSpacing: -.4 }}>Run your business. With BizziBuddi.</div>
+            <h1 style={{ margin: "18px auto 0", maxWidth: 980, fontSize: "clamp(38px, 6.2vw, 68px)", lineHeight: 1.04, letterSpacing: -2.4 }}>One clear workspace for your people, jobs, production, calendar and money.</h1>
             <div style={{ marginTop: 25, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}><CtaButton onClick={goPricing}>Start with BizziBuddi Free →</CtaButton><CtaButton secondary onClick={() => scrollToId("features")}>Explore BizziBuddi</CtaButton></div>
             <div className="bizzibuddi-hero-grid" style={{ marginTop: 42, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, textAlign: "left" }}>{pillars.map(([label, title, text]) => <article key={label} className="bizzibuddi-card" style={{ background: "rgba(255,255,255,.045)", border: `1px solid ${RED}`, borderRadius: 16, padding: 20, minHeight: 125 }}><div style={eyebrow}>{label}</div><strong style={{ display: "block", marginTop: 9, fontSize: 16 }}>{title}</strong><p style={{ margin: "7px 0 0", color: "#FFFFFF", fontSize: 12.5, lineHeight: 1.5 }}>{text}</p></article>)}</div>
           </div>
         </section>
-        <section id="why" style={{ maxWidth: 1080, margin: "0 auto", padding: "70px 22px" }} className="bizzibuddi-section-pad"><div style={eyebrow}>WHY BIZZIBUDDI</div><h2 style={heading}>Everything your business needs.<br />In one place.</h2><p style={lead}>BizziBuddi is built to make the everyday running of a business clearer, faster and easier to manage.</p><div className="bizzibuddi-three-grid" style={{ marginTop: 28, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>{reasons.map(([title, text], index) => <article key={title} className="bizzibuddi-card" style={{ ...panel, padding: 28, minHeight: 205 }}><div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 5, background: RED }} /><div style={{ width: 54, height: 54, borderRadius: 15, background: RED_DARK, color: "#FFFFFF", display: "grid", placeItems: "center", fontWeight: 900, fontSize: 17 }}>{index + 1}</div><h3 style={{ margin: "19px 0 8px", fontSize: 22 }}>{title}</h3><p style={{ margin: 0, color: "#FFFFFF", fontSize: 14, lineHeight: 1.65 }}>{text}</p></article>)}</div></section>
-        <section id="features" style={{ background: "#0E1016", borderTop: `2px solid ${RED}`, borderBottom: `2px solid ${RED}`, padding: "70px 22px" }} className="bizzibuddi-section-pad"><div style={{ maxWidth: 1080, margin: "0 auto" }}><div style={eyebrow}>YOUR BUSINESS. YOUR WORKSPACE.</div><h2 style={heading}>Six essentials.<br />One powerful BizziBuddi workspace.</h2><div className="bizzibuddi-feature-grid" style={{ marginTop: 28, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>{features.map(([number, title, text]) => <article key={title} className="bizzibuddi-card" style={{ ...panel, padding: 22, minHeight: 155 }}><div style={{ color: RED, fontSize: 11, fontWeight: 900, letterSpacing: 1.2 }}>{number}</div><h3 style={{ margin: "16px 0 8px", fontSize: 21 }}>{title}</h3><p style={{ margin: 0, color: "#FFFFFF", fontSize: 13.5, lineHeight: 1.65 }}>{text}</p><div style={{ marginTop: 18, color: RED, fontSize: 10, fontWeight: 900, letterSpacing: 1.1, textTransform: "uppercase" }}>Included in your workspace</div></article>)}</div></div></section>
-        <section id="pricing" style={{ background: "#0A0B10", padding: "70px 22px" }} className="bizzibuddi-section-pad"><div style={{ maxWidth: 1080, margin: "0 auto" }}><div style={{ textAlign: "center" }}><div style={eyebrow}>SIMPLE PRICING</div><h2 style={{ ...heading, marginLeft: "auto", marginRight: "auto" }}>Start free. Grow when you're ready.</h2><p style={{ ...lead, marginLeft: "auto", marginRight: "auto" }}>No complicated setup. No long-term commitment. Choose the level that fits your business.</p></div><div className="bizzibuddi-plan-grid" style={{ marginTop: 42, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, alignItems: "stretch" }}>{plans.map((plan) => <article key={plan.name} className="bizzibuddi-card" style={{ ...panel, border: `2px solid ${plan.popular ? RED : "#34303A"}`, borderRadius: 14, padding: 22 }}>{plan.popular && <div style={{ margin: "-22px -22px 18px", padding: "8px 12px", background: RED, color: "#FFF", textAlign: "center", fontSize: 11, fontWeight: 900, letterSpacing: 1, textTransform: "uppercase" }}>Most popular</div>}<h3 style={{ margin: 0, fontSize: 20 }}>{plan.name}</h3><div style={{ marginTop: 18, display: "flex", alignItems: "baseline", gap: 6 }}><strong style={{ fontSize: 38 }}>{plan.price}</strong><span style={{ color: "#FFFFFF", fontSize: 12 }}>{plan.period}</span></div><p style={{ minHeight: 66, color: "#FFFFFF", fontSize: 13, lineHeight: 1.55 }}>{plan.description}</p><div style={{ display: "grid", gap: 10, minHeight: 130 }}>{plan.features.map((feature) => <div key={feature} style={{ display: "flex", gap: 8, fontSize: 13 }}><span style={{ color: RED, fontWeight: 900 }}>✓</span>{feature}</div>)}</div><button type="button" onClick={() => alert(`BizziBuddi ${plan.name} signup will be connected in the account/subscription stage.`)} className="bizzibuddi-cta" style={{ width: "100%", marginTop: 22, minHeight: 44, border: `2px solid ${RED}`, borderRadius: 9, background: plan.popular ? RED : "transparent", color: "#FFF", fontWeight: 900, cursor: "pointer", transition: "background .18s ease,transform .18s ease,box-shadow .18s ease" }}>{plan.name === "Free Workspace" ? "Start Free" : `Choose ${plan.name.replace(" Workspace", "")}`}</button></article>)}</div><p style={{ textAlign: "center", margin: "22px 0 0", color: "#FFFFFF", fontSize: 12 }}>Prices shown are mock pricing for the BizziBuddi development site and are not yet connected to billing.</p></div></section>
+        <section id="why" style={{ maxWidth: 1080, margin: "0 auto", padding: "70px 22px" }} className="bizzibuddi-section-pad"><div style={eyebrow}>WHY BIZZIBUDDI</div><h2 style={heading}>Everything your business needs.<br />In one place.</h2><p style={lead}>BizziBuddi is built to make the everyday running of a business clearer, faster and easier to manage.</p><div className="bizzibuddi-three-grid" style={{ marginTop: 28, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>{reasons.map(([title, text], index) => <article key={title} className="bizzibuddi-card" style={{ ...panel, padding: 28, minHeight: 205 }}><div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 5, background: RED }} /><div style={{ width: 54, height: 54, borderRadius: 15, background: RED_DARK, color: "#FFFFFF", display: "grid", placeItems: "center", fontWeight: 600, fontSize: 17 }}>{index + 1}</div><h3 style={{ margin: "19px 0 8px", fontSize: 22 }}>{title}</h3><p style={{ margin: 0, color: "#FFFFFF", fontSize: 14, lineHeight: 1.65 }}>{text}</p></article>)}</div></section>
+        <section id="features" style={{ background: "#0E1016", borderTop: `2px solid ${RED}`, borderBottom: `2px solid ${RED}`, padding: "70px 22px" }} className="bizzibuddi-section-pad"><div style={{ maxWidth: 1080, margin: "0 auto" }}><div style={eyebrow}>YOUR BUSINESS. YOUR WORKSPACE.</div><h2 style={heading}>Six essentials.<br />One powerful BizziBuddi workspace.</h2><div className="bizzibuddi-feature-grid" style={{ marginTop: 28, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>{features.map(([number, title, text]) => <article key={title} className="bizzibuddi-card" style={{ ...panel, padding: 22, minHeight: 155 }}><div style={{ color: RED, fontSize: 11, fontWeight: 600, letterSpacing: 1.2 }}>{number}</div><h3 style={{ margin: "16px 0 8px", fontSize: 21 }}>{title}</h3><p style={{ margin: 0, color: "#FFFFFF", fontSize: 13.5, lineHeight: 1.65 }}>{text}</p></article>)}</div></div></section>
+        <section id="pricing" style={{ background: "#0A0B10", padding: "70px 22px" }} className="bizzibuddi-section-pad"><div style={{ maxWidth: 1080, margin: "0 auto" }}><div style={{ textAlign: "center" }}><div style={eyebrow}>SIMPLE PRICING</div><h2 style={{ ...heading, marginLeft: "auto", marginRight: "auto" }}>Start free. Grow when you're ready.</h2><p style={{ ...lead, marginLeft: "auto", marginRight: "auto" }}>No complicated setup. No long-term commitment. Choose the level that fits your business.</p></div><div className="bizzibuddi-plan-grid" style={{ marginTop: 42, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, alignItems: "stretch" }}>{plans.map((plan) => <article key={plan.name} className="bizzibuddi-card" style={{ ...panel, border: `2px solid ${plan.popular ? RED : "#34303A"}`, borderRadius: 14, padding: 22 }}>{plan.popular && <div style={{ margin: "-22px -22px 18px", padding: "8px 12px", background: RED, color: "#FFF", textAlign: "center", fontSize: 11, fontWeight: 600, letterSpacing: 1, textTransform: "uppercase" }}>Most popular</div>}<h3 style={{ margin: 0, fontSize: 20 }}>{plan.name}</h3><div style={{ marginTop: 18, display: "flex", alignItems: "baseline", gap: 6 }}><strong style={{ fontSize: 38 }}>{plan.price}</strong><span style={{ color: "#FFFFFF", fontSize: 12 }}>{plan.period}</span></div><p style={{ minHeight: 66, color: "#FFFFFF", fontSize: 13, lineHeight: 1.55 }}>{plan.description}</p><div style={{ display: "grid", gap: 10, minHeight: 130 }}>{plan.features.map((feature) => <div key={feature} style={{ display: "flex", gap: 8, fontSize: 13 }}><span style={{ color: RED, fontWeight: 600 }}>✓</span>{feature}</div>)}</div><button type="button" onClick={() => alert(`BizziBuddi ${plan.name} signup will be connected in the account/subscription stage.`)} className="bizzibuddi-cta" style={{ width: "100%", marginTop: 22, minHeight: 44, border: `2px solid ${RED}`, borderRadius: 9, background: plan.popular ? RED : "transparent", color: "#FFF", fontWeight: 600, cursor: "pointer", transition: "background .18s ease,transform .18s ease,box-shadow .18s ease" }}>{plan.name === "Free Workspace" ? "Start Free" : `Choose ${plan.name.replace(" Workspace", "")}`}</button></article>)}</div><p style={{ textAlign: "center", margin: "22px 0 0", color: "#FFFFFF", fontSize: 12 }}>Prices shown are mock pricing for the BizziBuddi development site and are not yet connected to billing.</p></div></section>
         <section style={{ background: `linear-gradient(135deg, ${SURFACE}, #16000A)`, color: "#FFF", padding: "80px 22px" }}><div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}><div style={eyebrow}>READY WHEN YOU ARE</div><h2 style={{ margin: "15px 0 0", fontSize: "clamp(32px, 5vw, 52px)" }}>Your business has enough to manage.<br />BizziBuddi makes it simpler.</h2><div style={{ marginTop: 26 }}><CtaButton onClick={goPricing}>Start for free →</CtaButton></div></div></section>
       </main>
       <Footer />
