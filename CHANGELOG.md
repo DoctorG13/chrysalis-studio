@@ -4,6 +4,19 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Landing Page Styling
+
+### Changed
+
+- Reworked the hero hierarchy so the main workspace message is the dominant headline.
+- Reduced the emphasis of the supporting “Run your business. With BizziBuddi.” line.
+- Removed the redundant “Included in your workspace” labels from feature cards.
+- Expanded the descriptions for People, Jobs, Production, Calendar, Finance and Reports.
+- Refined typography throughout the landing page with lighter font weights, particularly in navigation, branding, buttons and footer content.
+- Improved hero text sizing and wrapping for clearer presentation across screen sizes.
+
+---
+
 ## bizzibuddi Rebrand
 
 ### Changed
