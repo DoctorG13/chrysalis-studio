@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const PLATFORM_NAME = "THRIVE";
+const PLATFORM_NAME = "bizzibuddi";
 
 const MENU_ITEMS = [
   { id: "studio", label: "Studio", icon: "S", submenu: [
@@ -162,7 +162,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
       </div>
 
       <div style={{ flexShrink: 0, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.12)", marginTop: 8 }}>
-        <a href="/thrive" aria-label="Visit THRIVE" style={{ display: "block", color: "#AEB4B7", fontSize: 9, lineHeight: 1.35, textAlign: "center", textDecoration: "none", borderRadius: 8, padding: "5px 6px", transition: "color .2s ease, background .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.color = "#FFFFFF"; event.currentTarget.style.background = "rgba(255,255,255,.06)"; }} onMouseLeave={(event) => { event.currentTarget.style.color = "#AEB4B7"; event.currentTarget.style.background = "transparent"; }}>
+        <a href="/bizzibuddi" aria-label="Visit bizzibuddi" style={{ display: "block", color: "#AEB4B7", fontSize: 9, lineHeight: 1.35, textAlign: "center", textDecoration: "none", borderRadius: 8, padding: "5px 6px", transition: "color .2s ease, background .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.color = "#FFFFFF"; event.currentTarget.style.background = "rgba(255,255,255,.06)"; }} onMouseLeave={(event) => { event.currentTarget.style.color = "#AEB4B7"; event.currentTarget.style.background = "transparent"; }}>
           <div style={{ color: "inherit", fontWeight: 700 }}>Powered by {PLATFORM_NAME}</div>
           <div style={{ marginTop: 2 }}>Business management, all in one place.</div>
           <div style={{ marginTop: 4, color: "#858D91", fontSize: 8 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
