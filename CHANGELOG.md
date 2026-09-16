@@ -8,10 +8,10 @@ All notable changes to Chrysalis are recorded here.
 
 ### Changed
 
-- Renamed the public business-management platform branding from THRIVE to bizzibuddi.
+- Renamed the public business-management platform branding to bizzibuddi.
 - Updated the public platform route and navigation links to `/bizzibuddi`.
 - Updated the bizzibuddi landing page, legal pages, footer and application dialog branding.
-- Updated the platform logo mark from the previous T mark to a b mark.
+- Updated the platform logo mark to the new b mark.
 - Updated the application sidebar platform attribution to bizzibuddi.
 
 ---
