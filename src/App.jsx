@@ -15,7 +15,7 @@ import SettingsPage from "./pages/SettingsPage";
 import LabourSettingsPanel from "./components/settings/LabourSettingsPanel";
 import BackupTransferPanel from "./components/settings/BackupTransferPanel";
 import GarmentSchedulePanel from "./components/garments/GarmentSchedulePanel";
-import ThriveLandingPage from "./pages/ThriveLandingPage";
+import BizzibuddiLandingPage from "./pages/BizzibuddiLandingPage";
 
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import JobsWorkspace from "./components/jobs/JobsWorkspace";
@@ -483,7 +483,7 @@ export default function App() {
   const pathname = window.location.pathname.replace(/\/$/, "") || "/";
 
   if (pathname === "/bizzibuddi" || pathname.startsWith("/bizzibuddi/")) {
-    return <ThriveLandingPage />;
+    return <BizzibuddiLandingPage />;
   }
 
   return (
