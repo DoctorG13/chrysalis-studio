@@ -41,7 +41,7 @@ const DEMO_BRANDING = {
   businessName: "Demo Workspace",
   ownerName: "Demo User",
   logo: "",
-  slogan: "Explore THRIVE with sample data.",
+  slogan: "Explore bizzibuddi with sample data.",
   primaryColour: "#8B1E3F",
   secondaryColour: "#2F3A3F",
   accentColour: "#C96A83",
@@ -482,7 +482,7 @@ function ChrysalisApplication({ authenticatedUser }) {
 export default function App() {
   const pathname = window.location.pathname.replace(/\/$/, "") || "/";
 
-  if (pathname === "/thrive" || pathname.startsWith("/thrive/")) {
+  if (pathname === "/bizzibuddi" || pathname.startsWith("/bizzibuddi/")) {
     return <ThriveLandingPage />;
   }
 
