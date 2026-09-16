@@ -4,15 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
-## THRIVE Landing Page Refinements
+## bizzibuddi Rebrand
 
 ### Changed
 
-- Strengthened the visual treatment of THRIVE content panels with deeper elevation, clearer borders and accent treatment.
-- Made the Why THRIVE panels more prominent and easier to scan.
-- Expanded the THRIVE footer with quick links to Home, Why THRIVE, Features, Pricing and Sign In.
-- Kept Terms & Conditions, Privacy Policy and copyright information in the footer information area.
-- Kept the general-purpose workspace naming across Free, Professional, Team and Business tiers.
+- Renamed the public business-management platform branding from THRIVE to bizzibuddi.
+- Updated the public platform route and navigation links to `/bizzibuddi`.
+- Updated the bizzibuddi landing page, legal pages, footer and application dialog branding.
+- Updated the platform logo mark from the previous T mark to a b mark.
+- Updated the application sidebar platform attribution to bizzibuddi.
 
 ---
 
