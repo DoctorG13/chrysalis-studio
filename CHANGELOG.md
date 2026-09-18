@@ -4,6 +4,25 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Mock Registration and Onboarding
+
+### Added
+
+- Added a local-only mock account creation flow to the BizziBuddi account preview.
+- Added local mock login behaviour using browser-stored demo account data.
+- Added workspace onboarding with business/workspace name capture.
+- Added a simulated account dashboard showing workspace readiness, selected plan and billing status.
+- Added local plan selection without creating subscriptions or processing payments.
+- Added a reset option to clear the mock account from the current browser.
+
+### Notes
+
+- This feature is for interface and workflow testing only.
+- No passwords, accounts, payments or subscription records are sent to a server.
+- Real authentication, secure storage and billing remain future implementation work.
+
+---
+
 ## Bright Red BizziBuddi Theme Accents
 
 ### Changed
