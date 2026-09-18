@@ -10,9 +10,35 @@ const MUTED = "#B8B0B8";
 const BORDER = "rgba(255,255,255,.16)";
 
 const plans = [
-  { name: "Free", price: "$0", description: "Start organising your business essentials.", features: ["People management", "Basic jobs", "Simple calendar"] },
-  { name: "Musician", price: "$12", description: "More tools for your day-to-day work.", features: ["Everything in Free", "Production tracking", "Finance tools"], featured: true },
-  { name: "Business", price: "$29", description: "A complete workspace for growing teams.", features: ["Everything in Musician", "Advanced reporting", "Team collaboration"] },
+  {
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description: "A simple starting point for independent operators.",
+    features: ["People & contacts", "Basic jobs", "Calendar", "Dashboard"],
+  },
+  {
+    name: "Professional",
+    price: "$9",
+    period: "/ month",
+    description: "For established service businesses and solo professionals.",
+    features: ["Everything in Free", "Advanced scheduling", "Payments & invoices", "Automation"],
+  },
+  {
+    name: "Team",
+    price: "$19",
+    period: "/ month",
+    description: "For small teams working together in one place.",
+    features: ["Everything in Professional", "Shared workspace", "Team workflow", "Production tracking"],
+    featured: true,
+  },
+  {
+    name: "Business",
+    price: "$39",
+    period: "/ month",
+    description: "For growing businesses needing deeper control.",
+    features: ["Everything in Team", "Advanced reporting", "Priority features", "Professional controls"],
+  },
 ];
 
 const labels = { login: "Log in", create: "Create account", upgrade: "Plans & upgrade", dashboard: "Account preview" };
@@ -27,7 +53,10 @@ export default function BizzibuddiAccountPage() {
       <div style={ambientGlow}></div>
       <div style={shellStyle}>
         <header style={headerStyle}>
-          <a href="/bizzibuddi" style={brandStyle}><span style={brandMark}><span style={{ transform: "rotate(-45deg)" }}>B</span></span><span>Bizzi<span style={{ color: RED }}>Buddi</span></span></a>
+          <a href="/bizzibuddi" style={brandStyle}>
+            <span style={brandMark}><span style={{ transform: "rotate(-45deg)" }}>B</span></span>
+            <span>Bizzi<span style={{ color: RED }}>Buddi</span></span>
+          </a>
           <a href="/bizzibuddi" style={backLink}>Back to website ↗</a>
         </header>
 
@@ -90,9 +119,30 @@ function AuthPanel({ mode, submitted, onSubmit, onSwitch }) {
   </section>;
 }
 
-function UpgradePanel({ submitted, onSelectPlan }) { return <section><div style={{ textAlign: "center", marginBottom: 28 }}><h2 style={{ margin: 0, fontSize: "clamp(30px, 5vw, 42px)", letterSpacing: "-0.04em" }}>Find your fit.</h2><p style={{ color: MUTED, lineHeight: 1.7 }}>Compare the future plan options before connecting real subscriptions.</p></div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))", gap: 20 }}>{plans.map((plan) => <article key={plan.name} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, transform: plan.featured ? "translateY(-8px)" : "none" }}>{plan.featured && <span style={{ display: "inline-block", padding: "7px 10px", borderRadius: 999, background: RED, color: TEXT, fontSize: 11, fontWeight: 600 }}>MOST POPULAR PREVIEW</span>}<h3 style={{ fontSize: 27, margin: "18px 0 5px" }}>{plan.name}</h3><div style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.05em" }}>{plan.price}<small style={{ fontSize: 14, color: MUTED }}>/month</small></div><p style={{ color: MUTED, lineHeight: 1.6, minHeight: 52 }}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, minHeight: 130 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={onSelectPlan} style={plan.featured ? primaryButton : secondaryButton}>Select {plan.name}</button></article>)}</div>{submitted && <Notice>Demo plan selected. No subscription has been created.</Notice>}</section>; }
+function UpgradePanel({ submitted, onSelectPlan }) {
+  return <section>
+    <div style={{ textAlign: "center", marginBottom: 28 }}><h2 style={{ margin: 0, fontSize: "clamp(30px, 5vw, 42px)", letterSpacing: "-0.04em" }}>Find your fit.</h2><p style={{ color: MUTED, lineHeight: 1.7 }}>Compare the future plan options before connecting real subscriptions.</p></div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))", gap: 20, alignItems: "stretch" }}>
+      {plans.map((plan) => <article key={plan.name} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, transform: plan.featured ? "translateY(-8px)" : "none", display: "flex", flexDirection: "column" }}>
+        {plan.featured && <span style={{ display: "inline-block", padding: "7px 10px", borderRadius: 999, background: RED, color: TEXT, fontSize: 11, fontWeight: 600 }}>MOST POPULAR</span>}
+        <h3 style={{ fontSize: 27, margin: "18px 0 5px" }}>{plan.name}</h3>
+        <div style={{ fontSize: 42, fontWeight: 600, letterSpacing: "-0.05em" }}>{plan.price}<small style={{ fontSize: 14, color: MUTED }}>{plan.period}</small></div>
+        <p style={{ color: MUTED, lineHeight: 1.6, minHeight: 78 }}>{plan.description}</p>
+        <ul style={{ paddingLeft: 20, lineHeight: 2, minHeight: 150, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+        <button type="button" onClick={onSelectPlan} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button>
+      </article>)}
+    </div>
+    {submitted && <Notice>Demo plan selected. No subscription has been created.</Notice>}
+  </section>;
+}
 
-function DashboardPreview({ onUpgrade }) { return <section style={cardStyle(940)}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" }}><div><p style={{ color: RED, fontWeight: 600, fontSize: 12, letterSpacing: "0.12em", margin: 0 }}>ACCOUNT OVERVIEW</p><h2 style={{ margin: "12px 0 6px", fontSize: "clamp(30px, 5vw, 44px)", letterSpacing: "-0.05em" }}>Good morning, Darren.</h2><p style={{ color: MUTED, margin: 0 }}>A preview of your account home.</p></div><button type="button" onClick={onUpgrade} style={{ ...primaryButton, width: "auto" }}>Explore plans ↗</button></div><div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginTop: 34 }}>{["Free plan", "0 team members", "0 active jobs", "No billing activity"].map((item) => <div key={item} style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24, background: SURFACE, fontWeight: 600, fontSize: 16 }}>{item}</div>)}</div><div style={{ marginTop: 24, padding: 24, borderRadius: 16, background: "rgba(255,23,79,.08)", border: `1px solid ${RED}` }}><strong style={{ fontSize: 17 }}>Your next step</strong><p style={{ margin: "9px 0 0", color: MUTED, lineHeight: 1.7 }}>Connect your account, choose a plan, and begin setting up your business workspace.</p></div></section>; }
+function DashboardPreview({ onUpgrade }) {
+  return <section style={cardStyle(940)}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" }}><div><p style={{ color: RED, fontWeight: 600, fontSize: 12, letterSpacing: "0.12em", margin: 0 }}>ACCOUNT OVERVIEW</p><h2 style={{ margin: "12px 0 6px", fontSize: "clamp(30px, 5vw, 44px)", letterSpacing: "-0.05em" }}>Good morning, Darren.</h2><p style={{ color: MUTED, margin: 0 }}>A preview of your account home.</p></div><button type="button" onClick={onUpgrade} style={{ ...primaryButton, width: "auto" }}>Explore plans ↗</button></div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginTop: 34 }}>{["Free plan", "0 team members", "0 active jobs", "No billing activity"].map((item) => <div key={item} style={{ border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24, background: SURFACE, fontWeight: 600, fontSize: 16 }}>{item}</div>)}</div>
+    <div style={{ marginTop: 24, padding: 24, borderRadius: 16, background: "rgba(255,23,79,.08)", border: `1px solid ${RED}` }}><strong style={{ fontSize: 17 }}>Your next step</strong><p style={{ margin: "9px 0 0", color: MUTED, lineHeight: 1.7 }}>Connect your account, choose a plan, and begin setting up your business workspace.</p></div>
+  </section>;
+}
 
 function Field({ label, type, placeholder }) { return <label style={{ display: "block", marginTop: 17, fontSize: 13, fontWeight: 600, color: TEXT }}>{label}<input required type={type} placeholder={placeholder} style={{ display: "block", width: "100%", minHeight: 52, marginTop: 8, padding: "0 15px", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 10, fontSize: 15, color: TEXT, background: SURFACE }} /></label>; }
 function Notice({ children }) { return <p role="status" style={{ padding: 15, borderRadius: 10, background: "rgba(255,23,79,.10)", border: `1px solid ${RED}`, color: TEXT, lineHeight: 1.5, fontWeight: 600 }}>{children}</p>; }
