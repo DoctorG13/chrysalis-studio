@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Account Page Visual Styling
+
+### Changed
+
+- Matched the BizziBuddi account preview background to the public website's dark charcoal-to-crimson gradient.
+- Updated account-page colours, panels, tabs, form controls and notices to use the public BizziBuddi visual language.
+- Matched the account branding mark and crimson accent treatment to the public site.
+
+---
+
 ## BizziBuddi Landing Page Styling
 
 ### Changed
