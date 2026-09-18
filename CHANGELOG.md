@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Account Preview Blank Screen Fix
+
+### Fixed
+
+- Restored the missing account-preview style declarations, including the navigation tab style, status message, plan grid, dashboard cards and callout styles.
+- Prevented the BizziBuddi account preview from failing at runtime with `tabStyle is not defined`.
+
+---
+
 ## BizziBuddi Mock Registration and Onboarding
 
 ### Added
