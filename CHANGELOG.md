@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Account Upgrade Navigation
+
+### Added
+
+- Added a clear `View BizziBuddi plans & upgrade` link to the production Chrysalis login screen.
+- Connected the production login experience back to `/bizzibuddi/account` for plan information and upgrade options.
+- Preserved the existing authentication flow and login behaviour.
+
+---
+
 ## BizziBuddi Account Pricing Alignment
 
 ### Changed
