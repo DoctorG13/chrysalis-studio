@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Bright Red BizziBuddi Theme Accents
+
+### Changed
+
+- Updated the production authentication screen to use the brighter BizziBuddi crimson-red accent colour.
+- Updated the production login background, panel, fields, button, error state and account-upgrade link to match the dark BizziBuddi visual direction.
+- Kept the upgrade destination at `/bizzibuddi/account` and preserved the existing live login API flow.
+
+---
+
 ## BizziBuddi Account Upgrade Navigation
 
 ### Added
