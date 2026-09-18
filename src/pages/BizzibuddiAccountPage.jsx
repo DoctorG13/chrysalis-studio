@@ -152,10 +152,12 @@ function DashboardPanel({ account, onPlans, onReset }) {
   return <section style={cardStyle(940)}><p style={eyebrowStyle}>LOCAL ACCOUNT OVERVIEW</p><h2 style={sectionHeading}>Good morning, {account?.name || "Demo User"}.</h2><p style={copyStyle}>This is a simulated account dashboard.</p><div style={statsGrid}>{[["Account", account ? "Created" : "Demo only"], ["Workspace", account?.workspaceReady ? "Ready" : "Not set up"], ["Plan", account?.plan || "Free"], ["Billing", "Not connected"]].map(([label, value]) => <div key={label} style={statCard}><small style={smallText}>{label}</small><strong style={{ display: "block", marginTop: 8, fontSize: 20 }}>{value}</strong></div>)}</div><div style={callout}><strong>Your next step</strong><p style={copyStyle}>Continue refining the onboarding experience before connecting real authentication, databases or billing.</p><button type="button" onClick={onPlans} style={{ ...primaryButton, width: "auto", padding: "0 22px" }}>Explore plans ↗</button></div><button type="button" onClick={onReset} style={textButton}>Reset local demo</button></section>;
 }
 
-function Field({ name, label, type, placeholder, defaultValue }) { return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>; }
+function Field({ name, label, type, placeholder, defaultValue }) {
+  return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
+}
 
-const pageStyle = { minHeight: "100vh", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #16000A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
-const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto" };
+const pageStyle = { minHeight: "100vh", position: "relative", overflow: "hidden", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #16000A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" };
 const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
 const backLink = { color: RED, textDecoration: "none", fontWeight: 600, fontSize: 14 };
@@ -165,6 +167,7 @@ const heroHeading = { margin: "24px 0 18px", fontSize: "clamp(42px, 7vw, 76px)",
 const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 17, lineHeight: 1.75 };
 const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(255,23,79,.08)", color: RED, fontSize: 12, fontWeight: 600 };
 const navStyle = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", margin: "34px 0 28px" };
+const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
 const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(255,23,79,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
 const centerStyle = { textAlign: "center" };
@@ -180,9 +183,9 @@ const fieldStyle = { display: "block", marginTop: 17, fontSize: 13, fontWeight: 
 const inputStyle = { display: "block", width: "100%", minHeight: 52, marginTop: 8, padding: "0 15px", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 10, fontSize: 15, color: TEXT, background: SURFACE };
 const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(255,23,79,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };
 const plansGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))", gap: 20, alignItems: "stretch" };
-const popularBadge = { display: "inline-block", padding: "7px 10px", borderRadius: 999, background: RED, fontSize: 11, fontWeight: 700 };
+const popularBadge = { display: "inline-block", alignSelf: "flex-start", padding: "7px 10px", borderRadius: 999, background: RED, fontSize: 11, fontWeight: 700 };
 const planTitle = { fontSize: 27, margin: "18px 0 5px" };
 const priceStyle = { fontSize: 42, fontWeight: 700, letterSpacing: "-0.05em" };
 const statsGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginTop: 30 };
-const statCard = { border: `1px solid ${BORDER}`, borderRadius: 16, padding: 24, background: SURFACE };
-const callout = { margin: "26px 0", padding: 24, borderRadius: 16, background: "rgba(255,23,79,.08)", border: `1px solid ${RED}` };
+const statCard = { border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18, background: "rgba(255,255,255,.035)" };
+const callout = { marginTop: 28, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(255,23,79,.06)" };
