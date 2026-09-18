@@ -24,18 +24,14 @@ export default function LoginPage({ onAuthenticated }) {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(
-          payload?.error || "Unable to sign in."
-        );
+        throw new Error(payload?.error || "Unable to sign in.");
       }
 
       setPassword("");
       onAuthenticated?.(payload?.user || { username });
     } catch (loginError) {
       setError(
-        loginError instanceof Error
-          ? loginError.message
-          : "Unable to sign in."
+        loginError instanceof Error ? loginError.message : "Unable to sign in."
       );
     } finally {
       setIsSubmitting(false);
@@ -68,54 +64,20 @@ export default function LoginPage({ onAuthenticated }) {
           boxShadow: "0 18px 50px rgba(47,58,63,.10)",
         }}
       >
-        <div
-          style={{
-            textAlign: "center",
-            marginBottom: 28,
-          }}
-        >
-          <div
-            aria-hidden="true"
-            style={{
-              fontSize: 42,
-              lineHeight: 1,
-              marginBottom: 12,
-            }}
-          >
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div aria-hidden="true" style={{ fontSize: 42, lineHeight: 1, marginBottom: 12 }}>
             🦋
           </div>
-
-          <h1
-            style={{
-              margin: 0,
-              color: "#2F3A3F",
-              fontSize: 28,
-              fontWeight: 700,
-            }}
-          >
+          <h1 style={{ margin: 0, color: "#2F3A3F", fontSize: 28, fontWeight: 700 }}>
             Chrysalis Studio
           </h1>
-
-          <p
-            style={{
-              margin: "8px 0 0",
-              color: "#6B7478",
-              fontSize: 14,
-              lineHeight: 1.5,
-            }}
-          >
+          <p style={{ margin: "8px 0 0", color: "#6B7478", fontSize: 14, lineHeight: 1.5 }}>
             Sign in to access your studio workspace.
           </p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <label
-            htmlFor="chrysalis-username"
-            style={labelStyle}
-          >
-            Username
-          </label>
-
+          <label htmlFor="chrysalis-username" style={labelStyle}>Username</label>
           <input
             id="chrysalis-username"
             type="text"
@@ -127,13 +89,9 @@ export default function LoginPage({ onAuthenticated }) {
             style={inputStyle}
           />
 
-          <label
-            htmlFor="chrysalis-password"
-            style={{ ...labelStyle, marginTop: 18 }}
-          >
+          <label htmlFor="chrysalis-password" style={{ ...labelStyle, marginTop: 18 }}>
             Password
           </label>
-
           <input
             id="chrysalis-password"
             type="password"
@@ -145,19 +103,7 @@ export default function LoginPage({ onAuthenticated }) {
           />
 
           {error && (
-            <div
-              role="alert"
-              style={{
-                marginTop: 16,
-                padding: "11px 13px",
-                borderRadius: 10,
-                border: "1px solid #E5B5B5",
-                background: "#FFF4F4",
-                color: "#8B2E2E",
-                fontSize: 13,
-                lineHeight: 1.45,
-              }}
-            >
+            <div role="alert" style={{ marginTop: 16, padding: "11px 13px", borderRadius: 10, border: "1px solid #E5B5B5", background: "#FFF4F4", color: "#8B2E2E", fontSize: 13, lineHeight: 1.45 }}>
               {error}
             </div>
           )}
@@ -165,23 +111,18 @@ export default function LoginPage({ onAuthenticated }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            style={{
-              width: "100%",
-              marginTop: 22,
-              minHeight: 46,
-              border: "none",
-              borderRadius: 11,
-              background: "#8B1E3F",
-              color: "#FFFFFF",
-              fontSize: 15,
-              fontWeight: 700,
-              cursor: isSubmitting ? "wait" : "pointer",
-              opacity: isSubmitting ? 0.75 : 1,
-            }}
+            style={{ width: "100%", marginTop: 22, minHeight: 46, border: "none", borderRadius: 11, background: "#8B1E3F", color: "#FFFFFF", fontSize: 15, fontWeight: 700, cursor: isSubmitting ? "wait" : "pointer", opacity: isSubmitting ? 0.75 : 1 }}
           >
             {isSubmitting ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #E8E8E8", textAlign: "center", fontSize: 13, lineHeight: 1.6 }}>
+          <div style={{ color: "#6B7478" }}>Looking for plans or account options?</div>
+          <a href="/bizzibuddi/account" style={{ display: "inline-block", marginTop: 6, color: "#8B1E3F", fontWeight: 700, textDecoration: "none" }}>
+            View BizziBuddi plans &amp; upgrade →
+          </a>
+        </div>
       </section>
     </main>
   );
