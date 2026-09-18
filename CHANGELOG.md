@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Account Pricing Alignment
+
+### Changed
+
+- Updated the account preview to use the same four plans as the public BizziBuddi pricing section.
+- Added Free at $0 forever, Professional at $9/month, Team at $19/month and Business at $39/month.
+- Matched plan descriptions, feature lists and the Most Popular treatment for Team.
+- Corrected the Free plan billing label so it displays `forever` rather than `/ month`.
+
+---
+
 ## BizziBuddi Account Page Visual Styling
 
 ### Changed
