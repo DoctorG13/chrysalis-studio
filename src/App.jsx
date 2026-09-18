@@ -16,6 +16,7 @@ import LabourSettingsPanel from "./components/settings/LabourSettingsPanel";
 import BackupTransferPanel from "./components/settings/BackupTransferPanel";
 import GarmentSchedulePanel from "./components/garments/GarmentSchedulePanel";
 import BizzibuddiLandingPage from "./pages/BizzibuddiLandingPage";
+import BizzibuddiAccountPage from "./pages/BizzibuddiAccountPage";
 
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import JobsWorkspace from "./components/jobs/JobsWorkspace";
@@ -481,6 +482,10 @@ function ChrysalisApplication({ authenticatedUser }) {
 
 export default function App() {
   const pathname = window.location.pathname.replace(/\/$/, "") || "/";
+
+  if (pathname === "/bizzibuddi/account") {
+    return <BizzibuddiAccountPage />;
+  }
 
   if (pathname === "/bizzibuddi" || pathname.startsWith("/bizzibuddi/")) {
     return <BizzibuddiLandingPage />;
