@@ -72,6 +72,24 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
   const closeTimerRef = useRef(null);
 
   useEffect(() => {
+    if (!selectedSubItem) return;
+
+    const selectedEntry = MENU_ITEMS
+      .flatMap((item) => item.submenu.map((subItem) => ({ item, subItem })))
+      .find(({ item, subItem }) => `${item.id}-${subItem.label}` === selectedSubItem);
+
+    if (selectedEntry && selectedEntry.subItem.page === currentPage) return;
+
+    const fallbackEntry = MENU_ITEMS
+      .flatMap((item) => item.submenu.map((subItem) => ({ item, subItem })))
+      .find(({ subItem }) => subItem.page === currentPage);
+
+    setSelectedSubItem(
+      fallbackEntry ? `${fallbackEntry.item.id}-${fallbackEntry.subItem.label}` : null,
+    );
+  }, [currentPage, selectedSubItem]);
+
+  useEffect(() => {
     const handlePointerDown = (event) => {
       if (!sidebarRef.current?.contains(event.target)) {
         setExpandedItem(null);
@@ -193,7 +211,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
             <span style={{ color: "#FFFFFF", fontWeight: 500, fontSize: 18, letterSpacing: 0.2 }}>{PLATFORM_NAME}</span>
           </div>
           <div style={{ color: "#FFFFFF", fontWeight: 300, fontSize: 12 }}>Business management, all in one place.</div>
-          <div style={{ marginTop: 12, padding: "9px 8px", borderRadius: 8, background: BRAND_RED, color: "#FFFFFF", fontSize: 12, fontWeight: 800, lineHeight: 1.4, boxShadow: "0 5px 16px rgba(255,23,79,.2)" }}>View BizziBuddi plans &amp; upgrade →</div>
+          <div style={{ marginTop: 12, padding: "9px 8px", borderRadius: 8, background: BRAND_RED, color: "#FFFFFF", fontSize: 12, fontWeight: 800, lineHeight: 1.4 }}>View BizziBuddi plans &amp; upgrade →</div>
           <div style={{ marginTop: 9, color: "#FFFFFF", fontSize: 10, fontWeight: 300 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
         </a>
       </div>
