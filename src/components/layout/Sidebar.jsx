@@ -118,7 +118,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
   }
 
   return (
-    <aside ref={sidebarRef} style={{ width: 280, height: "100vh", background: secondary, color: "#FFFFFF", display: "flex", flexDirection: "column", padding: "18px 18px", flexShrink: 0, boxSizing: "border-box", overflow: "visible" }}>
+    <aside ref={sidebarRef} style={{ width: 300, height: "100vh", background: secondary, color: "#FFFFFF", display: "flex", flexDirection: "column", padding: "18px 16px", flexShrink: 0, boxSizing: "border-box", overflow: "hidden" }}>
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
         <div style={{ flexShrink: 0, marginBottom: 14, textAlign: "center" }}>
           {logo ? (
@@ -134,7 +134,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
           {slogan && <div style={{ color: "#E4E7E9", marginTop: 8, fontSize: 13, fontWeight: 400, lineHeight: 1.5, maxWidth: 230, marginLeft: "auto", marginRight: "auto" }}>{slogan}</div>}
         </div>
 
-        <nav aria-label="Main navigation" style={{ flex: 1, minHeight: 0, overflow: "visible" }}>
+        <nav aria-label="Main navigation" style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "visible", paddingRight: 2 }}>
           {MENU_ITEMS.map((item) => {
             const active = currentPage === item.id;
             const expanded = expandedItem === item.id;
@@ -148,7 +148,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
                   {hasSubmenu && <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1, opacity: 1, color: BRAND_RED, transform: expanded ? "rotate(90deg)" : "rotate(0deg)", transition: "transform .18s ease" }}>›</span>}
                 </button>
 
-                <div aria-hidden={!expanded} onMouseEnter={cancelCloseTimer} onMouseLeave={scheduleClose} style={{ position: "fixed", left: 286, top: flyoutTop, width: 255, maxHeight: "calc(100vh - 24px)", padding: "14px 12px", boxSizing: "border-box", background: secondary, border: `1px solid ${BRAND_RED}`, borderRadius: 12, boxShadow: "0 18px 45px rgba(0,0,0,.35)", zIndex: 1000, opacity: expanded ? 1 : 0, visibility: expanded ? "visible" : "hidden", transform: expanded ? "translateX(0)" : "translateX(-14px)", pointerEvents: expanded ? "auto" : "none", transition: "opacity 220ms ease, transform 220ms ease, visibility 220ms ease" }}>
+                <div aria-hidden={!expanded} onMouseEnter={cancelCloseTimer} onMouseLeave={scheduleClose} style={{ position: "fixed", left: 306, top: flyoutTop, width: 255, maxHeight: "calc(100vh - 24px)", padding: "14px 12px", boxSizing: "border-box", background: secondary, border: `1px solid ${BRAND_RED}`, borderRadius: 12, boxShadow: "0 18px 45px rgba(0,0,0,.35)", zIndex: 1000, opacity: expanded ? 1 : 0, visibility: expanded ? "visible" : "hidden", transform: expanded ? "translateX(0)" : "translateX(-14px)", pointerEvents: expanded ? "auto" : "none", transition: "opacity 220ms ease, transform 220ms ease, visibility 220ms ease" }}>
                   <div style={{ padding: "6px 10px 12px", color: BRAND_RED, fontSize: 12, fontWeight: 800, letterSpacing: 0.7, textTransform: "uppercase", borderBottom: `1px solid ${BRAND_RED}`, marginBottom: 8 }}>{item.label}</div>
                   {item.submenu.map((subItem) => {
                     const subActive = currentPage === subItem.page;
@@ -168,15 +168,15 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
         </nav>
       </div>
 
-      <div style={{ flexShrink: 0, paddingTop: 18, marginTop: 14 }}>
-        <a href="/bizzibuddi/account" target="_blank" rel="noopener noreferrer" aria-label="View BizziBuddi plans and upgrade" style={{ display: "block", color: "#FFFFFF", fontSize: 13, lineHeight: 1.6, textAlign: "center", textDecoration: "none", borderRadius: 12, padding: "18px 14px", background: "#20252B", border: `1px solid ${BRAND_RED}`, transition: "color .2s ease, background .2s ease, transform .2s ease, box-shadow .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.background = BRAND_RED_DARK; event.currentTarget.style.transform = "translateY(-2px)"; event.currentTarget.style.boxShadow = `0 8px 22px rgba(255,23,79,.24)`; }} onMouseLeave={(event) => { event.currentTarget.style.background = "#20252B"; event.currentTarget.style.transform = "translateY(0)"; event.currentTarget.style.boxShadow = "none"; }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 12 }}>
+      <div style={{ flexShrink: 0, paddingTop: 14, marginTop: 12 }}>
+        <a href="/bizzibuddi/account" target="_blank" rel="noopener noreferrer" aria-label="View BizziBuddi plans and upgrade" style={{ display: "block", color: "#FFFFFF", fontSize: 13, lineHeight: 1.6, textAlign: "center", textDecoration: "none", borderRadius: 12, padding: "16px 12px", background: "linear-gradient(145deg, #20252B 0%, #151923 100%)", border: `1px solid ${BRAND_RED}`, boxShadow: "0 8px 24px rgba(0,0,0,.18)", transition: "color .2s ease, background .2s ease, transform .2s ease, box-shadow .2s ease" }} onMouseEnter={(event) => { event.currentTarget.style.background = BRAND_RED_DARK; event.currentTarget.style.transform = "translateY(-2px)"; event.currentTarget.style.boxShadow = `0 8px 22px rgba(255,23,79,.24)`; }} onMouseLeave={(event) => { event.currentTarget.style.background = "linear-gradient(145deg, #20252B 0%, #151923 100%)"; event.currentTarget.style.transform = "translateY(0)"; event.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,.18)"; }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 10 }}>
             <span aria-hidden="true" style={{ width: 44, height: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 11, border: `2px solid ${BRAND_RED}`, background: BRAND_RED, color: "#FFFFFF", fontSize: 22, fontWeight: 900 }}>B</span>
             <span style={{ color: "#FFFFFF", fontWeight: 400, fontSize: 17, letterSpacing: 0.2 }}>{PLATFORM_NAME}</span>
           </div>
           <div style={{ color: "#FFFFFF", fontWeight: 300, fontSize: 12 }}>Business management, all in one place.</div>
-          <div style={{ marginTop: 12, color: BRAND_RED, fontSize: 12, fontWeight: 700 }}>View BizziBuddi plans &amp; upgrade →</div>
-          <div style={{ marginTop: 9, color: "#FFFFFF", fontSize: 10, fontWeight: 300 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
+          <div style={{ marginTop: 10, color: BRAND_RED, fontSize: 12, fontWeight: 700 }}>View BizziBuddi plans &amp; upgrade →</div>
+          <div style={{ marginTop: 8, color: "#FFFFFF", fontSize: 10, fontWeight: 300 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
         </a>
       </div>
     </aside>
