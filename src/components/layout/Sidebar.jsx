@@ -131,12 +131,9 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
 
   function handleMenuClick(item) {
     if (item.submenu?.length) {
-      if (expandedItem === item.id) {
-        setExpandedItem(null);
-        setHoveredSubItem(null);
-      } else {
-        openMenu(item);
-      }
+      handleSubmenuClick(item.submenu[0], item.id);
+      setExpandedItem(null);
+      setHoveredSubItem(null);
       return;
     }
 
@@ -176,7 +173,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
             const hasSubmenu = item.submenu?.length > 0;
             const menuHovered = hoveredItem === item.id;
             return (
-              <div key={item.id} ref={(element) => { itemRefs.current[item.id] = element; }} onMouseEnter={() => { setHoveredItem(item.id); }} onMouseLeave={() => { setHoveredItem(null); scheduleClose(); }} style={{ marginBottom: 2 }}>
+              <div key={item.id} ref={(element) => { itemRefs.current[item.id] = element; }} onMouseEnter={() => { setHoveredItem(item.id); if (hasSubmenu) openMenu(item); }} onMouseLeave={() => { setHoveredItem(null); scheduleClose(); }} style={{ marginBottom: 2 }}>
                 <button type="button" aria-current={active ? "page" : undefined} aria-expanded={hasSubmenu ? expanded : undefined} onClick={() => handleMenuClick(item)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, textAlign: "left", padding: "8px 11px", border: `1px solid ${active || menuHovered ? BRAND_RED : "transparent"}`, borderRadius: expanded && hasSubmenu ? "10px 10px 7px 7px" : 10, cursor: "pointer", fontSize: 15, fontWeight: active ? 600 : 400, background: active ? BRAND_RED_DARK : menuHovered ? BRAND_RED_DARK : "transparent", color: "#FFFFFF", transition: "background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease", transform: menuHovered ? "translateX(2px)" : "translateX(0)", boxShadow: active || menuHovered ? `0 0 14px rgba(255,23,79,.22)` : "none", boxSizing: "border-box" }}>
                   <span aria-hidden="true" style={{ width: 29, height: 29, borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: active || menuHovered ? BRAND_RED : "rgba(255,255,255,.10)", color: "#FFFFFF", fontSize: item.icon === "$" ? 17 : 12, fontWeight: 700 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
@@ -211,7 +208,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
             <span style={{ color: "#FFFFFF", fontWeight: 500, fontSize: 18, letterSpacing: 0.2 }}>{PLATFORM_NAME}</span>
           </div>
           <div style={{ color: "#FFFFFF", fontWeight: 300, fontSize: 12 }}>Business management, all in one place.</div>
-          <div style={{ marginTop: 12, padding: "9px 8px", borderRadius: 8, background: BRAND_RED, color: "#FFFFFF", fontSize: 12, fontWeight: 800, lineHeight: 1.4 }}>View BizziBuddi plans &amp; upgrade →</div>
+          <div style={{ marginTop: 12, padding: "9px 8px", borderRadius: 8, background: BRAND_RED, color: "#FFFFFF", fontSize: 12, fontWeight: 800, lineHeight: 1.4, boxShadow: "0 5px 16px rgba(255,23,79,.2)" }}>View BizziBuddi plans &amp; upgrade →</div>
           <div style={{ marginTop: 9, color: "#FFFFFF", fontSize: 10, fontWeight: 300 }}>© {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.</div>
         </a>
       </div>
