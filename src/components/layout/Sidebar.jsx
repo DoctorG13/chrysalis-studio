@@ -73,7 +73,10 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
 
   useEffect(() => {
     const handlePointerDown = (event) => {
-      if (!sidebarRef.current?.contains(event.target)) setExpandedItem(null);
+      if (!sidebarRef.current?.contains(event.target)) {
+        setExpandedItem(null);
+        setHoveredSubItem(null);
+      }
     };
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
@@ -90,6 +93,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
     cancelCloseTimer();
     closeTimerRef.current = window.setTimeout(() => {
       setExpandedItem(null);
+      setHoveredSubItem(null);
       closeTimerRef.current = null;
     }, 220);
   }
@@ -103,14 +107,24 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
       const maxTop = Math.max(12, window.innerHeight - flyoutHeight - 12);
       setFlyoutTop(Math.max(12, Math.min(rect.top, maxTop)));
     }
+    setHoveredSubItem(null);
     setExpandedItem(item.id);
   }
 
   function handleMenuClick(item) {
-    if (!item.submenu?.length) {
-      setExpandedItem(null);
-      setCurrentPage(item.id);
+    if (item.submenu?.length) {
+      if (expandedItem === item.id) {
+        setExpandedItem(null);
+        setHoveredSubItem(null);
+      } else {
+        openMenu(item);
+      }
+      return;
     }
+
+    setExpandedItem(null);
+    setHoveredSubItem(null);
+    setCurrentPage(item.id);
   }
 
   function handleSubmenuClick(subItem, parentId) {
@@ -144,7 +158,7 @@ export default function Sidebar({ currentPage, setCurrentPage, branding, onNavig
             const hasSubmenu = item.submenu?.length > 0;
             const menuHovered = hoveredItem === item.id;
             return (
-              <div key={item.id} ref={(element) => { itemRefs.current[item.id] = element; }} onMouseEnter={() => { setHoveredItem(item.id); openMenu(item); }} onMouseLeave={() => { setHoveredItem(null); scheduleClose(); }} style={{ marginBottom: 2 }}>
+              <div key={item.id} ref={(element) => { itemRefs.current[item.id] = element; }} onMouseEnter={() => { setHoveredItem(item.id); }} onMouseLeave={() => { setHoveredItem(null); scheduleClose(); }} style={{ marginBottom: 2 }}>
                 <button type="button" aria-current={active ? "page" : undefined} aria-expanded={hasSubmenu ? expanded : undefined} onClick={() => handleMenuClick(item)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 9, textAlign: "left", padding: "8px 11px", border: `1px solid ${active || menuHovered ? BRAND_RED : "transparent"}`, borderRadius: expanded && hasSubmenu ? "10px 10px 7px 7px" : 10, cursor: "pointer", fontSize: 15, fontWeight: active ? 600 : 400, background: active ? BRAND_RED_DARK : menuHovered ? BRAND_RED_DARK : "transparent", color: "#FFFFFF", transition: "background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease", transform: menuHovered ? "translateX(2px)" : "translateX(0)", boxShadow: active || menuHovered ? `0 0 14px rgba(255,23,79,.22)` : "none", boxSizing: "border-box" }}>
                   <span aria-hidden="true" style={{ width: 29, height: 29, borderRadius: 8, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: active || menuHovered ? BRAND_RED : "rgba(255,255,255,.10)", color: "#FFFFFF", fontSize: item.icon === "$" ? 17 : 12, fontWeight: 700 }}>{item.icon}</span>
                   <span style={{ flex: 1 }}>{item.label}</span>
