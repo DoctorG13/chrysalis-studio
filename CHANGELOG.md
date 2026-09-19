@@ -4,6 +4,24 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Account Foundation Database Schema
+
+### Added
+
+- Added database migration v4, named `account-foundation`.
+- Added a persistent `users` table for account identity, email, display name, password-hash storage and account status.
+- Added a persistent `workspaces` table for business/workspace ownership, slug identity and subscription state.
+- Added a `workspace_memberships` table linking users to workspaces with role and membership status.
+- Added supporting indexes for account status, workspace ownership, subscription state and membership lookups.
+- Kept this stage schema-only: existing business records and API behaviour are unchanged.
+
+### Notes
+
+- No live registration, password handling or workspace data isolation has been wired into the application yet.
+- Migration v4 runs through the existing migration/backup system before later account and authentication work.
+
+---
+
 ## BizziBuddi Account Preview Blank Screen Fix
 
 ### Fixed
