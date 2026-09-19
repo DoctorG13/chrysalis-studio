@@ -4,6 +4,18 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Scrollbar-Free Chrysalis Sidebar
+
+### Changed
+
+- Removed the visible sidebar navigation scrollbar.
+- Reduced menu spacing and control dimensions so the navigation fits more comfortably within the viewport.
+- Kept the BizziBuddi promotional card anchored at the bottom of the sidebar.
+- Preserved the BizziBuddi card's prominent crimson border, gradient background and upgrade link.
+- Prevented the sidebar itself from overflowing the viewport.
+
+---
+
 ## BizziBuddi Account Navigation and Login Improvements
 
 ### Added
