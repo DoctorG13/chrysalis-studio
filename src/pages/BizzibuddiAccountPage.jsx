@@ -29,7 +29,8 @@ export default function BizzibuddiAccountPage() {
     const form = new FormData(event.currentTarget);
     const nextAccount = {
       name: String(form.get("name") || "").trim(),
-      email: String(form.get("email") || "").trim(),
+      username: String(form.get("username") || "").trim().toLowerCase(),
+      email: String(form.get("email") || "").trim().toLowerCase(),
       business: String(form.get("business") || "").trim(),
       plan: "Free",
       workspaceReady: false,
@@ -43,10 +44,22 @@ export default function BizzibuddiAccountPage() {
 
   function handleLogin(event) {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const identifier = String(form.get("identifier") || "").trim().toLowerCase();
+
     if (!account) {
       setMessage("No mock account exists yet. Create one first.");
       return;
     }
+
+    const email = String(account.email || "").trim().toLowerCase();
+    const username = String(account.username || deriveUsername(account)).trim().toLowerCase();
+
+    if (identifier !== email && identifier !== username) {
+      setMessage("Enter the email address or username used for this mock account.");
+      return;
+    }
+
     setMessage(`Welcome back, ${account.name}.`);
     setView("onboarding");
   }
@@ -66,7 +79,7 @@ export default function BizzibuddiAccountPage() {
   }
 
   function selectPlan(planName) {
-    const nextAccount = { ...(account || { name: "Demo User", email: "demo@example.com", business: "" }), plan: planName };
+    const nextAccount = { ...(account || { name: "Demo User", username: "demo", email: "demo@example.com", business: "" }), plan: planName };
     localStorage.setItem("bizzibuddiMockAccount", JSON.stringify(nextAccount));
     setAccount(nextAccount);
     setMessage(`${planName} selected for this mock account. No payment was made.`);
@@ -124,19 +137,25 @@ function readAccount() {
   }
 }
 
+function deriveUsername(account) {
+  return String(account?.email || "").split("@")[0];
+}
+
 function AuthPanel({ mode, account, onSubmit, onSwitch }) {
   const login = mode === "login";
   return <section style={cardStyle(560)}>
-    <div style={centerStyle}><div style={{ fontSize: 46, color: RED }}>✦</div><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "This demo checks for a locally stored mock account." : "Create a local test account and begin your workspace setup."}</p></div>
+    <div style={centerStyle}><div style={{ fontSize: 46, color: RED }}>✦</div><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your workspace setup."}</p></div>
     <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
       {!login && <Field name="name" label="Full name" type="text" placeholder="Your name" />}
-      <Field name="email" label="Email address" type="email" placeholder="you@example.com" />
+      {!login && <Field name="username" label="Username" type="text" placeholder="Choose a username" />}
+      {!login && <Field name="email" label="Email address" type="email" placeholder="you@example.com" />}
+      {login && <Field name="identifier" label="Email address or username" type="text" placeholder="you@example.com or username" />}
       <Field name="password" label="Password" type="password" placeholder="Demo password" />
       {!login && <Field name="business" label="Business name" type="text" placeholder="Your business name" />}
       <button type="submit" style={primaryButton}>{login ? "Log in · Demo" : "Create account · Demo"}</button>
     </form>
     <p style={switchText}>{login ? "New to BizziBuddi?" : "Already have an account?"} <button type="button" onClick={onSwitch} style={textButton}>{login ? "Create an account" : "Log in"}</button></p>
-    {login && account && <p style={smallText}>Local account detected for {account.email}.</p>}
+    {login && account && <p style={smallText}>Local account detected for {account.email}{account.username ? ` · @${account.username}` : ""}.</p>}
   </section>;
 }
 
