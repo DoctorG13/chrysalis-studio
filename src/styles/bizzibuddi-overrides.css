@@ -14,7 +14,8 @@ body:has(.bizzibuddi-footer-grid) button:focus-visible {
   filter: none;
 }
 
-body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav button:not(:last-child):hover,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav .bizzibuddi-nav-link:hover,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav .bizzibuddi-nav-link:focus-visible,
 body:has(.bizzibuddi-footer-grid) .bizzibuddi-mobile-button:hover {
   color: #FF174F !important;
   background: rgba(255, 23, 79, 0.16) !important;
