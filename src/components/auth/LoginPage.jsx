@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const BRIGHT_RED = "#FF174F";
 
@@ -7,6 +7,13 @@ export default function LoginPage({ onAuthenticated }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isPublicLoginRoute = window.location.pathname.replace(/\/$/, "") === "/login";
+
+  useEffect(() => {
+    if (isPublicLoginRoute) {
+      window.location.replace("/bizzibuddi/account");
+    }
+  }, [isPublicLoginRoute]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -24,6 +31,10 @@ export default function LoginPage({ onAuthenticated }) {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (isPublicLoginRoute) {
+    return <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#08090D", color: "#FFFFFF", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>Opening BizziBuddi account options…</main>;
   }
 
   return (
