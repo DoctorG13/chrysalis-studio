@@ -4,6 +4,26 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Account Navigation and Login Improvements
+
+### Added
+
+- Added username capture to the local BizziBuddi account preview.
+- Added email-address-or-username login matching for the local mock account flow.
+- Linked the public `/login` route to the BizziBuddi account and plans experience.
+- Added a `View BizziBuddi plans & upgrade →` call-to-action to the Chrysalis sidebar platform card.
+
+### Changed
+
+- Updated BizziBuddi navigation hover styling so the Log in link receives the same crimson hover treatment as the other menu items.
+- Kept the existing production Chrysalis authentication form available outside the public `/login` route.
+
+### Notes
+
+- The BizziBuddi account flow remains a local browser-only mock experience. It is not yet live authentication or billing.
+
+---
+
 ## Account Foundation Database Schema
 
 ### Added
