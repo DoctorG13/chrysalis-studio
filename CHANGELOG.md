@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Sidebar Submenu Interaction Fix
+
+### Fixed
+
+- Changed parent navigation items to open their flyout menus on click rather than on hover.
+- Prevented hovering over a parent menu item from activating or appearing to select its first submenu item.
+- Cleared transient submenu hover states when switching or closing menus.
+- Preserved deliberate submenu selection only after the user clicks a submenu option.
+
+---
+
 ## Scrollbar-Free Chrysalis Sidebar
 
 ### Changed
