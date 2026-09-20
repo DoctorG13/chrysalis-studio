@@ -236,30 +236,10 @@ export default function FinancePage({
     if (["overview", "quotes", "invoices", "payments"].includes(label)) {
       setFinanceTab(label);
     } else if (label === "outstanding") {
-      setFinanceTab("overview");
-      window.setTimeout(() => {
-        const target = Array.from(document.querySelectorAll("h2, h3, h4, div, span"))
-          .find((element) => element.textContent?.trim() === "Outstanding Jobs");
-        target?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 0);
+      setFinanceTab("payments");
     }
   }, [navigation?.token, navigation?.page, navigation?.label]);
 
-  useEffect(() => {
-    if (!navigation?.token || navigation.page !== "finance") return;
-
-    const label = String(navigation.label || "").toLowerCase();
-    if (["overview", "quotes", "invoices", "payments"].includes(label)) {
-      setFinanceTab(label);
-    } else if (label === "outstanding") {
-      setFinanceTab("overview");
-      window.setTimeout(() => {
-        const target = Array.from(document.querySelectorAll("h2, h3, h4, div, span"))
-          .find((element) => element.textContent?.trim() === "Outstanding Jobs");
-        target?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 0);
-    }
-  }, [navigation?.token, navigation?.page, navigation?.label]);
 
   const [financeTab, setFinanceTab] = useState("overview");
   const { confirm, dialogProps } = useThriveDialog();
