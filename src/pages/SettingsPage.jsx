@@ -151,21 +151,6 @@ export default function SettingsPage({
   onToggleDemo,
   navigation,
 }) {
-  useEffect(() => {
-    if (!navigation?.token || navigation.page !== "settings") return;
-
-    const label = String(navigation.label || "").toLowerCase();
-    const sectionMap = {
-      general: "business",
-      business: "business",
-      jobs: "jobs",
-      finance: "financial",
-      "backup & transfer": "data",
-    };
-
-    const nextSection = navigation.sectionKey || sectionMap[label];
-    if (nextSection) setActiveSection(nextSection);
-  }, [navigation?.token, navigation?.page, navigation?.label, navigation?.sectionKey]);
 
   useEffect(() => {
     if (!navigation?.token || navigation.page !== "settings") return;
@@ -207,6 +192,8 @@ export default function SettingsPage({
 
   const fileInputRef = useRef(null);
 
+  const contentRef = useRef(null);
+
   const [setupGuideOpen, setSetupGuideOpen] =
     useState(false);
 
@@ -242,6 +229,15 @@ export default function SettingsPage({
 
   const { confirm, prompt, dialogProps } =
     useThriveDialog();
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+
+    contentRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [activeSection]);
 
   useEffect(() => {
     loadBackupHistory();
@@ -2068,7 +2064,7 @@ async function prepareLogoForStorage(file) {
           )}
         </nav>
 
-        <main style={contentStyle}>
+        <main ref={contentRef} style={contentStyle}>
           {renderSection()}
         </main>
       </div>
