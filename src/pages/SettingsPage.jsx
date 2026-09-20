@@ -149,7 +149,40 @@ export default function SettingsPage({
   onStartFresh,
   isDemoMode = false,
   onToggleDemo,
+  navigation,
 }) {
+  useEffect(() => {
+    if (!navigation?.token || navigation.page !== "settings") return;
+
+    const label = String(navigation.label || "").toLowerCase();
+    const sectionMap = {
+      general: "business",
+      business: "business",
+      jobs: "jobs",
+      finance: "financial",
+      "backup & transfer": "data",
+    };
+
+    const nextSection = navigation.sectionKey || sectionMap[label];
+    if (nextSection) setActiveSection(nextSection);
+  }, [navigation?.token, navigation?.page, navigation?.label, navigation?.sectionKey]);
+
+  useEffect(() => {
+    if (!navigation?.token || navigation.page !== "settings") return;
+
+    const label = String(navigation.label || "").toLowerCase();
+    const sectionMap = {
+      general: "business",
+      business: "business",
+      jobs: "jobs",
+      finance: "financial",
+      "backup & transfer": "data",
+    };
+
+    const nextSection = navigation.sectionKey || sectionMap[label];
+    if (nextSection) setActiveSection(nextSection);
+  }, [navigation?.token, navigation?.page, navigation?.label, navigation?.sectionKey]);
+
   const [activeSection, setActiveSection] =
     useState("business");
 

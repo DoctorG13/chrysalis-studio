@@ -162,6 +162,7 @@ function ChrysalisApplication({ authenticatedUser }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [branding, setBranding] = useState(getInitialBranding);
   const [calendarFocusRequest, setCalendarFocusRequest] = useState(0);
+  const [navigationRequest, setNavigationRequest] = useState(null);
 
   const {
     clients,
@@ -309,6 +310,18 @@ function ChrysalisApplication({ authenticatedUser }) {
     }
   }
 
+  function handleSidebarNavigation(subItem) {
+    const nextPage = subItem?.page || "studio";
+
+    setSearchQuery("");
+    closeWorkspace();
+    setCurrentPage(nextPage);
+    setNavigationRequest({
+      ...subItem,
+      token: Date.now(),
+    });
+  }
+
   function handleNotificationJob(client, job) {
     if (!job) return;
 
@@ -333,7 +346,7 @@ function ChrysalisApplication({ authenticatedUser }) {
   function renderPage() {
     switch (currentPage) {
       case "people":
-        return <PeoplePage clients={clients} setClients={setClients} />;
+        return <PeoplePage clients={clients} setClients={setClients} navigation={navigationRequest} />;
       case "jobs":
         return (
           <JobsWorkspace
@@ -342,6 +355,7 @@ function ChrysalisApplication({ authenticatedUser }) {
             updateJob={updateJob}
             deleteJob={deleteJob}
             onClose={() => setCurrentPage("studio")}
+            navigation={navigationRequest}
           />
         );
       case "garments":
@@ -352,15 +366,15 @@ function ChrysalisApplication({ authenticatedUser }) {
               jobs={jobs}
               onOpenJob={handleOpenScheduleJob}
             />
-            <GarmentsPage clients={clients} jobs={jobs} />
+            <GarmentsPage clients={clients} jobs={jobs} navigation={navigationRequest} />
           </>
         );
       case "calendar":
-        return <CalendarPage clients={clients} jobs={jobs} />;
+        return <CalendarPage clients={clients} jobs={jobs} navigation={navigationRequest} />;
       case "finance":
-        return <FinancePage clients={clients} jobs={jobs} />;
+        return <FinancePage clients={clients} jobs={jobs} navigation={navigationRequest} />;
       case "reports":
-        return <ReportsPage />;
+        return <ReportsPage clients={clients} jobs={jobs} navigation={navigationRequest} />;
       case "settings":
         return (
           <>
@@ -389,6 +403,7 @@ function ChrysalisApplication({ authenticatedUser }) {
                 }
               }}
               onClose={() => setCurrentPage("studio")}
+              navigation={navigationRequest}
             />
           </>
         );
@@ -437,6 +452,7 @@ function ChrysalisApplication({ authenticatedUser }) {
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
           branding={displayBranding}
+          onNavigate={handleSidebarNavigation}
         />
       }
       header={

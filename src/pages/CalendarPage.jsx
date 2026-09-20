@@ -133,6 +133,7 @@ function addDays(value, days) {
 export default function CalendarPage({
   clients = [],
   jobs = [],
+  navigation,
 }) {
   const [displayMonth, setDisplayMonth] =
     useState(new Date());
@@ -171,6 +172,38 @@ export default function CalendarPage({
   } = useChrysalis();
 
   const today = new Date();
+
+  useEffect(() => {
+    if (!navigation?.token || navigation.page !== "calendar") return;
+
+    const label = String(navigation.label || "").toLowerCase();
+    if (label === "today") {
+      goToday();
+      window.setTimeout(scrollToToday, 0);
+    } else if (label === "calendar") {
+      window.setTimeout(scrollToCalendar, 0);
+    } else if (["appointments", "fittings"].includes(label)) {
+      window.setTimeout(scrollToSelectedDay, 0);
+    }
+  }, [navigation?.token, navigation?.page, navigation?.label]);
+
+
+
+  useEffect(() => {
+    if (!navigation?.token || navigation.page !== "calendar") return;
+
+    const label = String(navigation.label || "").toLowerCase();
+    if (label === "today") {
+      goToday();
+      window.setTimeout(scrollToToday, 0);
+    } else if (label === "calendar") {
+      window.setTimeout(scrollToCalendar, 0);
+    } else if (["appointments", "fittings"].includes(label)) {
+      window.setTimeout(scrollToSelectedDay, 0);
+    }
+  }, [navigation?.token, navigation?.page, navigation?.label]);
+
+
 
   const calendarDays = useMemo(
     () => buildCalendar(displayMonth),

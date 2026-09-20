@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import JobCard from "../components/jobs/JobCard";
 import Button from "../components/common/Button";
@@ -405,8 +405,31 @@ function ProductionJobCard({
 export default function GarmentsPage({
   clients = [],
   jobs = [],
+  navigation,
 }) {
   const { openJob } = useChrysalis();
+
+  useEffect(() => {
+    if (!navigation?.token || navigation.page !== "garments") return;
+
+    const label = String(navigation.label || "").toLowerCase();
+    setSearch("");
+    setStatusFilter(label === "ready" ? "Ready" : "All");
+    setShowProductionBoard(label === "in production" || label === "all garments");
+  }, [navigation?.token, navigation?.page, navigation?.label]);
+
+
+
+  useEffect(() => {
+    if (!navigation?.token || navigation.page !== "garments") return;
+
+    const label = String(navigation.label || "").toLowerCase();
+    setSearch("");
+    setStatusFilter(label === "ready" ? "Ready" : "All");
+    setShowProductionBoard(label === "in production" || label === "all garments");
+  }, [navigation?.token, navigation?.page, navigation?.label]);
+
+
 
   const [search, setSearch] =
     useState("");
