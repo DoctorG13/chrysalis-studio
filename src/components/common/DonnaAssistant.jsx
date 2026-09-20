@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 function getJobDate(job) {
   return job?.dueDate || job?.completionDate || job?.date || job?.fittingDate || "";
@@ -47,6 +47,17 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    function handleEscape(event) {
+      if (event.key === "Escape") onClose?.();
+    }
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [open, onClose]);
 
   const insights = useMemo(() => {
     const overdueJobs = jobs.filter(isOverdue);
@@ -140,7 +151,7 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
           <h2 style={{ margin: "6px 0 0", fontSize: 23 }}>Hi, I’m Buddi</h2>
           <p style={{ margin: "5px 0 0", color: "#6B7478", fontSize: 13 }}>Your intelligent studio companion.</p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Close Buddi assistant" style={{ border: "none", background: "transparent", fontSize: 24, cursor: "pointer", color: "#6B7478" }}>×</button>
+        <button type="button" onClick={onClose} aria-label="Close Buddi assistant" title="Close chat" style={{ border: "none", background: "transparent", fontSize: 24, cursor: "pointer", color: "#6B7478" }}>×</button>
       </header>
 
       <div style={{ padding: 20 }}>
