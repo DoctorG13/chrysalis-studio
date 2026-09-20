@@ -62,3 +62,13 @@ img {
   background: var(--brand-accent);
   color: #FFFFFF;
 }
+
+/* Buddi's brand label must preserve its deliberate mixed case. */
+#buddi-assistant-title,
+#buddi-assistant-title span {
+  text-transform: none !important;
+  font-variant: normal !important;
+  font-variant-caps: normal !important;
+  font-feature-settings: "smcp" 0, "c2sc" 0 !important;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
+}
