@@ -409,14 +409,6 @@ export default function GarmentsPage({
 }) {
   const { openJob } = useChrysalis();
 
-  useEffect(() => {
-    if (!navigation?.token || navigation.page !== "garments") return;
-
-    const label = String(navigation.label || "").toLowerCase();
-    setSearch("");
-    setStatusFilter(label === "ready" ? "Ready" : "All");
-    setShowProductionBoard(label === "in production" || label === "all garments");
-  }, [navigation?.token, navigation?.page, navigation?.label]);
 
 
 
