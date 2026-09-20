@@ -31,7 +31,7 @@ export default defineConfig({
         changeOrigin: true,
       },
       "/api/timeline": {
-        target: "http://127.0.0.1:4180",
+        target: "http://127.0.0.1:4180,
         changeOrigin: true,
       },
       "/api/invoices": {
@@ -40,6 +40,10 @@ export default defineConfig({
       },
       "/api/quotes": {
         target: "http://127.0.0.1:4182",
+        changeOrigin: true,
+      },
+      "/api/donna": {
+        target: "http://127.0.0.1:4184",
         changeOrigin: true,
       },
       "/api": {
