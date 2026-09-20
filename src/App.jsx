@@ -21,6 +21,7 @@ import BizzibuddiAccountPage from "./pages/BizzibuddiAccountPage";
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import JobsWorkspace from "./components/jobs/JobsWorkspace";
 import SlidePanel from "./components/common/SlidePanel";
+import BuddiAssistant from "./components/common/DonnaAssistant";
 
 import {
   ChrysalisProvider,
@@ -163,6 +164,7 @@ function ChrysalisApplication({ authenticatedUser }) {
   const [branding, setBranding] = useState(getInitialBranding);
   const [calendarFocusRequest, setCalendarFocusRequest] = useState(0);
   const [navigationRequest, setNavigationRequest] = useState(null);
+  const [isDonnaOpen, setIsDonnaOpen] = useState(false);
 
   const {
     clients,
@@ -474,6 +476,57 @@ function ChrysalisApplication({ authenticatedUser }) {
       }
     >
       {renderPage()}
+
+      <BuddiAssistant
+        open={isDonnaOpen}
+        onClose={() => setIsDonnaOpen(false)}
+        currentPage={currentPage}
+        clients={clients}
+        jobs={jobs}
+        onNavigate={(page, label) => {
+          setIsDonnaOpen(false);
+          handleSidebarNavigation({ page, label: label || page });
+        }}
+      />
+
+      <style>{`
+        @keyframes buddiLauncherPulse {
+          0%, 100% { box-shadow: 0 10px 28px rgba(47,58,63,.22), 0 0 0 0 rgba(139,30,63,.28); }
+          50% { box-shadow: 0 12px 32px rgba(47,58,63,.28), 0 0 0 10px rgba(139,30,63,0); }
+        }
+        @media (prefers-reduced-motion: reduce) { .buddi-launcher { animation: none !important; } }
+      `}</style>
+      <button
+        type="button"
+        aria-label="Open Buddi assistant"
+        onClick={() => setIsDonnaOpen((value) => !value)}
+        className="buddi-launcher"
+        style={{
+          position: "fixed",
+          right: 24,
+          bottom: 24,
+          zIndex: 1200,
+          minWidth: 132,
+          height: 58,
+          padding: "0 17px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 9,
+          border: "2px solid #FFFFFF",
+          borderRadius: 30,
+          background: "linear-gradient(135deg, #8B1E3F 0%, #B83E62 100%)",
+          color: "#FFFFFF",
+          fontSize: 15,
+          fontWeight: 900,
+          boxShadow: "0 10px 28px rgba(47,58,63,.22)",
+          cursor: "pointer",
+          animation: isDonnaOpen ? "none" : "buddiLauncherPulse 3s infinite",
+        }}
+      >
+        <span aria-hidden="true" style={{ fontSize: 24 }}>🦋</span>
+        <span>Ask Buddi</span>
+      </button>
 
       <SlidePanel open={showWorkspace} onClose={closeWorkspace}>
         <ClientWorkspace
