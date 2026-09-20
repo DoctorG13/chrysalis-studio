@@ -9,7 +9,9 @@ import {
 } from "../services/invoiceApi";
 
 import {
+  deletePayment,
   getPayments,
+  savePayment,
 } from "../services/paymentApi";
 
 import {
@@ -281,6 +283,9 @@ export default function FinancePage({
     paymentsLoading,
     setPaymentsLoading,
   ] = useState(true);
+
+  const [paymentForm, setPaymentForm] = useState(null);
+  const [paymentSaving, setPaymentSaving] = useState(false);
 
   const [financialDefaults, setFinancialDefaults] = useState({
     gstRate: DEFAULT_GST_RATE,
@@ -590,6 +595,78 @@ export default function FinancePage({
         )
         .slice(0, 8);
     }, [financeJobs]);
+
+  function startNewPayment(payment = null, job = null) {
+    const linkedJob = job || jobs.find((item) => String(item.id) === String(payment?.jobId));
+    setError("");
+    setPaymentForm({
+      id: payment?.id || "",
+      jobId: payment?.jobId || linkedJob?.id || "",
+      clientId: payment?.clientId || linkedJob?.clientId || clients[0]?.id || "",
+      amount: payment?.amount ?? "",
+      paymentType: payment?.paymentType || "Deposit",
+      paymentMethod: payment?.paymentMethod || "Bank Transfer",
+      date: payment?.date || today(),
+      notes: payment?.notes || "",
+    });
+  }
+
+  function updatePaymentField(field, value) {
+    setPaymentForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function saveRecordedPayment() {
+    if (!paymentForm?.jobId) {
+      setError("Please select a job for this payment.");
+      return;
+    }
+
+    const amount = Number(paymentForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setError("Please enter a payment amount greater than zero.");
+      return;
+    }
+
+    setPaymentSaving(true);
+    setError("");
+
+    try {
+      await savePayment({
+        ...paymentForm,
+        amount,
+        jobId: paymentForm.jobId,
+        clientId: paymentForm.clientId,
+      });
+      await loadFinancePayments();
+      setPaymentForm(null);
+    } catch (err) {
+      setError(err.message || "Unable to save payment.");
+    } finally {
+      setPaymentSaving(false);
+    }
+  }
+
+  async function removeRecordedPayment() {
+    if (!paymentForm?.id) return;
+    const confirmed = await confirm({
+      title: "Delete Payment",
+      message: "Delete this payment record? This cannot be undone.",
+      confirmLabel: "Delete Payment",
+      danger: true,
+    });
+    if (!confirmed) return;
+
+    setPaymentSaving(true);
+    try {
+      await deletePayment(paymentForm.id);
+      await loadFinancePayments();
+      setPaymentForm(null);
+    } catch (err) {
+      setError(err.message || "Unable to delete payment.");
+    } finally {
+      setPaymentSaving(false);
+    }
+  }
 
   function startNew() {
     setSelectedId("");
@@ -1017,6 +1094,15 @@ export default function FinancePage({
               + New Invoice
             </button>
           )}
+
+          {financeTab === "payments" && (
+            <button
+              onClick={() => startNewPayment()}
+              style={primaryButton}
+            >
+              + Record Payment
+            </button>
+          )}
         </div>
       </div>
 
@@ -1396,6 +1482,45 @@ export default function FinancePage({
       </section>
 
         </>
+      )}
+
+      {financeTab === "payments" && paymentForm && (
+        <section style={{ ...panel, marginBottom: 26 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <div>
+              <div style={eyebrow}>Payments</div>
+              <h2 style={{ margin: "4px 0 0", color: "#2F3A3F" }}>
+                {paymentForm.id ? "Edit Payment" : "Record Payment"}
+              </h2>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {paymentForm.id && <button onClick={removeRecordedPayment} style={dangerButton} disabled={paymentSaving}>Delete</button>}
+              <button onClick={() => setPaymentForm(null)} style={secondaryButton} disabled={paymentSaving}>Cancel</button>
+              <button onClick={saveRecordedPayment} style={primaryButton} disabled={paymentSaving}>
+                {paymentSaving ? "Saving…" : "Save Payment"}
+              </button>
+            </div>
+          </div>
+          <div style={grid2}>
+            <Field label="Client">
+              <select value={paymentForm.clientId || ""} onChange={(e) => updatePaymentField("clientId", e.target.value)} style={input}>
+                <option value="">Select client…</option>
+                {clients.map((client) => <option key={client.id} value={client.id}>{client.name || `${client.firstName || ""} ${client.lastName || ""}`.trim()}</option>)}
+              </select>
+            </Field>
+            <Field label="Job">
+              <select value={paymentForm.jobId || ""} onChange={(e) => { const job = jobs.find((item) => String(item.id) === String(e.target.value)); updatePaymentField("jobId", e.target.value); if (job?.clientId) updatePaymentField("clientId", job.clientId); }} style={input}>
+                <option value="">Select job…</option>
+                {jobs.map((job) => <option key={job.id} value={job.id}>{job.reference ? `${job.reference} — ` : ""}{job.name || job.title || "Job"}</option>)}
+              </select>
+            </Field>
+            <Field label="Amount (AUD)"><input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(e) => updatePaymentField("amount", e.target.value)} style={input} /></Field>
+            <Field label="Payment Type"><select value={paymentForm.paymentType} onChange={(e) => updatePaymentField("paymentType", e.target.value)} style={input}><option>Deposit</option><option>Part Payment</option><option>Final Payment</option><option>Refund</option><option>Other</option></select></Field>
+            <Field label="Payment Method"><select value={paymentForm.paymentMethod} onChange={(e) => updatePaymentField("paymentMethod", e.target.value)} style={input}><option>Bank Transfer</option><option>Cash</option><option>Card</option><option>Direct Debit</option><option>Other</option></select></Field>
+            <Field label="Payment Date"><input type="date" value={paymentForm.date || ""} onChange={(e) => updatePaymentField("date", e.target.value)} style={input} /></Field>
+          </div>
+          <div style={{ marginTop: 16 }}><Field label="Notes"><textarea rows={3} value={paymentForm.notes || ""} onChange={(e) => updatePaymentField("notes", e.target.value)} style={{ ...input, resize: "vertical" }} placeholder="Optional payment notes" /></Field></div>
+        </section>
       )}
 
             {/* QUOTE MANAGEMENT */}
