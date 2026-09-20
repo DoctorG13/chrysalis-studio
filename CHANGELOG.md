@@ -4,6 +4,30 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Buddi Assistant Improvements
+
+### Added
+
+- Added the BizziBuddi Assistant interface and Buddi branding.
+- Added a more prominent “Ask Buddi” launcher for quick access to the assistant.
+- Added a visible thinking animation while Buddi processes a question.
+- Added natural-language question handling through the connected assistant service.
+- Added workspace context so Buddi can answer questions about clients, jobs, garments, payments and upcoming work.
+- Added recent conversation history, with the latest enquiry displayed first.
+
+### Changed
+
+- Updated the assistant title to display as `BizziBuddi Assistant`.
+- Increased and varied the thinking delay to make processing feedback more apparent.
+- Removed provider-specific wording from the visible assistant interface and error messages.
+
+### Notes
+
+- Buddi currently provides informational assistance using the workspace data supplied to the current session.
+- Action execution and confirmation-based workflow actions remain future enhancements.
+
+---
+
 ## Sidebar Submenu Interaction Fix
 
 ### Fixed
