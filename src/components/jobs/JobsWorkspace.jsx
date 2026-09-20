@@ -449,19 +449,6 @@ export default function JobsWorkspace({
   const [isSaving, setIsSaving] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState(null);
 
-  useEffect(() => {
-    if (!navigation?.token || navigation.page !== "jobs") return;
-
-    const label = String(navigation.label || "").toLowerCase();
-    setSearch("");
-    setStatusFilter("All");
-
-    if (label === "due today") setQuickFilter("today");
-    else if (label === "overdue") setQuickFilter("overdue");
-    else setQuickFilter("all");
-
-    setSelectedJobId(null);
-  }, [navigation?.token, navigation?.page, navigation?.label]);
 
   useEffect(() => {
     if (!navigation?.token || navigation.page !== "jobs") return;
