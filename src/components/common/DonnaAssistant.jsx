@@ -69,10 +69,10 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
   }, [jobs]);
 
   const prompts = [
-    { id: "week", label: "What’s happening this week?" },
     { id: "attention", label: "What needs attention today?" },
     { id: "garments", label: "Show overdue garments" },
     { id: "money", label: "Who owes money?" },
+    { id: "week", label: "What’s happening this week?" },
   ];
 
   async function answerQuestion(rawQuestion) {
@@ -124,7 +124,6 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
     <aside aria-label="Buddi assistant" style={{ position: "fixed", right: 24, bottom: 94, zIndex: 1199, width: "min(420px, calc(100vw - 32px))", maxHeight: "min(720px, calc(100vh - 130px))", overflowY: "auto", background: "#FFFFFF", border: "1px solid #E8E8E8", borderRadius: 20, boxShadow: "0 22px 70px rgba(47,58,63,.25)", color: "#2F3A3F" }}>
       <style>{`
         @keyframes buddiDotPulse { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
-        #buddi-assistant-title { text-transform: none !important; text-transform: none; font-variant: normal !important; }
         .buddi-thinking-dots { display: inline-flex; gap: 4px; align-items: center; }
         .buddi-thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: #8B1E3F; animation: buddiDotPulse 1.2s infinite ease-in-out; }
         .buddi-thinking-dots span:nth-child(2) { animation-delay: .15s; }
@@ -134,9 +133,9 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
 
       <header style={{ padding: "20px 20px 18px", borderBottom: "1px solid #ECE8E5", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #FFF8FA 0%, #FFFFFF 65%)" }}>
         <div>
-          <div id="buddi-assistant-title" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 900, letterSpacing: ".1em", textTransform: "none", fontVariant: "normal", color: "#8B1E3F" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 900, letterSpacing: ".1em", textTransform: "none", fontVariant: "normal", fontVariantCaps: "normal", color: "#8B1E3F" }}>
             <span aria-hidden="true">🦋</span>
-            <span>BizziBuddi Assistant</span>
+            BizziBuddi Assistant
           </div>
           <h2 style={{ margin: "6px 0 0", fontSize: 23 }}>Hi, I’m Buddi</h2>
           <p style={{ margin: "5px 0 0", color: "#6B7478", fontSize: 13 }}>Your intelligent studio companion.</p>
