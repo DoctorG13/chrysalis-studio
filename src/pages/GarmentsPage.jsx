@@ -119,11 +119,18 @@ function WorkflowColumn({
   status,
   jobs,
   onOpenJob,
+  onDropJob,
+  onDragStart,
+  onQuickStatus,
+  isDropTarget,
+  onDragOver,
 }) {
   const total = jobs.length;
 
   return (
     <div
+      onDragOver={onDragOver}
+      onDrop={(event) => onDropJob(event, status)}
       style={{
         minWidth: 0,
         width: "100%",
@@ -205,6 +212,8 @@ function WorkflowColumn({
                 key={job.id}
                 job={job}
                 onOpenJob={onOpenJob}
+                onDragStart={onDragStart}
+                onQuickStatus={onQuickStatus}
               />
             ))}
           </div>
@@ -217,6 +226,8 @@ function WorkflowColumn({
 function ProductionJobCard({
   job,
   onOpenJob,
+  onDragStart,
+  onQuickStatus,
 }) {
   const client =
     job.clientDisplayName ||
@@ -242,6 +253,8 @@ function ProductionJobCard({
   return (
     <button
       type="button"
+      draggable
+      onDragStart={(event) => onDragStart(event, job)}
       onClick={() => onOpenJob(job)}
       style={{
         width: "100%",
@@ -398,6 +411,17 @@ function ProductionJobCard({
           </span>
         )}
       </div>
+
+      <div style={{ marginTop: 10 }} onClick={(event) => event.stopPropagation()}>
+        <select
+          value={job.status || ""}
+          onChange={(event) => onQuickStatus(job, event.target.value)}
+          aria-label="Change garment status"
+          style={{ width: "100%", padding: "7px 8px", borderRadius: 6, border: "1px solid #D9DEE2", fontSize: 12, background: "#FFFFFF" }}
+        >
+          {JOB_WORKFLOW.map((stage) => <option key={stage} value={stage}>{stage}</option>)}
+        </select>
+      </div>
     </button>
   );
 }
@@ -407,7 +431,7 @@ export default function GarmentsPage({
   jobs = [],
   navigation,
 }) {
-  const { openJob } = useChrysalis();
+  const { openJob, updateJob } = useChrysalis();
 
 
 
@@ -428,6 +452,11 @@ export default function GarmentsPage({
 
   const [statusFilter, setStatusFilter] =
     useState("All");
+
+  const [urgencyFilter, setUrgencyFilter] = useState("All");
+  const [draggedJobId, setDraggedJobId] = useState(null);
+  const [dropTarget, setDropTarget] = useState("");
+  const [savingJobId, setSavingJobId] = useState(null);
 
   const [
     showProductionBoard,
@@ -494,17 +523,19 @@ export default function GarmentsPage({
         const matchesStatus =
           statusFilter === "All" ||
           job.status === statusFilter;
+        const matchesUrgency =
+          urgencyFilter === "All" ||
+          (urgencyFilter === "Overdue" && isOverdue(job)) ||
+          (urgencyFilter === "Due This Week" && isDueThisWeek(job));
 
-        return (
-          matchesSearch &&
-          matchesStatus
-        );
+        return matchesSearch && matchesStatus && matchesUrgency;
       }
     );
   }, [
     garmentJobs,
     search,
     statusFilter,
+    urgencyFilter,
   ]);
 
   const inProgressJobs =
@@ -543,6 +574,51 @@ export default function GarmentsPage({
         {}
       );
     }, [filteredJobs]);
+
+  async function moveJobToStatus(job, nextStatus) {
+    if (!job || !nextStatus || job.status === nextStatus || savingJobId === job.id) return;
+    setSavingJobId(job.id);
+    try {
+      const previousStatus = job.status || "Unscheduled";
+      const timelineEntry = {
+        id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `timeline-${Date.now()}`,
+        type: "workflow",
+        title: "Workflow Stage Changed",
+        description: `${previousStatus} → ${nextStatus}`,
+        date: new Date().toISOString(),
+      };
+      await updateJob({
+        ...job,
+        status: nextStatus,
+        timeline: [timelineEntry, ...(Array.isArray(job.timeline) ? job.timeline : [])],
+      });
+    } catch (error) {
+      console.error("Unable to move garment between workflow stages.", error);
+    } finally {
+      setSavingJobId(null);
+      setDraggedJobId(null);
+      setDropTarget("");
+    }
+  }
+
+  function handleDragStart(event, job) {
+    setDraggedJobId(job.id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", String(job.id));
+  }
+
+  function handleDragOver(event, status) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDropTarget(status);
+  }
+
+  function handleDropJob(event, status) {
+    event.preventDefault();
+    const jobId = event.dataTransfer.getData("text/plain") || draggedJobId;
+    const job = garmentJobs.find((item) => String(item.id) === String(jobId));
+    moveJobToStatus(job, status);
+  }
 
   function handleOpenJob(job) {
     if (!job) return;
@@ -767,6 +843,16 @@ export default function GarmentsPage({
           </option>
         </select>
 
+        <select
+          value={urgencyFilter}
+          onChange={(event) => setUrgencyFilter(event.target.value)}
+          style={{ padding: 12, borderRadius: 8, border: "1px solid #CBD5E1", background: "#FFFFFF" }}
+        >
+          <option value="All">All Due Dates</option>
+          <option value="Due This Week">Due This Week</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+
         <Button
           onClick={() =>
             setShowProductionBoard(
@@ -849,9 +935,12 @@ export default function GarmentsPage({
                       status
                     ] || []
                   }
-                  onOpenJob={
-                    handleOpenJob
-                  }
+                  onOpenJob={handleOpenJob}
+                  onDropJob={handleDropJob}
+                  onDragStart={handleDragStart}
+                  onQuickStatus={moveJobToStatus}
+                  isDropTarget={dropTarget === status}
+                  onDragOver={(event) => handleDragOver(event, status)}
                 />
               )
             )}
