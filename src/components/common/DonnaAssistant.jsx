@@ -94,10 +94,10 @@ export default function BuddiAssistant({
   }, [jobs]);
 
   const prompts = [
+    { id: "week", label: "What’s happening this week?" },
     { id: "attention", label: "What needs attention today?" },
     { id: "garments", label: "Show overdue garments" },
     { id: "money", label: "Who owes money?" },
-    { id: "week", label: "What’s happening this week?" },
   ];
 
   async function answerQuestion(rawQuestion) {
@@ -202,11 +202,11 @@ export default function BuddiAssistant({
           0%, 60%, 100% { opacity: .25; transform: translateY(0); }
           30% { opacity: 1; transform: translateY(-3px); }
         }
+        .buddi-assistant-title { text-transform: none !important; }
         .buddi-thinking-dots { display: inline-flex; gap: 4px; align-items: center; }
         .buddi-thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: #8B1E3F; animation: buddiDotPulse 1.2s infinite ease-in-out; }
         .buddi-thinking-dots span:nth-child(2) { animation-delay: .15s; }
         .buddi-thinking-dots span:nth-child(3) { animation-delay: .3s; }
-        .buddi-assistant-title { text-transform: none !important; }
         @media (prefers-reduced-motion: reduce) { .buddi-thinking-dots span { animation: none; opacity: .7; } }
       `}</style>
 
@@ -214,7 +214,7 @@ export default function BuddiAssistant({
         <div>
           <div className="buddi-assistant-title" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 900, letterSpacing: ".1em", textTransform: "none", color: "#8B1E3F" }}>
             <span aria-hidden="true">🦋</span>
-            <span className="buddi-assistant-title">BizziBuddi Assistant</span>
+            BizziBuddi Assistant
           </div>
           <h2 style={{ margin: "6px 0 0", fontSize: 23 }}>Hi, I’m Buddi</h2>
           <p style={{ margin: "5px 0 0", color: "#6B7478", fontSize: 13 }}>Your intelligent studio companion.</p>
