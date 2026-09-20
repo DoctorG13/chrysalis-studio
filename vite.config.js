@@ -6,7 +6,7 @@ export default defineConfig({
 
   server: {
     proxy: {
-      "/api/auth": { target: "http://127.0.0.1:4183", changeOrigin: true },
+      "/api/auth": { target: "http://127.0.0.1:4183", changeOrigin: false },
       "/api/jobs": { target: "http://127.0.0.1:4175", changeOrigin: true },
       "/api/appointments": { target: "http://127.0.0.1:4176", changeOrigin: true },
       "/api/measurements": { target: "http://127.0.0.1:4177", changeOrigin: true },
