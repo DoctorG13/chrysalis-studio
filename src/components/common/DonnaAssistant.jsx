@@ -137,7 +137,8 @@ export default function BuddiAssistant({
       },
     };
 
-    const minimumThinkingTime = new Promise((resolve) => setTimeout(resolve, 2200));
+    const thinkingDuration = 1800 + Math.floor(Math.random() * 1800);
+    const minimumThinkingTime = new Promise((resolve) => setTimeout(resolve, thinkingDuration));
 
     try {
       const [response] = await Promise.all([
@@ -210,7 +211,7 @@ export default function BuddiAssistant({
 
       <header style={{ padding: "20px 20px 18px", borderBottom: "1px solid #ECE8E5", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #FFF8FA 0%, #FFFFFF 65%)" }}>
         <div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 900, letterSpacing: ".1em", color: "#8B1E3F" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 900, letterSpacing: ".1em", textTransform: "none", color: "#8B1E3F" }}>
             <span aria-hidden="true">🦋</span>
             BizziBuddi Assistant
           </div>
