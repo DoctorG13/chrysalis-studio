@@ -137,7 +137,7 @@ export default function BuddiAssistant({
       },
     };
 
-    const thinkingDuration = 1800 + Math.floor(Math.random() * 1800);
+    const thinkingDuration = 2100 + Math.floor(Math.random() * 2501);
     const minimumThinkingTime = new Promise((resolve) => setTimeout(resolve, thinkingDuration));
 
     try {
@@ -206,14 +206,15 @@ export default function BuddiAssistant({
         .buddi-thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: #8B1E3F; animation: buddiDotPulse 1.2s infinite ease-in-out; }
         .buddi-thinking-dots span:nth-child(2) { animation-delay: .15s; }
         .buddi-thinking-dots span:nth-child(3) { animation-delay: .3s; }
+        .buddi-assistant-title { text-transform: none !important; }
         @media (prefers-reduced-motion: reduce) { .buddi-thinking-dots span { animation: none; opacity: .7; } }
       `}</style>
 
       <header style={{ padding: "20px 20px 18px", borderBottom: "1px solid #ECE8E5", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg, #FFF8FA 0%, #FFFFFF 65%)" }}>
         <div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 900, letterSpacing: ".1em", textTransform: "none", color: "#8B1E3F" }}>
+          <div className="buddi-assistant-title" style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11, fontWeight: 900, letterSpacing: ".1em", textTransform: "none", color: "#8B1E3F" }}>
             <span aria-hidden="true">🦋</span>
-            BizziBuddi Assistant
+            <span className="buddi-assistant-title">BizziBuddi Assistant</span>
           </div>
           <h2 style={{ margin: "6px 0 0", fontSize: 23 }}>Hi, I’m Buddi</h2>
           <p style={{ margin: "5px 0 0", color: "#6B7478", fontSize: 13 }}>Your intelligent studio companion.</p>
