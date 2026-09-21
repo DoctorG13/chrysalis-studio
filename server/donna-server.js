@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 
 const PORT = 4184;
 const API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 const MAX_BODY_BYTES = 512 * 1024;
 
 function sendJson(response, statusCode, payload) {
@@ -39,13 +39,13 @@ async function askGemini(message, context) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: buildPrompt(message, context) }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 700 },
+      generationConfig: { maxOutputTokens: 700 },
     }),
   });
 
   const payload = await result.json();
   if (!result.ok) {
-    throw new Error(payload?.error?.message || "Gemini request failed.");
+    throw new Error(payload?.error?.message || "AI request failed.");
   }
 
   const text = payload?.candidates?.[0]?.content?.parts
@@ -53,7 +53,7 @@ async function askGemini(message, context) {
     .join("")
     .trim();
 
-  if (!text) throw new Error("Gemini returned an empty response.");
+  if (!text) throw new Error("The assistant returned an empty response.");
   return text;
 }
 
@@ -69,7 +69,7 @@ const server = createServer(async (request, response) => {
   }
 
   if (!API_KEY) {
-    sendJson(response, 503, { error: "Donna AI is not configured. Add GEMINI_API_KEY to the server environment." });
+    sendJson(response, 503, { error: "The assistant is not configured. Add GEMINI_API_KEY to the server environment." });
     return;
   }
 
@@ -84,11 +84,11 @@ const server = createServer(async (request, response) => {
     const answer = await askGemini(message, body.context || {});
     sendJson(response, 200, { answer });
   } catch (error) {
-    console.error("Donna AI request failed:", error);
-    sendJson(response, 500, { error: error.message || "Donna could not respond." });
+    console.error("Assistant request failed:", error);
+    sendJson(response, 500, { error: error.message || "The assistant could not respond." });
   }
 });
 
 server.listen(PORT, "127.0.0.1", () => {
-  console.log(`Donna AI service listening on http://127.0.0.1:${PORT}`);
+  console.log(`Assistant service listening on http://127.0.0.1:${PORT}`);
 });
