@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 
 const PORT = 4184;
 const API_KEY = process.env.GEMINI_API_KEY;
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+const MODEL = "gemini-3.6-flash";
 const MAX_BODY_BYTES = 512 * 1024;
 
 function sendJson(response, statusCode, payload) {
