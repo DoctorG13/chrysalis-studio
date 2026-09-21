@@ -4,6 +4,21 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Assistant Visual Polish
+
+### Changed
+
+- Reworked the Buddi assistant panel into a polished, branded studio companion interface.
+- Added a structured header with branded identity, greeting and improved visual hierarchy.
+- Replaced plain form controls and browser-default action buttons with consistent branded controls.
+- Added styled welcome guidance, quick-question pills, conversation message bubbles and Buddi response cards.
+- Improved appointment and client creation forms with clearer grouping, spacing and action areas.
+- Added a more compact composer with a branded send control.
+- Improved panel sizing, scrolling, borders, shadows and responsive behaviour.
+- Preserved the existing Buddi question handling, client creation and appointment creation workflows.
+
+---
+
 ## Buddi Assistant Improvements
 
 ### Added
