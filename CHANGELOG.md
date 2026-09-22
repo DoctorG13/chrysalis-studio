@@ -4,6 +4,23 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Buddi OpenAI Provider
+
+### Changed
+
+- Switched the Buddi assistant service from Gemini to OpenAI.
+- Added support for configuring the OpenAI model through `OPENAI_MODEL`.
+- Set the default OpenAI model to `gpt-4o-mini`.
+- Updated the assistant health response to report the active provider and model.
+- Updated the missing-configuration message to reference `OPENAI_API_KEY`.
+
+### Configuration
+
+- Set `OPENAI_API_KEY` in the server environment.
+- Optionally set `OPENAI_MODEL` to choose another supported OpenAI model.
+
+---
+
 ## BizziBuddi Assistant Visual Polish
 
 ### Changed
