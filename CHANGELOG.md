@@ -4,6 +4,20 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Clock Rebrand
+
+### Changed
+
+- Introduced the new BizziBuddi clock-inspired lowercase “b” logo.
+- Added the navy, blue and cyan BizziBuddi brand palette with slate and light neutrals.
+- Applied the new logo and branding to the public BizziBuddi landing page and account experience.
+- Updated the Buddi launcher and assistant panel to use the new BizziBuddi visual identity.
+- Added the supporting brand message “Business support, simplified.” and “Your personal assistant for business.”
+- Added the “Organise | Plan | Do | Grow” brand feature line.
+- Kept the clock mark's three arc segments evenly spaced while increasing in size clockwise.
+
+---
+
 ## Buddi Thinking Animation Reliability
 
 ### Fixed
