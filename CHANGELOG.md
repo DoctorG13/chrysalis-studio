@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Buddi Thinking Animation Reliability
+
+### Fixed
+
+- Restored the visible “Buddi is thinking” label alongside the thinking dots.
+- Moved the dot animation styling into the Buddi component so the three dots animate independently and reliably.
+- Added staggered animation delays to create a clear bouncing/pulsing sequence.
+- Kept the thinking indicator visually prominent while Buddi is processing a request.
+
+---
+
 ## Buddi OpenAI Provider
 
 ### Changed
