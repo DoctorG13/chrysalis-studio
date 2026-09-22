@@ -95,21 +95,22 @@ img { max-width: 100%; display: block; }
   background: linear-gradient(180deg, #FFFDFC 0%, #FFF4F7 100%);
 }
 
-/* Force an unmistakable animated thinking state. */
+/* Buddi thinking indicator */
 @keyframes buddiThinkingPulse {
-  0%, 100% { opacity: .25; transform: translateY(0) scale(.65); }
-  50% { opacity: 1; transform: translateY(-8px) scale(1.45); }
+  0%, 100% { opacity: .3; transform: translateY(0) scale(.8); }
+  50% { opacity: 1; transform: translateY(-5px) scale(1.2); }
 }
 
 @keyframes buddiThinkingGlow {
-  0%, 100% { box-shadow: 0 0 0 rgba(169,44,85,0); transform: translateX(0); }
-  50% { box-shadow: 0 0 30px rgba(169,44,85,.32); transform: translateX(1px); }
+  0%, 100% { box-shadow: 0 0 0 rgba(169,44,85,0); }
+  50% { box-shadow: 0 0 30px rgba(169,44,85,.32); }
 }
 
 [aria-label="Buddi assistant"] div[role="status"] {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  gap: 10px !important;
   min-height: 56px !important;
   padding: 14px 16px !important;
   border: 2px solid rgba(169,44,85,.35) !important;
@@ -120,36 +121,50 @@ img { max-width: 100%; display: block; }
   font-weight: 800 !important;
 }
 
-/* Display only the three animated dots; hide the avatar and label. */
-[aria-label="Buddi assistant"] div[role="status"] > span:first-child,
-[aria-label="Buddi assistant"] div[role="status"] > span:nth-child(2) {
+/* Keep the requested label and remove only the decorative avatar. */
+[aria-label="Buddi assistant"] div[role="status"] > span:first-child {
   display: none !important;
 }
 
+[aria-label="Buddi assistant"] div[role="status"] > span:nth-child(2) {
+  display: inline !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  color: #7F2342 !important;
+}
+
+/* Make the dot container and each dot unambiguously visible. */
 [aria-label="Buddi assistant"] div[role="status"] > span:last-child {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 8px !important;
-  min-width: 74px !important;
+  min-width: 50px !important;
+  min-height: 18px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-[aria-label="Buddi assistant"] div[role="status"] i {
-  display: block !important;
-  width: 11px !important;
-  height: 11px !important;
-  flex: 0 0 11px !important;
+[aria-label="Buddi assistant"] div[role="status"] > span:last-child i {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: .3 !important;
+  width: 10px !important;
+  height: 10px !important;
+  min-width: 10px !important;
+  min-height: 10px !important;
+  flex: 0 0 10px !important;
   border-radius: 50% !important;
   background: #A92C55 !important;
+  border: 2px solid #A92C55 !important;
   animation: buddiThinkingPulse .65s infinite ease-in-out !important;
   will-change: transform, opacity;
 }
 
-[aria-label="Buddi assistant"] div[role="status"] i:nth-child(2) { animation-delay: .14s !important; }
-[aria-label="Buddi assistant"] div[role="status"] i:nth-child(3) { animation-delay: .28s !important; }
+[aria-label="Buddi assistant"] div[role="status"] > span:last-child i:nth-child(2) { animation-delay: .14s !important; }
+[aria-label="Buddi assistant"] div[role="status"] > span:last-child i:nth-child(3) { animation-delay: .28s !important; }
 
 @media (prefers-reduced-motion: reduce) {
-  [aria-label="Buddi assistant"] div[role="status"],
-  [aria-label="Buddi assistant"] div[role="status"] i { animation: none !important; }
-  [aria-label="Buddi assistant"] div[role="status"] i { opacity: .85 !important; }
+  [aria-label="Buddi assistant"] div[role="status"] { animation: none !important; }
+  [aria-label="Buddi assistant"] div[role="status"] i { animation: none !important; opacity: 1 !important; }
 }
