@@ -21,6 +21,7 @@ import BizzibuddiAccountPage from "./pages/BizzibuddiAccountPage";
 import ClientWorkspace from "./components/clients/ClientWorkspace";
 import JobsWorkspace from "./components/jobs/JobsWorkspace";
 import SlidePanel from "./components/common/SlidePanel";
+import BizziBuddiLogo from "./components/common/BizziBuddiLogo";
 import BuddiAssistant from "./components/common/DonnaAssistant";
 
 import {
@@ -491,8 +492,8 @@ function ChrysalisApplication({ authenticatedUser }) {
 
       <style>{`
         @keyframes buddiLauncherPulse {
-          0%, 100% { box-shadow: 0 10px 28px rgba(47,58,63,.22), 0 0 0 0 rgba(139,30,63,.28); }
-          50% { box-shadow: 0 12px 32px rgba(47,58,63,.28), 0 0 0 10px rgba(139,30,63,0); }
+          0%, 100% { box-shadow: 0 10px 28px rgba(15,45,74,.22), 0 0 0 0 rgba(0,180,219,.24); }
+          50% { box-shadow: 0 12px 32px rgba(15,45,74,.28), 0 0 0 10px rgba(0,180,219,0); }
         }
         @media (prefers-reduced-motion: reduce) { .buddi-launcher { animation: none !important; } }
       `}</style>
@@ -515,7 +516,7 @@ function ChrysalisApplication({ authenticatedUser }) {
           gap: 9,
           border: "2px solid #FFFFFF",
           borderRadius: 30,
-          background: "linear-gradient(135deg, #8B1E3F 0%, #B83E62 100%)",
+          background: "linear-gradient(135deg, #0F2D4A 0%, #2563EB 72%, #00B4DB 100%)",
           color: "#FFFFFF",
           fontSize: 15,
           fontWeight: 900,
@@ -524,7 +525,7 @@ function ChrysalisApplication({ authenticatedUser }) {
           animation: isDonnaOpen ? "none" : "buddiLauncherPulse 3s infinite",
         }}
       >
-        <span aria-hidden="true" style={{ fontSize: 24 }}>🦋</span>
+        <BizziBuddiLogo size={32} dark showWordmark={false} />
         <span>Ask Buddi</span>
       </button>
 
