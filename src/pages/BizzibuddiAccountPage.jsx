@@ -1,10 +1,12 @@
 import { useState } from "react";
+import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
 
-const RED = "#FF174F";
-const BG = "#08090D";
-const SURFACE = "#12141B";
+const RED = "#2563EB";
+const CYAN = "#00B4DB";
+const BG = "#061A2B";
+const SURFACE = "#0F2D4A";
 const TEXT = "#FFFFFF";
-const MUTED = "#B8B0B8";
+const MUTED = "#B8C6D6";
 const BORDER = "rgba(255,255,255,.16)";
 
 const plans = [
@@ -98,15 +100,15 @@ export default function BizzibuddiAccountPage() {
       <div style={ambientGlow} />
       <div style={shellStyle}>
         <header style={headerStyle}>
-          <a href="/bizzibuddi" style={brandStyle}>Bizzi<span style={{ color: RED }}>Buddi</span></a>
+          <a href="/bizzibuddi" style={{ color: TEXT, textDecoration: "none", display: "inline-flex", alignItems: "center" }}><BizziBuddiLogo size={42} dark showWordmark /></a>
           <a href="/bizzibuddi" style={backLink}>Back to website ↗</a>
         </header>
 
         <section style={heroStyle}>
-          <div style={eyebrowStyle}>BUSINESS MANAGEMENT, SIMPLIFIED</div>
-          <h1 style={heroHeading}>Everything starts<br /><span style={{ color: RED }}>right here.</span></h1>
+          <div style={eyebrowStyle}>BUSINESS SUPPORT, SIMPLIFIED</div>
+          <h1 style={heroHeading}>Your business.<br /><span style={{ color: CYAN }}>Better organised.</span></h1>
           <p style={heroCopy}>Explore the BizziBuddi account experience with a local-only registration, onboarding and workspace preview.</p>
-          <div style={previewBadge}>✦ Local mock environment · No live data or payments</div>
+          <div style={previewBadge}>BizziBuddi gives you time · Local mock environment · No live data or payments</div>
         </section>
 
         <nav aria-label="Account preview navigation" style={navStyle}>
@@ -144,7 +146,7 @@ function deriveUsername(account) {
 function AuthPanel({ mode, account, onSubmit, onSwitch }) {
   const login = mode === "login";
   return <section style={cardStyle(560)}>
-    <div style={centerStyle}><div style={{ fontSize: 46, color: RED }}>✦</div><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your workspace setup."}</p></div>
+    <div style={centerStyle}><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your workspace setup."}</p></div>
     <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
       {!login && <Field name="name" label="Full name" type="text" placeholder="Your name" />}
       {!login && <Field name="username" label="Username" type="text" placeholder="Choose a username" />}
@@ -160,11 +162,11 @@ function AuthPanel({ mode, account, onSubmit, onSwitch }) {
 }
 
 function OnboardingPanel({ account, onSubmit }) {
-  return <section style={cardStyle(620)}><div style={centerStyle}><div style={{ fontSize: 46, color: RED }}>🦋</div><h2 style={sectionHeading}>Set up your workspace.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your workspace a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Workspace or business name" type="text" placeholder={account?.business || "Your workspace"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Complete setup · Demo</button></form></section>;
+  return <section style={cardStyle(620)}><div style={centerStyle}><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your workspace.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your workspace a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Workspace or business name" type="text" placeholder={account?.business || "Your workspace"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Complete setup · Demo</button></form></section>;
 }
 
 function PlansPanel({ onSelectPlan }) {
-  return <section><div style={centerStyle}><h2 style={sectionHeading}>Find your fit.</h2><p style={copyStyle}>Choose a plan for the local mock account. No subscription is created.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.name} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>Choose {plan.name}</button></article>)}</div></section>;
+  return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose a plan for the local mock account. No subscription is created.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.name} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>Choose {plan.name}</button></article>)}</div></section>;
 }
 
 function DashboardPanel({ account, onPlans, onReset }) {
@@ -175,7 +177,7 @@ function Field({ name, label, type, placeholder, defaultValue }) {
   return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
 }
 
-const pageStyle = { minHeight: "100vh", position: "relative", overflow: "hidden", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #16000A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const pageStyle = { minHeight: "100vh", position: "relative", overflow: "hidden", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
 const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" };
 const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
@@ -184,11 +186,11 @@ const heroStyle = { maxWidth: 780, margin: "76px auto 38px", textAlign: "center"
 const eyebrowStyle = { display: "inline-block", color: RED, fontSize: 12, fontWeight: 700, letterSpacing: "0.16em" };
 const heroHeading = { margin: "24px 0 18px", fontSize: "clamp(42px, 7vw, 76px)", lineHeight: 0.98, letterSpacing: "-0.055em", fontWeight: 600 };
 const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 17, lineHeight: 1.75 };
-const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(255,23,79,.08)", color: RED, fontSize: 12, fontWeight: 600 };
+const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(0,180,219,.08)", color: RED, fontSize: 12, fontWeight: 600 };
 const navStyle = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", margin: "34px 0 28px" };
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
-const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(255,23,79,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
+const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
 const centerStyle = { textAlign: "center" };
 const sectionHeading = { margin: "16px 0 10px", fontSize: "clamp(30px, 5vw, 44px)", letterSpacing: "-0.04em" };
 const copyStyle = { color: MUTED, lineHeight: 1.7 };
@@ -200,7 +202,7 @@ const switchText = { textAlign: "center", color: MUTED, fontSize: 14, margin: "2
 const smallText = { color: MUTED, fontSize: 13 };
 const fieldStyle = { display: "block", marginTop: 17, fontSize: 13, fontWeight: 700 };
 const inputStyle = { display: "block", width: "100%", minHeight: 52, marginTop: 8, padding: "0 15px", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 10, fontSize: 15, color: TEXT, background: SURFACE };
-const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(255,23,79,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };
+const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(37,99,235,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };
 const plansGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))", gap: 20, alignItems: "stretch" };
 const popularBadge = { display: "inline-block", alignSelf: "flex-start", padding: "7px 10px", borderRadius: 999, background: RED, fontSize: 11, fontWeight: 700 };
 const planTitle = { fontSize: 27, margin: "18px 0 5px" };
