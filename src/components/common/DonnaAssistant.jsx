@@ -77,9 +77,12 @@ function renderRichText(text) {
 function ThinkingIndicator() {
   return (
     <div style={thinkingStyle} role="status" aria-live="polite">
-      <span style={thinkingAvatarStyle}>🦋</span>
-      <span>Buddi is thinking</span>
-      <span style={thinkingDotsStyle} aria-hidden="true"><i /><i /><i /></span>
+      <span style={thinkingLabelStyle}>Buddi is thinking</span>
+      <span style={thinkingDotsStyle} aria-hidden="true">
+        <i className="buddi-thinking-dot" style={{ ...thinkingDotStyle, animationDelay: "0s" }} />
+        <i className="buddi-thinking-dot" style={{ ...thinkingDotStyle, animationDelay: "0.14s" }} />
+        <i className="buddi-thinking-dot" style={{ ...thinkingDotStyle, animationDelay: "0.28s" }} />
+      </span>
     </div>
   );
 }
@@ -224,7 +227,7 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
         {conversation.length > 0 && <div style={conversationStyle}>{conversation.slice(0, 6).map((entry, index) => <article key={`${entry.question}-${index}`} style={messageGroupStyle}><div style={userMessageStyle}><span style={userAvatarStyle}>You</span><span>{entry.question}</span></div><div style={buddiMessageStyle}><span style={messageAvatarStyle}>🦋</span><div style={{ flex: 1, minWidth: 0 }}><div style={messageLabelStyle}>Buddi</div><div style={messageTextStyle}>{renderRichText(entry.answer)}</div>{entry.action && onNavigate && <button type="button" style={inlineActionStyle} onClick={() => onNavigate(entry.action.page, entry.action.label)}>{entry.action.labelText} <span>→</span></button>}</div></div></article>)}</div>}
         <div style={footerNoteStyle}><span>🛡</span> Buddi uses the current studio workspace to help you.</div>
       </div>
-      <style>{`@keyframes buddiThinkingPulse { 0%, 80%, 100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } } @media (prefers-reduced-motion: reduce) { .buddi-thinking-dot { animation: none !important; } }`}</style>
+      <style>{`@keyframes buddiThinkingPulse { 0%, 80%, 100% { opacity: .25; transform: translateY(0) scale(.75); } 40% { opacity: 1; transform: translateY(-5px) scale(1.2); } }`}</style>
     </aside>
   );
 }
@@ -260,9 +263,10 @@ const quickActionsStyle = { marginBottom: 18 };
 const quickLabelStyle = { display: "block", marginBottom: 9, color: "#8A7B7E", fontSize: 10, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase" };
 const quickPillsStyle = { display: "flex", flexWrap: "wrap", gap: 7 };
 const quickPillStyle = { ...buttonStyle, padding: "8px 11px", fontSize: 11, textAlign: "left" };
-const thinkingStyle = { display: "flex", alignItems: "center", gap: 8, padding: "11px 13px", marginBottom: 14, borderRadius: 12, background: "#F6E7EC", color: "#8C3B55", fontSize: 12, fontWeight: 700 };
-const thinkingAvatarStyle = { fontSize: 16 };
-const thinkingDotsStyle = { display: "inline-flex", gap: 4, marginLeft: 2 };
+const thinkingStyle = { display: "flex", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 52, padding: "11px 13px", marginBottom: 14, border: "2px solid rgba(169,44,85,.28)", borderRadius: 12, background: "linear-gradient(90deg, #F6E7EC 0%, #FFF5F8 50%, #F6E7EC 100%)", color: "#7F2342", fontSize: 12, fontWeight: 800, boxShadow: "0 8px 24px rgba(169,44,85,.10)" };
+const thinkingLabelStyle = { display: "inline-block", whiteSpace: "nowrap" };
+const thinkingDotsStyle = { display: "inline-flex", alignItems: "center", gap: 6, minWidth: 42, minHeight: 16 };
+const thinkingDotStyle = { display: "block", width: 8, height: 8, minWidth: 8, minHeight: 8, borderRadius: "50%", background: "#A92C55", animationName: "buddiThinkingPulse", animationDuration: "0.75s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", willChange: "transform, opacity" };
 const conversationStyle = { display: "flex", flexDirection: "column", gap: 15 };
 const messageGroupStyle = { display: "flex", flexDirection: "column", gap: 8 };
 const userMessageStyle = { display: "flex", alignItems: "flex-start", gap: 8, justifyContent: "flex-end", color: "#67595D", fontSize: 12, lineHeight: 1.5 };
