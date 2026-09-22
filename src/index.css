@@ -109,6 +109,7 @@ img { max-width: 100%; display: block; }
 [aria-label="Buddi assistant"] div[role="status"] {
   display: flex !important;
   align-items: center !important;
+  justify-content: center !important;
   min-height: 56px !important;
   padding: 14px 16px !important;
   border: 2px solid rgba(169,44,85,.35) !important;
@@ -119,11 +120,18 @@ img { max-width: 100%; display: block; }
   font-weight: 800 !important;
 }
 
+/* Display only the three animated dots; hide the avatar and label. */
+[aria-label="Buddi assistant"] div[role="status"] > span:first-child,
+[aria-label="Buddi assistant"] div[role="status"] > span:nth-child(2) {
+  display: none !important;
+}
+
 [aria-label="Buddi assistant"] div[role="status"] > span:last-child {
   display: inline-flex !important;
   align-items: center !important;
+  justify-content: center !important;
   gap: 8px !important;
-  min-width: 42px !important;
+  min-width: 74px !important;
 }
 
 [aria-label="Buddi assistant"] div[role="status"] i {
