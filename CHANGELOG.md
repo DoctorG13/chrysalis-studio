@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Assistant Logo Correction
+
+### Changed
+
+- Corrected the Buddi assistant's light-background logo treatment to use the approved navy BizziBuddi mark rather than the dark-background white variant.
+- Kept the dark variant for dark launcher surfaces.
+- Ensured the same approved clock mark is used consistently across the assistant header, welcome card and Buddi responses.
+
+---
+
 ## BizziBuddi Brand Artwork Refinement
 
 ### Changed
