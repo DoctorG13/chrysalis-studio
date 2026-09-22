@@ -52,11 +52,11 @@ img { max-width: 100%; display: block; }
 /* Buddi: prominent, branded floating workspace */
 [aria-label="Buddi assistant"] {
   isolation: isolate;
-  border: 3px solid #A92C55 !important;
-  background: #FFF8FA !important;
+  border: 3px solid #2563EB !important;
+  background: #F8FAFC !important;
   box-shadow:
-    0 0 0 6px rgba(169, 44, 85, 0.13),
-    0 0 34px rgba(169, 44, 85, 0.24),
+    0 0 0 6px rgba(0, 180, 219, 0.13),
+    0 0 34px rgba(37, 99, 235, 0.24),
     0 28px 90px rgba(43, 25, 35, 0.38) !important;
 }
 
@@ -71,7 +71,7 @@ img { max-width: 100%; display: block; }
 }
 
 [aria-label="Buddi assistant"] header {
-  background: linear-gradient(135deg, #B93662 0%, #7F2342 100%) !important;
+  background: linear-gradient(135deg, #0F2D4A 0%, #0F2D4A 100%) !important;
   color: #FFFFFF !important;
   border-bottom: 0 !important;
   padding-top: 26px !important;
@@ -87,7 +87,7 @@ img { max-width: 100%; display: block; }
   background: rgba(255, 255, 255, 0.18) !important;
   color: #FFFFFF !important;
 }
-[aria-label="Buddi assistant"] header [style*="background: #A92C55"] {
+[aria-label="Buddi assistant"] header [style*="background: #2563EB"] {
   background: rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 0 18px rgba(255,255,255,.18) !important;
 }
@@ -102,8 +102,8 @@ img { max-width: 100%; display: block; }
 }
 
 @keyframes buddiThinkingGlow {
-  0%, 100% { box-shadow: 0 0 0 rgba(169,44,85,0); }
-  50% { box-shadow: 0 0 30px rgba(169,44,85,.32); }
+  0%, 100% { box-shadow: 0 0 0 rgba(0,180,219,0); }
+  50% { box-shadow: 0 0 30px rgba(0,180,219,.32); }
 }
 
 [aria-label="Buddi assistant"] div[role="status"] {
@@ -113,8 +113,8 @@ img { max-width: 100%; display: block; }
   gap: 10px !important;
   min-height: 56px !important;
   padding: 14px 16px !important;
-  border: 2px solid rgba(169,44,85,.35) !important;
-  background: linear-gradient(90deg, #FCE8EF, #FFF5F8, #FCE8EF) !important;
+  border: 2px solid rgba(37,99,235,.35) !important;
+  background: linear-gradient(90deg, #E8F4FB, #F4FBFE, #E8F4FB) !important;
   background-size: 220% 100% !important;
   animation: buddiThinkingGlow 1.2s ease-in-out infinite !important;
   font-size: 13px !important;
@@ -130,7 +130,7 @@ img { max-width: 100%; display: block; }
   display: inline !important;
   visibility: visible !important;
   opacity: 1 !important;
-  color: #7F2342 !important;
+  color: #0F2D4A !important;
 }
 
 /* Make the dot container and each dot unambiguously visible. */
@@ -155,8 +155,8 @@ img { max-width: 100%; display: block; }
   min-height: 10px !important;
   flex: 0 0 10px !important;
   border-radius: 50% !important;
-  background: #A92C55 !important;
-  border: 2px solid #A92C55 !important;
+  background: #2563EB !important;
+  border: 2px solid #2563EB !important;
   animation: buddiThinkingPulse .65s infinite ease-in-out !important;
   will-change: transform, opacity;
 }
