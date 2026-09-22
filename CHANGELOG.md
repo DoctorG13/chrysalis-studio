@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Brand Artwork Refinement
+
+### Changed
+
+- Refined the BizziBuddi clock mark to match the supplied brand artwork more closely.
+- Updated the wordmark to the navy/blue split used in the supplied artwork and added the ™ mark.
+- Added the full brand lockup treatment with “BUSINESS SUPPORT, SIMPLIFIED.”, “Your personal assistant for business.” and “ORGANISE | PLAN | DO | GROW”.
+- Applied the refined lockup to the BizziBuddi website hero while retaining the compact mark for the Buddi assistant and launcher.
+
+---
+
 ## BizziBuddi Clock Rebrand
 
 ### Changed
