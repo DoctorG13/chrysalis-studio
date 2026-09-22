@@ -1,13 +1,15 @@
 import { useState } from "react";
+import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
 import BizzibuddiTermsPage from "./BizzibuddiTermsPage";
 import BizzibuddiPrivacyPage from "./BizzibuddiPrivacyPage";
 
-const RED = "#FF174F";
-const RED_DARK = "#C4003D";
-const BG = "#08090D";
-const SURFACE = "#12141B";
+const RED = "#2563EB";
+const RED_DARK = "#0F2D4A";
+const CYAN = "#00B4DB";
+const BG = "#061A2B";
+const SURFACE = "#0F2D4A";
 const TEXT = "#FFFFFF";
-const MUTED = "#B8B0B8";
+const MUTED = "#B8C6D6";
 
 const plans = [
   { name: "Free", price: "$0", period: "forever", description: "A simple starting point for independent operators.", features: ["People & contacts", "Basic jobs", "Calendar", "Dashboard"] },
@@ -48,19 +50,12 @@ function scrollToId(id) {
 }
 
 function Logo() {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, whiteSpace: "nowrap" }}>
-      <span style={{ width: 30, height: 30, border: "2px solid #FFF", borderRadius: 9, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, transform: "rotate(45deg)", background: RED_DARK }}>
-        <span style={{ transform: "rotate(-45deg)" }}>B</span>
-      </span>
-      <span style={{ fontSize: 21, fontWeight: 600, letterSpacing: 1.8 }}>BizziBuddi</span>
-    </div>
-  );
+  return <BizziBuddiLogo size={38} dark showWordmark />;
 }
 
 function CtaButton({ children, secondary = false, onClick }) {
   return (
-    <button type="button" onClick={onClick} className={secondary ? "bizzibuddi-cta bizzibuddi-cta-secondary" : "bizzibuddi-cta"} style={{ ...buttonBase, border: `2px solid ${RED}`, background: secondary ? "transparent" : RED, color: "#FFF", boxShadow: secondary ? "none" : `0 10px 28px rgba(255,23,79,.34)` }}>
+    <button type="button" onClick={onClick} className={secondary ? "bizzibuddi-cta bizzibuddi-cta-secondary" : "bizzibuddi-cta"} style={{ ...buttonBase, border: `2px solid ${RED}`, background: secondary ? "transparent" : RED, color: "#FFF", boxShadow: secondary ? "none" : `0 10px 28px rgba(37,99,235,.34)` }}>
       {children}
     </button>
   );
@@ -68,13 +63,13 @@ function CtaButton({ children, secondary = false, onClick }) {
 
 function Footer() {
   return (
-    <footer style={{ background: "#050609", color: "#FFFFFF", padding: "64px 22px 34px", borderTop: `4px solid ${RED}` }}>
+    <footer style={{ background: "#050609", color: "#FFFFFF", padding: "64px 22px 34px", borderTop: `4px solid ${CYAN}` }}>
       <div style={{ maxWidth: 1080, margin: "0 auto" }}>
         <div className="bizzibuddi-footer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 34, alignItems: "start" }}>
           <div>
             <Logo />
-            <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.7, color: "#FFFFFF" }}>Streamline your business.<br />Simplify your work.</div>
-            <div style={{ marginTop: 18, color: RED, fontSize: 12, fontWeight: 600, letterSpacing: 1.1 }}>BUSINESS MANAGEMENT, ALL IN ONE PLACE.</div>
+            <div style={{ marginTop: 14, fontSize: 14, lineHeight: 1.7, color: "#FFFFFF" }}>Your personal assistant for business.<br />Gives you time.</div>
+            <div style={{ marginTop: 18, color: RED, fontSize: 12, fontWeight: 600, letterSpacing: 1.1 }}>ORGANISE  ·  PLAN  ·  DO  ·  GROW</div>
           </div>
           <div>
             <div style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 600, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Quick Links</div>
@@ -120,12 +115,12 @@ export default function BizzibuddiLandingPage() {
       <style>{`
         button:hover,.bizzibuddi-footer-link:hover,.bizzibuddi-nav-link:hover{transform:translateY(-2px);filter:brightness(1.18)}
         button:focus-visible,a:focus-visible{outline:3px solid ${RED};outline-offset:4px}
-        .bizzibuddi-cta:hover{background:${RED_DARK}!important;box-shadow:0 12px 34px rgba(255,23,79,.5)!important}
+        .bizzibuddi-cta:hover{background:${RED_DARK}!important;box-shadow:0 12px 34px rgba(37,99,235,.5)!important}
         .bizzibuddi-cta-secondary:hover{background:${RED}!important;color:#FFF!important}
         .bizzibuddi-nav-link{transition:color .18s ease,transform .18s ease}
         .bizzibuddi-footer-link{transition:filter .18s ease,transform .18s ease;color:${RED}!important}
         .bizzibuddi-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
-        .bizzibuddi-card:hover{transform:translateY(-4px);border-color:${RED}!important;box-shadow:0 18px 42px rgba(255,23,79,.22)!important}
+        .bizzibuddi-card:hover{transform:translateY(-4px);border-color:${RED}!important;box-shadow:0 18px 42px rgba(37,99,235,.22)!important}
         @media(max-width:850px){.bizzibuddi-desktop-nav{display:none!important}.bizzibuddi-mobile-button{display:block!important}.bizzibuddi-hero-grid,.bizzibuddi-three-grid,.bizzibuddi-feature-grid{grid-template-columns:1fr!important}.bizzibuddi-plan-grid{grid-template-columns:1fr 1fr!important}.bizzibuddi-footer-grid{grid-template-columns:1fr 1fr!important}}
         @media(max-width:520px){.bizzibuddi-plan-grid{grid-template-columns:1fr!important}.bizzibuddi-footer-grid{grid-template-columns:1fr!important}.bizzibuddi-section-pad{padding-left:16px!important;padding-right:16px!important}}
       `}</style>
@@ -144,11 +139,11 @@ export default function BizzibuddiLandingPage() {
         {mobileOpen && <div style={{ padding: "0 22px 18px", display: "grid", gap: 9 }}><button type="button" onClick={() => { setMobileOpen(false); scrollToId("why"); }} style={nav}>Why BizziBuddi</button><button type="button" onClick={() => { setMobileOpen(false); scrollToId("features"); }} style={nav}>Features</button><button type="button" onClick={() => { setMobileOpen(false); goPricing(); }} style={nav}>Pricing</button><a href="/login" onClick={() => setMobileOpen(false)} style={{ ...nav, textDecoration: "none", textAlign: "center" }}>Log in</a><CtaButton onClick={() => { setMobileOpen(false); goPricing(); }}>Start Free →</CtaButton></div>}
       </header>
       <main>
-        <section style={{ background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #16000A 100%)`, color: "#FFF", padding: "76px 22px 64px" }}>
+        <section style={{ background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: "#FFF", padding: "76px 22px 64px" }}>
           <div style={{ maxWidth: 1080, margin: "0 auto", textAlign: "center" }}>
-            <div style={sectionEyebrow}>BUSINESS MANAGEMENT, SIMPLIFIED</div>
-            <div style={{ margin: "18px auto 0", color: MUTED, fontSize: "clamp(18px, 2.4vw, 28px)", fontWeight: 400, letterSpacing: -.4 }}>Run your business. With BizziBuddi.</div>
-            <h1 style={{ margin: "18px auto 0", maxWidth: 980, fontSize: "clamp(34px, 5.5vw, 60px)", fontWeight: 600, lineHeight: 1.06, letterSpacing: -1.9 }}>One clear workspace for your people, jobs, production, calendar and money.</h1>
+            <div style={sectionEyebrow}>BUSINESS SUPPORT, SIMPLIFIED</div>
+            <div style={{ margin: "18px auto 0", color: MUTED, fontSize: "clamp(18px, 2.4vw, 28px)", fontWeight: 400, letterSpacing: -.4 }}>Gives you time.</div>
+            <h1 style={{ margin: "18px auto 0", maxWidth: 980, fontSize: "clamp(34px, 5.5vw, 60px)", fontWeight: 600, lineHeight: 1.06, letterSpacing: -1.9 }}>Your personal assistant for business — helping you organise, plan and grow.</h1>
             <div style={{ marginTop: 25, display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" }}><CtaButton onClick={goPricing}>Start with BizziBuddi Free →</CtaButton><CtaButton secondary onClick={() => scrollToId("features")}>Explore BizziBuddi</CtaButton></div>
             <div className="bizzibuddi-hero-grid" style={{ marginTop: 42, display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, textAlign: "left" }}>{pillars.map(([label, title, text]) => <article key={label} className="bizzibuddi-card" style={{ background: "rgba(255,255,255,.045)", border: `1px solid ${RED}`, borderRadius: 16, padding: 20, minHeight: 125 }}><div style={{ ...eyebrow, fontSize: 12, letterSpacing: 1.6 }}>{label}</div><strong style={{ display: "block", marginTop: 10, fontSize: 19, fontWeight: 600 }}>{title}</strong><p style={{ margin: "9px 0 0", color: "#FFFFFF", fontSize: 14.5, lineHeight: 1.6 }}>{text}</p></article>)}</div>
           </div>
