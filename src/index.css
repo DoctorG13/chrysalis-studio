@@ -25,13 +25,7 @@ body,
 }
 
 body {
-  font-family:
-    "Segoe UI",
-    Tahoma,
-    Geneva,
-    Verdana,
-    sans-serif;
-
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: #F7F5F2;
   color: var(--brand-secondary);
   overflow: hidden;
@@ -40,30 +34,12 @@ body {
 button,
 input,
 select,
-textarea {
-  font: inherit;
-}
+textarea { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+::selection { background: var(--brand-accent); color: #FFFFFF; }
 
-button {
-  cursor: pointer;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-img {
-  max-width: 100%;
-  display: block;
-}
-
-::selection {
-  background: var(--brand-accent);
-  color: #FFFFFF;
-}
-
-/* Buddi's brand label must preserve its deliberate mixed case. */
 #buddi-assistant-title,
 #buddi-assistant-title span {
   text-transform: none !important;
@@ -73,16 +49,15 @@ img {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
 }
 
-/* ------------------------------------------------------
-   Buddi assistant: stronger visual presence
------------------------------------------------------- */
+/* Buddi: prominent, branded floating workspace */
 [aria-label="Buddi assistant"] {
   isolation: isolate;
-  border: 2px solid #A92C55 !important;
+  border: 3px solid #A92C55 !important;
+  background: #FFF8FA !important;
   box-shadow:
-    0 0 0 5px rgba(169, 44, 85, 0.10),
-    0 22px 70px rgba(43, 25, 35, 0.30),
-    0 0 42px rgba(169, 44, 85, 0.12) !important;
+    0 0 0 6px rgba(169, 44, 85, 0.13),
+    0 0 34px rgba(169, 44, 85, 0.24),
+    0 28px 90px rgba(43, 25, 35, 0.38) !important;
 }
 
 [aria-label="Buddi assistant"]::before {
@@ -91,103 +66,82 @@ img {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.9);
   z-index: 2;
 }
 
 [aria-label="Buddi assistant"] header {
-  background: linear-gradient(135deg, #A92C55 0%, #7F2342 100%) !important;
+  background: linear-gradient(135deg, #B93662 0%, #7F2342 100%) !important;
   color: #FFFFFF !important;
   border-bottom: 0 !important;
-  padding-top: 24px !important;
+  padding-top: 26px !important;
+  padding-bottom: 24px !important;
 }
 
-[aria-label="Buddi assistant"] header * {
-  position: relative;
-  z-index: 3;
-}
-
+[aria-label="Buddi assistant"] header * { position: relative; z-index: 3; }
 [aria-label="Buddi assistant"] header [style*="color: #293239"],
 [aria-label="Buddi assistant"] header [style*="color: #76696B"],
-[aria-label="Buddi assistant"] header [style*="color: #75686A"] {
-  color: #FFFFFF !important;
-}
-
+[aria-label="Buddi assistant"] header [style*="color: #75686A"] { color: #FFFFFF !important; }
 [aria-label="Buddi assistant"] header button {
-  border-color: rgba(255, 255, 255, 0.55) !important;
-  background: rgba(255, 255, 255, 0.14) !important;
+  border-color: rgba(255, 255, 255, 0.65) !important;
+  background: rgba(255, 255, 255, 0.18) !important;
   color: #FFFFFF !important;
 }
-
 [aria-label="Buddi assistant"] header [style*="background: #A92C55"] {
-  background: rgba(255, 255, 255, 0.18) !important;
-  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 0 18px rgba(255,255,255,.18) !important;
 }
-
 [aria-label="Buddi assistant"] > div {
-  background: linear-gradient(180deg, #FFFDFC 0%, #FFF8FA 100%);
+  background: linear-gradient(180deg, #FFFDFC 0%, #FFF4F7 100%);
 }
 
-/* ------------------------------------------------------
-   Buddi assistant: unmistakable thinking animation
------------------------------------------------------- */
+/* Force an unmistakable animated thinking state. */
 @keyframes buddiThinkingPulse {
-  0%, 100% {
-    opacity: 0.28;
-    transform: translateY(0) scale(0.82);
-  }
-  45% {
-    opacity: 1;
-    transform: translateY(-5px) scale(1.18);
-  }
+  0%, 100% { opacity: .25; transform: translateY(0) scale(.65); }
+  50% { opacity: 1; transform: translateY(-8px) scale(1.45); }
 }
 
 @keyframes buddiThinkingGlow {
-  0%, 100% { box-shadow: 0 0 0 rgba(169, 44, 85, 0.00); }
-  50% { box-shadow: 0 0 24px rgba(169, 44, 85, 0.18); }
+  0%, 100% { box-shadow: 0 0 0 rgba(169,44,85,0); transform: translateX(0); }
+  50% { box-shadow: 0 0 30px rgba(169,44,85,.32); transform: translateX(1px); }
 }
 
 [aria-label="Buddi assistant"] div[role="status"] {
   display: flex !important;
   align-items: center !important;
-  min-height: 48px;
-  border: 1px solid rgba(169, 44, 85, 0.24);
-  animation: buddiThinkingGlow 1.8s ease-in-out infinite;
+  min-height: 56px !important;
+  padding: 14px 16px !important;
+  border: 2px solid rgba(169,44,85,.35) !important;
+  background: linear-gradient(90deg, #FCE8EF, #FFF5F8, #FCE8EF) !important;
+  background-size: 220% 100% !important;
+  animation: buddiThinkingGlow 1.2s ease-in-out infinite !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
 }
 
 [aria-label="Buddi assistant"] div[role="status"] > span:last-child {
   display: inline-flex !important;
-  align-items: center;
-  gap: 6px;
-  min-width: 34px;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 42px !important;
 }
 
 [aria-label="Buddi assistant"] div[role="status"] i {
   display: block !important;
-  width: 8px !important;
-  height: 8px !important;
-  flex: 0 0 8px;
-  border-radius: 50%;
+  width: 11px !important;
+  height: 11px !important;
+  flex: 0 0 11px !important;
+  border-radius: 50% !important;
   background: #A92C55 !important;
-  animation: buddiThinkingPulse 1.05s infinite ease-in-out !important;
+  animation: buddiThinkingPulse .65s infinite ease-in-out !important;
   will-change: transform, opacity;
 }
 
-[aria-label="Buddi assistant"] div[role="status"] i:nth-child(2) {
-  animation-delay: 0.16s !important;
-}
-
-[aria-label="Buddi assistant"] div[role="status"] i:nth-child(3) {
-  animation-delay: 0.32s !important;
-}
+[aria-label="Buddi assistant"] div[role="status"] i:nth-child(2) { animation-delay: .14s !important; }
+[aria-label="Buddi assistant"] div[role="status"] i:nth-child(3) { animation-delay: .28s !important; }
 
 @media (prefers-reduced-motion: reduce) {
   [aria-label="Buddi assistant"] div[role="status"],
-  [aria-label="Buddi assistant"] div[role="status"] i {
-    animation: none !important;
-  }
-
-  [aria-label="Buddi assistant"] div[role="status"] i {
-    opacity: 0.8 !important;
-  }
+  [aria-label="Buddi assistant"] div[role="status"] i { animation: none !important; }
+  [aria-label="Buddi assistant"] div[role="status"] i { opacity: .85 !important; }
 }
