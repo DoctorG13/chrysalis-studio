@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useChrysalis } from "../../context/ChrysalisProvider";
+import BizziBuddiLogo from "./BizziBuddiLogo";
 
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
@@ -91,9 +92,9 @@ function Field({ label, children }) {
   return <label style={fieldStyle}><span style={fieldLabelStyle}>{label}</span>{children}</label>;
 }
 
-const inputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #DDD7D4", borderRadius: 10, padding: "11px 12px", background: "#FFFEFD", color: "#293239", font: "inherit", fontSize: 13, outline: "none" };
+const inputStyle = { width: "100%", boxSizing: "border-box", border: "1px solid #DDD7D4", borderRadius: 10, padding: "11px 12px", background: "#FFFEFD", color: "#0F2D4A", font: "inherit", fontSize: 13, outline: "none" };
 const buttonStyle = { border: "1px solid #E2D8D8", borderRadius: 999, padding: "8px 12px", background: "#FFFFFF", color: "#5B2638", fontSize: 12, fontWeight: 700, cursor: "pointer" };
-const primaryButtonStyle = { ...buttonStyle, borderColor: "#A92C55", background: "#A92C55", color: "#FFFFFF" };
+const primaryButtonStyle = { ...buttonStyle, borderColor: "#2563EB", background: "#2563EB", color: "#FFFFFF" };
 
 export default function BuddiAssistant({ open, onClose, currentPage, clients = [], jobs = [], onNavigate }) {
   const { createAppointment } = useChrysalis();
@@ -209,13 +210,13 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
   return (
     <aside aria-label="Buddi assistant" style={panelStyle}>
       <header style={headerStyle}>
-        <div style={brandRowStyle}><div style={brandMarkStyle}>🦋</div><div><div style={brandEyebrowStyle}>BIZZIBUDDI</div><div style={brandTitleStyle}>Studio companion</div></div></div>
+        <div style={brandRowStyle}><BizziBuddiLogo size={42} dark showWordmark={false} /><div><div style={brandEyebrowStyle}>BIZZIBUDDI</div><div style={brandTitleStyle}>Your personal assistant for business</div></div></div>
         <button type="button" onClick={onClose} aria-label="Close Buddi assistant" title="Close chat" style={closeButtonStyle}>×</button>
-        <div style={heroStyle}><div style={heroGreetingStyle}>Hi, I’m Buddi<span style={{ color: "#A92C55" }}>.</span></div><p style={heroSubStyle}>A little help for your studio, whenever you need it.</p></div>
+        <div style={heroStyle}><div style={heroGreetingStyle}>Hi, I’m Buddi<span style={{ color: "#2563EB" }}>.</span></div><p style={heroSubStyle}>A little help for your studio, whenever you need it.</p></div>
       </header>
 
       <div style={contentStyle}>
-        <div style={welcomeCardStyle}><div style={welcomeIconStyle}>✦</div><div><strong style={{ display: "block", marginBottom: 3 }}>What can I help with?</strong><span>Ask about your workload, clients, garments, payments or calendar.</span></div></div>
+        <div style={welcomeCardStyle}><div style={welcomeIconStyle}><BizziBuddiLogo size={24} dark showWordmark={false} /></div><div><strong style={{ display: "block", marginBottom: 3 }}>What can I help with?</strong><span>Ask about your workload, clients, garments, payments or calendar.</span></div></div>
 
         {clientDraft && <section style={actionCardStyle}><div style={cardHeadingStyle}><span style={cardIconStyle}>＋</span><div><div style={cardKickerStyle}>New record</div><h3 style={cardTitleStyle}>Create a client</h3></div></div><div style={formGridStyle}><Field label="First name"><input style={inputStyle} value={clientDraft.firstName} onChange={(event) => setClientDraft((draft) => ({ ...draft, firstName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Last name"><input style={inputStyle} value={clientDraft.lastName} onChange={(event) => setClientDraft((draft) => ({ ...draft, lastName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Phone"><input style={inputStyle} value={clientDraft.phone} onChange={(event) => setClientDraft((draft) => ({ ...draft, phone: event.target.value }))} disabled={clientSaving} /></Field><Field label="Email"><input style={inputStyle} value={clientDraft.email} onChange={(event) => setClientDraft((draft) => ({ ...draft, email: event.target.value }))} disabled={clientSaving} /></Field></div><Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={clientDraft.notes} onChange={(event) => setClientDraft((draft) => ({ ...draft, notes: event.target.value }))} disabled={clientSaving} /></Field>{clientMessage && <div style={errorStyle}>{clientMessage}</div>}<div style={formActionsStyle}><button type="button" style={buttonStyle} onClick={() => setClientDraft(null)}>Cancel</button><button type="button" style={primaryButtonStyle} onClick={confirmCreateClient} disabled={clientSaving}>{clientSaving ? "Saving…" : "Save client"}</button></div></section>}
 
@@ -224,7 +225,7 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
         <form onSubmit={(event) => { event.preventDefault(); answerQuestion(question); }} style={composerStyle}><input style={composerInputStyle} value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask Buddi something…" disabled={isLoading} /><button type="submit" style={composerButtonStyle} disabled={!question.trim() || isLoading} aria-label="Send question">↑</button></form>
         <div style={quickActionsStyle}><span style={quickLabelStyle}>Quick questions</span><div style={quickPillsStyle}>{prompts.map((prompt) => <button key={prompt} type="button" style={quickPillStyle} onClick={() => answerQuestion(prompt)} disabled={isLoading}>{prompt}</button>)}</div></div>
         {isLoading && <ThinkingIndicator />}
-        {conversation.length > 0 && <div style={conversationStyle}>{conversation.slice(0, 6).map((entry, index) => <article key={`${entry.question}-${index}`} style={messageGroupStyle}><div style={userMessageStyle}><span style={userAvatarStyle}>You</span><span>{entry.question}</span></div><div style={buddiMessageStyle}><span style={messageAvatarStyle}>🦋</span><div style={{ flex: 1, minWidth: 0 }}><div style={messageLabelStyle}>Buddi</div><div style={messageTextStyle}>{renderRichText(entry.answer)}</div>{entry.action && onNavigate && <button type="button" style={inlineActionStyle} onClick={() => onNavigate(entry.action.page, entry.action.label)}>{entry.action.labelText} <span>→</span></button>}</div></div></article>)}</div>}
+        {conversation.length > 0 && <div style={conversationStyle}>{conversation.slice(0, 6).map((entry, index) => <article key={`${entry.question}-${index}`} style={messageGroupStyle}><div style={userMessageStyle}><span style={userAvatarStyle}>You</span><span>{entry.question}</span></div><div style={buddiMessageStyle}><span style={messageAvatarStyle}><BizziBuddiLogo size={24} dark showWordmark={false} /></span><div style={{ flex: 1, minWidth: 0 }}><div style={messageLabelStyle}>Buddi</div><div style={messageTextStyle}>{renderRichText(entry.answer)}</div>{entry.action && onNavigate && <button type="button" style={inlineActionStyle} onClick={() => onNavigate(entry.action.page, entry.action.label)}>{entry.action.labelText} <span>→</span></button>}</div></div></article>)}</div>}
         <div style={footerNoteStyle}><span>🛡</span> Buddi uses the current studio workspace to help you.</div>
       </div>
       <style>{`@keyframes buddiThinkingPulse { 0%, 80%, 100% { opacity: .25; transform: translateY(0) scale(.75); } 40% { opacity: 1; transform: translateY(-5px) scale(1.2); } }`}</style>
@@ -232,51 +233,51 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
   );
 }
 
-const panelStyle = { position: "fixed", right: 24, bottom: 94, zIndex: 1199, width: "min(460px, calc(100vw - 32px))", maxHeight: "min(760px, calc(100vh - 118px))", overflow: "hidden", display: "flex", flexDirection: "column", background: "#FFFCFA", border: "1px solid #E7DEDA", borderRadius: 24, boxShadow: "0 24px 80px rgba(43, 35, 39, .25)", color: "#293239" };
-const headerStyle = { position: "relative", padding: "22px 24px 20px", background: "linear-gradient(145deg, #FFFDFC 0%, #F7EFEC 100%)", borderBottom: "1px solid #E9DFDB" };
+const panelStyle = { position: "fixed", right: 24, bottom: 94, zIndex: 1199, width: "min(460px, calc(100vw - 32px))", maxHeight: "min(760px, calc(100vh - 118px))", overflow: "hidden", display: "flex", flexDirection: "column", background: "#F8FAFC", border: "1px solid #D7E4EE", borderRadius: 24, boxShadow: "0 24px 80px rgba(43, 35, 39, .25)", color: "#0F2D4A" };
+const headerStyle = { position: "relative", padding: "22px 24px 20px", background: "linear-gradient(145deg, #FFFDFC 0%, #EAF5FA 100%)", borderBottom: "1px solid #D7E4EE" };
 const brandRowStyle = { display: "flex", alignItems: "center", gap: 10 };
-const brandMarkStyle = { width: 38, height: 38, display: "grid", placeItems: "center", borderRadius: 13, background: "#A92C55", color: "#FFFFFF", fontSize: 19, boxShadow: "0 5px 14px rgba(169,44,85,.22)" };
-const brandEyebrowStyle = { color: "#A92C55", fontSize: 11, fontWeight: 900, letterSpacing: ".16em" };
-const brandTitleStyle = { marginTop: 2, color: "#75686A", fontSize: 11, fontWeight: 600 };
-const closeButtonStyle = { position: "absolute", top: 20, right: 20, width: 34, height: 34, border: "1px solid #DCD0CE", borderRadius: 10, background: "#FFFFFF", color: "#6A5C60", fontSize: 21, lineHeight: 1, cursor: "pointer" };
+const brandMarkStyle = { width: 38, height: 38, display: "grid", placeItems: "center", borderRadius: 13, background: "#2563EB", color: "#FFFFFF", fontSize: 19, boxShadow: "0 5px 14px rgba(0,180,219,.22)" };
+const brandEyebrowStyle = { color: "#2563EB", fontSize: 11, fontWeight: 900, letterSpacing: ".16em" };
+const brandTitleStyle = { marginTop: 2, color: "#64748B", fontSize: 11, fontWeight: 600 };
+const closeButtonStyle = { position: "absolute", top: 20, right: 20, width: 34, height: 34, border: "1px solid #C8D8E5", borderRadius: 10, background: "#FFFFFF", color: "#6A5C60", fontSize: 21, lineHeight: 1, cursor: "pointer" };
 const heroStyle = { marginTop: 25, paddingRight: 24 };
-const heroGreetingStyle = { fontSize: 30, lineHeight: 1.12, fontWeight: 800, letterSpacing: "-.04em", color: "#293239" };
-const heroSubStyle = { margin: "9px 0 0", color: "#76696B", fontSize: 13, lineHeight: 1.5 };
+const heroGreetingStyle = { fontSize: 30, lineHeight: 1.12, fontWeight: 800, letterSpacing: "-.04em", color: "#0F2D4A" };
+const heroSubStyle = { margin: "9px 0 0", color: "#64748B", fontSize: 13, lineHeight: 1.5 };
 const contentStyle = { padding: 20, overflowY: "auto" };
-const welcomeCardStyle = { display: "flex", gap: 12, alignItems: "flex-start", padding: 15, marginBottom: 16, border: "1px solid #E8DEDA", borderRadius: 15, background: "#FFFFFF", color: "#75686A", fontSize: 12, lineHeight: 1.5 };
-const welcomeIconStyle = { width: 30, height: 30, flex: "0 0 auto", display: "grid", placeItems: "center", borderRadius: 10, background: "#F6E7EC", color: "#A92C55", fontSize: 18 };
-const actionCardStyle = { marginBottom: 16, padding: 16, border: "1px solid #E4D7DB", borderRadius: 16, background: "#FFFFFF", boxShadow: "0 5px 18px rgba(65,45,52,.05)" };
+const welcomeCardStyle = { display: "flex", gap: 12, alignItems: "flex-start", padding: 15, marginBottom: 16, border: "1px solid #D7E4EE", borderRadius: 15, background: "#FFFFFF", color: "#64748B", fontSize: 12, lineHeight: 1.5 };
+const welcomeIconStyle = { width: 30, height: 30, flex: "0 0 auto", display: "grid", placeItems: "center", borderRadius: 10, background: "#E8F4FB", color: "#2563EB", fontSize: 18 };
+const actionCardStyle = { marginBottom: 16, padding: 16, border: "1px solid #D7E4EE", borderRadius: 16, background: "#FFFFFF", boxShadow: "0 5px 18px rgba(65,45,52,.05)" };
 const cardHeadingStyle = { display: "flex", gap: 10, alignItems: "center", marginBottom: 14 };
-const cardIconStyle = { width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 11, background: "#F6E7EC", color: "#A92C55", fontSize: 20 };
-const cardKickerStyle = { color: "#A92C55", fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".12em" };
-const cardTitleStyle = { margin: "3px 0 0", fontSize: 17, lineHeight: 1.2, color: "#293239" };
-const cardIntroStyle = { margin: "-4px 0 14px", color: "#75686A", fontSize: 12, lineHeight: 1.5 };
+const cardIconStyle = { width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 11, background: "#E8F4FB", color: "#2563EB", fontSize: 20 };
+const cardKickerStyle = { color: "#2563EB", fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".12em" };
+const cardTitleStyle = { margin: "3px 0 0", fontSize: 17, lineHeight: 1.2, color: "#0F2D4A" };
+const cardIntroStyle = { margin: "-4px 0 14px", color: "#64748B", fontSize: 12, lineHeight: 1.5 };
 const formGridStyle = { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 11, marginBottom: 11 };
 const fieldStyle = { display: "flex", flexDirection: "column", gap: 5, minWidth: 0 };
-const fieldLabelStyle = { color: "#75686A", fontSize: 11, fontWeight: 800 };
+const fieldLabelStyle = { color: "#64748B", fontSize: 11, fontWeight: 800 };
 const formActionsStyle = { display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 14 };
 const errorStyle = { marginTop: 10, padding: "9px 11px", borderRadius: 9, background: "#FFF1F2", border: "1px solid #F0C9D0", color: "#A12745", fontSize: 12, lineHeight: 1.4 };
-const composerStyle = { display: "flex", alignItems: "center", gap: 8, padding: 6, marginBottom: 15, border: "1px solid #DCD0CE", borderRadius: 14, background: "#FFFFFF", boxShadow: "0 4px 15px rgba(43,35,39,.04)" };
-const composerInputStyle = { flex: 1, minWidth: 0, border: 0, outline: 0, padding: "10px 10px", background: "transparent", color: "#293239", font: "inherit", fontSize: 13 };
-const composerButtonStyle = { width: 36, height: 36, border: 0, borderRadius: 10, background: "#A92C55", color: "#FFFFFF", fontSize: 20, cursor: "pointer" };
+const composerStyle = { display: "flex", alignItems: "center", gap: 8, padding: 6, marginBottom: 15, border: "1px solid #C8D8E5", borderRadius: 14, background: "#FFFFFF", boxShadow: "0 4px 15px rgba(43,35,39,.04)" };
+const composerInputStyle = { flex: 1, minWidth: 0, border: 0, outline: 0, padding: "10px 10px", background: "transparent", color: "#0F2D4A", font: "inherit", fontSize: 13 };
+const composerButtonStyle = { width: 36, height: 36, border: 0, borderRadius: 10, background: "#2563EB", color: "#FFFFFF", fontSize: 20, cursor: "pointer" };
 const quickActionsStyle = { marginBottom: 18 };
-const quickLabelStyle = { display: "block", marginBottom: 9, color: "#8A7B7E", fontSize: 10, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase" };
+const quickLabelStyle = { display: "block", marginBottom: 9, color: "#64748B", fontSize: 10, fontWeight: 900, letterSpacing: ".12em", textTransform: "uppercase" };
 const quickPillsStyle = { display: "flex", flexWrap: "wrap", gap: 7 };
 const quickPillStyle = { ...buttonStyle, padding: "8px 11px", fontSize: 11, textAlign: "left" };
-const thinkingStyle = { display: "flex", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 52, padding: "11px 13px", marginBottom: 14, border: "2px solid rgba(169,44,85,.28)", borderRadius: 12, background: "linear-gradient(90deg, #F6E7EC 0%, #FFF5F8 50%, #F6E7EC 100%)", color: "#7F2342", fontSize: 12, fontWeight: 800, boxShadow: "0 8px 24px rgba(169,44,85,.10)" };
+const thinkingStyle = { display: "flex", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 52, padding: "11px 13px", marginBottom: 14, border: "2px solid rgba(37,99,235,.28)", borderRadius: 12, background: "linear-gradient(90deg, #E8F4FB 0%, #F4FBFE 50%, #E8F4FB 100%)", color: "#0F2D4A", fontSize: 12, fontWeight: 800, boxShadow: "0 8px 24px rgba(0,180,219,.10)" };
 const thinkingLabelStyle = { display: "inline-block", whiteSpace: "nowrap" };
 const thinkingDotsStyle = { display: "inline-flex", alignItems: "center", gap: 6, minWidth: 42, minHeight: 16 };
-const thinkingDotStyle = { display: "block", width: 8, height: 8, minWidth: 8, minHeight: 8, borderRadius: "50%", background: "#A92C55", animationName: "buddiThinkingPulse", animationDuration: "0.75s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", willChange: "transform, opacity" };
+const thinkingDotStyle = { display: "block", width: 8, height: 8, minWidth: 8, minHeight: 8, borderRadius: "50%", background: "#2563EB", animationName: "buddiThinkingPulse", animationDuration: "0.75s", animationTimingFunction: "ease-in-out", animationIterationCount: "infinite", willChange: "transform, opacity" };
 const conversationStyle = { display: "flex", flexDirection: "column", gap: 15 };
 const messageGroupStyle = { display: "flex", flexDirection: "column", gap: 8 };
-const userMessageStyle = { display: "flex", alignItems: "flex-start", gap: 8, justifyContent: "flex-end", color: "#67595D", fontSize: 12, lineHeight: 1.5 };
-const buddiMessageStyle = { display: "flex", alignItems: "flex-start", gap: 9, padding: 13, border: "1px solid #E7DEDA", borderRadius: "5px 15px 15px 15px", background: "#FFFFFF", color: "#3E474C", fontSize: 13, lineHeight: 1.55 };
-const userAvatarStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 28, padding: "0 7px", borderRadius: 9, background: "#F6E7EC", color: "#A92C55", fontSize: 10, fontWeight: 900 };
-const messageAvatarStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto", minWidth: 28, height: 28, padding: "0 7px", borderRadius: 9, background: "#F6E7EC", color: "#A92C55", fontSize: 10, fontWeight: 900 };
-const messageLabelStyle = { marginBottom: 4, color: "#A92C55", fontSize: 10, fontWeight: 900, letterSpacing: ".1em", textTransform: "uppercase" };
+const userMessageStyle = { display: "flex", alignItems: "flex-start", gap: 8, justifyContent: "flex-end", color: "#475569", fontSize: 12, lineHeight: 1.5 };
+const buddiMessageStyle = { display: "flex", alignItems: "flex-start", gap: 9, padding: 13, border: "1px solid #D7E4EE", borderRadius: "5px 15px 15px 15px", background: "#FFFFFF", color: "#334155", fontSize: 13, lineHeight: 1.55 };
+const userAvatarStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 28, height: 28, padding: "0 7px", borderRadius: 9, background: "#E8F4FB", color: "#2563EB", fontSize: 10, fontWeight: 900 };
+const messageAvatarStyle = { display: "inline-flex", alignItems: "center", justifyContent: "center", flex: "0 0 auto", minWidth: 28, height: 28, padding: "0 7px", borderRadius: 9, background: "#E8F4FB", color: "#2563EB", fontSize: 10, fontWeight: 900 };
+const messageLabelStyle = { marginBottom: 4, color: "#2563EB", fontSize: 10, fontWeight: 900, letterSpacing: ".1em", textTransform: "uppercase" };
 const messageTextStyle = { whiteSpace: "normal" };
 const richLineStyle = { minHeight: 1 };
 const bulletLineStyle = { display: "flex", gap: 8, paddingLeft: 3 };
-const bulletMarkerStyle = { color: "#A92C55", fontWeight: 900 };
+const bulletMarkerStyle = { color: "#2563EB", fontWeight: 900 };
 const inlineActionStyle = { ...primaryButtonStyle, marginTop: 11, padding: "7px 11px", fontSize: 11 };
-const footerNoteStyle = { display: "flex", gap: 7, alignItems: "center", marginTop: 18, paddingTop: 14, borderTop: "1px solid #E9DFDB", color: "#9A8D90", fontSize: 10, lineHeight: 1.4 };
+const footerNoteStyle = { display: "flex", gap: 7, alignItems: "center", marginTop: 18, paddingTop: 14, borderTop: "1px solid #D7E4EE", color: "#64748B", fontSize: 10, lineHeight: 1.4 };
