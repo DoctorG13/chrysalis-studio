@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Final Logo Geometry
+
+### Changed
+
+- Rebuilt the BizziBuddi clock mark from the approved final artwork rather than using a loose interpretation.
+- Matched the pointed navy stem, clock-hand proportions, three clockwise-increasing segments and equal segment spacing.
+- Preserved the approved navy, blue and cyan palette and the no-centre-dot clock treatment.
+- Updated the shared logo component so the same approved mark is used consistently throughout the product.
+
+---
+
 ## BizziBuddi Assistant Logo Correction
 
 ### Changed
