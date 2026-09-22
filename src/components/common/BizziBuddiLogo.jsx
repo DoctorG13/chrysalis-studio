@@ -31,42 +31,38 @@ export default function BizziBuddiLogo({
         aria-label="BizziBuddi logo"
         style={{ display: "block", overflow: "visible" }}
       >
+        {/* Approved BizziBuddi 'b' mark: pointed navy stem + three evenly
+            spaced segments increasing in length clockwise. */}
         <path
-          d="M45 17 L72 43 L72 127 C72 141 80 149 95 153 L95 178 C62 175 43 156 43 126 L43 17 Z"
+          d="M52 17 L77 42 L77 126 C77 143 84 151 98 155 L98 181 C68 178 51 161 51 130 L51 17 Z"
           fill={navy}
         />
 
         <path
-          d="M91 54 A59 59 0 0 1 119 70"
-          fill="none"
-          stroke={cyan}
-          strokeWidth="22"
-          strokeLinecap="butt"
-        />
-        <path
-          d="M132 80 A59 59 0 0 1 138 109"
-          fill="none"
-          stroke={blue}
-          strokeWidth="22"
-          strokeLinecap="butt"
-        />
-        <path
-          d="M135 127 A59 59 0 0 1 99 164"
-          fill="none"
-          stroke={blue}
-          strokeWidth="22"
-          strokeLinecap="butt"
+          d="M103.4 39.1 A65 65 0 0 1 137.3 50.8 L124.1 69.6 A42 42 0 0 0 102.2 62.1 Z"
+          fill={cyan}
         />
 
         <path
-          d="M99 103 L99 73"
+          d="M143.5 55.7 A65 65 0 0 1 162.5 86.1 L140.4 92.4 A42 42 0 0 0 128.1 72.8 Z"
+          fill={blue}
+        />
+
+        <path
+          d="M164.4 95 A65 65 0 0 1 150.5 144.9 L132.6 130.4 A42 42 0 0 0 141.6 98.2 Z"
+          fill={blue}
+        />
+
+        {/* Clock hands — deliberately no centre circle. */}
+        <path
+          d="M104 104 L104 73"
           fill="none"
           stroke={navy}
           strokeWidth="8"
           strokeLinecap="round"
         />
         <path
-          d="M99 103 L123 119"
+          d="M104 104 L128 121"
           fill="none"
           stroke={navy}
           strokeWidth="8"
@@ -129,7 +125,11 @@ export default function BizziBuddiLogo({
                 style={{
                   width: Math.max(42, size * 0.42),
                   height: 2,
-                  margin: Math.max(11, size * 0.12) + "px auto " + Math.max(10, size * 0.11) + "px",
+                  margin:
+                    Math.max(11, size * 0.12) +
+                    "px auto " +
+                    Math.max(10, size * 0.11) +
+                    "px",
                   background: cyan,
                 }}
               />
