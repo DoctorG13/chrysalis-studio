@@ -72,3 +72,32 @@ img {
   font-feature-settings: "smcp" 0, "c2sc" 0 !important;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif !important;
 }
+
+@keyframes buddiThinkingPulse {
+  0%, 80%, 100% { opacity: .3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-3px); }
+}
+
+[aria-label="Buddi assistant"] div[role="status"] i {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: buddiThinkingPulse 1.2s infinite ease-in-out;
+}
+
+[aria-label="Buddi assistant"] div[role="status"] i:nth-child(2) {
+  animation-delay: .15s;
+}
+
+[aria-label="Buddi assistant"] div[role="status"] i:nth-child(3) {
+  animation-delay: .3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [aria-label="Buddi assistant"] div[role="status"] i {
+    animation: none;
+    opacity: .7;
+  }
+}
