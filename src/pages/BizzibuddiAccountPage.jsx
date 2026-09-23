@@ -19,6 +19,7 @@ export default function BizzibuddiAccountPage() {
   const [message, setMessage] = useState("");
   const [people, setPeople] = useState(() => readPeople());
   const [jobs, setJobs] = useState(() => readJobs());
+  const [appointments, setAppointments] = useState(() => readAppointments());
 
   function selectView(nextView) {
     setView(nextView);
@@ -90,6 +91,7 @@ export default function BizzibuddiAccountPage() {
     localStorage.removeItem("bizzibuddiMockAccount");
     localStorage.removeItem("bizzibuddiMockPeople");
     localStorage.removeItem("bizzibuddiMockJobs");
+    localStorage.removeItem("bizzibuddiMockAppointments");
     setAccount(null);
     setMessage("Local demo data cleared.");
     setView("create");
@@ -122,7 +124,8 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} />}
+        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); }} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
 
@@ -153,6 +156,15 @@ function readPeople() {
 function readJobs() {
   try {
     const value = localStorage.getItem("bizzibuddiMockJobs");
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+function readAppointments() {
+  try {
+    const value = localStorage.getItem("bizzibuddiMockAppointments");
     return value ? JSON.parse(value) : [];
   } catch {
     return [];
@@ -321,7 +333,7 @@ function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCount, jobsCount }) {
+function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onReset, peopleCount, jobsCount, appointmentsCount }) {
     return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
     <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
@@ -333,6 +345,7 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCou
         ["Plan", account?.plan || "Free"],
         ["People", peopleCount ? `${peopleCount} added` : "Ready to add"],
         ["Jobs", jobsCount ? `${jobsCount} created` : "Ready to add"],
+        ["Calendar", appointmentsCount ? `${appointmentsCount} booked` : "Ready to use"],
       ].map(([label, value]) => (
         <div key={label} style={statCard}>
           <small style={smallText}>{label}</small>
@@ -362,6 +375,10 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCou
           <span style={actionIcon}>📋</span>
           <span><strong>Create a job</strong><small>Start tracking work from enquiry to completion.</small></span>
         </button>
+        <button type="button" onClick={onCalendar} style={actionCard}>
+          <span style={actionIcon}>📅</span>
+          <span><strong>Open your calendar</strong><small>Keep appointments and business dates organised.</small></span>
+        </button>
         <button type="button" onClick={onPlans} style={actionCard}>
           <span style={actionIcon}>⚡</span>
           <span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span>
@@ -380,6 +397,85 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCou
   </section>;
 }
 
+function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
+  const [showForm, setShowForm] = useState(false);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const personId = String(form.get("personId") || "");
+    const person = people.find((item) => item.id === personId);
+
+    onAddAppointment({
+      id: "appointment-" + Date.now(),
+      title: String(form.get("title") || "").trim(),
+      date: String(form.get("date") || ""),
+      time: String(form.get("time") || ""),
+      personName: person?.name || "",
+      notes: String(form.get("notes") || "").trim(),
+    });
+
+    event.currentTarget.reset();
+    setShowForm(false);
+  }
+
+  return <section style={cardStyle(940)}>
+    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+    <div style={{ marginTop: 22 }}>
+      <p style={eyebrowStyle}>CALENDAR</p>
+      <h2 style={sectionHeading}>Your calendar.</h2>
+      <p style={copyStyle}>Keep appointments, fittings, meetings and important business dates organised.</p>
+    </div>
+
+    {appointments.length > 0 ? (
+      <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
+        {appointments.map((appointment) => (
+          <article key={appointment.id} style={appointmentCard}>
+            <div>
+              <strong style={{ display: "block", fontSize: 17 }}>{appointment.title}</strong>
+              <span style={smallText}>{formatAppointmentDate(appointment.date, appointment.time)}{appointment.personName ? " · " + appointment.personName : ""}</span>
+              {appointment.notes && <span style={{ ...smallText, display: "block", marginTop: 5 }}>{appointment.notes}</span>}
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div style={emptyPeople}>
+        <strong>No appointments yet.</strong>
+        <p style={copyStyle}>Add your first appointment to start using the BizziBuddi calendar.</p>
+      </div>
+    )}
+
+    {!showForm ? (
+      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 260 }}>+ Add an appointment</button>
+    ) : (
+      <form onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>Add an appointment</strong>
+        <Field name="title" label="Appointment" type="text" placeholder="e.g. Client fitting" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+          <Field name="date" label="Date" type="date" required />
+          <Field name="time" label="Time" type="time" required />
+        </div>
+        <label style={fieldStyle}>Person<select name="personId" defaultValue="" style={inputStyle}>
+          <option value="">No person linked</option>
+          {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+        </select></label>
+        <Field name="notes" label="Notes" type="text" placeholder="Optional notes" />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button type="submit" style={{ ...primaryButton, width: "auto", marginTop: 0 }}>Save appointment</button>
+          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+        </div>
+      </form>
+    )}
+  </section>;
+}
+
+function formatAppointmentDate(date, time) {
+  if (!date) return "Date not set";
+  const value = new Date(date + "T" + (time || "00:00"));
+  if (Number.isNaN(value.getTime())) return date + " · " + (time || "Time not set");
+  return value.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
 function MembershipAccessPanel({ planName }) {
   const plan = getBizzibuddiPlan(planName);
   const featureGroups = [
@@ -423,6 +519,7 @@ const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borde
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
+const appointmentCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
 const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
