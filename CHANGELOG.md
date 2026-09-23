@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Workspace Welcome Preview
+
+### Changed
+
+- Reworked the completed local account dashboard into a simple BizziBuddi workspace welcome screen.
+- Replaced the simulated account-dashboard messaging with workspace-focused People, Jobs and plan starting points.
+- Added a clearer “your workspace is ready” experience after onboarding.
+- Kept all actions local and clearly marked the workspace as a development preview.
+- Removed the unused business-name field from account creation so workspace naming remains part of the onboarding step.
+
+
 ## BizziBuddi Account Onboarding Flow
 
 ### Changed
