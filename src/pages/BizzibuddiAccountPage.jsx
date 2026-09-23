@@ -22,6 +22,7 @@ export default function BizzibuddiAccountPage() {
   const [appointments, setAppointments] = useState(() => readAppointments());
   const [invoices, setInvoices] = useState(() => readInvoices());
   const [automationEvents, setAutomationEvents] = useState(() => readAutomationEvents());
+  const [productionRecords, setProductionRecords] = useState(() => readProductionRecords());
 
   function selectView(nextView) {
     setView(nextView);
@@ -130,6 +131,7 @@ export default function BizzibuddiAccountPage() {
     localStorage.removeItem("bizzibuddiMockAppointments");
     localStorage.removeItem("bizzibuddiMockInvoices");
     localStorage.removeItem("bizzibuddiMockAutomationEvents");
+    localStorage.removeItem("bizzibuddiMockProductionRecords");
     setAccount(null);
     setMessage("Local demo data cleared.");
     setView("create");
@@ -162,12 +164,13 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} productionCount={productionRecords.length} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
+        {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem("bizzibuddiMockProductionRecords", JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
 
         <footer style={footerStyle}>Mock environment · Data stays in this browser only · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
@@ -223,6 +226,15 @@ function readInvoices() {
 function readAutomationEvents() {
   try {
     const value = localStorage.getItem("bizzibuddiMockAutomationEvents");
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+function readProductionRecords() {
+  try {
+    const value = localStorage.getItem("bizzibuddiMockProductionRecords");
     return value ? JSON.parse(value) : [];
   } catch {
     return [];
@@ -391,7 +403,7 @@ function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount }) {
+function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onProduction, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount, productionCount }) {
     return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
     <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
@@ -406,6 +418,7 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
         ["Calendar", appointmentsCount ? `${appointmentsCount} booked` : "Ready to use"],
         ["Finance", invoicesCount ? `${invoicesCount} invoices` : "Ready to use"],
         ["Automation", hasBizzibuddiFeature(account?.plan, "automation") ? (automationCount ? `${automationCount} events` : "Ready to use") : "Professional"],
+         ["Production", hasBizzibuddiFeature(account?.plan, "production") ? (productionCount ? `${productionCount} tracked` : "Ready to use") : "Business"],
       ].map(([label, value]) => (
         <div key={label} style={statCard}>
           <small style={smallText}>{label}</small>
@@ -446,6 +459,10 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
         <button type="button" onClick={onAutomation} style={actionCard}>
           <span style={actionIcon}>⚙️</span>
           <span><strong>Open automation</strong><small>Turn routine business events into useful follow-up.</small></span>
+        </button>
+        <button type="button" onClick={onProduction} style={actionCard}>
+          <span style={actionIcon}>🏭</span>
+          <span><strong>Open production</strong><small>Track work stages, tasks and production progress.</small></span>
         </button>
         <button type="button" onClick={onPlans} style={actionCard}>
           <span style={actionIcon}>⚡</span>
@@ -548,6 +565,122 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
       <p style={copyStyle}>These automations only create local browser events. They do not send emails, messages or external notifications.</p>
     </div>
   </section>;
+}
+
+function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
+  const available = hasBizzibuddiFeature(account?.plan, "production");
+  const stages = ["Not started", "In production", "Quality check", "Ready", "Complete"];
+  const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
+  const selectedJob = jobs.find((job) => job.id === selectedJobId);
+  const existing = records.find((record) => record.jobId === selectedJobId);
+
+  if (!available) {
+    return <section style={cardStyle(720)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 24 }}>
+        <p style={eyebrowStyle}>PRODUCTION</p>
+        <h2 style={sectionHeading}>Know what is happening next.</h2>
+        <p style={copyStyle}>Production tracking is included with Business membership. Track the stages and tasks that move work from job creation to completion.</p>
+        <div style={lockedFeatureCard}>
+          <span style={{ fontSize: 26 }}>🔒</span>
+          <div>
+            <strong style={{ display: "block", fontSize: 18 }}>Business production tracking</strong>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Stage tracking, production tasks and progress visibility are available on Business.</p>
+          </div>
+        </div>
+        <button type="button" onClick={onPlans} style={primaryButton}>View membership plans</button>
+      </div>
+    </section>;
+  }
+
+  function handleSave(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const taskText = String(form.get("tasks") || "").trim();
+    const tasks = taskText ? taskText.split("\n").map((task) => task.trim()).filter(Boolean).map((title, index) => ({
+      id: `task-${Date.now()}-${index}`,
+      title,
+      complete: false,
+    })) : [];
+
+    onSave({
+      id: existing?.id || `production-${Date.now()}`,
+      jobId: selectedJobId,
+      jobTitle: selectedJob?.title || "Untitled job",
+      stage: String(form.get("stage") || "Not started"),
+      dueDate: String(form.get("dueDate") || ""),
+      notes: String(form.get("notes") || "").trim(),
+      tasks,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  return <section style={cardStyle(940)}>
+    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+    <div style={{ marginTop: 22 }}>
+      <p style={eyebrowStyle}>PRODUCTION</p>
+      <h2 style={sectionHeading}>Production tracking.</h2>
+      <p style={copyStyle}>See where each job is, what needs doing and when the work needs to be ready.</p>
+    </div>
+
+    {jobs.length === 0 ? (
+      <div style={emptyPeople}>
+        <strong>Create a job first.</strong>
+        <p style={copyStyle}>Production tracking works from your BizziBuddi jobs.</p>
+      </div>
+    ) : (
+      <>
+        <label style={fieldStyle}>Job<select value={selectedJobId} onChange={(event) => setSelectedJobId(event.target.value)} style={inputStyle}>
+          {jobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}
+        </select></label>
+
+        <div style={productionProgress}>
+          {stages.map((stage, index) => {
+            const currentStage = existing?.stage || "Not started";
+            const currentIndex = stages.indexOf(currentStage);
+            return <div key={stage} style={productionStage(stage === currentStage, index <= currentIndex)}>
+              <span>{index + 1}</span>
+              <small>{stage}</small>
+            </div>;
+          })}
+        </div>
+
+        <form onSubmit={handleSave} style={personForm}>
+          <strong style={{ fontSize: 18 }}>Update production</strong>
+          <label style={fieldStyle}>Production stage<select required name="stage" defaultValue={existing?.stage || "Not started"} style={inputStyle}>
+            {stages.map((stage) => <option key={stage}>{stage}</option>)}
+          </select></label>
+          <Field name="dueDate" label="Ready by" type="date" defaultValue={existing?.dueDate || ""} />
+          <label style={fieldStyle}>Production tasks<small style={{ display: "block", color: MUTED, marginTop: 5, fontWeight: 400 }}>One task per line.</small><textarea name="tasks" defaultValue={(existing?.tasks || []).map((task) => task.title).join("\n")} placeholder={"Cut fabric\nSew panels\nFinal fitting"} rows="5" style={{ ...inputStyle, padding: 15, resize: "vertical" }} /></label>
+          <Field name="notes" label="Production notes" type="text" placeholder="Optional production notes" defaultValue={existing?.notes || ""} />
+          <button type="submit" style={{ ...primaryButton, maxWidth: 260 }}>Save production progress</button>
+        </form>
+      </>
+    )}
+
+    {records.length > 0 && <div style={{ marginTop: 28 }}>
+      <small style={smallText}>TRACKED JOBS</small>
+      <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+        {records.map((record) => (
+          <article key={record.id} style={productionRecordCard}>
+            <div>
+              <strong style={{ display: "block", fontSize: 16 }}>{record.jobTitle}</strong>
+              <span style={smallText}>{record.stage}{record.dueDate ? ` · Ready ${formatProductionDate(record.dueDate)}` : ""}</span>
+              {record.tasks?.length > 0 && <span style={{ ...smallText, display: "block", marginTop: 5 }}>{record.tasks.length} production task{record.tasks.length === 1 ? "" : "s"}</span>}
+            </div>
+            <span style={productionBadge}>{record.stage.toUpperCase()}</span>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>;
+}
+
+function formatProductionDate(date) {
+  if (!date) return "";
+  const value = new Date(date + "T00:00");
+  if (Number.isNaN(value.getTime())) return date;
+  return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
 function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMarkPaid, onBack }) {
@@ -807,6 +940,10 @@ const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borde
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
+const productionProgress = { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginTop: 24, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const productionStage = (current, reached) => ({ display: "grid", justifyItems: "center", gap: 7, textAlign: "center", color: current ? TEXT : reached ? CYAN : MUTED, fontWeight: current ? 800 : 600, fontSize: 12 });
+const productionRecordCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
+const productionBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", whiteSpace: "nowrap" };
 const automationRuleGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 24 };
 const automationRuleCard = { display: "flex", alignItems: "flex-start", gap: 12, padding: 18, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)" };
 const automationSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", alignItems: "center", gap: 16, marginTop: 24, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
