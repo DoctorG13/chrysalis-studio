@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Landing Hero Compactness
+
+### Changed
+
+- Compact the opening BizziBuddi hero so the core message is visible with substantially less vertical space.
+- Reduced the logo, headline, supporting copy and spacing while preserving the existing CTAs.
+- Removed the three supporting hero cards from the opening section so the primary brand message has a cleaner, tighter presentation.
+- Set the opening brand lockup to “BUSINESS SUPPORT, SIMPLIFIED.” as requested.
+
+
 ## BizziBuddi Hero Messaging Polish
 
 ### Changed
