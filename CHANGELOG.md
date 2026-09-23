@@ -4,6 +4,23 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Membership Tiers Foundation
+
+### Changed
+
+- Replaced the four-tier BizziBuddi pricing model with three membership levels: Free, Professional and Business.
+- Removed Team membership from the current product direction so BizziBuddi remains focused on individual business owners.
+- Removed team and shared-workspace language from the BizziBuddi account preview.
+- Added a shared BizziBuddi membership definition with explicit feature entitlements for future feature gating.
+- Kept membership selection local-only with no live billing or subscriptions.
+- Positioned membership tiers as the mechanism for unlocking additional BizziBuddi functionality as the product expands.
+
+### Membership levels
+
+- Free — People & contacts, Basic jobs, Calendar and Dashboard.
+- Professional — Free features plus Advanced scheduling, Payments & invoices and Automation.
+- Business — Professional features plus Production tracking, Advanced reporting, Priority features and Professional controls.
+
 ## BizziBuddi Jobs Workspace Preview
 
 ### Added
