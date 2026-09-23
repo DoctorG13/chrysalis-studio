@@ -11,7 +11,7 @@ export const bizzibuddiPlans = [
   {
     id: "professional",
     name: "Professional",
-    price: "$9",
+    price: "$29",
     period: "/ month",
     description: "For established service businesses and solo professionals.",
     features: ["Everything in Free", "Advanced scheduling", "Payments & invoices", "Automation"],
@@ -20,7 +20,7 @@ export const bizzibuddiPlans = [
   {
     id: "business",
     name: "Business",
-    price: "$39",
+    price: "$59",
     period: "/ month",
     description: "For growing businesses needing deeper control.",
     features: ["Everything in Professional", "Production tracking", "Advanced reporting", "Priority features", "Professional controls"],
