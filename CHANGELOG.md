@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Account Onboarding Flow
+
+### Changed
+
+- Separated account creation from workspace setup so the business name is collected once during onboarding.
+- Added clear step labels for the account and workspace stages.
+- Updated the account action labels to make the transition into workspace setup explicit.
+
+
 ## BizziBuddi Start Free Account Entry
 
 ### Changed
