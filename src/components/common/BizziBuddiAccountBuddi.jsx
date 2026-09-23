@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
+import BizziBuddiLogo from "./BizziBuddiLogo";
 
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
