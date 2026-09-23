@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Account Buddi Assistant
+
+### Added
+
+- Added a dedicated Buddi assistant experience inside the BizziBuddi account dashboard.
+- Added an Ask Buddi dashboard action that opens the assistant with the current local BizziBuddi business data as context.
+- Added quick business questions covering attention, workload, upcoming activity, outstanding money and jobs in progress.
+- Added the visible “Buddi is thinking” animation while the assistant is processing a request.
+- Added business-aware assistant prompting so the shared OpenAI service identifies the account experience as BizziBuddi and responds as Buddi.
+- Kept this first account integration informational only: Buddi does not create or modify BizziBuddi records from this screen.
+
 ## BizziBuddi Production JSX Parsing Fix
 
 ### Fixed
