@@ -4,6 +4,20 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Pricing Baseline
+
+### Changed
+
+- Set the BizziBuddi Professional membership to $29/month.
+- Set the BizziBuddi Business membership to $59/month.
+- Kept Free at $0 forever.
+- Kept pricing centralised in the shared BizziBuddi membership definition so the public pricing and account preview remain aligned.
+- Kept billing and subscriptions disconnected as planned; these prices are currently presentation and membership-definition values only.
+
+All notable changes to Chrysalis are recorded here.
+
+---
+
 ## BizziBuddi Membership Tiers Foundation
 
 ### Changed
