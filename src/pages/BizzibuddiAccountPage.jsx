@@ -1,5 +1,6 @@
 import { useState } from "react";
 import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
+import { bizzibuddiPlans, getBizzibuddiPlan } from "../data/bizzibuddiPlans";
 
 const RED = "#2563EB";
 const CYAN = "#00B4DB";
@@ -9,12 +10,7 @@ const TEXT = "#FFFFFF";
 const MUTED = "#B8C6D6";
 const BORDER = "rgba(255,255,255,.16)";
 
-const plans = [
-  { name: "Free", price: "$0", period: "forever", description: "A simple starting point for independent operators.", features: ["People & contacts", "Basic jobs", "Calendar", "Dashboard"] },
-  { name: "Professional", price: "$9", period: "/ month", description: "For established service businesses and solo professionals.", features: ["Everything in Free", "Advanced scheduling", "Payments & invoices", "Automation"] },
-  { name: "Team", price: "$19", period: "/ month", description: "For small teams working together in one place.", features: ["Everything in Professional", "Shared workspace", "Team workflow", "Production tracking"], featured: true },
-  { name: "Business", price: "$39", period: "/ month", description: "For growing businesses needing deeper control.", features: ["Everything in Team", "Advanced reporting", "Priority features", "Professional controls"] },
-];
+const plans = bizzibuddiPlans;
 
 export default function BizzibuddiAccountPage() {
   const initialView = new URLSearchParams(window.location.search).get("view");
@@ -38,7 +34,6 @@ export default function BizzibuddiAccountPage() {
       email: String(form.get("email") || "").trim().toLowerCase(),
       business: "",
       plan: "Free",
-      workspaceReady: false,
     };
 
     localStorage.setItem("bizzibuddiMockAccount", JSON.stringify(nextAccount));
@@ -75,16 +70,16 @@ export default function BizzibuddiAccountPage() {
     const nextAccount = {
       ...account,
       business: String(form.get("business") || account?.business || "").trim(),
-      workspaceReady: true,
     };
     localStorage.setItem("bizzibuddiMockAccount", JSON.stringify(nextAccount));
     setAccount(nextAccount);
-    setMessage("Workspace setup complete. This is still local demo data.");
+    setMessage("Business setup complete. This is still local demo data.");
     setView("dashboard");
   }
 
   function selectPlan(planName) {
-    const nextAccount = { ...(account || { name: "Demo User", username: "demo", email: "demo@example.com", business: "" }), plan: planName };
+    const selectedPlan = getBizzibuddiPlan(planName);
+    const nextAccount = { ...(account || { name: "Demo User", username: "demo", email: "demo@example.com", business: "" }), plan: selectedPlan.name };
     localStorage.setItem("bizzibuddiMockAccount", JSON.stringify(nextAccount));
     setAccount(nextAccount);
     setMessage(`${planName} selected for this mock account. No payment was made.`);
@@ -112,7 +107,7 @@ export default function BizzibuddiAccountPage() {
         <section style={heroStyle}>
           <div style={eyebrowStyle}>BUSINESS SUPPORT, SIMPLIFIED</div>
           <h1 style={heroHeading}>Your business.<br /><span style={{ color: CYAN }}>Better organised.</span></h1>
-          <p style={heroCopy}>Explore the BizziBuddi account experience with a local-only registration, onboarding and workspace preview.</p>
+          <p style={heroCopy}>Explore the BizziBuddi account experience with local-only registration, business setup and membership tiers.</p>
           <div style={previewBadge}>BizziBuddi gives you time · Local mock environment · No live data or payments</div>
         </section>
 
@@ -171,14 +166,14 @@ function deriveUsername(account) {
 function AuthPanel({ mode, account, onSubmit, onSwitch }) {
   const login = mode === "login";
   return <section style={cardStyle(560)}>
-    <div style={centerStyle}><div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your workspace setup."}</p></div>
+    <div style={centerStyle}><div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your business setup."}</p></div>
     <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
       {!login && <Field name="name" label="Full name" type="text" placeholder="Your name" />}
       {!login && <Field name="username" label="Username" type="text" placeholder="Choose a username" />}
       {!login && <Field name="email" label="Email address" type="email" placeholder="you@example.com" />}
       {login && <Field name="identifier" label="Email address or username" type="text" placeholder="you@example.com or username" />}
       <Field name="password" label="Password" type="password" placeholder="Demo password" />
-      <button type="submit" style={primaryButton}>{login ? "Log in · Demo" : "Continue to workspace →"}</button>
+      <button type="submit" style={primaryButton}>{login ? "Log in · Demo" : "Continue to business setup →"}</button>
     </form>
     <p style={switchText}>{login ? "New to BizziBuddi?" : "Already have an account?"} <button type="button" onClick={onSwitch} style={textButton}>{login ? "Create an account" : "Log in"}</button></p>
     {login && account && <p style={smallText}>Local account detected for {account.email}{account.username ? ` · @${account.username}` : ""}.</p>}
@@ -186,7 +181,7 @@ function AuthPanel({ mode, account, onSubmit, onSwitch }) {
 }
 
 function OnboardingPanel({ account, onSubmit }) {
-  return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · WORKSPACE</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your workspace.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your workspace a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Workspace or business name" type="text" placeholder={account?.business || "Your workspace"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
+  return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your business.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your business a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
 }
 
 function PeoplePanel({ people, onAddPerson, onBack }) {
@@ -206,11 +201,11 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
   }
 
   return <section style={cardStyle(940)}>
-    <button type="button" onClick={onBack} style={textButton}>← Back to workspace</button>
+    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>PEOPLE</p>
       <h2 style={sectionHeading}>Your people.</h2>
-      <p style={copyStyle}>Keep your clients and contacts organised in one simple workspace.</p>
+      <p style={copyStyle}>Keep your clients and contacts organised in one simple place.</p>
     </div>
 
     {people.length > 0 ? (
@@ -227,7 +222,7 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
     ) : (
       <div style={emptyPeople}>
         <strong>No people added yet.</strong>
-        <p style={copyStyle}>Add your first client or contact to start building the workspace.</p>
+        <p style={copyStyle}>Add your first client or contact to start building your business.</p>
       </div>
     )}
 
@@ -291,7 +286,7 @@ function JobsPanel({ jobs, people, onAddJob, onBack }) {
     ) : (
       <div style={emptyPeople}>
         <strong>No jobs created yet.</strong>
-        <p style={copyStyle}>Create your first job to start tracking work in your workspace.</p>
+        <p style={copyStyle}>Create your first job to start tracking work in your business.</p>
       </div>
     )}
 
@@ -323,19 +318,18 @@ function JobsPanel({ jobs, people, onAddJob, onBack }) {
 }
 
 function PlansPanel({ onSelectPlan }) {
-  return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose a plan for the local mock account. No subscription is created.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.name} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>Choose {plan.name}</button></article>)}</div></section>;
+  return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
 function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCount, jobsCount }) {
-  const [workspaceMessage, setWorkspaceMessage] = useState("");
-  return <section style={cardStyle(940)}>
-    <p style={eyebrowStyle}>YOUR BIZZIBUDDI WORKSPACE</p>
-    <h2 style={sectionHeading}>Welcome to {account?.business || "your workspace"}.</h2>
-    <p style={copyStyle}>Your workspace is ready. This is the beginning of the BizziBuddi experience — one place to organise, plan and grow your business.</p>
+    return <section style={cardStyle(940)}>
+    <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
+    <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
+    <p style={copyStyle}>Your business is ready. This is the beginning of the BizziBuddi experience — one place to organise, plan and grow.</p>
 
     <div style={statsGrid}>
       {[
-        ["Workspace", account?.workspaceReady ? "Ready" : "Not set up"],
+        ["Business", account?.business ? "Ready" : "Not set up"],
         ["Plan", account?.plan || "Free"],
         ["People", peopleCount ? `${peopleCount} added` : "Ready to add"],
         ["Jobs", jobsCount ? `${jobsCount} created` : "Ready to add"],
@@ -347,10 +341,17 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCou
       ))}
     </div>
 
-    <div style={workspaceActions}>
+    <div style={businessActions}>
       <div>
         <strong style={{ fontSize: 20 }}>What would you like to do first?</strong>
-        <p style={{ ...copyStyle, marginBottom: 0 }}>Start building your workspace with the people, jobs and information that matter to your business.</p>
+        <p style={{ ...copyStyle, marginBottom: 0 }}>Start building your business with the people, jobs and information that matter.</p>
+      </div>
+      <div style={planSummary}>
+        <div>
+          <small style={smallText}>CURRENT MEMBERSHIP</small>
+          <strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>{getBizzibuddiPlan(account?.plan).name}</strong>
+        </div>
+        <div style={{ color: MUTED, fontSize: 13, lineHeight: 1.5 }}>{getBizzibuddiPlan(account?.plan).features.join(" · ")}</div>
       </div>
       <div style={actionGrid}>
         <button type="button" onClick={onPeople} style={actionCard}>
@@ -366,19 +367,19 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCou
           <span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span>
         </button>
       </div>
-      {workspaceMessage && <p role="status" style={{ ...smallText, margin: "16px 0 0", color: CYAN }}>{workspaceMessage}</p>}
     </div>
 
-    <div style={workspaceNote}>
+    <div style={businessNote}>
       <strong>Development preview</strong>
-      <p style={copyStyle}>This workspace is still running on local demo data. Real authentication, databases and billing are not connected yet.</p>
+      <p style={copyStyle}>This business preview is still running on local demo data. Real authentication, databases and billing are not connected yet.</p>
     </div>
 
     <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
   </section>;
 }
 
-const workspaceActions = { marginTop: 28, padding: 24, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
+const businessActions = { marginTop: 28, padding: 24, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
+const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
@@ -387,7 +388,7 @@ const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,1
 const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px dashed ${BORDER}`, background: "rgba(255,255,255,.025)", textAlign: "center" };
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
-const workspaceNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
+const businessNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
 
 function Field({ name, label, type, placeholder, defaultValue }) {
   return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
