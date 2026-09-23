@@ -4,6 +4,14 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Sidebar Viewport Reference Error Fix
+
+### Fixed
+
+- Corrected the sidebar viewport state declaration order.
+- Prevented `compactSidebar` from referencing `viewportHeight` before it was initialised.
+- Restored sidebar rendering after the responsive short-viewport change.
+
 ## Sidebar Blank-Screen Hardening
 
 ### Fixed
