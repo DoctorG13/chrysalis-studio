@@ -4,6 +4,21 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Professional Automation Preview
+
+### Added
+
+- Added a local BizziBuddi Automation preview for Professional and Business membership.
+- Added automatic local reminder events when appointments are created.
+- Added a local overdue-invoice automation check.
+- Added automation event history to the BizziBuddi account preview.
+- Added Automation to the BizziBuddi dashboard and membership access experience.
+- Locked Automation for Free membership with an upgrade path to membership plans.
+- Kept automation local-only with no external email, messaging or notification delivery.
+
+
+---
+
 ## BizziBuddi Advanced Scheduling Preview
 
 ### Added
