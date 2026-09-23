@@ -15,6 +15,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Sidebar Footer Branding
+
+### Changed
+
+- Replaced the old BizziBuddi sidebar footer badge with the approved BizziBuddi clock logo and wordmark.
+- Added the approved “Business support, simplified.” lockup and “Your personal assistant for business.” descriptor.
+- Kept the footer's existing plans and upgrade action.
+- Corrected the Sidebar JSX closing structure so the application compiles cleanly.
+
+---
+
 ## BizziBuddi Final Logo Geometry
 
 ### Changed
