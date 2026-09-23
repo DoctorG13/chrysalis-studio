@@ -264,7 +264,7 @@ function JobsPanel({ jobs, people, onAddJob, onBack }) {
   }
 
   return <section style={cardStyle(940)}>
-    <button type="button" onClick={onBack} style={textButton}>← Back to workspace</button>
+    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>JOBS</p>
       <h2 style={sectionHeading}>Your jobs.</h2>
