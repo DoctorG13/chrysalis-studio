@@ -1,5 +1,9 @@
 # Changelog
 
+All notable changes to Chrysalis are recorded here.
+
+---
+
 ## BizziBuddi Business Advanced Reporting Preview
 
 ### Added
@@ -14,10 +18,6 @@
 - Added Reports to the BizziBuddi dashboard and membership access experience.
 - Locked Advanced Reporting for Free and Professional membership with an upgrade path to Business.
 
-
-All notable changes to Chrysalis are recorded here.
-
----
 
 ## BizziBuddi Business Production Tracking Preview
 
