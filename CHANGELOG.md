@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Landing Header Compactness
+
+### Changed
+
+- Reduced the sticky header height and horizontal spacing.
+- Reduced the header BizziBuddi logo size.
+- Tightened desktop navigation spacing.
+- Preserved all navigation links, the Start Free placeholder action and mobile menu behaviour.
+
+
 ## BizziBuddi Pricing Section Compactness
 
 ### Changed
