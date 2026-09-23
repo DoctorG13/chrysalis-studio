@@ -84,7 +84,7 @@ export default function BizziBuddiLogo({
               whiteSpace: "nowrap",
             }}
           >
-            <span style={{ color: navy }}>Bizzi</span>
+            <span style={{ color: dark ? "#FFFFFF" : navy }}>Bizzi</span>
             <span style={{ color: blue }}>Buddi</span>
             <sup
               style={{
