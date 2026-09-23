@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi People Workspace Preview
+
+### Added
+
+- Added the first functional People workspace to the local BizziBuddi preview.
+- Added a simple people list with name, email and phone details.
+- Added local-only person creation and browser persistence.
+- Connected the workspace welcome screen's “Add your people” action to the People workspace.
+- Kept the feature independent from the existing Chrysalis People page and real database until the BizziBuddi workspace architecture is ready.
+
+
 ## BizziBuddi Workspace Welcome Preview
 
 ### Changed
