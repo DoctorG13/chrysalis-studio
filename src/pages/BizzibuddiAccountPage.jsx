@@ -22,6 +22,7 @@ export default function BizzibuddiAccountPage() {
   const [account, setAccount] = useState(() => readAccount());
   const [message, setMessage] = useState("");
   const [people, setPeople] = useState(() => readPeople());
+  const [jobs, setJobs] = useState(() => readJobs());
 
   function selectView(nextView) {
     setView(nextView);
@@ -93,6 +94,7 @@ export default function BizzibuddiAccountPage() {
   function resetDemo() {
     localStorage.removeItem("bizzibuddiMockAccount");
     localStorage.removeItem("bizzibuddiMockPeople");
+    localStorage.removeItem("bizzibuddiMockJobs");
     setAccount(null);
     setMessage("Local demo data cleared.");
     setView("create");
@@ -125,8 +127,9 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onReset={resetDemo} peopleCount={people.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
+        {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
 
         <footer style={footerStyle}>Mock environment · Data stays in this browser only · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
@@ -146,6 +149,15 @@ function readAccount() {
 function readPeople() {
   try {
     const value = localStorage.getItem("bizzibuddiMockPeople");
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+function readJobs() {
+  try {
+    const value = localStorage.getItem("bizzibuddiMockJobs");
     return value ? JSON.parse(value) : [];
   } catch {
     return [];
@@ -236,11 +248,85 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
   </section>;
 }
 
+function JobsPanel({ jobs, people, onAddJob, onBack }) {
+  const [showForm, setShowForm] = useState(false);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const personId = String(form.get("personId") || "");
+    const person = people.find((item) => item.id === personId);
+
+    onAddJob({
+      id: `job-${Date.now()}`,
+      title: String(form.get("title") || "").trim(),
+      clientName: person?.name || "Unassigned",
+      status: String(form.get("status") || "New"),
+    });
+
+    event.currentTarget.reset();
+    setShowForm(false);
+  }
+
+  return <section style={cardStyle(940)}>
+    <button type="button" onClick={onBack} style={textButton}>← Back to workspace</button>
+    <div style={{ marginTop: 22 }}>
+      <p style={eyebrowStyle}>JOBS</p>
+      <h2 style={sectionHeading}>Your jobs.</h2>
+      <p style={copyStyle}>Track the work that moves through your business from enquiry to completion.</p>
+    </div>
+
+    {jobs.length > 0 ? (
+      <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
+        {jobs.map((job) => (
+          <article key={job.id} style={jobCard}>
+            <div>
+              <strong style={{ display: "block", fontSize: 17 }}>{job.title}</strong>
+              <span style={smallText}>{job.clientName}</span>
+            </div>
+            <span style={jobStatus}>{job.status}</span>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div style={emptyPeople}>
+        <strong>No jobs created yet.</strong>
+        <p style={copyStyle}>Create your first job to start tracking work in your workspace.</p>
+      </div>
+    )}
+
+    {!showForm ? (
+      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 240 }}>+ Create a job</button>
+    ) : (
+      <form onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>Create a job</strong>
+        <Field name="title" label="Job name" type="text" placeholder="e.g. Wedding dress alteration" />
+        <label style={fieldStyle}>Client<select required name="personId" defaultValue="" style={inputStyle}>
+          <option value="" disabled>Select a person</option>
+          {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+          {people.length === 0 && <option value="" disabled>Add a person first</option>}
+        </select></label>
+        <label style={fieldStyle}>Status<select name="status" defaultValue="New" style={inputStyle}>
+          <option>New</option>
+          <option>In progress</option>
+          <option>Waiting</option>
+          <option>Complete</option>
+        </select></label>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button type="submit" disabled={people.length === 0} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 ? 0.5 : 1 }}>Save job</button>
+          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+        </div>
+        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can assign the job.</p>}
+      </form>
+    )}
+  </section>;
+}
+
 function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose a plan for the local mock account. No subscription is created.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.name} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>Choose {plan.name}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onReset, peopleCount }) {
+function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCount, jobsCount }) {
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI WORKSPACE</p>
@@ -252,7 +338,7 @@ function DashboardPanel({ account, onPlans, onPeople, onReset, peopleCount }) {
         ["Workspace", account?.workspaceReady ? "Ready" : "Not set up"],
         ["Plan", account?.plan || "Free"],
         ["People", peopleCount ? `${peopleCount} added` : "Ready to add"],
-        ["Jobs", "Ready to add"],
+        ["Jobs", jobsCount ? `${jobsCount} created` : "Ready to add"],
       ].map(([label, value]) => (
         <div key={label} style={statCard}>
           <small style={smallText}>{label}</small>
@@ -271,7 +357,7 @@ function DashboardPanel({ account, onPlans, onPeople, onReset, peopleCount }) {
           <span style={actionIcon}>👥</span>
           <span><strong>Add your people</strong><small>Keep clients and contacts organised.</small></span>
         </button>
-        <button type="button" onClick={() => setWorkspaceMessage("Jobs workspace coming next.")} style={actionCard}>
+        <button type="button" onClick={onJobs} style={actionCard}>
           <span style={actionIcon}>📋</span>
           <span><strong>Create a job</strong><small>Start tracking work from enquiry to completion.</small></span>
         </button>
@@ -296,6 +382,8 @@ const workspaceActions = { marginTop: 28, padding: 24, borderRadius: 14, border:
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
+const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
 const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px dashed ${BORDER}`, background: "rgba(255,255,255,.025)", textAlign: "center" };
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
