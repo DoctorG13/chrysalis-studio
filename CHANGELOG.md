@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Tablet Pricing Card Compactness
+
+### Changed
+
+- Reduced pricing-card padding and internal spacing on tablet-sized screens.
+- Tightened plan descriptions, feature lists, popular-plan banner and action buttons for the two-column tablet layout.
+- Preserved the desktop pricing layout and the more compact small-mobile treatment.
+
+
 ## BizziBuddi Tablet Content Grid Compactness
 
 ### Changed
