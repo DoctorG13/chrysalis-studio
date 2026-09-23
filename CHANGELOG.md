@@ -4,6 +4,21 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Mobile Content Card Compactness
+
+### Changed
+
+- Reduced Why BizziBuddi and Features card padding and minimum heights on small mobile screens.
+- Tightened card headings, supporting text and internal spacing so the public landing page remains compact without changing the desktop layout.
+- Preserved all existing card content, branding and responsive structure.
+
+
+# Changelog
+
+All notable changes to Chrysalis are recorded here.
+
+---
+
 ## BizziBuddi Mobile Pricing Card Compactness
 
 ### Changed
