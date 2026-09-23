@@ -15,7 +15,7 @@ const MUTED = "#B8C6D6";
 const plans = bizzibuddiPlans;
 
 const features = [
-  ["01", "People", "Keep every client, contact detail and piece of history organised in one accessible workspace."],
+  ["01", "People", "Keep every client, contact detail and piece of history organised in one accessible place."],
   ["02", "Jobs", "Manage every job from the first enquiry and quote through to delivery and completion."],
   ["03", "Production", "Track tasks, stages and deadlines so you always know what needs attention next."],
   ["04", "Calendar", "Bring appointments, bookings, deadlines and important dates together in one clear view."],
