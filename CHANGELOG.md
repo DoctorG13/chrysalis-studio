@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Landing Section Compactness
+
+### Changed
+
+- Reduced vertical spacing in the Why BizziBuddi, Features and closing CTA sections.
+- Reduced card padding, minimum heights and typography so more content fits comfortably on screen.
+- Tightened the BizziBuddi footer layout, links and legal row.
+- Preserved the existing content, branding, colours and responsive structure.
+
+
 ## BizziBuddi Landing Hero Compactness
 
 ### Changed
