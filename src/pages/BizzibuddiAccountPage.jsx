@@ -162,9 +162,25 @@ export default function BizzibuddiAccountPage() {
         </section>
 
         <nav aria-label="Account preview navigation" style={navStyle}>
-          {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"], ["buddi", "Ask Buddi"], ["help", "Help & Support"]].map(([key, label]) => (
-            <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
-          ))}
+          <div style={navMainGroup}>
+            {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"]].map(([key, label]) => (
+              <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
+            ))}
+          </div>
+
+          <div style={navAssistantGroup}>
+            <span style={navAssistantLabel}>NEED A HAND?</span>
+            <div style={navAssistantButtons}>
+              <button type="button" onClick={() => selectView("buddi")} style={assistantNavButton(view === "buddi")}>
+                <span aria-hidden="true">🤖</span>
+                <span>Ask Buddi</span>
+              </button>
+              <button type="button" onClick={() => selectView("help")} style={helpNavButton(view === "help")}>
+                <span aria-hidden="true">❓</span>
+                <span>Help & Support</span>
+              </button>
+            </div>
+          </div>
         </nav>
 
         {message && <div role="status" style={messageStyle}>{message}</div>}
@@ -1412,7 +1428,42 @@ const eyebrowStyle = { display: "inline-block", color: RED, fontSize: 12, fontWe
 const heroHeading = { margin: "24px 0 18px", fontSize: "clamp(42px, 7vw, 76px)", lineHeight: 0.98, letterSpacing: "-0.055em", fontWeight: 600 };
 const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 17, lineHeight: 1.75 };
 const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(0,180,219,.08)", color: RED, fontSize: 12, fontWeight: 600 };
-const navStyle = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", margin: "34px 0 28px" };
+const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "34px 0 28px" };
+const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
+const navAssistantGroup = { display: "grid", gap: 6, justifyItems: "center", paddingLeft: 18, borderLeft: "1px solid rgba(255,255,255,.18)" };
+const navAssistantLabel = { color: MUTED, fontSize: 9, fontWeight: 800, letterSpacing: ".16em" };
+const navAssistantButtons = { display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" };
+const assistantNavButton = (active) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  minHeight: 42,
+  padding: "0 16px",
+  border: "1px solid " + (active ? CYAN : "rgba(0,180,219,.45)"),
+  borderRadius: 999,
+  background: active ? "linear-gradient(135deg, #0F2D4A, #2563EB)" : "rgba(0,180,219,.10)",
+  color: TEXT,
+  fontSize: 13,
+  fontWeight: 800,
+  cursor: "pointer",
+  boxShadow: active ? "0 8px 20px rgba(0,180,219,.18)" : "none",
+});
+const helpNavButton = (active) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  minHeight: 42,
+  padding: "0 15px",
+  border: "1px solid " + (active ? CYAN : BORDER),
+  borderRadius: 999,
+  background: active ? "rgba(0,180,219,.12)" : "rgba(255,255,255,.04)",
+  color: active ? TEXT : MUTED,
+  fontSize: 13,
+  fontWeight: 700,
+  cursor: "pointer",
+});
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
 const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
