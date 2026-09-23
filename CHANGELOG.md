@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Tablet Content Grid Compactness
+
+### Changed
+
+- Changed the Why BizziBuddi and Features cards to use two columns on tablet-sized screens.
+- Reduced vertical page length while preserving the single-column mobile layout below 520px.
+- Preserved all existing card content, branding and desktop layout.
+
+
 ## BizziBuddi Mobile Content Card Compactness
 
 ### Changed
