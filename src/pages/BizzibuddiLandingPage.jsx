@@ -63,7 +63,7 @@ function CtaButton({ children, secondary = false, onClick }) {
 
 function Footer() {
   return (
-    <footer style={{ background: "#050609", color: "#FFFFFF", padding: "38px 22px 22px", borderTop: `4px solid ${CYAN}` }}>
+    <footer className="bizzibuddi-footer" style={{ background: "#050609", color: "#FFFFFF", padding: "38px 22px 22px", borderTop: `4px solid ${CYAN}` }}>
       <div style={{ maxWidth: 1080, margin: "0 auto" }}>
         <div className="bizzibuddi-footer-grid" style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1fr", gap: 26, alignItems: "start" }}>
           <div>
@@ -81,19 +81,19 @@ function Footer() {
             </div>
           </div>
           <div>
-            <div style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 600, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Account</div>
-            <div style={{ display: "grid", gap: 12, fontSize: 14 }}>
+            <div className="bizzibuddi-footer-account-heading" style={{ color: "#FFFFFF", fontSize: 12, fontWeight: 600, letterSpacing: 1.2, textTransform: "uppercase", marginBottom: 16 }}>Account</div>
+            <div className="bizzibuddi-footer-account-links" style={{ display: "grid", gap: 12, fontSize: 14 }}>
               <a href="/login" style={footerLink} className="bizzibuddi-footer-link">Log in</a>
               <a href="#pricing" style={footerLink} className="bizzibuddi-footer-link">Start Free</a>
             </div>
           </div>
         </div>
-        <div style={{ marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.3)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", fontSize: 11 }}>
+        <div className="bizzibuddi-footer-legal" style={{ marginTop: 24, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.3)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", fontSize: 11 }}>
           <a href="/bizzibuddi/terms" style={footerLink} className="bizzibuddi-footer-link">Terms &amp; Conditions</a>
           <a href="/bizzibuddi/privacy" style={footerLink} className="bizzibuddi-footer-link">Privacy Policy</a>
           <span style={{ color: "#FFFFFF" }}>© {new Date().getFullYear()} BizziBuddi. All rights reserved.</span>
         </div>
-        <div style={{ marginTop: 12, textAlign: "center", fontSize: 11, color: "#FFFFFF" }}>Development site — pricing, billing and account subscriptions will be connected next.</div>
+        <div className="bizzibuddi-footer-note" style={{ marginTop: 12, textAlign: "center", fontSize: 11, color: "#FFFFFF" }}>Development site — pricing, billing and account subscriptions will be connected next.</div>
       </div>
     </footer>
   );
@@ -122,7 +122,7 @@ export default function BizzibuddiLandingPage() {
         .bizzibuddi-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
         .bizzibuddi-card:hover{transform:translateY(-4px);border-color:${RED}!important;box-shadow:0 18px 42px rgba(37,99,235,.22)!important}
         @media(max-width:850px){.bizzibuddi-desktop-nav{display:none!important}.bizzibuddi-mobile-button{display:block!important}.bizzibuddi-hero-grid,.bizzibuddi-three-grid,.bizzibuddi-feature-grid{grid-template-columns:1fr!important}.bizzibuddi-plan-grid{grid-template-columns:1fr 1fr!important}.bizzibuddi-footer-grid{grid-template-columns:1fr 1fr!important}}
-        @media(max-width:520px){.bizzibuddi-plan-grid{grid-template-columns:1fr!important}.bizzibuddi-footer-grid{grid-template-columns:1fr!important}.bizzibuddi-section-pad{padding-left:16px!important;padding-right:16px!important}.bizzibuddi-hero{padding:28px 16px 30px!important}.bizzibuddi-hero-logo{transform:scale(.86)}.bizzibuddi-hero-title{margin-top:12px!important;font-size:clamp(29px,8vw,38px)!important}.bizzibuddi-hero-promise{margin-top:6px!important;font-size:20px!important}.bizzibuddi-hero-copy{margin-top:8px!important;font-size:15px!important}.bizzibuddi-hero-actions{margin-top:14px!important;gap:8px!important}.bizzibuddi-hero-actions button{min-height:42px!important;padding-left:14px!important;padding-right:14px!important}}
+        @media(max-width:520px){.bizzibuddi-plan-grid{grid-template-columns:1fr!important}.bizzibuddi-footer-grid{grid-template-columns:1fr!important}.bizzibuddi-section-pad{padding-left:16px!important;padding-right:16px!important}.bizzibuddi-hero{padding:28px 16px 30px!important}.bizzibuddi-hero-logo{transform:scale(.86)}.bizzibuddi-hero-title{margin-top:12px!important;font-size:clamp(29px,8vw,38px)!important}.bizzibuddi-hero-promise{margin-top:6px!important;font-size:20px!important}.bizzibuddi-hero-copy{margin-top:8px!important;font-size:15px!important}.bizzibuddi-hero-actions{margin-top:14px!important;gap:8px!important}.bizzibuddi-hero-actions button{min-height:42px!important;padding-left:14px!important;padding-right:14px!important}.bizzibuddi-footer{padding:28px 16px 18px!important}.bizzibuddi-footer-grid{gap:18px!important}.bizzibuddi-footer-account-heading{margin-bottom:9px!important}.bizzibuddi-footer-account-links{gap:7px!important}.bizzibuddi-footer-legal{margin-top:18px!important;padding-top:11px!important;gap:9px!important}.bizzibuddi-footer-note{margin-top:10px!important}}
       `}</style>
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(6,26,43,.98)", color: "#FFF", borderBottom: `4px solid ${RED}`, backdropFilter: "blur(12px)" }}>
         <div style={{ maxWidth: 1120, margin: "0 auto", padding: "8px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
