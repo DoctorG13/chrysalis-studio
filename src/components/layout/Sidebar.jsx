@@ -642,7 +642,7 @@ export default function Sidebar({
         >
           <div style={{ display: "flex", justifyContent: "center" }}>
             <BizziBuddiLogo
-              size={118}
+              size={112}
               dark
               showWordmark
               tagline="Business support, simplified."
@@ -656,6 +656,7 @@ export default function Sidebar({
               fontFamily: "Arial, Helvetica, sans-serif",
               fontSize: 11,
               fontWeight: 500,
+              letterSpacing: ".01em",
             }}
           >
             Your personal assistant for business.
@@ -689,7 +690,6 @@ export default function Sidebar({
           </div>
         </a>
       </div>
-</div>
     </aside>
   );
 }
