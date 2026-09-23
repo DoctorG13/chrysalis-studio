@@ -154,7 +154,6 @@ function AuthPanel({ mode, account, onSubmit, onSwitch }) {
       {!login && <Field name="email" label="Email address" type="email" placeholder="you@example.com" />}
       {login && <Field name="identifier" label="Email address or username" type="text" placeholder="you@example.com or username" />}
       <Field name="password" label="Password" type="password" placeholder="Demo password" />
-      {!login && <Field name="business" label="Business name" type="text" placeholder="Your business name" />}
       <button type="submit" style={primaryButton}>{login ? "Log in · Demo" : "Continue to workspace →"}</button>
     </form>
     <p style={switchText}>{login ? "New to BizziBuddi?" : "Already have an account?"} <button type="button" onClick={onSwitch} style={textButton}>{login ? "Create an account" : "Log in"}</button></p>
@@ -171,8 +170,62 @@ function PlansPanel({ onSelectPlan }) {
 }
 
 function DashboardPanel({ account, onPlans, onReset }) {
-  return <section style={cardStyle(940)}><p style={eyebrowStyle}>LOCAL ACCOUNT OVERVIEW</p><h2 style={sectionHeading}>Good morning, {account?.name || "Demo User"}.</h2><p style={copyStyle}>This is a simulated account dashboard.</p><div style={statsGrid}>{[["Account", account ? "Created" : "Demo only"], ["Workspace", account?.workspaceReady ? "Ready" : "Not set up"], ["Plan", account?.plan || "Free"], ["Billing", "Not connected"]].map(([label, value]) => <div key={label} style={statCard}><small style={smallText}>{label}</small><strong style={{ display: "block", marginTop: 8, fontSize: 20 }}>{value}</strong></div>)}</div><div style={callout}><strong>Your next step</strong><p style={copyStyle}>Continue refining the onboarding experience before connecting real authentication, databases or billing.</p><button type="button" onClick={onPlans} style={{ ...primaryButton, width: "auto", padding: "0 22px" }}>Explore plans ↗</button></div><button type="button" onClick={onReset} style={textButton}>Reset local demo</button></section>;
+  const [workspaceMessage, setWorkspaceMessage] = useState("");
+  return <section style={cardStyle(940)}>
+    <p style={eyebrowStyle}>YOUR BIZZIBUDDI WORKSPACE</p>
+    <h2 style={sectionHeading}>Welcome to {account?.business || "your workspace"}.</h2>
+    <p style={copyStyle}>Your workspace is ready. This is the beginning of the BizziBuddi experience — one place to organise, plan and grow your business.</p>
+
+    <div style={statsGrid}>
+      {[
+        ["Workspace", account?.workspaceReady ? "Ready" : "Not set up"],
+        ["Plan", account?.plan || "Free"],
+        ["People", "Ready to add"],
+        ["Jobs", "Ready to add"],
+      ].map(([label, value]) => (
+        <div key={label} style={statCard}>
+          <small style={smallText}>{label}</small>
+          <strong style={{ display: "block", marginTop: 8, fontSize: 20 }}>{value}</strong>
+        </div>
+      ))}
+    </div>
+
+    <div style={workspaceActions}>
+      <div>
+        <strong style={{ fontSize: 20 }}>What would you like to do first?</strong>
+        <p style={{ ...copyStyle, marginBottom: 0 }}>Start building your workspace with the people, jobs and information that matter to your business.</p>
+      </div>
+      <div style={actionGrid}>
+        <button type="button" onClick={() => setWorkspaceMessage("People workspace coming next.")} style={actionCard}>
+          <span style={actionIcon}>👥</span>
+          <span><strong>Add your people</strong><small>Keep clients and contacts organised.</small></span>
+        </button>
+        <button type="button" onClick={() => setWorkspaceMessage("Jobs workspace coming next.")} style={actionCard}>
+          <span style={actionIcon}>📋</span>
+          <span><strong>Create a job</strong><small>Start tracking work from enquiry to completion.</small></span>
+        </button>
+        <button type="button" onClick={onPlans} style={actionCard}>
+          <span style={actionIcon}>⚡</span>
+          <span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span>
+        </button>
+      </div>
+      {workspaceMessage && <p role="status" style={{ ...smallText, margin: "16px 0 0", color: CYAN }}>{workspaceMessage}</p>}
+    </div>
+
+    <div style={workspaceNote}>
+      <strong>Development preview</strong>
+      <p style={copyStyle}>This workspace is still running on local demo data. Real authentication, databases and billing are not connected yet.</p>
+    </div>
+
+    <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
+  </section>;
 }
+
+const workspaceActions = { marginTop: 28, padding: 24, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
+const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
+const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
+const actionIcon = { fontSize: 22, lineHeight: 1 };
+const workspaceNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
 
 function Field({ name, label, type, placeholder, defaultValue }) {
   return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
