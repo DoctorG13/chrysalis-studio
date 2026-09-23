@@ -4,6 +4,14 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Sidebar Navigation Containment
+
+### Fixed
+
+- Added an explicit overflow boundary around the sidebar's main content region.
+- Prevented navigation items from painting beneath the fixed BizziBuddi footer.
+- Preserved independent scrolling for the main navigation area.
+
 ## BizziBuddi Sidebar Footer Layout Fix
 
 ### Fixed
