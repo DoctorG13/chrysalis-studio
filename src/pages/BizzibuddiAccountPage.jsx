@@ -162,7 +162,7 @@ export default function BizzibuddiAccountPage() {
         </section>
 
         <nav aria-label="Account preview navigation" style={navStyle}>
-          {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"], ["buddi", "Ask Buddi"]].map(([key, label]) => (
+          {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"], ["buddi", "Ask Buddi"], ["help", "Help & Support"]].map(([key, label]) => (
             <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
           ))}
         </nav>
@@ -181,7 +181,33 @@ export default function BizzibuddiAccountPage() {
         {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem("bizzibuddiMockProductionRecords", JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} onBack={() => selectView("dashboard")} />}
+        {view === "help" && <HelpSupportPanel onBuddi={() => selectView("buddi")} />}
 
+
+        {account && (
+          <>
+            <style>{`
+              @keyframes bizzibuddiBuddiPulse {
+                0%, 100% { box-shadow: 0 12px 30px rgba(0,0,0,.28), 0 0 0 0 rgba(0,180,219,.28); }
+                50% { box-shadow: 0 14px 34px rgba(0,0,0,.34), 0 0 0 10px rgba(0,180,219,0); }
+              }
+              @media (prefers-reduced-motion: reduce) {
+                .bizzibuddi-buddi-launcher { animation: none !important; }
+              }
+            `}</style>
+
+            <button
+              type="button"
+              className="bizzibuddi-buddi-launcher"
+              aria-label="Open Ask Buddi"
+              onClick={() => selectView(view === "buddi" ? "dashboard" : "buddi")}
+              style={buddiFloatingButton}
+            >
+              <BizziBuddiLogo size={32} dark showWordmark={false} />
+              <span>Ask Buddi</span>
+            </button>
+          </>
+        )}
         <footer style={footerStyle}>Mock environment · Data stays in this browser only · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
     </main>
@@ -1085,6 +1111,89 @@ function formatAppointmentDate(date, time) {
   if (Number.isNaN(value.getTime())) return date + " · " + (time || "Time not set");
   return value.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 }
+
+function HelpSupportPanel({ onBuddi }) {
+  const helpItems = [
+    {
+      icon: "🤖",
+      title: "Ask Buddi",
+      description: "Get help understanding your people, jobs, calendar, money and business activity.",
+      action: "Ask Buddi →",
+      onClick: onBuddi,
+      featured: true,
+    },
+    {
+      icon: "🚀",
+      title: "Getting started",
+      description: "Learn the simple steps for setting up your business and getting your first records into BizziBuddi.",
+      action: "Getting started",
+    },
+    {
+      icon: "🧭",
+      title: "Feature guides",
+      description: "Explore People, Jobs, Calendar, Finance, Automation, Production and Reports.",
+      action: "Explore features",
+    },
+    {
+      icon: "❓",
+      title: "Frequently asked questions",
+      description: "Find quick answers about accounts, memberships, data and how BizziBuddi works.",
+      action: "View FAQs",
+    },
+    {
+      icon: "✉️",
+      title: "Contact support",
+      description: "Need a hand with something specific? Keep support close at hand as BizziBuddi grows.",
+      action: "Contact support",
+    },
+  ];
+
+  return (
+    <section style={cardStyle(940)}>
+      <div style={helpHero}>
+        <div style={helpIcon}>
+          <span>?</span>
+        </div>
+        <div>
+          <p style={eyebrowStyle}>HELP & SUPPORT</p>
+          <h2 style={sectionHeading}>How can we help?</h2>
+          <p style={{ ...copyStyle, maxWidth: 650, margin: "0 auto" }}>
+            Get answers, learn how BizziBuddi works, or ask Buddi about what is happening in your business.
+          </p>
+        </div>
+      </div>
+
+      <div style={helpGrid}>
+        {helpItems.map((item) => (
+          <article key={item.title} style={helpCard(item.featured)}>
+            <div style={helpCardIcon}>{item.icon}</div>
+            <div style={{ flex: 1 }}>
+              <strong style={{ display: "block", fontSize: 18 }}>{item.title}</strong>
+              <p style={{ ...copyStyle, margin: "8px 0 18px" }}>{item.description}</p>
+              <button
+                type="button"
+                onClick={item.onClick}
+                disabled={!item.onClick}
+                style={item.onClick ? helpPrimaryButton : helpSecondaryButton}
+              >
+                {item.action}
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div style={helpTip}>
+        <BizziBuddiLogo size={30} showWordmark={false} />
+        <div>
+          <strong style={{ display: "block" }}>Buddi is always close by.</strong>
+          <span style={smallText}>Use the floating Ask Buddi button whenever you want help without leaving what you're working on.</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function MembershipAccessPanel({ planName }) {
   const plan = getBizzibuddiPlan(planName);
   const featureGroups = [
@@ -1118,6 +1227,113 @@ function MembershipAccessPanel({ planName }) {
     </div>
   </div>;
 }
+
+
+const buddiFloatingButton = {
+  position: "fixed",
+  right: 24,
+  bottom: 24,
+  zIndex: 1200,
+  minWidth: 144,
+  height: 58,
+  padding: "0 18px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 9,
+  border: "2px solid #FFFFFF",
+  borderRadius: 30,
+  background: "linear-gradient(135deg, #0F2D4A 0%, #2563EB 72%, #00B4DB 100%)",
+  color: "#FFFFFF",
+  fontSize: 15,
+  fontWeight: 900,
+  boxShadow: "0 12px 30px rgba(0,0,0,.28)",
+  cursor: "pointer",
+  animation: "bizzibuddiBuddiPulse 3s infinite",
+};
+
+const helpHero = {
+  display: "grid",
+  justifyItems: "center",
+  gap: 16,
+  textAlign: "center",
+};
+
+const helpIcon = {
+  width: 72,
+  height: 72,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: 22,
+  background: "linear-gradient(135deg, rgba(0,180,219,.18), rgba(37,99,235,.18))",
+  border: "1px solid rgba(0,180,219,.45)",
+  color: CYAN,
+  fontSize: 34,
+  fontWeight: 800,
+  boxShadow: "0 14px 32px rgba(0,0,0,.18)",
+};
+
+const helpGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+  gap: 14,
+  marginTop: 34,
+};
+
+const helpCard = (featured) => ({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 14,
+  padding: 20,
+  borderRadius: 16,
+  border: "1px solid " + (featured ? "rgba(0,180,219,.6)" : BORDER),
+  background: featured ? "linear-gradient(135deg, rgba(0,180,219,.12), rgba(37,99,235,.08))" : "rgba(255,255,255,.035)",
+  boxShadow: featured ? "0 14px 30px rgba(0,0,0,.14)" : "none",
+});
+
+const helpCardIcon = {
+  width: 42,
+  height: 42,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  borderRadius: 12,
+  background: "rgba(255,255,255,.06)",
+  fontSize: 21,
+};
+
+const helpPrimaryButton = {
+  minHeight: 42,
+  padding: "0 15px",
+  border: 0,
+  borderRadius: 9,
+  background: RED,
+  color: TEXT,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const helpSecondaryButton = {
+  minHeight: 42,
+  padding: "0 15px",
+  border: "1px solid " + BORDER,
+  borderRadius: 9,
+  background: "transparent",
+  color: MUTED,
+  fontWeight: 700,
+  cursor: "default",
+};
+
+const helpTip = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  marginTop: 20,
+  padding: 16,
+  borderRadius: 14,
+  border: "1px solid rgba(0,180,219,.24)",
+  background: "rgba(0,180,219,.05)",
+};
 
 const membershipAccess = { marginTop: 20, padding: 20, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(37,99,235,.06)" };
 const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginTop: 16 };
