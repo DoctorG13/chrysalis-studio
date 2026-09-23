@@ -4,6 +4,13 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Production JSX Parsing Fix
+
+### Fixed
+
+- Reworked the BizziBuddi Production panel JSX structure to remove the nested fragment/conditional structure that was causing the Vite JSX transform failure.
+- Preserved the existing Business-only production tracking behaviour and UI while simplifying its render structure.
+
 ## BizziBuddi Entry and Account Flow
 
 ### Fixed
