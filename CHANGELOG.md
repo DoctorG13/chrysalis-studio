@@ -4,6 +4,14 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Tablet Closing CTA Compactness
+
+### Changed
+
+- Tightened the closing BizziBuddi CTA section on tablet-sized screens.
+- Reduced heading, supporting copy and button spacing while preserving the desktop layout and existing CTA behaviour.
+
+
 ## BizziBuddi Mobile Closing CTA Compactness
 
 ### Changed
