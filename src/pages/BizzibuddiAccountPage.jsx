@@ -1,6 +1,6 @@
 import { useState } from "react";
 import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
-import { bizzibuddiPlans, getBizzibuddiPlan } from "../data/bizzibuddiPlans";
+import { bizzibuddiPlans, getBizzibuddiPlan, hasBizzibuddiFeature } from "../data/bizzibuddiPlans";
 
 const RED = "#2563EB";
 const CYAN = "#00B4DB";
@@ -369,6 +369,8 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCou
       </div>
     </div>
 
+    <MembershipAccessPanel planName={account?.plan} />
+
     <div style={businessNote}>
       <strong>Development preview</strong>
       <p style={copyStyle}>This business preview is still running on local demo data. Real authentication, databases and billing are not connected yet.</p>
@@ -377,6 +379,44 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onReset, peopleCou
     <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
   </section>;
 }
+
+function MembershipAccessPanel({ planName }) {
+  const plan = getBizzibuddiPlan(planName);
+  const featureGroups = [
+    { feature: "people", label: "People & contacts", tier: "Free" },
+    { feature: "jobs", label: "Basic jobs", tier: "Free" },
+    { feature: "calendar", label: "Calendar", tier: "Free" },
+    { feature: "advancedScheduling", label: "Advanced scheduling", tier: "Professional" },
+    { feature: "finance", label: "Payments & invoices", tier: "Professional" },
+    { feature: "automation", label: "Automation", tier: "Professional" },
+    { feature: "production", label: "Production tracking", tier: "Business" },
+    { feature: "reports", label: "Advanced reporting", tier: "Business" },
+  ];
+
+  return <div style={membershipAccess}>
+    <div>
+      <small style={smallText}>MEMBERSHIP ACCESS</small>
+      <strong style={{ display: "block", marginTop: 5, fontSize: 20 }}>{plan.name} features</strong>
+      <p style={{ ...copyStyle, marginBottom: 0 }}>Your membership determines which BizziBuddi capabilities are available as the product expands.</p>
+    </div>
+    <div style={membershipFeatureGrid}>
+      {featureGroups.map(({ feature, label, tier }) => {
+        const available = hasBizzibuddiFeature(plan.name, feature);
+        return <div key={feature} style={membershipFeature(available)}>
+          <span style={{ fontSize: 16 }}>{available ? "✓" : "🔒"}</span>
+          <span>
+            <strong style={{ display: "block", fontSize: 13 }}>{label}</strong>
+            {!available && <small style={{ color: MUTED }}>Available on {tier}</small>}
+          </span>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+const membershipAccess = { marginTop: 20, padding: 20, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(37,99,235,.06)" };
+const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginTop: 16 };
+const membershipFeature = (available) => ({ display: "flex", alignItems: "flex-start", gap: 9, padding: 12, borderRadius: 10, border: "1px solid " + (available ? "rgba(0,180,219,.28)" : BORDER), background: available ? "rgba(0,180,219,.08)" : "rgba(255,255,255,.025)", color: available ? TEXT : MUTED });
 
 const businessActions = { marginTop: 28, padding: 24, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
 const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
