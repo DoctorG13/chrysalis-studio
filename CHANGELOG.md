@@ -1,5 +1,12 @@
 # Changelog
 
+## BizziBuddi Help Navigation Hierarchy
+
+- Grouped **Ask Buddi** and **Help & Support** as a dedicated assistance area in the account navigation.
+- Added clearer visual hierarchy so Buddi is the primary help action while Help & Support remains directly beside it.
+- Preserved the existing account navigation and assistant behaviour.
+
+
 ## BizziBuddi Help & Floating Buddi
 
 - Added a dedicated **Help & Support** area to the BizziBuddi account experience.
