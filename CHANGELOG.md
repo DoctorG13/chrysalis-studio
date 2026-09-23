@@ -4,6 +4,20 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Membership Feature Access
+
+### Added
+
+- Added a membership access panel to the BizziBuddi account preview.
+- Connected the account preview to the shared membership entitlement helper.
+- Clearly show which current and planned capabilities are included in the selected membership.
+- Show locked Professional and Business capabilities without pretending those future features are already available.
+- Kept the feature-access model local and billing-free as planned.
+
+All notable changes to Chrysalis are recorded here.
+
+---
+
 ## BizziBuddi Pricing Baseline
 
 ### Changed
