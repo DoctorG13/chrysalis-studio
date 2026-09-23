@@ -127,7 +127,7 @@ export default function Sidebar({
   const [hoveredSubItem, setHoveredSubItem] = useState(null);
   const [selectedSubItem, setSelectedSubItem] = useState(null);
   const [flyoutTop, setFlyoutTop] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   const sidebarRef = useRef(null);
   const itemRefs = useRef({});
