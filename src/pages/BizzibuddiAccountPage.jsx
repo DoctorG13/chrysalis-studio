@@ -21,6 +21,7 @@ export default function BizzibuddiAccountPage() {
   const [view, setView] = useState(initialView === "create" ? "create" : "login");
   const [account, setAccount] = useState(() => readAccount());
   const [message, setMessage] = useState("");
+  const [people, setPeople] = useState(() => readPeople());
 
   function selectView(nextView) {
     setView(nextView);
@@ -91,6 +92,7 @@ export default function BizzibuddiAccountPage() {
 
   function resetDemo() {
     localStorage.removeItem("bizzibuddiMockAccount");
+    localStorage.removeItem("bizzibuddiMockPeople");
     setAccount(null);
     setMessage("Local demo data cleared.");
     setView("create");
@@ -123,7 +125,8 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onReset={resetDemo} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onReset={resetDemo} peopleCount={people.length} />}
+        {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
 
         <footer style={footerStyle}>Mock environment · Data stays in this browser only · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
@@ -137,6 +140,15 @@ function readAccount() {
     return value ? JSON.parse(value) : null;
   } catch {
     return null;
+  }
+}
+
+function readPeople() {
+  try {
+    const value = localStorage.getItem("bizzibuddiMockPeople");
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -165,11 +177,70 @@ function OnboardingPanel({ account, onSubmit }) {
   return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · WORKSPACE</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your workspace.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your workspace a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Workspace or business name" type="text" placeholder={account?.business || "Your workspace"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
 }
 
+function PeoplePanel({ people, onAddPerson, onBack }) {
+  const [showForm, setShowForm] = useState(false);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    onAddPerson({
+      id: `person-${Date.now()}`,
+      name: String(form.get("name") || "").trim(),
+      email: String(form.get("email") || "").trim(),
+      phone: String(form.get("phone") || "").trim(),
+    });
+    event.currentTarget.reset();
+    setShowForm(false);
+  }
+
+  return <section style={cardStyle(940)}>
+    <button type="button" onClick={onBack} style={textButton}>← Back to workspace</button>
+    <div style={{ marginTop: 22 }}>
+      <p style={eyebrowStyle}>PEOPLE</p>
+      <h2 style={sectionHeading}>Your people.</h2>
+      <p style={copyStyle}>Keep your clients and contacts organised in one simple workspace.</p>
+    </div>
+
+    {people.length > 0 ? (
+      <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
+        {people.map((person) => (
+          <article key={person.id} style={personCard}>
+            <div>
+              <strong style={{ display: "block", fontSize: 17 }}>{person.name}</strong>
+              <span style={smallText}>{person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}</span>
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div style={emptyPeople}>
+        <strong>No people added yet.</strong>
+        <p style={copyStyle}>Add your first client or contact to start building the workspace.</p>
+      </div>
+    )}
+
+    {!showForm ? (
+      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 240 }}>+ Add a person</button>
+    ) : (
+      <form onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>Add a person</strong>
+        <Field name="name" label="Name" type="text" placeholder="Client or contact name" />
+        <Field name="email" label="Email address" type="email" placeholder="you@example.com" />
+        <Field name="phone" label="Phone" type="tel" placeholder="Phone number" />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button type="submit" style={{ ...primaryButton, width: "auto", marginTop: 0 }}>Save person</button>
+          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+        </div>
+      </form>
+    )}
+  </section>;
+}
+
 function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose a plan for the local mock account. No subscription is created.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.name} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>Choose {plan.name}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onReset }) {
+function DashboardPanel({ account, onPlans, onPeople, onReset, peopleCount }) {
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI WORKSPACE</p>
@@ -180,7 +251,7 @@ function DashboardPanel({ account, onPlans, onReset }) {
       {[
         ["Workspace", account?.workspaceReady ? "Ready" : "Not set up"],
         ["Plan", account?.plan || "Free"],
-        ["People", "Ready to add"],
+        ["People", peopleCount ? `${peopleCount} added` : "Ready to add"],
         ["Jobs", "Ready to add"],
       ].map(([label, value]) => (
         <div key={label} style={statCard}>
@@ -196,7 +267,7 @@ function DashboardPanel({ account, onPlans, onReset }) {
         <p style={{ ...copyStyle, marginBottom: 0 }}>Start building your workspace with the people, jobs and information that matter to your business.</p>
       </div>
       <div style={actionGrid}>
-        <button type="button" onClick={() => setWorkspaceMessage("People workspace coming next.")} style={actionCard}>
+        <button type="button" onClick={onPeople} style={actionCard}>
           <span style={actionIcon}>👥</span>
           <span><strong>Add your people</strong><small>Keep clients and contacts organised.</small></span>
         </button>
@@ -225,6 +296,9 @@ const workspaceActions = { marginTop: 28, padding: 24, borderRadius: 14, border:
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
+const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px dashed ${BORDER}`, background: "rgba(255,255,255,.025)", textAlign: "center" };
+const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
 const workspaceNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
 
 function Field({ name, label, type, placeholder, defaultValue }) {
