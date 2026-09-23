@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Start Free Account Entry
+
+### Changed
+
+- Connected the landing-page **Start Free** actions to the BizziBuddi local account creation flow.
+- Added support for opening the account page directly in create-account mode.
+- Kept pricing-plan buttons as development placeholders with no billing connection.
+
+
 ## BizziBuddi Tablet Closing CTA Compactness
 
 ### Changed
