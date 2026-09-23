@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Pricing Section Compactness
+
+### Changed
+
+- Reduced the vertical footprint of the public pricing section.
+- Tightened pricing-card padding, typography, feature spacing and button sizing.
+- Preserved all four mock plans, pricing values, feature lists and placeholder actions.
+- Kept pricing disconnected from billing and subscriptions as planned.
+
+
 ## BizziBuddi Landing Section Compactness
 
 ### Changed
