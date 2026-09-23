@@ -4,6 +4,20 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Advanced Scheduling Preview
+
+### Added
+
+- Added Professional and Business advanced scheduling controls to the BizziBuddi calendar preview.
+- Added appointment duration tracking.
+- Added optional buffer time between appointments.
+- Added appointment status tracking for Booked, Confirmed, Pending and Cancelled.
+- Added advanced scheduling details to appointment listings.
+- Clearly identify the Professional scheduling capability in the calendar preview.
+- Kept Free membership on the existing basic calendar experience.
+- Kept advanced scheduling local-only and independent from the production Chrysalis Calendar implementation.
+
+
 ## BizziBuddi Professional Finance Preview
 
 ### Added
