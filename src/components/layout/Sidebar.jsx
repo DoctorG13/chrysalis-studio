@@ -119,12 +119,15 @@ export default function Sidebar({
   const businessName = branding?.businessName || "Your Business";
   const logo = branding?.logo || "";
   const slogan = branding?.slogan?.trim() || "";
+  const compactSidebar = viewportHeight > 0 && viewportHeight < 760;
+  const veryCompactSidebar = viewportHeight > 0 && viewportHeight < 650;
 
   const [expandedItem, setExpandedItem] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
   const [hoveredSubItem, setHoveredSubItem] = useState(null);
   const [selectedSubItem, setSelectedSubItem] = useState(null);
   const [flyoutTop, setFlyoutTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(() => window.innerHeight);
 
   const sidebarRef = useRef(null);
   const itemRefs = useRef({});
@@ -158,6 +161,19 @@ export default function Sidebar({
         : null,
     );
   }, [currentPage, selectedSubItem]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportHeight(window.innerHeight);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -259,7 +275,7 @@ export default function Sidebar({
         color: "#FFFFFF",
         display: "flex",
         flexDirection: "column",
-        padding: "18px 18px",
+        padding: compactSidebar ? "12px 14px" : "18px 18px",
         flexShrink: 0,
         boxSizing: "border-box",
         overflow: "hidden",
@@ -277,7 +293,7 @@ export default function Sidebar({
         <div
           style={{
             flexShrink: 0,
-            marginBottom: 12,
+            marginBottom: compactSidebar ? 8 : 12,
             textAlign: "center",
           }}
         >
@@ -285,19 +301,19 @@ export default function Sidebar({
             <div
               style={{
                 width: "100%",
-                height: 78,
+                height: compactSidebar ? 58 : 78,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginBottom: 10,
+                marginBottom: compactSidebar ? 6 : 10,
               }}
             >
               <img
                 src={logo}
                 alt={`${businessName} logo`}
                 style={{
-                  maxWidth: "220px",
-                  maxHeight: "76px",
+                  maxWidth: compactSidebar ? "190px" : "220px",
+                  maxHeight: compactSidebar ? "56px" : "76px",
                   objectFit: "contain",
                 }}
               />
@@ -305,8 +321,8 @@ export default function Sidebar({
           ) : (
             <div
               style={{
-                width: 64,
-                height: 64,
+                width: compactSidebar ? 52 : 64,
+                height: compactSidebar ? 52 : 64,
                 margin: "0 auto 10px",
                 borderRadius: 14,
                 background: primary,
@@ -325,7 +341,7 @@ export default function Sidebar({
 
           <div
             style={{
-              fontSize: 20,
+              fontSize: compactSidebar ? 17 : 20,
               fontWeight: 600,
               lineHeight: 1.2,
               overflowWrap: "anywhere",
@@ -338,8 +354,8 @@ export default function Sidebar({
             <div
               style={{
                 color: "#E4E7E9",
-                marginTop: 8,
-                fontSize: 13,
+                marginTop: compactSidebar ? 5 : 8,
+                fontSize: compactSidebar ? 11 : 13,
                 fontWeight: 400,
                 lineHeight: 1.5,
                 maxWidth: 230,
@@ -401,7 +417,7 @@ export default function Sidebar({
                     alignItems: "center",
                     gap: 10,
                     textAlign: "left",
-                    padding: "5px 12px",
+                    padding: compactSidebar ? "4px 10px" : "5px 12px",
                     border: `1px solid ${
                       active || menuHovered
                         ? BRAND_BLUE
@@ -435,8 +451,8 @@ export default function Sidebar({
                   <span
                     aria-hidden="true"
                     style={{
-                      width: 27,
-                      height: 27,
+                      width: compactSidebar ? 25 : 27,
+                      height: compactSidebar ? 25 : 27,
                       borderRadius: 8,
                       display: "inline-flex",
                       alignItems: "center",
@@ -596,19 +612,19 @@ export default function Sidebar({
       <div
         style={{
           flexShrink: 0,
-          paddingTop: 8,
-          marginTop: 6,
+          paddingTop: compactSidebar ? 5 : 8,
+          marginTop: compactSidebar ? 4 : 6,
           textAlign: "center",
         }}
       >
         <div
           style={{
             color: "#E4E7E9",
-            fontSize: 10,
+            fontSize: veryCompactSidebar ? 8 : 10,
             fontWeight: 700,
-            letterSpacing: 1.8,
+            letterSpacing: veryCompactSidebar ? 1.4 : 1.8,
             textTransform: "uppercase",
-            marginBottom: 8,
+            marginBottom: compactSidebar ? 5 : 8,
           }}
         >
           Powered by
@@ -623,8 +639,8 @@ export default function Sidebar({
             display: "block",
             color: "#FFFFFF",
             textDecoration: "none",
-            borderRadius: 16,
-            padding: "10px 10px 9px",
+            borderRadius: compactSidebar ? 12 : 16,
+            padding: compactSidebar ? "7px 8px 6px" : "10px 10px 9px",
             background: "linear-gradient(145deg, #162C3F 0%, #0F2D4A 100%)",
             border: "1px solid #2563EB",
             boxShadow: "0 10px 28px rgba(0,0,0,.22)",
@@ -643,7 +659,7 @@ export default function Sidebar({
         >
           <div style={{ display: "flex", justifyContent: "center" }}>
             <BizziBuddiLogo
-              size={76}
+              size={compactSidebar ? 58 : 76}
               dark
               showWordmark
               tagline="Business support, simplified."
@@ -652,10 +668,10 @@ export default function Sidebar({
 
           <div
             style={{
-              marginTop: 7,
+              marginTop: compactSidebar ? 5 : 7,
               color: "#FFFFFF",
               fontFamily: "Arial, Helvetica, sans-serif",
-              fontSize: 10,
+              fontSize: veryCompactSidebar ? 8 : compactSidebar ? 9 : 10,
               fontWeight: 500,
               letterSpacing: ".01em",
             }}
@@ -665,14 +681,14 @@ export default function Sidebar({
 
           <div
             style={{
-              marginTop: 9,
-              padding: "8px 7px",
-              borderRadius: 8,
+              marginTop: compactSidebar ? 6 : 9,
+              padding: compactSidebar ? "6px 6px" : "8px 7px",
+              borderRadius: compactSidebar ? 7 : 8,
               background: "linear-gradient(90deg, #2563EB 0%, #00B4DB 100%)",
               color: "#FFFFFF",
-              fontSize: 11,
+              fontSize: veryCompactSidebar ? 9 : compactSidebar ? 10 : 11,
               fontWeight: 800,
-              lineHeight: 1.4,
+              lineHeight: 1.35,
               boxShadow: "0 5px 16px rgba(0,180,219,.16)",
             }}
           >
@@ -681,9 +697,9 @@ export default function Sidebar({
 
           <div
             style={{
-              marginTop: 7,
+              marginTop: compactSidebar ? 5 : 7,
               color: "#D7E4EE",
-              fontSize: 8,
+              fontSize: veryCompactSidebar ? 7 : 8,
               fontWeight: 400,
             }}
           >
