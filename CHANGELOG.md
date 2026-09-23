@@ -4,6 +4,14 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Sidebar Rendering Recovery
+
+### Fixed
+
+- Removed the experimental viewport-height logic that was preventing the sidebar from rendering in the local development build.
+- Restored the last known working sidebar implementation while retaining the BizziBuddi footer containment fix.
+- Kept the approved BizziBuddi branding and navigation behaviour unchanged.
+
 ## Sidebar Viewport Reference Error Fix
 
 ### Fixed
