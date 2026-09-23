@@ -141,7 +141,7 @@ export default function BizzibuddiLandingPage() {
       <main>
         <section style={{ background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: "#FFF", padding: "76px 22px 64px" }}>
           <div style={{ maxWidth: 1080, margin: "0 auto", textAlign: "center" }}>
-            <div style={{ display: "flex", justifyContent: "center" }}><BizziBuddiLogo size={128} dark showWordmark tagline="Business support, simplified." featureLine /></div>
+            <div style={{ display: "flex", justifyContent: "center" }}><BizziBuddiLogo size={128} dark showWordmark tagline="Business management, simplified." featureLine /></div>
             <div style={{ margin: "26px auto 0", color: CYAN, fontSize: "clamp(15px, 1.7vw, 20px)", fontWeight: 800, letterSpacing: 2.4, textTransform: "uppercase" }}>BUSINESS MANAGEMENT, SIMPLIFIED</div>
             <div style={{ margin: "13px auto 0", color: "#FFFFFF", fontSize: "clamp(19px, 2.3vw, 27px)", fontWeight: 500, letterSpacing: -.3 }}>Run your business. With BizziBuddi</div>
             <h1 style={{ margin: "22px auto 0", maxWidth: 1080, fontSize: "clamp(42px, 6.5vw, 76px)", fontWeight: 700, lineHeight: 1.02, letterSpacing: -2.5 }}>One clear workspace for your people, jobs, production, calendar and money.</h1>
