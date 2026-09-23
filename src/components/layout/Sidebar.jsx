@@ -646,7 +646,7 @@ export default function Sidebar({
               size={76}
               dark
               showWordmark
-              tagline="Business support, simplified."
+              tagline="Business management, simplified."
             />
           </div>
 
