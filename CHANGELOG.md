@@ -4,6 +4,14 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Hero Brand Message
+
+### Changed
+
+- Updated the BizziBuddi tagline from “Business support, simplified.” to “Business management, simplified.”
+- Applied the revised wording consistently to the landing-page hero lockup and sidebar BizziBuddi branding.
+- Preserved the existing logo geometry, palette and supporting “Your personal assistant for business.” message.
+
 ## BizziBuddi Landing Hero Hierarchy
 
 ### Changed
