@@ -162,7 +162,7 @@ export default function BizzibuddiAccountPage() {
         </section>
 
         <nav aria-label="Account preview navigation" style={navStyle}>
-          {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"]].map(([key, label]) => (
+          {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"], ["buddi", "Ask Buddi"]].map(([key, label]) => (
             <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
           ))}
         </nav>
@@ -436,6 +436,20 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
           <strong style={{ display: "block", marginTop: 8, fontSize: 20 }}>{value}</strong>
         </div>
       ))}
+    </div>
+
+    <div style={buddiDashboardCard}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+        <div style={buddiDashboardIcon}>
+          <BizziBuddiLogo size={38} dark showWordmark={false} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <small style={smallText}>YOUR BUSINESS ASSISTANT</small>
+          <strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>Ask Buddi.</strong>
+          <p style={{ ...copyStyle, margin: "6px 0 0" }}>Ask questions about your people, jobs, calendar, money and business activity.</p>
+        </div>
+        <button type="button" onClick={onBuddi} style={{ ...primaryButton, width: "auto", marginTop: 0, whiteSpace: "nowrap" }}>Ask Buddi →</button>
+      </div>
     </div>
 
     <div style={businessActions}>
@@ -1108,6 +1122,25 @@ function MembershipAccessPanel({ planName }) {
 const membershipAccess = { marginTop: 20, padding: 20, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(37,99,235,.06)" };
 const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginTop: 16 };
 const membershipFeature = (available) => ({ display: "flex", alignItems: "flex-start", gap: 9, padding: 12, borderRadius: 10, border: "1px solid " + (available ? "rgba(0,180,219,.28)" : BORDER), background: available ? "rgba(0,180,219,.08)" : "rgba(255,255,255,.025)", color: available ? TEXT : MUTED });
+
+const buddiDashboardCard = {
+  marginTop: 22,
+  padding: 18,
+  borderRadius: 16,
+  border: "1px solid rgba(0,180,219,.55)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.11), rgba(37,99,235,.08))",
+  boxShadow: "0 12px 30px rgba(0,0,0,.16)",
+};
+
+const buddiDashboardIcon = {
+  width: 52,
+  height: 52,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  borderRadius: 14,
+  background: "rgba(0,180,219,.12)",
+};
 
 const businessActions = { marginTop: 28, padding: 24, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
 const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
