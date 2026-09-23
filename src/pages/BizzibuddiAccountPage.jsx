@@ -34,7 +34,7 @@ export default function BizzibuddiAccountPage() {
       name: String(form.get("name") || "").trim(),
       username: String(form.get("username") || "").trim().toLowerCase(),
       email: String(form.get("email") || "").trim().toLowerCase(),
-      business: String(form.get("business") || "").trim(),
+      business: "",
       plan: "Free",
       workspaceReady: false,
     };
@@ -147,7 +147,7 @@ function deriveUsername(account) {
 function AuthPanel({ mode, account, onSubmit, onSwitch }) {
   const login = mode === "login";
   return <section style={cardStyle(560)}>
-    <div style={centerStyle}><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your workspace setup."}</p></div>
+    <div style={centerStyle}><div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your workspace setup."}</p></div>
     <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
       {!login && <Field name="name" label="Full name" type="text" placeholder="Your name" />}
       {!login && <Field name="username" label="Username" type="text" placeholder="Choose a username" />}
@@ -155,7 +155,7 @@ function AuthPanel({ mode, account, onSubmit, onSwitch }) {
       {login && <Field name="identifier" label="Email address or username" type="text" placeholder="you@example.com or username" />}
       <Field name="password" label="Password" type="password" placeholder="Demo password" />
       {!login && <Field name="business" label="Business name" type="text" placeholder="Your business name" />}
-      <button type="submit" style={primaryButton}>{login ? "Log in · Demo" : "Create account · Demo"}</button>
+      <button type="submit" style={primaryButton}>{login ? "Log in · Demo" : "Continue to workspace →"}</button>
     </form>
     <p style={switchText}>{login ? "New to BizziBuddi?" : "Already have an account?"} <button type="button" onClick={onSwitch} style={textButton}>{login ? "Create an account" : "Log in"}</button></p>
     {login && account && <p style={smallText}>Local account detected for {account.email}{account.username ? ` · @${account.username}` : ""}.</p>}
@@ -163,7 +163,7 @@ function AuthPanel({ mode, account, onSubmit, onSwitch }) {
 }
 
 function OnboardingPanel({ account, onSubmit }) {
-  return <section style={cardStyle(620)}><div style={centerStyle}><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your workspace.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your workspace a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Workspace or business name" type="text" placeholder={account?.business || "Your workspace"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Complete setup · Demo</button></form></section>;
+  return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · WORKSPACE</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your workspace.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your workspace a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Workspace or business name" type="text" placeholder={account?.business || "Your workspace"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
 }
 
 function PlansPanel({ onSelectPlan }) {
@@ -193,6 +193,7 @@ const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, bo
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
 const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
 const centerStyle = { textAlign: "center" };
+const stepBadge = { display: "inline-block", marginBottom: 14, color: RED, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em" };
 const sectionHeading = { margin: "16px 0 10px", fontSize: "clamp(30px, 5vw, 44px)", letterSpacing: "-0.04em" };
 const copyStyle = { color: MUTED, lineHeight: 1.7 };
 const cardStyle = (maxWidth = "none") => ({ width: "100%", maxWidth, margin: "0 auto", boxSizing: "border-box", background: "rgba(255,255,255,.045)", border: `1px solid ${RED}`, borderRadius: 20, padding: "clamp(24px, 5vw, 48px)", boxShadow: "0 20px 48px rgba(0,0,0,.42)" });
