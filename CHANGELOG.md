@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Sidebar Branding
+
+### Changed
+
+- Replaced the old pink “B” platform card in the sidebar footer with the approved BizziBuddi clock logo and wordmark.
+- Applied the navy, blue and cyan BizziBuddi palette to the footer card and upgrade button.
+- Added the approved “Business support, simplified.” and “Your personal assistant for business.” messaging.
+- Updated the dark BizziBuddi wordmark so “Bizzi” remains light while “Buddi” retains the approved blue treatment.
+
+---
+
 ## BizziBuddi Final Logo Geometry
 
 ### Changed
