@@ -262,7 +262,7 @@ export default function Sidebar({
         padding: "18px 18px",
         flexShrink: 0,
         boxSizing: "border-box",
-        overflow: "visible",
+        overflow: "hidden",
       }}
     >
       <div
@@ -595,8 +595,8 @@ export default function Sidebar({
       <div
         style={{
           flexShrink: 0,
-          paddingTop: 12,
-          marginTop: 8,
+          paddingTop: 8,
+          marginTop: 6,
           textAlign: "center",
         }}
       >
@@ -623,7 +623,7 @@ export default function Sidebar({
             color: "#FFFFFF",
             textDecoration: "none",
             borderRadius: 16,
-            padding: "16px 12px 13px",
+            padding: "10px 10px 9px",
             background: "linear-gradient(145deg, #162C3F 0%, #0F2D4A 100%)",
             border: "1px solid #2563EB",
             boxShadow: "0 10px 28px rgba(0,0,0,.22)",
@@ -642,7 +642,7 @@ export default function Sidebar({
         >
           <div style={{ display: "flex", justifyContent: "center" }}>
             <BizziBuddiLogo
-              size={112}
+              size={76}
               dark
               showWordmark
               tagline="Business support, simplified."
@@ -651,10 +651,10 @@ export default function Sidebar({
 
           <div
             style={{
-              marginTop: 9,
+              marginTop: 7,
               color: "#FFFFFF",
               fontFamily: "Arial, Helvetica, sans-serif",
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 500,
               letterSpacing: ".01em",
             }}
@@ -664,8 +664,8 @@ export default function Sidebar({
 
           <div
             style={{
-              marginTop: 12,
-              padding: "9px 8px",
+              marginTop: 9,
+              padding: "8px 7px",
               borderRadius: 8,
               background: "linear-gradient(90deg, #2563EB 0%, #00B4DB 100%)",
               color: "#FFFFFF",
@@ -680,9 +680,9 @@ export default function Sidebar({
 
           <div
             style={{
-              marginTop: 9,
+              marginTop: 7,
               color: "#D7E4EE",
-              fontSize: 9,
+              fontSize: 8,
               fontWeight: 400,
             }}
           >
