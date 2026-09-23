@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import BizziBuddiLogo from "../common/BizziBuddiLogo";
 
 const PLATFORM_NAME = "BizziBuddi";
-const BRAND_RED = "#FF174F";
-const BRAND_RED_DARK = "#C4003D";
+const BRAND_BLUE = "#2563EB";
+const BRAND_NAVY = "#0F2D4A";
+const BRAND_CYAN = "#00B4DB";
 
 const MENU_ITEMS = [
   {
@@ -111,9 +113,9 @@ export default function Sidebar({
   branding,
   onNavigate,
 }) {
-  const primary = branding?.primaryColour || BRAND_RED_DARK;
-  const secondary = branding?.secondaryColour || "#2F3A3F";
-  const accent = branding?.accentColour || BRAND_RED;
+  const primary = branding?.primaryColour || BRAND_NAVY;
+  const secondary = "#2F3A3F";
+  const accent = BRAND_CYAN;
   const businessName = branding?.businessName || "Your Business";
   const logo = branding?.logo || "";
   const slogan = branding?.slogan?.trim() || "";
@@ -401,7 +403,7 @@ export default function Sidebar({
                     padding: "5px 12px",
                     border: `1px solid ${
                       active || menuHovered
-                        ? BRAND_RED
+                        ? BRAND_BLUE
                         : "transparent"
                     }`,
                     borderRadius:
@@ -412,9 +414,9 @@ export default function Sidebar({
                     fontSize: 15,
                     fontWeight: active ? 600 : 400,
                     background: active
-                      ? BRAND_RED_DARK
+                      ? BRAND_NAVY
                       : menuHovered
-                        ? BRAND_RED_DARK
+                        ? BRAND_NAVY
                         : "transparent",
                     color: "#FFFFFF",
                     transition:
@@ -424,7 +426,7 @@ export default function Sidebar({
                       : "translateX(0)",
                     boxShadow:
                       active || menuHovered
-                        ? "0 0 14px rgba(255,23,79,.22)"
+                        ? "0 0 14px rgba(0,180,219,.22)"
                         : "none",
                     boxSizing: "border-box",
                   }}
@@ -441,7 +443,7 @@ export default function Sidebar({
                       flexShrink: 0,
                       background:
                         active || menuHovered
-                          ? BRAND_RED
+                          ? BRAND_BLUE
                           : "rgba(255,255,255,.10)",
                       color: "#FFFFFF",
                       fontSize: item.icon === "$" ? 17 : 12,
@@ -460,7 +462,7 @@ export default function Sidebar({
                         fontSize: 15,
                         lineHeight: 1,
                         opacity: 1,
-                        color: BRAND_RED,
+                        color: BRAND_BLUE,
                         transform: expanded
                           ? "rotate(90deg)"
                           : "rotate(0deg)",
@@ -485,7 +487,7 @@ export default function Sidebar({
                     padding: "14px 12px",
                     boxSizing: "border-box",
                     background: secondary,
-                    border: `1px solid ${BRAND_RED}`,
+                    border: `1px solid ${BRAND_BLUE}`,
                     borderRadius: 12,
                     boxShadow: "0 18px 45px rgba(0,0,0,.35)",
                     zIndex: 1000,
@@ -502,12 +504,12 @@ export default function Sidebar({
                   <div
                     style={{
                       padding: "6px 10px 12px",
-                      color: BRAND_RED,
+                      color: BRAND_BLUE,
                       fontSize: 12,
                       fontWeight: 800,
                       letterSpacing: 0.7,
                       textTransform: "uppercase",
-                      borderBottom: `1px solid ${BRAND_RED}`,
+                      borderBottom: `1px solid ${BRAND_BLUE}`,
                       marginBottom: 8,
                     }}
                   >
@@ -538,14 +540,14 @@ export default function Sidebar({
                           margin: "3px 0",
                           border: `1px solid ${
                             subActive || subHovered
-                              ? BRAND_RED
+                              ? BRAND_BLUE
                               : "transparent"
                           }`,
                           borderRadius: 8,
                           background: subActive
-                            ? BRAND_RED_DARK
+                            ? BRAND_NAVY
                             : subHovered
-                              ? BRAND_RED_DARK
+                              ? BRAND_NAVY
                               : "transparent",
                           color: "#FFFFFF",
                           textAlign: "left",
@@ -563,7 +565,7 @@ export default function Sidebar({
                             style={{
                               display: "inline-block",
                               width: 12,
-                              color: BRAND_RED,
+                              color: BRAND_BLUE,
                             }}
                           >
                             •
@@ -574,7 +576,7 @@ export default function Sidebar({
                         <span
                           aria-hidden="true"
                           style={{
-                            color: BRAND_RED,
+                            color: BRAND_BLUE,
                             opacity: 1,
                           }}
                         >
@@ -593,7 +595,7 @@ export default function Sidebar({
       <div
         style={{
           flexShrink: 0,
-          paddingTop: 10,
+          paddingTop: 12,
           marginTop: 8,
           textAlign: "center",
         }}
@@ -601,11 +603,11 @@ export default function Sidebar({
         <div
           style={{
             color: "#E4E7E9",
-            fontSize: 11,
-            fontWeight: 500,
-            letterSpacing: 0.8,
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: 1.8,
             textTransform: "uppercase",
-            marginBottom: 7,
+            marginBottom: 8,
           }}
         >
           Powered by
@@ -619,81 +621,44 @@ export default function Sidebar({
           style={{
             display: "block",
             color: "#FFFFFF",
-            fontSize: 13,
-            lineHeight: 1.6,
-            textAlign: "center",
             textDecoration: "none",
-            borderRadius: 12,
-            padding: "15px 12px 13px",
-            background:
-              "linear-gradient(145deg, #20252B 0%, #151923 100%)",
-            border: `1px solid ${BRAND_RED}`,
-            boxShadow: "0 8px 24px rgba(0,0,0,.18)",
-            transition:
-              "color .2s ease, background .2s ease, transform .2s ease, box-shadow .2s ease",
+            borderRadius: 16,
+            padding: "16px 12px 13px",
+            background: "linear-gradient(145deg, #162C3F 0%, #0F2D4A 100%)",
+            border: "1px solid #2563EB",
+            boxShadow: "0 10px 28px rgba(0,0,0,.22)",
+            transition: "transform .2s ease, box-shadow .2s ease, border-color .2s ease",
           }}
           onMouseEnter={(event) => {
-            event.currentTarget.style.background = BRAND_RED_DARK;
             event.currentTarget.style.transform = "translateY(-2px)";
-            event.currentTarget.style.boxShadow =
-              "0 8px 22px rgba(255,23,79,.24)";
+            event.currentTarget.style.boxShadow = "0 12px 30px rgba(0,180,219,.18)";
+            event.currentTarget.style.borderColor = "#00B4DB";
           }}
           onMouseLeave={(event) => {
-            event.currentTarget.style.background =
-              "linear-gradient(145deg, #20252B 0%, #151923 100%)";
             event.currentTarget.style.transform = "translateY(0)";
-            event.currentTarget.style.boxShadow =
-              "0 8px 24px rgba(0,0,0,.18)";
+            event.currentTarget.style.boxShadow = "0 10px 28px rgba(0,0,0,.22)";
+            event.currentTarget.style.borderColor = "#2563EB";
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              marginBottom: 10,
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                width: 46,
-                height: 46,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: 12,
-                border: `2px solid ${BRAND_RED}`,
-                background: BRAND_RED,
-                color: "#FFFFFF",
-                fontSize: 23,
-                fontWeight: 900,
-              }}
-            >
-              B
-            </span>
-
-            <span
-              style={{
-                color: "#FFFFFF",
-                fontWeight: 500,
-                fontSize: 18,
-                letterSpacing: 0.2,
-              }}
-            >
-              {PLATFORM_NAME}
-            </span>
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <BizziBuddiLogo
+              size={118}
+              dark
+              showWordmark
+              tagline="Business support, simplified."
+            />
           </div>
 
           <div
             style={{
+              marginTop: 9,
               color: "#FFFFFF",
-              fontWeight: 300,
-              fontSize: 12,
+              fontFamily: "Arial, Helvetica, sans-serif",
+              fontSize: 11,
+              fontWeight: 500,
             }}
           >
-            Business management, all in one place.
+            Your personal assistant for business.
           </div>
 
           <div
@@ -701,12 +666,12 @@ export default function Sidebar({
               marginTop: 12,
               padding: "9px 8px",
               borderRadius: 8,
-              background: BRAND_RED,
+              background: "linear-gradient(90deg, #2563EB 0%, #00B4DB 100%)",
               color: "#FFFFFF",
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: 800,
               lineHeight: 1.4,
-              boxShadow: "0 5px 16px rgba(255,23,79,.2)",
+              boxShadow: "0 5px 16px rgba(0,180,219,.16)",
             }}
           >
             View BizziBuddi plans &amp; upgrade →
@@ -715,15 +680,16 @@ export default function Sidebar({
           <div
             style={{
               marginTop: 9,
-              color: "#FFFFFF",
-              fontSize: 10,
-              fontWeight: 300,
+              color: "#D7E4EE",
+              fontSize: 9,
+              fontWeight: 400,
             }}
           >
             © {new Date().getFullYear()} {PLATFORM_NAME}. All rights reserved.
           </div>
         </a>
       </div>
+</div>
     </aside>
   );
 }
