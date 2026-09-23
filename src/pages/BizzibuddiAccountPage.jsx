@@ -50,22 +50,29 @@ export default function BizzibuddiAccountPage() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const identifier = String(form.get("identifier") || "").trim().toLowerCase();
+    const storedAccount = readAccount();
+    const storedEmail = String(storedAccount?.email || "").trim().toLowerCase();
+    const storedUsername = String(storedAccount?.username || deriveUsername(storedAccount)).trim().toLowerCase();
 
-    if (!account) {
+    if (!storedAccount) {
       setMessage("No mock account exists yet. Create one first.");
       return;
     }
 
-    const email = String(account.email || "").trim().toLowerCase();
-    const username = String(account.username || deriveUsername(account)).trim().toLowerCase();
-
-    if (identifier !== email && identifier !== username) {
+    if (identifier !== storedEmail && identifier !== storedUsername) {
       setMessage("Enter the email address or username used for this mock account.");
       return;
     }
 
-    setMessage(`Welcome back, ${account.name}.`);
+    setAccount(storedAccount);
+    setMessage(`Welcome back, ${storedAccount.name}.`);
     setView("onboarding");
+  }
+
+  function handleLogout() {
+    setAccount(null);
+    setMessage("You have been logged out. Your local demo data remains saved in this browser.");
+    setView("login");
   }
 
   function completeOnboarding(event) {
@@ -164,7 +171,7 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} productionCount={productionRecords.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onReset={resetDemo} onLogout={handleLogout} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} productionCount={productionRecords.length} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
@@ -404,7 +411,7 @@ function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onProduction, onReports, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount, productionCount }) {
+function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onProduction, onReports, onReset, onLogout, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount, productionCount }) {
     return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
     <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
@@ -484,7 +491,10 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
       <p style={copyStyle}>This business preview is still running on local demo data. Real authentication, databases and billing are not connected yet.</p>
     </div>
 
-    <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
+    <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 18 }}>
+      <button type="button" onClick={onLogout} style={textButton}>Log out</button>
+      <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
+    </div>
   </section>;
 }
 
