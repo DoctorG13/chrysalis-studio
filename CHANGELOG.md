@@ -4,6 +4,19 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Entry and Account Flow
+
+### Fixed
+
+- Connected the public BizziBuddi hero and closing CTA buttons directly to account creation.
+- Connected the public pricing buttons to BizziBuddi account creation for Free and the membership plans preview for Professional and Business.
+- Connected the BizziBuddi landing-page Log in links directly to the BizziBuddi account login view.
+- Added a clear Log out action to the BizziBuddi account dashboard.
+- Preserved local BizziBuddi business data when logging out so the mock account can be logged into again.
+- Updated the mock login flow to recover the stored local account after logout.
+- Kept billing, subscriptions and real authentication disconnected as planned.
+
+
 ## BizziBuddi Business Advanced Reporting Preview
 
 ### Added
