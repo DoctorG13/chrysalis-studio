@@ -1,5 +1,11 @@
 # Changelog
 
+## BizziBuddi Help Navigation Runtime Fix
+
+- Corrected the Ask Buddi/help navigation icon style reference that caused the account page to render blank.
+- No visual or behavioural changes beyond restoring the new help navigation.
+
+
 ## BizziBuddi Help Navigation Visual Upgrade
 
 - Elevated the **Need a hand?** area into a larger, more prominent help block.
