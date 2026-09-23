@@ -591,33 +591,37 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
   const existing = records.find((record) => record.jobId === selectedJobId);
 
   if (!available) {
-    return <section style={cardStyle(720)}>
-      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
-      <div style={{ ...centerStyle, marginTop: 24 }}>
-        <p style={eyebrowStyle}>PRODUCTION</p>
-        <h2 style={sectionHeading}>Know what is happening next.</h2>
-        <p style={copyStyle}>Production tracking is included with Business membership. Track the stages and tasks that move work from job creation to completion.</p>
-        <div style={lockedFeatureCard}>
-          <span style={{ fontSize: 26 }}>🔒</span>
-          <div>
-            <strong style={{ display: "block", fontSize: 18 }}>Business production tracking</strong>
-            <p style={{ ...copyStyle, marginBottom: 0 }}>Stage tracking, production tasks and progress visibility are available on Business.</p>
+    return (
+      <section style={cardStyle(720)}>
+        <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+        <div style={{ ...centerStyle, marginTop: 24 }}>
+          <p style={eyebrowStyle}>PRODUCTION</p>
+          <h2 style={sectionHeading}>Know what is happening next.</h2>
+          <p style={copyStyle}>Production tracking is included with Business membership. Track the stages and tasks that move work from job creation to completion.</p>
+          <div style={lockedFeatureCard}>
+            <span style={{ fontSize: 26 }}>🔒</span>
+            <div>
+              <strong style={{ display: "block", fontSize: 18 }}>Business production tracking</strong>
+              <p style={{ ...copyStyle, marginBottom: 0 }}>Stage tracking, production tasks and progress visibility are available on Business.</p>
+            </div>
           </div>
+          <button type="button" onClick={onPlans} style={primaryButton}>View membership plans</button>
         </div>
-        <button type="button" onClick={onPlans} style={primaryButton}>View membership plans</button>
-      </div>
-    </section>;
+      </section>
+    );
   }
 
   function handleSave(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const taskText = String(form.get("tasks") || "").trim();
-    const tasks = taskText ? taskText.split("\n").map((task) => task.trim()).filter(Boolean).map((title, index) => ({
-      id: `task-${Date.now()}-${index}`,
-      title,
-      complete: false,
-    })) : [];
+    const tasks = taskText
+      ? taskText.split("\n").map((task) => task.trim()).filter(Boolean).map((title, index) => ({
+          id: `task-${Date.now()}-${index}`,
+          title,
+          complete: false,
+        }))
+      : [];
 
     onSave({
       id: existing?.id || `production-${Date.now()}`,
@@ -631,65 +635,103 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     });
   }
 
-  return <section style={cardStyle(940)}>
-    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
-    <div style={{ marginTop: 22 }}>
-      <p style={eyebrowStyle}>PRODUCTION</p>
-      <h2 style={sectionHeading}>Production tracking.</h2>
-      <p style={copyStyle}>See where each job is, what needs doing and when the work needs to be ready.</p>
-    </div>
+  return (
+    <section style={cardStyle(940)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
 
-    {jobs.length === 0 ? (
-      <div style={emptyPeople}>
-        <strong>Create a job first.</strong>
-        <p style={copyStyle}>Production tracking works from your BizziBuddi jobs.</p>
+      <div style={{ marginTop: 22 }}>
+        <p style={eyebrowStyle}>PRODUCTION</p>
+        <h2 style={sectionHeading}>Production tracking.</h2>
+        <p style={copyStyle}>See where each job is, what needs doing and when the work needs to be ready.</p>
       </div>
-    ) : (
-      <>
-        <label style={fieldStyle}>Job<select value={selectedJobId} onChange={(event) => setSelectedJobId(event.target.value)} style={inputStyle}>
-          {jobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}
-        </select></label>
 
-        <div style={productionProgress}>
-          {stages.map((stage, index) => {
-            const currentStage = existing?.stage || "Not started";
-            const currentIndex = stages.indexOf(currentStage);
-            return <div key={stage} style={productionStage(stage === currentStage, index <= currentIndex)}>
-              <span>{index + 1}</span>
-              <small>{stage}</small>
-            </div>;
-          })}
+      {jobs.length === 0 && (
+        <div style={emptyPeople}>
+          <strong>Create a job first.</strong>
+          <p style={copyStyle}>Production tracking works from your BizziBuddi jobs.</p>
         </div>
+      )}
 
-        <form onSubmit={handleSave} style={personForm}>
-          <strong style={{ fontSize: 18 }}>Update production</strong>
-          <label style={fieldStyle}>Production stage<select required name="stage" defaultValue={existing?.stage || "Not started"} style={inputStyle}>
-            {stages.map((stage) => <option key={stage}>{stage}</option>)}
-          </select></label>
-          <Field name="dueDate" label="Ready by" type="date" defaultValue={existing?.dueDate || ""} />
-          <label style={fieldStyle}>Production tasks<small style={{ display: "block", color: MUTED, marginTop: 5, fontWeight: 400 }}>One task per line.</small><textarea name="tasks" defaultValue={(existing?.tasks || []).map((task) => task.title).join("\n")} placeholder={"Cut fabric\nSew panels\nFinal fitting"} rows="5" style={{ ...inputStyle, padding: 15, resize: "vertical" }} /></label>
-          <Field name="notes" label="Production notes" type="text" placeholder="Optional production notes" defaultValue={existing?.notes || ""} />
-          <button type="submit" style={{ ...primaryButton, maxWidth: 260 }}>Save production progress</button>
-        </form>
-      </>
-    )}
+      {jobs.length > 0 && (
+        <div>
+          <label style={fieldStyle}>
+            Job
+            <select value={selectedJobId} onChange={(event) => setSelectedJobId(event.target.value)} style={inputStyle}>
+              {jobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}
+            </select>
+          </label>
 
-    {records.length > 0 && <div style={{ marginTop: 28 }}>
-      <small style={smallText}>TRACKED JOBS</small>
-      <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-        {records.map((record) => (
-          <article key={record.id} style={productionRecordCard}>
-            <div>
-              <strong style={{ display: "block", fontSize: 16 }}>{record.jobTitle}</strong>
-              <span style={smallText}>{record.stage}{record.dueDate ? ` · Ready ${formatProductionDate(record.dueDate)}` : ""}</span>
-              {record.tasks?.length > 0 && <span style={{ ...smallText, display: "block", marginTop: 5 }}>{record.tasks.length} production task{record.tasks.length === 1 ? "" : "s"}</span>}
-            </div>
-            <span style={productionBadge}>{record.stage.toUpperCase()}</span>
-          </article>
-        ))}
-      </div>
-    </div>
-  </section>;
+          <div style={productionProgress}>
+            {stages.map((stage, index) => {
+              const currentStage = existing?.stage || "Not started";
+              const currentIndex = stages.indexOf(currentStage);
+
+              return (
+                <div key={stage} style={productionStage(stage === currentStage, index <= currentIndex)}>
+                  <span>{index + 1}</span>
+                  <small>{stage}</small>
+                </div>
+              );
+            })}
+          </div>
+
+          <form onSubmit={handleSave} style={personForm}>
+            <strong style={{ fontSize: 18 }}>Update production</strong>
+
+            <label style={fieldStyle}>
+              Production stage
+              <select required name="stage" defaultValue={existing?.stage || "Not started"} style={inputStyle}>
+                {stages.map((stage) => <option key={stage}>{stage}</option>)}
+              </select>
+            </label>
+
+            <Field name="dueDate" label="Ready by" type="date" defaultValue={existing?.dueDate || ""} />
+
+            <label style={fieldStyle}>
+              Production tasks
+              <small style={{ display: "block", color: MUTED, marginTop: 5, fontWeight: 400 }}>One task per line.</small>
+              <textarea
+                name="tasks"
+                defaultValue={(existing?.tasks || []).map((task) => task.title).join("\n")}
+                placeholder={"Cut fabric\nSew panels\nFinal fitting"}
+                rows="5"
+                style={{ ...inputStyle, padding: 15, resize: "vertical" }}
+              />
+            </label>
+
+            <Field name="notes" label="Production notes" type="text" placeholder="Optional production notes" defaultValue={existing?.notes || ""} />
+
+            <button type="submit" style={{ ...primaryButton, maxWidth: 260 }}>Save production progress</button>
+          </form>
+        </div>
+      )}
+
+      {records.length > 0 && (
+        <div style={{ marginTop: 28 }}>
+          <small style={smallText}>TRACKED JOBS</small>
+          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
+            {records.map((record) => (
+              <article key={record.id} style={productionRecordCard}>
+                <div>
+                  <strong style={{ display: "block", fontSize: 16 }}>{record.jobTitle}</strong>
+                  <span style={smallText}>
+                    {record.stage}
+                    {record.dueDate ? ` · Ready ${formatProductionDate(record.dueDate)}` : ""}
+                  </span>
+                  {record.tasks?.length > 0 && (
+                    <span style={{ ...smallText, display: "block", marginTop: 5 }}>
+                      {record.tasks.length} production task{record.tasks.length === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </div>
+                <span style={productionBadge}>{record.stage.toUpperCase()}</span>
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
 
 function formatProductionDate(date) {
