@@ -4,6 +4,14 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Buddi Dashboard Visibility
+
+### Added
+
+- Added a dedicated Ask Buddi navigation tab to the BizziBuddi account experience.
+- Added a prominent Buddi assistant card near the top of the BizziBuddi business dashboard.
+- Kept the existing Ask Buddi dashboard action and assistant experience intact.
+
 ## BizziBuddi Buddi Import Fix
 
 ### Fixed
