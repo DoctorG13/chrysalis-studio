@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Mobile Pricing Card Compactness
+
+### Changed
+
+- Reduced pricing-card padding and internal spacing on small mobile screens.
+- Tightened plan descriptions, feature lists, popular-plan banner and action buttons.
+- Preserved all mock pricing, plans, feature lists and placeholder billing actions.
+
+
 ## BizziBuddi Mobile Content Compactness
 
 ### Changed
