@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Mobile Content Compactness
+
+### Changed
+
+- Reduced vertical spacing across the public landing-page content sections on tablet and mobile widths.
+- Tightened section headings and supporting copy for smaller screens.
+- Preserved the desktop layout, content and existing responsive card grids.
+
+
 ## BizziBuddi Mobile Footer Compactness
 
 ### Changed
