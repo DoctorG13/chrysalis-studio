@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Sidebar Short-Viewport Behaviour
+
+### Changed
+
+- Added responsive sidebar sizing for shorter laptop and browser viewports.
+- Reduced non-essential sidebar spacing and control dimensions below 760px viewport height.
+- Further compacted the BizziBuddi footer below 650px while preserving the approved logo, messaging and upgrade action.
+- Kept the main navigation independently scrollable so all menu items remain accessible.
+
 ## BizziBuddi Sidebar Navigation Containment
 
 ### Fixed
