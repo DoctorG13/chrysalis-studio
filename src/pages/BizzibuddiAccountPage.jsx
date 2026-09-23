@@ -20,6 +20,7 @@ export default function BizzibuddiAccountPage() {
   const [people, setPeople] = useState(() => readPeople());
   const [jobs, setJobs] = useState(() => readJobs());
   const [appointments, setAppointments] = useState(() => readAppointments());
+  const [invoices, setInvoices] = useState(() => readInvoices());
 
   function selectView(nextView) {
     setView(nextView);
@@ -92,6 +93,7 @@ export default function BizzibuddiAccountPage() {
     localStorage.removeItem("bizzibuddiMockPeople");
     localStorage.removeItem("bizzibuddiMockJobs");
     localStorage.removeItem("bizzibuddiMockAppointments");
+    localStorage.removeItem("bizzibuddiMockInvoices");
     setAccount(null);
     setMessage("Local demo data cleared.");
     setView("create");
@@ -124,7 +126,8 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} />}
+        {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); }} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
@@ -165,6 +168,15 @@ function readJobs() {
 function readAppointments() {
   try {
     const value = localStorage.getItem("bizzibuddiMockAppointments");
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+function readInvoices() {
+  try {
+    const value = localStorage.getItem("bizzibuddiMockInvoices");
     return value ? JSON.parse(value) : [];
   } catch {
     return [];
@@ -333,7 +345,7 @@ function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onReset, peopleCount, jobsCount, appointmentsCount }) {
+function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount }) {
     return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
     <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
@@ -346,6 +358,7 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onRese
         ["People", peopleCount ? `${peopleCount} added` : "Ready to add"],
         ["Jobs", jobsCount ? `${jobsCount} created` : "Ready to add"],
         ["Calendar", appointmentsCount ? `${appointmentsCount} booked` : "Ready to use"],
+        ["Finance", invoicesCount ? `${invoicesCount} invoices` : "Ready to use"],
       ].map(([label, value]) => (
         <div key={label} style={statCard}>
           <small style={smallText}>{label}</small>
@@ -379,6 +392,10 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onRese
           <span style={actionIcon}>📅</span>
           <span><strong>Open your calendar</strong><small>Keep appointments and business dates organised.</small></span>
         </button>
+        <button type="button" onClick={onFinance} style={actionCard}>
+          <span style={actionIcon}>💳</span>
+          <span><strong>Open finance</strong><small>Manage invoices and payment status.</small></span>
+        </button>
         <button type="button" onClick={onPlans} style={actionCard}>
           <span style={actionIcon}>⚡</span>
           <span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span>
@@ -395,6 +412,124 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onRese
 
     <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
   </section>;
+}
+
+function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMarkPaid, onBack }) {
+  const [showForm, setShowForm] = useState(false);
+  const available = hasBizzibuddiFeature(account?.plan, "finance");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const personId = String(form.get("personId") || "");
+    const person = people.find((item) => item.id === personId);
+    const amount = Number(form.get("amount") || 0);
+
+    onAddInvoice({
+      id: "invoice-" + Date.now(),
+      number: "INV-" + String(Date.now()).slice(-6),
+      personName: person?.name || "No client linked",
+      amount: Number.isFinite(amount) ? amount : 0,
+      amountPaid: 0,
+      dueDate: String(form.get("dueDate") || ""),
+      status: "Issued",
+    });
+
+    event.currentTarget.reset();
+    setShowForm(false);
+  }
+
+  if (!available) {
+    return <section style={cardStyle(760)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 34 }}>
+        <div style={stepBadge}>PROFESSIONAL FEATURE</div>
+        <h2 style={sectionHeading}>Finance & invoices.</h2>
+        <p style={copyStyle}>Payments and invoices are included with Professional and Business membership.</p>
+        <div style={lockedFeatureCard}>
+          <span style={{ fontSize: 28 }}>🔒</span>
+          <div>
+            <strong style={{ display: "block", fontSize: 18 }}>Available on Professional</strong>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Upgrade your local preview to explore invoice and payment management.</p>
+          </div>
+        </div>
+        <button type="button" onClick={onPlans} style={{ ...primaryButton, maxWidth: 260 }}>View membership plans</button>
+      </div>
+    </section>;
+  }
+
+  return <section style={cardStyle(940)}>
+    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+    <div style={{ marginTop: 22 }}>
+      <p style={eyebrowStyle}>FINANCE</p>
+      <h2 style={sectionHeading}>Your finances.</h2>
+      <p style={copyStyle}>Create invoices and keep track of what has been paid. This Professional preview is local-only.</p>
+    </div>
+
+    <div style={financeSummary}>
+      <div><small style={smallText}>OUTSTANDING</small><strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{formatCurrency(invoices.reduce((sum, invoice) => sum + Math.max(0, invoice.amount - (invoice.amountPaid || 0)), 0))}</strong></div>
+      <div><small style={smallText}>INVOICES</small><strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{invoices.length}</strong></div>
+      <div><small style={smallText}>PAID</small><strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{invoices.filter((invoice) => invoice.status === "Paid").length}</strong></div>
+    </div>
+
+    {invoices.length > 0 ? (
+      <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
+        {invoices.map((invoice) => {
+          const balance = Math.max(0, invoice.amount - (invoice.amountPaid || 0));
+          return <article key={invoice.id} style={invoiceCard}>
+            <div>
+              <strong style={{ display: "block", fontSize: 17 }}>{invoice.number}</strong>
+              <span style={smallText}>{invoice.personName} · Due {formatInvoiceDate(invoice.dueDate)}</span>
+            </div>
+            <div style={invoiceMeta}>
+              <strong>{formatCurrency(invoice.amount)}</strong>
+              <span style={invoiceStatus(invoice.status)}>{invoice.status}</span>
+              {invoice.status !== "Paid" && <button type="button" onClick={() => onMarkPaid(invoice.id)} style={smallActionButton}>Mark paid</button>}
+              {invoice.status !== "Paid" && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
+            </div>
+          </article>;
+        })}
+      </div>
+    ) : (
+      <div style={emptyPeople}>
+        <strong>No invoices yet.</strong>
+        <p style={copyStyle}>Create your first invoice to start tracking money coming into your business.</p>
+      </div>
+    )}
+
+    {!showForm ? (
+      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 240 }}>+ Create an invoice</button>
+    ) : (
+      <form onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>Create an invoice</strong>
+        <label style={fieldStyle}>Client<select required name="personId" defaultValue="" style={inputStyle}>
+          <option value="" disabled>Select a person</option>
+          {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+          {people.length === 0 && <option value="" disabled>Add a person first</option>}
+        </select></label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+          <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
+          <Field name="dueDate" label="Due date" type="date" required />
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button type="submit" disabled={people.length === 0} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 ? 0.5 : 1 }}>Save invoice</button>
+          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+        </div>
+        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create an invoice for them.</p>}
+      </form>
+    )}
+  </section>;
+}
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(amount) || 0);
+}
+
+function formatInvoiceDate(date) {
+  if (!date) return "Not set";
+  const value = new Date(date + "T00:00");
+  if (Number.isNaN(value.getTime())) return date;
+  return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
 function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
@@ -520,6 +655,12 @@ const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, min
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
 const appointmentCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const financeSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 28 };
+const invoiceCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
+const invoiceMeta = { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" };
+const invoiceStatus = (status) => ({ padding: "6px 9px", borderRadius: 999, background: status === "Paid" ? "rgba(0,180,219,.12)" : "rgba(37,99,235,.12)", color: status === "Paid" ? CYAN : RED, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" });
+const smallActionButton = { border: `1px solid ${RED}`, borderRadius: 8, padding: "7px 10px", background: "transparent", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" };
+const lockedFeatureCard = { display: "flex", alignItems: "flex-start", gap: 14, maxWidth: 520, margin: "24px auto 0", padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", textAlign: "left" };
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
 const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
