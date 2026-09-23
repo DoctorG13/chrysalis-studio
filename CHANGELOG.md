@@ -4,6 +4,22 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Business Production Tracking Preview
+
+### Added
+
+- Added a local BizziBuddi Production preview for Business membership.
+- Added production stages from Not started through Complete.
+- Added ready-by dates and production notes.
+- Added production task entry for each tracked job.
+- Added production progress visibility and tracked-job summaries.
+- Added Production to the BizziBuddi dashboard and membership access experience.
+- Locked Production for Free and Professional membership with an upgrade path to Business.
+- Kept production tracking local-only and independent from the existing production Chrysalis garment workflow.
+
+
+---
+
 ## BizziBuddi Professional Automation Preview
 
 ### Added
