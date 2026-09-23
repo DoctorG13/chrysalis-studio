@@ -4,6 +4,18 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Jobs Workspace Preview
+
+### Added
+
+- Added the first functional Jobs workspace to the local BizziBuddi preview.
+- Added job creation with a job name, client assignment and status.
+- Added a simple jobs list with client and status visibility.
+- Added local-only job persistence in the browser.
+- Connected the workspace welcome screen's “Create a job” action to the Jobs workspace.
+- Kept job creation dependent on a person being available for assignment.
+
+
 ## BizziBuddi People Workspace Preview
 
 ### Added
