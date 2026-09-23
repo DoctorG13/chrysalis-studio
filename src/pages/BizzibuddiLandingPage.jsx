@@ -106,7 +106,7 @@ export default function BizzibuddiLandingPage() {
   if (pathname === "/bizzibuddi/privacy") return <BizzibuddiPrivacyPage />;
 
   const goPricing = () => scrollToId("pricing");
-  const nav = { border: "none", background: "transparent", color: "#FFFFFF", fontWeight: 500, fontSize: 13, cursor: "pointer", padding: "10px 4px" };
+  const nav = { border: "none", background: "transparent", color: "#FFFFFF", fontWeight: 500, fontSize: 13, cursor: "pointer", padding: "7px 4px" };
   const pillars = [["ONE PLACE", "Everything together", "Stop jumping between spreadsheets, notes and messages."], ["CLEAR WORKFLOW", "Know what is next", "Keep work moving from first contact to completion."], ["LESS ADMIN", "Get time back", "Simple tools designed around everyday business work."]];
   const reasons = [["Clarity", "See the information that matters without digging through systems."], ["Control", "Keep jobs, schedules, payments and processes organised."], ["Confidence", "Know where your work and business stand at a glance."]];
 
@@ -134,9 +134,9 @@ export default function BizzibuddiLandingPage() {
             <a href="/login" className="bizzibuddi-nav-link" style={{ ...nav, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Log in</a>
             <CtaButton onClick={goPricing}>Start Free →</CtaButton>
           </nav>
-          <button type="button" aria-label="Open navigation" onClick={() => setMobileOpen((value) => !value)} style={{ ...buttonBase, border: `2px solid ${RED}`, background: RED_DARK, color: "#FFF", display: "none" }} className="bizzibuddi-mobile-button">☰</button>
+          <button type="button" aria-label="Open navigation" onClick={() => setMobileOpen((value) => !value)} style={{ ...buttonBase, minHeight: 40, padding: "0 14px", border: `2px solid ${RED}`, background: RED_DARK, color: "#FFF", display: "none" }} className="bizzibuddi-mobile-button">☰</button>
         </div>
-        {mobileOpen && <div style={{ padding: "0 22px 18px", display: "grid", gap: 9 }}><button type="button" onClick={() => { setMobileOpen(false); scrollToId("why"); }} style={nav}>Why BizziBuddi</button><button type="button" onClick={() => { setMobileOpen(false); scrollToId("features"); }} style={nav}>Features</button><button type="button" onClick={() => { setMobileOpen(false); goPricing(); }} style={nav}>Pricing</button><a href="/login" onClick={() => setMobileOpen(false)} style={{ ...nav, textDecoration: "none", textAlign: "center" }}>Log in</a><CtaButton onClick={() => { setMobileOpen(false); goPricing(); }}>Start Free →</CtaButton></div>}
+        {mobileOpen && <div style={{ padding: "0 22px 12px", display: "grid", gap: 6 }}><button type="button" onClick={() => { setMobileOpen(false); scrollToId("why"); }} style={nav}>Why BizziBuddi</button><button type="button" onClick={() => { setMobileOpen(false); scrollToId("features"); }} style={nav}>Features</button><button type="button" onClick={() => { setMobileOpen(false); goPricing(); }} style={nav}>Pricing</button><a href="/login" onClick={() => setMobileOpen(false)} style={{ ...nav, textDecoration: "none", textAlign: "center" }}>Log in</a><CtaButton onClick={() => { setMobileOpen(false); goPricing(); }}>Start Free →</CtaButton></div>}
       </header>
       <main>
         <section style={{ background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: "#FFF", padding: "42px 22px 38px" }}>
