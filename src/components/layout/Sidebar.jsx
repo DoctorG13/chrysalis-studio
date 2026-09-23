@@ -271,6 +271,7 @@ export default function Sidebar({
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         <div
