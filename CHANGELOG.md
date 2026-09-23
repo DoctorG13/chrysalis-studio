@@ -4,6 +4,17 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## Sidebar Blank-Screen Hardening
+
+### Fixed
+
+- Removed direct browser viewport access from the sidebar state initializer.
+- Initialise viewport height safely before the browser resize effect runs.
+- Preserved the responsive short-viewport behaviour without requiring `window` during component initialisation.
+
+
+---
+
 ## BizziBuddi Sidebar Short-Viewport Behaviour
 
 ### Changed
