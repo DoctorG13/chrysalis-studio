@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Sidebar Footer Layout Fix
+
+### Fixed
+
+- Reduced the sidebar BizziBuddi footer footprint so it no longer obscures the main navigation.
+- Kept the approved shared BizziBuddi logo and final brand treatment intact.
+- Constrained the sidebar itself to the viewport so navigation remains contained and scrollable when space is limited.
+
+---
+
 ## BizziBuddi Sidebar Branding
 
 ### Changed
