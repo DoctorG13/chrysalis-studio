@@ -132,11 +132,11 @@ export default function BizzibuddiLandingPage() {
             <button type="button" onClick={() => scrollToId("features")} className="bizzibuddi-nav-link" style={nav}>Features</button>
             <button type="button" onClick={goPricing} className="bizzibuddi-nav-link" style={nav}>Pricing</button>
             <a href="/login" className="bizzibuddi-nav-link" style={{ ...nav, textDecoration: "none", display: "inline-flex", alignItems: "center" }}>Log in</a>
-            <CtaButton onClick={goPricing}>Start Free →</CtaButton>
+            <CtaButton onClick={() => { window.location.href = "/bizzibuddi/account?view=create"; }}>Start Free →</CtaButton>
           </nav>
           <button type="button" aria-label="Open navigation" onClick={() => setMobileOpen((value) => !value)} style={{ ...buttonBase, minHeight: 40, padding: "0 14px", border: `2px solid ${RED}`, background: RED_DARK, color: "#FFF", display: "none" }} className="bizzibuddi-mobile-button">☰</button>
         </div>
-        {mobileOpen && <div style={{ padding: "0 22px 12px", display: "grid", gap: 6 }}><button type="button" onClick={() => { setMobileOpen(false); scrollToId("why"); }} style={nav}>Why BizziBuddi</button><button type="button" onClick={() => { setMobileOpen(false); scrollToId("features"); }} style={nav}>Features</button><button type="button" onClick={() => { setMobileOpen(false); goPricing(); }} style={nav}>Pricing</button><a href="/login" onClick={() => setMobileOpen(false)} style={{ ...nav, textDecoration: "none", textAlign: "center" }}>Log in</a><CtaButton onClick={() => { setMobileOpen(false); goPricing(); }}>Start Free →</CtaButton></div>}
+        {mobileOpen && <div style={{ padding: "0 22px 12px", display: "grid", gap: 6 }}><button type="button" onClick={() => { setMobileOpen(false); scrollToId("why"); }} style={nav}>Why BizziBuddi</button><button type="button" onClick={() => { setMobileOpen(false); scrollToId("features"); }} style={nav}>Features</button><button type="button" onClick={() => { setMobileOpen(false); goPricing(); }} style={nav}>Pricing</button><a href="/login" onClick={() => setMobileOpen(false)} style={{ ...nav, textDecoration: "none", textAlign: "center" }}>Log in</a><CtaButton onClick={() => { setMobileOpen(false); window.location.href = "/bizzibuddi/account?view=create"; }}>Start Free →</CtaButton></div>}
       </header>
       <main>
         <section className="bizzibuddi-hero" style={{ background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: "#FFF", padding: "42px 22px 38px" }}>
