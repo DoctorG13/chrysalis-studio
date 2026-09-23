@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Mobile Footer Compactness
+
+### Changed
+
+- Reduced the BizziBuddi landing-page footer footprint on small mobile screens.
+- Tightened footer column spacing, account links, legal links and the development note.
+- Preserved all footer links, legal destinations and branding.
+
+
 ## BizziBuddi Mobile Hero Compactness
 
 ### Changed
