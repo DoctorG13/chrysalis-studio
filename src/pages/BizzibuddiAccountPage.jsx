@@ -177,7 +177,7 @@ export default function BizzibuddiAccountPage() {
             <p style={navAssistantSubheading}>Get answers. Find help. Keep moving.</p>
             <div style={navAssistantButtons}>
               <button type="button" onClick={() => selectView("buddi")} style={assistantNavButton(view === "buddi")}>
-                <span style={assistantNavIcon(true)} aria-hidden="true">•••</span>
+                <span style={navAssistantIcon(true)} aria-hidden="true">•••</span>
                 <span style={navAssistantCopy}>
                   <strong>ASK BUDDI</strong>
                   <small>Get instant help with your business</small>
@@ -185,7 +185,7 @@ export default function BizzibuddiAccountPage() {
                 <span style={navAssistantArrow(true)} aria-hidden="true">→</span>
               </button>
               <button type="button" onClick={() => selectView("help")} style={helpNavButton(view === "help")}>
-                <span style={assistantNavIcon(false)} aria-hidden="true">◯</span>
+                <span style={navAssistantIcon(false)} aria-hidden="true">◯</span>
                 <span style={navAssistantCopy}>
                   <strong>HELP & SUPPORT</strong>
                   <small>Guides, FAQs and contact options</small>
