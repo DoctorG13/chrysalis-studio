@@ -119,8 +119,6 @@ export default function Sidebar({
   const businessName = branding?.businessName || "Your Business";
   const logo = branding?.logo || "";
   const slogan = branding?.slogan?.trim() || "";
-  const compactSidebar = viewportHeight > 0 && viewportHeight < 760;
-  const veryCompactSidebar = viewportHeight > 0 && viewportHeight < 650;
 
   const [expandedItem, setExpandedItem] = useState(null);
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -128,6 +126,9 @@ export default function Sidebar({
   const [selectedSubItem, setSelectedSubItem] = useState(null);
   const [flyoutTop, setFlyoutTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
+
+  const compactSidebar = viewportHeight > 0 && viewportHeight < 760;
+  const veryCompactSidebar = viewportHeight > 0 && viewportHeight < 650;
 
   const sidebarRef = useRef(null);
   const itemRefs = useRef({});
