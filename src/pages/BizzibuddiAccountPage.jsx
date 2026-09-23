@@ -21,6 +21,7 @@ export default function BizzibuddiAccountPage() {
   const [jobs, setJobs] = useState(() => readJobs());
   const [appointments, setAppointments] = useState(() => readAppointments());
   const [invoices, setInvoices] = useState(() => readInvoices());
+  const [automationEvents, setAutomationEvents] = useState(() => readAutomationEvents());
 
   function selectView(nextView) {
     setView(nextView);
@@ -88,12 +89,47 @@ export default function BizzibuddiAccountPage() {
     setView("dashboard");
   }
 
+  function addAutomationEvent(event) {
+    if (!hasBizzibuddiFeature(account?.plan, "automation")) return;
+    setAutomationEvents((current) => {
+      const nextEvents = [event, ...current].slice(0, 50);
+      localStorage.setItem("bizzibuddiMockAutomationEvents", JSON.stringify(nextEvents));
+      return nextEvents;
+    });
+  }
+
+  function runAutomationChecks() {
+    if (!hasBizzibuddiFeature(account?.plan, "automation")) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < today);
+    if (overdueInvoices.length === 0) {
+      addAutomationEvent({
+        id: `automation-${Date.now()}`,
+        type: "check-complete",
+        title: "Automation check complete",
+        detail: "No overdue invoices were found.",
+        createdAt: new Date().toISOString(),
+      });
+      return;
+    }
+    overdueInvoices.forEach((invoice, index) => {
+      addAutomationEvent({
+        id: `automation-${Date.now()}-${index}`,
+        type: "invoice-overdue",
+        title: "Overdue invoice flagged",
+        detail: `${invoice.number} for ${invoice.clientName || "a client"} is overdue.`,
+        createdAt: new Date().toISOString(),
+      });
+    });
+  }
+
   function resetDemo() {
     localStorage.removeItem("bizzibuddiMockAccount");
     localStorage.removeItem("bizzibuddiMockPeople");
     localStorage.removeItem("bizzibuddiMockJobs");
     localStorage.removeItem("bizzibuddiMockAppointments");
     localStorage.removeItem("bizzibuddiMockInvoices");
+    localStorage.removeItem("bizzibuddiMockAutomationEvents");
     setAccount(null);
     setMessage("Local demo data cleared.");
     setView("create");
@@ -126,11 +162,12 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
-        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
+        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
+        {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
 
         <footer style={footerStyle}>Mock environment · Data stays in this browser only · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
@@ -177,6 +214,15 @@ function readAppointments() {
 function readInvoices() {
   try {
     const value = localStorage.getItem("bizzibuddiMockInvoices");
+    return value ? JSON.parse(value) : [];
+  } catch {
+    return [];
+  }
+}
+
+function readAutomationEvents() {
+  try {
+    const value = localStorage.getItem("bizzibuddiMockAutomationEvents");
     return value ? JSON.parse(value) : [];
   } catch {
     return [];
@@ -345,7 +391,7 @@ function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount }) {
+function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount }) {
     return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
     <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
@@ -359,6 +405,7 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
         ["Jobs", jobsCount ? `${jobsCount} created` : "Ready to add"],
         ["Calendar", appointmentsCount ? `${appointmentsCount} booked` : "Ready to use"],
         ["Finance", invoicesCount ? `${invoicesCount} invoices` : "Ready to use"],
+        ["Automation", hasBizzibuddiFeature(account?.plan, "automation") ? (automationCount ? `${automationCount} events` : "Ready to use") : "Professional"],
       ].map(([label, value]) => (
         <div key={label} style={statCard}>
           <small style={smallText}>{label}</small>
@@ -396,6 +443,10 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
           <span style={actionIcon}>💳</span>
           <span><strong>Open finance</strong><small>Manage invoices and payment status.</small></span>
         </button>
+        <button type="button" onClick={onAutomation} style={actionCard}>
+          <span style={actionIcon}>⚙️</span>
+          <span><strong>Open automation</strong><small>Turn routine business events into useful follow-up.</small></span>
+        </button>
         <button type="button" onClick={onPlans} style={actionCard}>
           <span style={actionIcon}>⚡</span>
           <span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span>
@@ -411,6 +462,91 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
     </div>
 
     <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
+  </section>;
+}
+
+function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBack }) {
+  const available = hasBizzibuddiFeature(account?.plan, "automation");
+
+  if (!available) {
+    return <section style={cardStyle(720)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 24 }}>
+        <p style={eyebrowStyle}>AUTOMATION</p>
+        <h2 style={sectionHeading}>Let BizziBuddi handle the routine.</h2>
+        <p style={copyStyle}>Automation is included with Professional and Business membership. Upgrade to turn common business events into follow-up actions.</p>
+        <div style={lockedFeatureCard}>
+          <span style={{ fontSize: 26 }}>🔒</span>
+          <div>
+            <strong style={{ display: "block", fontSize: 18 }}>Professional automation</strong>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Appointment reminders and overdue-invoice checks are available from Professional.</p>
+          </div>
+        </div>
+        <button type="button" onClick={onPlans} style={primaryButton}>View membership plans</button>
+      </div>
+    </section>;
+  }
+
+  return <section style={cardStyle(940)}>
+    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+    <div style={{ marginTop: 22 }}>
+      <p style={eyebrowStyle}>AUTOMATION</p>
+      <h2 style={sectionHeading}>Let BizziBuddi handle the routine.</h2>
+      <p style={copyStyle}>Automation keeps useful follow-up moving without requiring an external notification service.</p>
+    </div>
+
+    <div style={automationRuleGrid}>
+      <article style={automationRuleCard}>
+        <span style={actionIcon}>📅</span>
+        <div>
+          <strong style={{ display: "block", fontSize: 17 }}>Appointment reminder</strong>
+          <p style={{ ...copyStyle, margin: "6px 0 0" }}>Creating an appointment automatically prepares a local reminder event.</p>
+        </div>
+      </article>
+      <article style={automationRuleCard}>
+        <span style={actionIcon}>💳</span>
+        <div>
+          <strong style={{ display: "block", fontSize: 17 }}>Overdue invoice check</strong>
+          <p style={{ ...copyStyle, margin: "6px 0 0" }}>Run a local check to flag unpaid invoices whose due date has passed.</p>
+        </div>
+      </article>
+    </div>
+
+    <div style={automationSummary}>
+      <div>
+        <small style={smallText}>AUTOMATION EVENTS</small>
+        <strong style={{ display: "block", marginTop: 5, fontSize: 28 }}>{events.length}</strong>
+      </div>
+      <div>
+        <small style={smallText}>OPEN INVOICES</small>
+        <strong style={{ display: "block", marginTop: 5, fontSize: 28 }}>{invoices.filter((invoice) => invoice.status !== "Paid").length}</strong>
+      </div>
+      <button type="button" onClick={onRunChecks} style={{ ...primaryButton, width: "auto", marginTop: 0 }}>Run automation checks</button>
+    </div>
+
+    {events.length > 0 ? (
+      <div style={{ display: "grid", gap: 12, marginTop: 24 }}>
+        {events.map((event) => (
+          <article key={event.id} style={automationEventCard}>
+            <div>
+              <strong style={{ display: "block", fontSize: 16 }}>{event.title}</strong>
+              <span style={smallText}>{event.detail}</span>
+            </div>
+            <span style={automationEventBadge}>{event.type === "invoice-overdue" ? "FLAGGED" : "READY"}</span>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div style={emptyPeople}>
+        <strong>No automation events yet.</strong>
+        <p style={copyStyle}>Create an appointment or run an automation check to see BizziBuddi respond.</p>
+      </div>
+    )}
+
+    <div style={businessNote}>
+      <strong>Local preview</strong>
+      <p style={copyStyle}>These automations only create local browser events. They do not send emails, messages or external notifications.</p>
+    </div>
   </section>;
 }
 
@@ -671,6 +807,11 @@ const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borde
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
+const automationRuleGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 24 };
+const automationRuleCard = { display: "flex", alignItems: "flex-start", gap: 12, padding: 18, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)" };
+const automationSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", alignItems: "center", gap: 16, marginTop: 24, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const automationEventCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
+const automationEventBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", whiteSpace: "nowrap" };
 const appointmentCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const schedulingSummary = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, marginTop: 20, padding: 16, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)", flexWrap: "wrap" };
 const advancedScheduleFields = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 6 };
