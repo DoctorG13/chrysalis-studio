@@ -128,7 +128,7 @@ export default function BizzibuddiAccountPage() {
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
-        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); }} onBack={() => selectView("dashboard")} />}
+        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
 
@@ -532,7 +532,7 @@ function formatInvoiceDate(date) {
   return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
+function CalendarPanel({ appointments, people, account, onAddAppointment, onBack, onPlans }) {
   const [showForm, setShowForm] = useState(false);
 
   function handleSubmit(event) {
@@ -541,6 +541,8 @@ function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
     const personId = String(form.get("personId") || "");
     const person = people.find((item) => item.id === personId);
 
+    const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
+
     onAddAppointment({
       id: "appointment-" + Date.now(),
       title: String(form.get("title") || "").trim(),
@@ -548,6 +550,9 @@ function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
       time: String(form.get("time") || ""),
       personName: person?.name || "",
       notes: String(form.get("notes") || "").trim(),
+      duration: advancedScheduling ? Number(form.get("duration") || 60) : 60,
+      buffer: advancedScheduling ? Number(form.get("buffer") || 0) : 0,
+      status: advancedScheduling ? String(form.get("status") || "Booked") : "Booked",
     });
 
     event.currentTarget.reset();
@@ -560,6 +565,7 @@ function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
       <p style={eyebrowStyle}>CALENDAR</p>
       <h2 style={sectionHeading}>Your calendar.</h2>
       <p style={copyStyle}>Keep appointments, fittings, meetings and important business dates organised.</p>
+      {hasBizzibuddiFeature(account?.plan, "advancedScheduling") && <div style={schedulingSummary}><span><strong>Advanced scheduling</strong><small>Duration, buffer time and appointment status are enabled.</small></span><span style={advancedBadge}>PROFESSIONAL</span></div>}
     </div>
 
     {appointments.length > 0 ? (
@@ -570,6 +576,7 @@ function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
               <strong style={{ display: "block", fontSize: 17 }}>{appointment.title}</strong>
               <span style={smallText}>{formatAppointmentDate(appointment.date, appointment.time)}{appointment.personName ? " · " + appointment.personName : ""}</span>
               {appointment.notes && <span style={{ ...smallText, display: "block", marginTop: 5 }}>{appointment.notes}</span>}
+              {hasBizzibuddiFeature(account?.plan, "advancedScheduling") && <span style={{ ...smallText, display: "block", marginTop: 5 }}>{appointment.duration || 60} min{appointment.buffer ? ` · ${appointment.buffer} min buffer` : ""} · {appointment.status || "Booked"}</span>}
             </div>
           </article>
         ))}
@@ -595,6 +602,16 @@ function CalendarPanel({ appointments, people, onAddAppointment, onBack }) {
           <option value="">No person linked</option>
           {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
         </select></label>
+        {hasBizzibuddiFeature(account?.plan, "advancedScheduling") && <div style={advancedScheduleFields}>
+          <Field name="duration" label="Duration (minutes)" type="number" placeholder="60" defaultValue="60" />
+          <Field name="buffer" label="Buffer after (minutes)" type="number" placeholder="0" defaultValue="0" />
+          <label style={fieldStyle}>Status<select name="status" defaultValue="Booked" style={inputStyle}>
+            <option>Booked</option>
+            <option>Confirmed</option>
+            <option>Pending</option>
+            <option>Cancelled</option>
+          </select></label>
+        </div>}
         <Field name="notes" label="Notes" type="text" placeholder="Optional notes" />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
           <button type="submit" style={{ ...primaryButton, width: "auto", marginTop: 0 }}>Save appointment</button>
@@ -655,6 +672,9 @@ const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, min
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1 };
 const appointmentCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const schedulingSummary = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, marginTop: 20, padding: 16, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)", flexWrap: "wrap" };
+const advancedScheduleFields = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 6 };
+const advancedBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(37,99,235,.16)", color: RED, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", whiteSpace: "nowrap" };
 const financeSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 28 };
 const invoiceCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
 const invoiceMeta = { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" };
