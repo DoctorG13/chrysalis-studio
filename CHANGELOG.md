@@ -4,6 +4,20 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Professional Finance Preview
+
+### Added
+
+- Added a local BizziBuddi Finance preview for Professional and Business membership.
+- Added local invoice creation with client, amount and due date.
+- Added invoice totals for outstanding and paid amounts.
+- Added local invoice payment status with a simple Mark paid workflow.
+- Added local browser persistence for BizziBuddi invoices.
+- Locked Finance for Free membership and provided an upgrade path to the membership plans.
+- Kept the finance preview independent from the existing production Chrysalis Finance implementation.
+- Kept billing, subscriptions and real payment processing disconnected as planned.
+
+
 ## BizziBuddi Calendar Preview
 
 ### Added
