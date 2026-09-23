@@ -4,6 +4,16 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Hero Messaging Polish
+
+### Changed
+
+- Set “Your personal assistant for business.” as the primary hero headline.
+- Set “Gives you time.” as the prominent supporting brand promise.
+- Set “Helping you organise, plan and grow.” as supporting explanatory copy.
+- Kept “Business management, simplified.” as the approved BizziBuddi tagline.
+- Left pricing and account buttons unchanged as development placeholders.
+
 ## BizziBuddi Hero Brand Message
 
 ### Changed
