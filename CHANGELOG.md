@@ -1,5 +1,14 @@
 # Changelog
 
+## BizziBuddi Help Navigation Visual Upgrade
+
+- Elevated the **Need a hand?** area into a larger, more prominent help block.
+- Made **Ask Buddi** the visually dominant assistance action.
+- Added supporting descriptions and directional arrows to both help actions.
+- Replaced the generic robot emoji treatment with a cleaner chat-style Buddi icon.
+- Kept the approved BizziBuddi colour language and existing interactions intact.
+
+
 ## BizziBuddi Help Navigation Hierarchy
 
 - Grouped **Ask Buddi** and **Help & Support** as a dedicated assistance area in the account navigation.
