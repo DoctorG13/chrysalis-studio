@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Landing Hero Hierarchy
+
+### Changed
+
+- Made `BUSINESS MANAGEMENT, SIMPLIFIED` the clear eyebrow statement.
+- Reduced `Run your business. With BizziBuddi` to supporting headline status.
+- Made `One clear workspace for your people, jobs, production, calendar and money.` the dominant hero message.
+- Preserved the approved BizziBuddi logo, palette and existing hero actions.
+
 ## Sidebar Rendering Recovery
 
 ### Fixed
