@@ -1,5 +1,20 @@
 # Changelog
 
+## BizziBuddi Business Advanced Reporting Preview
+
+### Added
+
+- Added a Business-only Advanced Reporting preview to BizziBuddi.
+- Added business-at-a-glance metrics for people, open jobs, upcoming appointments and outstanding invoices.
+- Added finance reporting for invoiced, paid, outstanding and overdue amounts.
+- Added job status reporting across New, In progress, Waiting and Complete.
+- Added calendar activity reporting for total, upcoming, booked/confirmed and cancelled appointments.
+- Added production status reporting for active, complete and stage-level production records.
+- Kept reporting local-only and calculated from existing BizziBuddi browser data.
+- Added Reports to the BizziBuddi dashboard and membership access experience.
+- Locked Advanced Reporting for Free and Professional membership with an upgrade path to Business.
+
+
 All notable changes to Chrysalis are recorded here.
 
 ---

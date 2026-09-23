@@ -164,13 +164,14 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} productionCount={productionRecords.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onReset={resetDemo} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} productionCount={productionRecords.length} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
         {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem("bizzibuddiMockProductionRecords", JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
+        {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
 
         <footer style={footerStyle}>Mock environment · Data stays in this browser only · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
@@ -403,7 +404,7 @@ function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onProduction, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount, productionCount }) {
+function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onProduction, onReports, onReset, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount, productionCount }) {
     return <section style={cardStyle(940)}>
     <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
     <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
@@ -419,6 +420,7 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
         ["Finance", invoicesCount ? `${invoicesCount} invoices` : "Ready to use"],
         ["Automation", hasBizzibuddiFeature(account?.plan, "automation") ? (automationCount ? `${automationCount} events` : "Ready to use") : "Professional"],
          ["Production", hasBizzibuddiFeature(account?.plan, "production") ? (productionCount ? `${productionCount} tracked` : "Ready to use") : "Business"],
+        ["Reports", hasBizzibuddiFeature(account?.plan, "reports") ? "Ready to use" : "Business"],
       ].map(([label, value]) => (
         <div key={label} style={statCard}>
           <small style={smallText}>{label}</small>
@@ -463,6 +465,10 @@ function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFina
         <button type="button" onClick={onProduction} style={actionCard}>
           <span style={actionIcon}>🏭</span>
           <span><strong>Open production</strong><small>Track work stages, tasks and production progress.</small></span>
+        </button>
+        <button type="button" onClick={onReports} style={actionCard}>
+          <span style={actionIcon}>📊</span>
+          <span><strong>Open reports</strong><small>See the numbers and activity behind your business.</small></span>
         </button>
         <button type="button" onClick={onPlans} style={actionCard}>
           <span style={actionIcon}>⚡</span>
@@ -681,6 +687,116 @@ function formatProductionDate(date) {
   const value = new Date(date + "T00:00");
   if (Number.isNaN(value.getTime())) return date;
   return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
+function ReportsPanel({ account, people, jobs, appointments, invoices, productionRecords, onPlans, onBack }) {
+  const available = hasBizzibuddiFeature(account?.plan, "reports");
+
+  if (!available) {
+    return <section style={cardStyle(720)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 24 }}>
+        <p style={eyebrowStyle}>REPORTS</p>
+        <h2 style={sectionHeading}>See the bigger picture.</h2>
+        <p style={copyStyle}>Advanced reporting is included with Business membership. Bring your people, jobs, calendar, finance and production activity together in one view.</p>
+        <div style={lockedFeatureCard}>
+          <span style={{ fontSize: 26 }}>🔒</span>
+          <div>
+            <strong style={{ display: "block", fontSize: 18 }}>Business advanced reporting</strong>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Business reporting turns your existing BizziBuddi activity into a clearer operating picture.</p>
+          </div>
+        </div>
+        <button type="button" onClick={onPlans} style={primaryButton}>View membership plans</button>
+      </div>
+    </section>;
+  }
+
+  const totalInvoiced = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
+  const totalPaid = invoices.reduce((sum, invoice) => sum + (Number(invoice.amountPaid) || 0), 0);
+  const outstanding = Math.max(0, totalInvoiced - totalPaid);
+  const completedJobs = jobs.filter((job) => job.status === "Complete").length;
+  const openJobs = jobs.filter((job) => job.status !== "Complete").length;
+  const upcomingAppointments = appointments.filter((appointment) => {
+    if (!appointment.date) return false;
+    const appointmentDate = new Date(appointment.date + "T" + (appointment.time || "23:59"));
+    return !Number.isNaN(appointmentDate.getTime()) && appointmentDate >= new Date();
+  }).length;
+  const productionComplete = productionRecords.filter((record) => record.stage === "Complete").length;
+  const productionActive = productionRecords.filter((record) => record.stage && record.stage !== "Complete").length;
+  const overdueInvoices = invoices.filter((invoice) => {
+    if (invoice.status === "Paid" || !invoice.dueDate) return false;
+    return invoice.dueDate < new Date().toISOString().slice(0, 10);
+  }).length;
+  const jobStatusGroups = [
+    ["New", jobs.filter((job) => job.status === "New").length],
+    ["In progress", jobs.filter((job) => job.status === "In progress").length],
+    ["Waiting", jobs.filter((job) => job.status === "Waiting").length],
+    ["Complete", completedJobs],
+  ];
+  const productionStageGroups = ["Not started", "In production", "Quality check", "Ready", "Complete"].map((stage) => [
+    stage,
+    productionRecords.filter((record) => record.stage === stage).length,
+  ]);
+
+  return <section style={cardStyle(940)}>
+    <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+    <div style={{ marginTop: 22 }}>
+      <p style={eyebrowStyle}>REPORTS</p>
+      <h2 style={sectionHeading}>Your business at a glance.</h2>
+      <p style={copyStyle}>A Business-level view of the activity already captured in BizziBuddi. This preview calculates reports locally from your current browser data.</p>
+    </div>
+
+    <div style={reportSummaryGrid}>
+      <div style={reportSummaryCard}><small style={smallText}>PEOPLE</small><strong style={reportSummaryValue}>{people.length}</strong><span style={smallText}>contacts</span></div>
+      <div style={reportSummaryCard}><small style={smallText}>OPEN JOBS</small><strong style={reportSummaryValue}>{openJobs}</strong><span style={smallText}>{completedJobs} completed</span></div>
+      <div style={reportSummaryCard}><small style={smallText}>UPCOMING</small><strong style={reportSummaryValue}>{upcomingAppointments}</strong><span style={smallText}>appointments</span></div>
+      <div style={reportSummaryCard}><small style={smallText}>OUTSTANDING</small><strong style={reportSummaryValue}>{formatCurrency(outstanding)}</strong><span style={smallText}>{overdueInvoices} overdue</span></div>
+    </div>
+
+    <div style={reportSectionGrid}>
+      <article style={reportCard}>
+        <div style={reportCardHeading}><div><small style={smallText}>FINANCE</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Money overview</strong></div><span style={reportMetric}>{formatCurrency(totalInvoiced)}</span></div>
+        <div style={reportRows}>
+          <div style={reportRow}><span>Total invoiced</span><strong>{formatCurrency(totalInvoiced)}</strong></div>
+          <div style={reportRow}><span>Paid</span><strong>{formatCurrency(totalPaid)}</strong></div>
+          <div style={reportRow}><span>Outstanding</span><strong>{formatCurrency(outstanding)}</strong></div>
+          <div style={reportRow}><span>Overdue invoices</span><strong>{overdueInvoices}</strong></div>
+        </div>
+      </article>
+
+      <article style={reportCard}>
+        <div style={reportCardHeading}><div><small style={smallText}>JOBS</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Work status</strong></div><span style={reportMetric}>{jobs.length}</span></div>
+        <div style={reportRows}>
+          {jobStatusGroups.map(([label, count]) => <div key={label} style={reportRow}><span>{label}</span><strong>{count}</strong></div>)}
+        </div>
+      </article>
+
+      <article style={reportCard}>
+        <div style={reportCardHeading}><div><small style={smallText}>CALENDAR</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Scheduled activity</strong></div><span style={reportMetric}>{appointments.length}</span></div>
+        <div style={reportRows}>
+          <div style={reportRow}><span>Total appointments</span><strong>{appointments.length}</strong></div>
+          <div style={reportRow}><span>Upcoming</span><strong>{upcomingAppointments}</strong></div>
+          <div style={reportRow}><span>Booked / confirmed</span><strong>{appointments.filter((item) => !item.status || item.status === "Booked" || item.status === "Confirmed").length}</strong></div>
+          <div style={reportRow}><span>Cancelled</span><strong>{appointments.filter((item) => item.status === "Cancelled").length}</strong></div>
+        </div>
+      </article>
+
+      <article style={reportCard}>
+        <div style={reportCardHeading}><div><small style={smallText}>PRODUCTION</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Production status</strong></div><span style={reportMetric}>{productionRecords.length}</span></div>
+        <div style={reportRows}>
+          <div style={reportRow}><span>Active</span><strong>{productionActive}</strong></div>
+          <div style={reportRow}><span>Complete</span><strong>{productionComplete}</strong></div>
+          {productionStageGroups.filter(([, count]) => count > 0).map(([stage, count]) => <div key={stage} style={reportRow}><span>{stage}</span><strong>{count}</strong></div>)}
+          {productionRecords.length === 0 && <div style={reportRow}><span>No production records yet</span><strong>—</strong></div>}
+        </div>
+      </article>
+    </div>
+
+    <div style={businessNote}>
+      <strong>Advanced reporting preview</strong>
+      <p style={copyStyle}>These figures are calculated from your local BizziBuddi people, jobs, calendar, finance and production data. Nothing is sent to an external reporting service.</p>
+    </div>
+  </section>;
 }
 
 function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMarkPaid, onBack }) {
@@ -944,6 +1060,15 @@ const productionProgress = { display: "grid", gridTemplateColumns: "repeat(5, 1f
 const productionStage = (current, reached) => ({ display: "grid", justifyItems: "center", gap: 7, textAlign: "center", color: current ? TEXT : reached ? CYAN : MUTED, fontWeight: current ? 800 : 600, fontSize: 12 });
 const productionRecordCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
 const productionBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", whiteSpace: "nowrap" };
+const reportSummaryGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginTop: 28 };
+const reportSummaryCard = { display: "grid", gap: 5, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.06)" };
+const reportSummaryValue = { fontSize: 26, fontWeight: 800 };
+const reportSectionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginTop: 18 };
+const reportCard = { padding: 20, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const reportCardHeading = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16 };
+const reportMetric = { fontSize: 20, fontWeight: 800, color: CYAN, whiteSpace: "nowrap" };
+const reportRows = { display: "grid", gap: 0 };
+const reportRow = { display: "flex", justifyContent: "space-between", gap: 16, padding: "10px 0", borderBottom: `1px solid ${BORDER}` };
 const automationRuleGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 24 };
 const automationRuleCard = { display: "flex", alignItems: "flex-start", gap: 12, padding: 18, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)" };
 const automationSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", alignItems: "center", gap: 16, marginTop: 24, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
