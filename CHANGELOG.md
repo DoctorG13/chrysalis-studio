@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Mobile Hero Compactness
+
+### Changed
+
+- Reduced the BizziBuddi landing-page hero footprint on small mobile screens.
+- Tightened the hero logo, headline, supporting message and CTA spacing below 520px.
+- Preserved the desktop hero hierarchy, branding and content.
+
+
 ## BizziBuddi Mobile Navigation Compactness
 
 ### Changed
