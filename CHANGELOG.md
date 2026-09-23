@@ -4,6 +4,21 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Calendar Preview
+
+### Added
+
+- Added a local BizziBuddi Calendar preview for the Free membership.
+- Added appointment creation with date, time, optional person and notes.
+- Added appointment listing ordered by date and time.
+- Added local browser persistence for BizziBuddi calendar appointments.
+- Added Calendar as a dashboard starting point and business stat.
+- Kept the calendar preview independent from the existing production Chrysalis Calendar implementation.
+
+All notable changes to Chrysalis are recorded here.
+
+---
+
 ## BizziBuddi Membership Feature Access
 
 ### Added
