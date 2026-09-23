@@ -4,6 +4,12 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Buddi Import Fix
+
+### Fixed
+
+- Corrected the BizziBuddi account Buddi component's relative logo import so Vite resolves the shared BizziBuddi logo correctly.
+
 ## BizziBuddi Account Buddi Assistant
 
 ### Added
