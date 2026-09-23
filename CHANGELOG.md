@@ -1,5 +1,13 @@
 # Changelog
 
+## BizziBuddi Help & Floating Buddi
+
+- Added a dedicated **Help & Support** area to the BizziBuddi account experience.
+- Added **Ask Buddi** as the primary action from Help & Support.
+- Added a persistent floating **Ask Buddi** launcher for signed-in/local account previews.
+- Kept the existing Buddi assistant, branding and business-data context intact.
+
+
 All notable changes to Chrysalis are recorded here.
 
 ---
