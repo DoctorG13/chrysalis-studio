@@ -50,7 +50,7 @@ function scrollToId(id) {
 }
 
 function Logo() {
-  return <BizziBuddiLogo size={38} dark showWordmark />;
+  return <BizziBuddiLogo size={34} dark showWordmark />;
 }
 
 function CtaButton({ children, secondary = false, onClick }) {
@@ -125,9 +125,9 @@ export default function BizzibuddiLandingPage() {
         @media(max-width:520px){.bizzibuddi-plan-grid{grid-template-columns:1fr!important}.bizzibuddi-footer-grid{grid-template-columns:1fr!important}.bizzibuddi-section-pad{padding-left:16px!important;padding-right:16px!important}}
       `}</style>
       <header style={{ position: "sticky", top: 0, zIndex: 20, background: "rgba(6,26,43,.98)", color: "#FFF", borderBottom: `4px solid ${RED}`, backdropFilter: "blur(12px)" }}>
-        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "12px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18 }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto", padding: "8px 22px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
           <a href="/bizzibuddi" style={{ color: "inherit", textDecoration: "none" }}><Logo /></a>
-          <nav className="bizzibuddi-desktop-nav" style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <nav className="bizzibuddi-desktop-nav" style={{ display: "flex", alignItems: "center", gap: 15 }}>
             <button type="button" onClick={() => scrollToId("why")} className="bizzibuddi-nav-link" style={nav}>Why BizziBuddi</button>
             <button type="button" onClick={() => scrollToId("features")} className="bizzibuddi-nav-link" style={nav}>Features</button>
             <button type="button" onClick={goPricing} className="bizzibuddi-nav-link" style={nav}>Pricing</button>
