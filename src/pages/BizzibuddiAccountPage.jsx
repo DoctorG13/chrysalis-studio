@@ -17,7 +17,8 @@ const plans = [
 ];
 
 export default function BizzibuddiAccountPage() {
-  const [view, setView] = useState("login");
+  const initialView = new URLSearchParams(window.location.search).get("view");
+  const [view, setView] = useState(initialView === "create" ? "create" : "login");
   const [account, setAccount] = useState(() => readAccount());
   const [message, setMessage] = useState("");
 
