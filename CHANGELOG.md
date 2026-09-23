@@ -4,6 +4,15 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
+## BizziBuddi Mobile Navigation Compactness
+
+### Changed
+
+- Reduced mobile navigation vertical spacing and menu gaps on the public BizziBuddi landing page.
+- Reduced the mobile menu button height and horizontal padding.
+- Preserved all mobile navigation links, actions and behaviour.
+
+
 ## BizziBuddi Landing Header Compactness
 
 ### Changed
