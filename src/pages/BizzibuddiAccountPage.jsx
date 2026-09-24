@@ -201,7 +201,7 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => selectView("buddi")} onReset={resetDemo} onLogout={handleLogout} peopleCount={people.length} jobsCount={jobs.length} appointmentsCount={appointments.length} invoicesCount={invoices.length} automationCount={automationEvents.length} productionCount={productionRecords.length} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => selectView("buddi")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
@@ -502,109 +502,163 @@ function PlansPanel({ onSelectPlan }) {
   return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function DashboardPanel({ account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation, onProduction, onReports, onBuddi, onReset, onLogout, peopleCount, jobsCount, appointmentsCount, invoicesCount, automationCount, productionCount }) {
-    return <section style={cardStyle(940)}>
-    <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
-    <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
-    <p style={copyStyle}>Your business is ready. This is the beginning of the BizziBuddi experience — one place to organise, plan and grow.</p>
+function DashboardPanel({
+  account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation,
+  onProduction, onReports, onBuddi, onReset, onLogout, people, jobs,
+  appointments, invoices, automationEvents, productionRecords,
+}) {
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < todayKey);
+  const appointmentsToday = appointments.filter((appointment) => appointment.date === todayKey);
+  const waitingJobs = jobs.filter((job) => job.status === "Waiting");
+  const openJobs = jobs.filter((job) => job.status !== "Complete").length;
+  const readyProduction = productionRecords.filter((record) => record.stage === "Ready");
+  const recentAutomationFlags = automationEvents.filter((event) => event.type === "invoice-overdue");
 
-    <div style={statsGrid}>
-      {[
-        ["Business", account?.business ? "Ready" : "Not set up"],
-        ["Plan", account?.plan || "Free"],
-        ["People", peopleCount ? `${peopleCount} added` : "Ready to add"],
-        ["Jobs", jobsCount ? `${jobsCount} created` : "Ready to add"],
-        ["Calendar", appointmentsCount ? `${appointmentsCount} booked` : "Ready to use"],
-        ["Finance", invoicesCount ? `${invoicesCount} invoices` : "Ready to use"],
-        ["Automation", hasBizzibuddiFeature(account?.plan, "automation") ? (automationCount ? `${automationCount} events` : "Ready to use") : "Professional"],
-         ["Production", hasBizzibuddiFeature(account?.plan, "production") ? (productionCount ? `${productionCount} tracked` : "Ready to use") : "Business"],
-        ["Reports", hasBizzibuddiFeature(account?.plan, "reports") ? "Ready to use" : "Business"],
-      ].map(([label, value]) => (
-        <div key={label} style={statCard}>
-          <small style={smallText}>{label}</small>
-          <strong style={{ display: "block", marginTop: 8, fontSize: 20 }}>{value}</strong>
-        </div>
-      ))}
-    </div>
+  const attentionItems = [
+    ...overdueInvoices.slice(0, 3).map((invoice) => ({
+      key: `invoice-${invoice.id}`, icon: "💳", label: "Overdue payment",
+      title: invoice.clientName || invoice.client || "Invoice requires attention",
+      detail: `${formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
+      action: "Open finance", onClick: onFinance, tone: "urgent",
+    })),
+    ...appointmentsToday.slice(0, 3).map((appointment) => ({
+      key: `appointment-${appointment.id}`, icon: "📅", label: "Today",
+      title: appointment.title || "Appointment",
+      detail: `${appointment.time || "Time not set"}${appointment.personName ? ` · ${appointment.personName}` : ""}`,
+      action: "Open calendar", onClick: onCalendar, tone: "today",
+    })),
+    ...waitingJobs.slice(0, 2).map((job) => ({
+      key: `waiting-${job.id}`, icon: "⏳", label: "Waiting",
+      title: job.title || "Job waiting",
+      detail: job.clientName || job.client ? `Waiting on ${job.clientName || job.client}` : "This job is waiting for the next step.",
+      action: "Open jobs", onClick: onJobs, tone: "attention",
+    })),
+    ...readyProduction.slice(0, 2).map((record) => ({
+      key: `production-${record.id}`, icon: "🏭", label: "Ready",
+      title: record.jobTitle || "Production job",
+      detail: record.dueDate ? `Ready by ${formatProductionDate(record.dueDate)}` : "Production has reached the Ready stage.",
+      action: "Open production", onClick: onProduction, tone: "ready",
+    })),
+  ];
+  const uniqueAttentionItems = attentionItems.filter((item, index, items) => items.findIndex((candidate) => candidate.key === item.key) === index);
+  const attentionCount = uniqueAttentionItems.length;
+  const outstanding = invoices.reduce((sum, invoice) => invoice.status === "Paid" ? sum : sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0);
 
-    <div style={buddiDashboardCard}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-        <div style={buddiDashboardIcon}>
-          <BizziBuddiLogo size={38} dark showWordmark={false} />
+  return (
+    <section style={cardStyle(940)}>
+      <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
+      <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
+      <p style={copyStyle}>Your business is ready. This is your operating view — what needs attention, what is happening today and where to go next.</p>
+
+      <div style={attentionPanel}>
+        <div style={attentionHeader}>
+          <div>
+            <small style={smallText}>TODAY'S BUSINESS PICTURE</small>
+            <h3 style={{ margin: "6px 0 5px", fontSize: 28 }}>What needs attention today?</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>Buddi can help you make sense of the activity that matters most right now.</p>
+          </div>
+          <button type="button" onClick={onBuddi} style={attentionBuddiButton}>
+            <BizziBuddiLogo size={30} dark showWordmark={false} />
+            <span>Ask Buddi</span>
+          </button>
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <small style={smallText}>YOUR BUSINESS ASSISTANT</small>
-          <strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>Ask Buddi.</strong>
-          <p style={{ ...copyStyle, margin: "6px 0 0" }}>Ask questions about your people, jobs, calendar, money and business activity.</p>
+
+        <div style={attentionSummary}>
+          <div><strong>{attentionCount}</strong><span>{attentionCount === 1 ? "item needs attention" : "items need attention"}</span></div>
+          <div><strong>{appointmentsToday.length}</strong><span>{appointmentsToday.length === 1 ? "appointment today" : "appointments today"}</span></div>
+          <div><strong>{openJobs}</strong><span>{openJobs === 1 ? "open job" : "open jobs"}</span></div>
+          <div><strong>{formatCurrency(outstanding)}</strong><span>outstanding</span></div>
         </div>
-        <button type="button" onClick={onBuddi} style={{ ...primaryButton, width: "auto", marginTop: 0, whiteSpace: "nowrap" }}>Ask Buddi →</button>
+
+        {uniqueAttentionItems.length > 0 ? (
+          <div style={attentionList}>
+            {uniqueAttentionItems.map((item) => (
+              <article key={item.key} style={attentionItem(item.tone)}>
+                <div style={attentionItemIcon}>{item.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <small style={smallText}>{item.label}</small>
+                  <strong style={{ display: "block", marginTop: 3, fontSize: 16 }}>{item.title}</strong>
+                  <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 13 }}>{item.detail}</span>
+                </div>
+                <button type="button" onClick={item.onClick} style={attentionAction}>{item.action} →</button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div style={attentionClear}>
+            <div style={attentionClearIcon}>✓</div>
+            <div>
+              <strong style={{ display: "block", fontSize: 17 }}>Nothing urgent is showing.</strong>
+              <p style={{ ...copyStyle, margin: "5px 0 0" }}>Your dashboard has no overdue payments, today's appointments or waiting jobs requiring immediate attention.</p>
+            </div>
+          </div>
+        )}
+
+        <div style={attentionFooter}>
+          <span>{recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and decide what to look at next."}</span>
+          <button type="button" onClick={onBuddi} style={attentionFooterButton}>Ask Buddi what needs attention →</button>
+        </div>
       </div>
-    </div>
 
-    <div style={businessActions}>
-      <div>
-        <strong style={{ fontSize: 20 }}>What would you like to do first?</strong>
-        <p style={{ ...copyStyle, marginBottom: 0 }}>Start building your business with the people, jobs and information that matter.</p>
+      <div style={statsGrid}>
+        {[
+          ["Business", account?.business ? "Ready" : "Not set up"],
+          ["Plan", account?.plan || "Free"],
+          ["People", people.length ? `${people.length} added` : "Ready to add"],
+          ["Jobs", jobs.length ? `${jobs.length} created` : "Ready to add"],
+          ["Calendar", appointments.length ? `${appointments.length} booked` : "Ready to use"],
+          ["Finance", invoices.length ? `${invoices.length} invoices` : "Ready to use"],
+          ["Automation", hasBizzibuddiFeature(account?.plan, "automation") ? (automationEvents.length ? `${automationEvents.length} events` : "Ready to use") : "Professional"],
+          ["Production", hasBizzibuddiFeature(account?.plan, "production") ? (productionRecords.length ? `${productionRecords.length} tracked` : "Ready to use") : "Business"],
+          ["Reports", hasBizzibuddiFeature(account?.plan, "reports") ? "Ready to use" : "Business"],
+        ].map(([label, value]) => (
+          <div key={label} style={statCard}><small style={smallText}>{label}</small><strong style={{ display: "block", marginTop: 8, fontSize: 20 }}>{value}</strong></div>
+        ))}
       </div>
-      <div style={planSummary}>
+
+      <div style={buddiDashboardCard}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <div style={buddiDashboardIcon}><BizziBuddiLogo size={38} dark showWordmark={false} /></div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <small style={smallText}>YOUR BUSINESS ASSISTANT</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>Ask Buddi.</strong>
+            <p style={{ ...copyStyle, margin: "6px 0 0" }}>Ask questions about your people, jobs, calendar, money and business activity.</p>
+          </div>
+          <button type="button" onClick={onBuddi} style={{ ...primaryButton, width: "auto", marginTop: 0, whiteSpace: "nowrap" }}>Ask Buddi →</button>
+        </div>
+      </div>
+
+      <div style={businessActions}>
         <div>
-          <small style={smallText}>CURRENT MEMBERSHIP</small>
-          <strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>{getBizzibuddiPlan(account?.plan).name}</strong>
+          <strong style={{ fontSize: 20 }}>What would you like to do next?</strong>
+          <p style={{ ...copyStyle, marginBottom: 0 }}>Jump directly into the part of your business you want to work on.</p>
         </div>
-        <div style={{ color: MUTED, fontSize: 13, lineHeight: 1.5 }}>{getBizzibuddiPlan(account?.plan).features.join(" · ")}</div>
+        <div style={planSummary}>
+          <div><small style={smallText}>CURRENT MEMBERSHIP</small><strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>{getBizzibuddiPlan(account?.plan).name}</strong></div>
+          <div style={{ color: MUTED, fontSize: 13, lineHeight: 1.5 }}>{getBizzibuddiPlan(account?.plan).features.join(" · ")}</div>
+        </div>
+        <div style={actionGrid}>
+          <button type="button" onClick={onPeople} style={actionCard}><span style={actionIcon}>👥</span><span><strong>Add your people</strong><small>Keep clients and contacts organised.</small></span></button>
+          <button type="button" onClick={onJobs} style={actionCard}><span style={actionIcon}>📋</span><span><strong>Create a job</strong><small>Start tracking work from enquiry to completion.</small></span></button>
+          <button type="button" onClick={onCalendar} style={actionCard}><span style={actionIcon}>📅</span><span><strong>Open your calendar</strong><small>Keep appointments and business dates organised.</small></span></button>
+          <button type="button" onClick={onFinance} style={actionCard}><span style={actionIcon}>💳</span><span><strong>Open finance</strong><small>Manage invoices and payment status.</small></span></button>
+          <button type="button" onClick={onAutomation} style={actionCard}><span style={actionIcon}>⚙️</span><span><strong>Open automation</strong><small>Turn routine business events into useful follow-up.</small></span></button>
+          <button type="button" onClick={onProduction} style={actionCard}><span style={actionIcon}>🏭</span><span><strong>Open production</strong><small>Track work stages, tasks and production progress.</small></span></button>
+          <button type="button" onClick={onReports} style={actionCard}><span style={actionIcon}>📊</span><span><strong>Open reports</strong><small>See the numbers and activity behind your business.</small></span></button>
+          <button type="button" onClick={onBuddi} style={{ ...actionCard, borderColor: "rgba(0,180,219,.55)", background: "rgba(0,180,219,.08)" }}><span style={actionIcon}>🤖</span><span><strong>Ask Buddi</strong><small>Get help understanding your people, jobs, calendar and money.</small></span></button>
+          <button type="button" onClick={onPlans} style={actionCard}><span style={actionIcon}>⚡</span><span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span></button>
+        </div>
       </div>
-      <div style={actionGrid}>
-        <button type="button" onClick={onPeople} style={actionCard}>
-          <span style={actionIcon}>👥</span>
-          <span><strong>Add your people</strong><small>Keep clients and contacts organised.</small></span>
-        </button>
-        <button type="button" onClick={onJobs} style={actionCard}>
-          <span style={actionIcon}>📋</span>
-          <span><strong>Create a job</strong><small>Start tracking work from enquiry to completion.</small></span>
-        </button>
-        <button type="button" onClick={onCalendar} style={actionCard}>
-          <span style={actionIcon}>📅</span>
-          <span><strong>Open your calendar</strong><small>Keep appointments and business dates organised.</small></span>
-        </button>
-        <button type="button" onClick={onFinance} style={actionCard}>
-          <span style={actionIcon}>💳</span>
-          <span><strong>Open finance</strong><small>Manage invoices and payment status.</small></span>
-        </button>
-        <button type="button" onClick={onAutomation} style={actionCard}>
-          <span style={actionIcon}>⚙️</span>
-          <span><strong>Open automation</strong><small>Turn routine business events into useful follow-up.</small></span>
-        </button>
-        <button type="button" onClick={onProduction} style={actionCard}>
-          <span style={actionIcon}>🏭</span>
-          <span><strong>Open production</strong><small>Track work stages, tasks and production progress.</small></span>
-        </button>
-        <button type="button" onClick={onReports} style={actionCard}>
-          <span style={actionIcon}>📊</span>
-          <span><strong>Open reports</strong><small>See the numbers and activity behind your business.</small></span>
-        </button>
-        <button type="button" onClick={onBuddi} style={{ ...actionCard, borderColor: "rgba(0,180,219,.55)", background: "rgba(0,180,219,.08)" }}>
-          <span style={actionIcon}>🤖</span>
-          <span><strong>Ask Buddi</strong><small>Get help understanding your people, jobs, calendar and money.</small></span>
-        </button>
-        <button type="button" onClick={onPlans} style={actionCard}>
-          <span style={actionIcon}>⚡</span>
-          <span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span>
-        </button>
+
+      <MembershipAccessPanel planName={account?.plan} />
+      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>This business preview is still running on local demo data. Real authentication, databases and billing are not connected yet.</p></div>
+      <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 18 }}>
+        <button type="button" onClick={onLogout} style={textButton}>Log out</button>
+        <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
       </div>
-    </div>
-
-    <MembershipAccessPanel planName={account?.plan} />
-
-    <div style={businessNote}>
-      <strong>Development preview</strong>
-      <p style={copyStyle}>This business preview is still running on local demo data. Real authentication, databases and billing are not connected yet.</p>
-    </div>
-
-    <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 18 }}>
-      <button type="button" onClick={onLogout} style={textButton}>Log out</button>
-      <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
-    </div>
-  </section>;
+    </section>
+  );
 }
 
 function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBack }) {
@@ -2114,6 +2168,61 @@ const helpTip = {
 const membershipAccess = { marginTop: 20, padding: 20, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(37,99,235,.06)" };
 const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginTop: 16 };
 const membershipFeature = (available) => ({ display: "flex", alignItems: "flex-start", gap: 9, padding: 12, borderRadius: 10, border: "1px solid " + (available ? "rgba(0,180,219,.28)" : BORDER), background: available ? "rgba(0,180,219,.08)" : "rgba(255,255,255,.025)", color: available ? TEXT : MUTED });
+
+const attentionPanel = {
+  marginTop: 24, padding: 22, borderRadius: 18,
+  border: "1px solid rgba(0,180,219,.55)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.10), rgba(37,99,235,.10))",
+  boxShadow: "0 16px 34px rgba(0,0,0,.18)",
+};
+const attentionHeader = {
+  display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+  gap: 18, flexWrap: "wrap",
+};
+const attentionBuddiButton = {
+  display: "inline-flex", alignItems: "center", gap: 9, minHeight: 46,
+  padding: "0 15px", border: "1px solid rgba(0,180,219,.55)",
+  borderRadius: 12, background: "rgba(6,26,43,.72)", color: TEXT,
+  fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
+};
+const attentionSummary = {
+  display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+  gap: 8, marginTop: 18,
+};
+const attentionList = { display: "grid", gap: 9, marginTop: 16 };
+const attentionItem = (tone) => ({
+  display: "flex", alignItems: "center", gap: 12, padding: 13,
+  borderRadius: 12,
+  border: "1px solid " + (tone === "urgent" ? "rgba(248,113,113,.42)" : tone === "today" ? "rgba(0,180,219,.42)" : BORDER),
+  background: tone === "urgent" ? "rgba(248,113,113,.07)" : "rgba(255,255,255,.035)",
+  flexWrap: "wrap",
+});
+const attentionItemIcon = {
+  width: 40, height: 40, display: "grid", placeItems: "center",
+  flex: "0 0 auto", borderRadius: 11, background: "rgba(0,180,219,.10)", fontSize: 20,
+};
+const attentionAction = {
+  flex: "0 0 auto", minHeight: 38, padding: "0 12px",
+  border: "1px solid " + BORDER, borderRadius: 9, background: "transparent",
+  color: TEXT, fontWeight: 700, cursor: "pointer",
+};
+const attentionClear = {
+  display: "flex", alignItems: "center", gap: 12, marginTop: 16, padding: 15,
+  borderRadius: 12, border: "1px solid rgba(0,180,219,.30)", background: "rgba(0,180,219,.06)",
+};
+const attentionClearIcon = {
+  width: 38, height: 38, display: "grid", placeItems: "center", borderRadius: "50%",
+  background: "rgba(0,180,219,.14)", color: CYAN, fontSize: 19, fontWeight: 900,
+};
+const attentionFooter = {
+  display: "flex", alignItems: "center", justifyContent: "space-between",
+  gap: 14, marginTop: 15, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.10)",
+  color: MUTED, fontSize: 12, lineHeight: 1.5, flexWrap: "wrap",
+};
+const attentionFooterButton = {
+  flex: "0 0 auto", border: 0, padding: 0, background: "transparent",
+  color: CYAN, fontWeight: 800, cursor: "pointer",
+};
 
 const buddiDashboardCard = {
   marginTop: 22,
