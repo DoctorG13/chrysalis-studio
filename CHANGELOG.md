@@ -1,5 +1,14 @@
 # Changelog
 
+## BizziBuddi Dashboard Attention Overview
+
+- Made **What needs attention today?** the central dashboard business overview.
+- Added live attention items for overdue invoices, today's appointments, waiting jobs and production ready items.
+- Added summary figures for attention count, today's appointments, open jobs and outstanding money.
+- Added direct navigation from each attention item into the relevant BizziBuddi area.
+- Added prominent **Ask Buddi** actions so Buddi can help interpret the current business picture.
+- Preserved the existing dashboard stats, membership access and quick actions beneath the new overview.
+
 ## BizziBuddi Support Form Runtime Fix
 
 - Fixed the Contact Support blank-page error caused by the support textarea style referencing `inputStyle` before that style was initialized.
