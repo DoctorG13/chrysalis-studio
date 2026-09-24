@@ -210,7 +210,15 @@ export default function BizzibuddiAccountPage() {
         {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem("bizzibuddiMockProductionRecords", JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} onBack={() => selectView("dashboard")} />}
-        {view === "help" && <HelpSupportPanel onBuddi={() => selectView("buddi")} />}
+        {view === "help" && (
+          <HelpSupportPanel
+            onBuddi={() => selectView("buddi")}
+            onDashboard={() => selectView("dashboard")}
+            onPeople={() => selectView("people")}
+            onJobs={() => selectView("jobs")}
+            onCalendar={() => selectView("calendar")}
+          />
+        )}
 
 
         {account && (
@@ -1141,7 +1149,9 @@ function formatAppointmentDate(date, time) {
   return value.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 }
 
-function HelpSupportPanel({ onBuddi }) {
+function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }) {
+  const [showGettingStarted, setShowGettingStarted] = useState(false);
+
   const helpItems = [
     {
       icon: "🤖",
@@ -1154,8 +1164,10 @@ function HelpSupportPanel({ onBuddi }) {
     {
       icon: "🚀",
       title: "Getting started",
-      description: "Learn the simple steps for setting up your business and getting your first records into BizziBuddi.",
-      action: "Getting started",
+      description: "Follow a simple path from business setup to your first people, jobs and appointments.",
+      action: showGettingStarted ? "Hide guide" : "Start the guide →",
+      onClick: () => setShowGettingStarted((current) => !current),
+      featured: false,
     },
     {
       icon: "🧭",
@@ -1174,6 +1186,44 @@ function HelpSupportPanel({ onBuddi }) {
       title: "Contact support",
       description: "Need a hand with something specific? Keep support close at hand as BizziBuddi grows.",
       action: "Contact support",
+    },
+  ];
+
+  const gettingStartedSteps = [
+    {
+      number: "01",
+      title: "Set up your business",
+      description: "Give BizziBuddi your business name so your account is ready to use.",
+      action: "Go to dashboard",
+      onClick: onDashboard,
+    },
+    {
+      number: "02",
+      title: "Add your people",
+      description: "Start building your business records with the people and clients you work with.",
+      action: "Add people",
+      onClick: onPeople,
+    },
+    {
+      number: "03",
+      title: "Create your first job",
+      description: "Turn your work into something you can track from start to completion.",
+      action: "Create a job",
+      onClick: onJobs,
+    },
+    {
+      number: "04",
+      title: "Add your calendar",
+      description: "Keep appointments, bookings and important dates in one place.",
+      action: "Open calendar",
+      onClick: onCalendar,
+    },
+    {
+      number: "05",
+      title: "Ask Buddi",
+      description: "Once your business has some information in it, ask Buddi what needs attention.",
+      action: "Ask Buddi",
+      onClick: onBuddi,
     },
   ];
 
@@ -1211,6 +1261,37 @@ function HelpSupportPanel({ onBuddi }) {
           </article>
         ))}
       </div>
+
+      {showGettingStarted && (
+        <div style={gettingStartedPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI QUICK START</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>Your first five steps.</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                You don't need to learn everything at once. Start here, add a little information, and let BizziBuddi grow with your business.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowGettingStarted(false)} style={helpCloseButton} aria-label="Close getting started guide">×</button>
+          </div>
+
+          <div style={gettingStartedSteps}>
+            {gettingStartedSteps.map((step, index) => (
+              <article key={step.number} style={gettingStartedStep}>
+                <div style={gettingStartedNumber}>{step.number}</div>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: "block", fontSize: 17 }}>{step.title}</strong>
+                  <p style={{ ...copyStyle, margin: "6px 0 14px" }}>{step.description}</p>
+                  <button type="button" onClick={step.onClick} style={helpSecondaryButton}>
+                    {step.action} →
+                  </button>
+                </div>
+                {index < gettingStartedSteps.length - 1 && <div style={gettingStartedConnector} aria-hidden="true" />}
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={helpTip}>
         <BizziBuddiLogo size={30} showWordmark={false} />
@@ -1353,6 +1434,67 @@ const helpSecondaryButton = {
   cursor: "default",
 };
 
+const gettingStartedPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(0,180,219,.38)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.08), rgba(37,99,235,.07))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const gettingStartedIntro = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 20,
+};
+const gettingStartedSteps = {
+  display: "grid",
+  gap: 0,
+  marginTop: 24,
+};
+const gettingStartedStep = {
+  position: "relative",
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 14,
+  padding: "16px 0",
+  borderTop: "1px solid rgba(255,255,255,.09)",
+};
+const gettingStartedNumber = {
+  width: 42,
+  height: 42,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  borderRadius: 12,
+  background: "rgba(0,180,219,.12)",
+  border: "1px solid rgba(0,180,219,.34)",
+  color: CYAN,
+  fontSize: 12,
+  fontWeight: 900,
+  letterSpacing: ".08em",
+};
+const gettingStartedConnector = {
+  position: "absolute",
+  left: 20,
+  top: 58,
+  bottom: -16,
+  width: 1,
+  background: "rgba(0,180,219,.20)",
+};
+const helpCloseButton = {
+  width: 36,
+  height: 36,
+  flex: "0 0 auto",
+  border: "1px solid " + BORDER,
+  borderRadius: "50%",
+  background: "rgba(255,255,255,.04)",
+  color: MUTED,
+  fontSize: 22,
+  lineHeight: 1,
+  cursor: "pointer",
+};
 const helpTip = {
   display: "flex",
   alignItems: "center",
