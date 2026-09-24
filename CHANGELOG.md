@@ -1,5 +1,13 @@
 # Changelog
 
+## BizziBuddi Dashboard-to-Buddi Attention Flow
+
+- Connected the dashboard's **Ask Buddi what needs attention →** action directly to Buddi.
+- Added the dashboard attention picture to Buddi's supplied business context so the response is grounded in the same overdue payments, today's appointments, waiting jobs and ready production items shown on the dashboard.
+- Automatically sends **What needs attention today?** when that dashboard action is used, instead of merely opening the Buddi screen.
+- Added BizziBuddi-specific assistant guidance to keep attention responses concise, prioritised and practical.
+- Kept Buddi read-only; no records are created or changed by this flow.
+
 ## BizziBuddi Dashboard Attention Overview
 
 - Made **What needs attention today?** the central dashboard business overview.
