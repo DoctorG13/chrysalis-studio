@@ -1,5 +1,12 @@
 # Changelog
 
+## BizziBuddi Help Centre FAQs
+
+- Added an expandable **Frequently asked questions** section to Help & Support.
+- Added practical answers covering BizziBuddi, memberships, People, Jobs, Calendar, Buddi, upgrading and getting help.
+- Added automatic scrolling to the FAQ section when opened.
+- Kept the FAQ interaction consistent with the existing Getting Started and Feature Guides Help Centre pattern.
+
 ## BizziBuddi Help Centre Feature Guides
 
 - Made the **Getting Started** selection automatically scroll to the **BIZZIBUDDI QUICK START** guide.
