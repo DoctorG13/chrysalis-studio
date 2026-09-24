@@ -1,5 +1,13 @@
 # Changelog
 
+## BizziBuddi Help Centre Contact Support
+
+- Added a functional **Contact support** panel to Help & Support.
+- Added support categories covering the main BizziBuddi areas.
+- Added subject, message, name and email fields with local demo persistence.
+- Added a clear confirmation state and support-request history storage for the current browser.
+- Kept the experience ready for a future connection to a real support service without inventing a support endpoint.
+
 ## BizziBuddi Help Centre FAQs
 
 - Added an expandable **Frequently asked questions** section to Help & Support.
