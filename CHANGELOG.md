@@ -1,5 +1,12 @@
 # Changelog
 
+## BizziBuddi Buddi Direct Actions
+
+- Added direct navigation actions to Buddi responses for Finance, Calendar, Jobs and Production.
+- Actions are suggested from the question and the supplied dashboard attention data, keeping them relevant to the current business picture.
+- Attention responses can now lead directly from an overdue payment, today's appointments, waiting jobs or ready production to the relevant BizziBuddi area.
+- Kept the Buddi experience read-only; these actions only navigate and do not modify records.
+
 ## BizziBuddi Dashboard-to-Buddi Attention Flow
 
 - Connected the dashboard's **Ask Buddi what needs attention →** action directly to Buddi.
