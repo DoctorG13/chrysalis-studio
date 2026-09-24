@@ -50,6 +50,31 @@ function renderAnswer(text) {
   });
 }
 
+function getSuggestedActions(question, context, handlers) {
+  const value = String(question || "").trim().toLowerCase();
+  const items = context?.dashboardAttention?.items || [];
+  const actions = [];
+
+  const add = (key, label, onClick) => {
+    if (!onClick || actions.some((action) => action.key === key)) return;
+    actions.push({ key, label, onClick });
+  };
+
+  if (value.includes("attention") || value.includes("urgent") || value.includes("today")) {
+    if (items.some((item) => item.type === "overdue-payment")) add("finance", "Review payments →", handlers.onFinance);
+    if (items.some((item) => item.type === "appointment-today")) add("calendar", "Open today's calendar →", handlers.onCalendar);
+    if (items.some((item) => item.type === "waiting-job")) add("jobs", "Review waiting jobs →", handlers.onJobs);
+    if (items.some((item) => item.type === "production-ready")) add("production", "Review ready production →", handlers.onProduction);
+  }
+
+  if (value.includes("owe") || value.includes("invoice") || value.includes("payment") || value.includes("money")) add("finance", "Open finance →", handlers.onFinance);
+  if (value.includes("coming up") || value.includes("calendar") || value.includes("appointment") || value.includes("booking")) add("calendar", "Open calendar →", handlers.onCalendar);
+  if (value.includes("job") || value.includes("work") || value.includes("in progress") || value.includes("waiting")) add("jobs", "Open jobs →", handlers.onJobs);
+  if (value.includes("production") || value.includes("ready")) add("production", "Open production →", handlers.onProduction);
+
+  return actions.slice(0, 4);
+}
+
 function ThinkingIndicator() {
   return (
     <div style={thinkingStyle} role="status" aria-live="polite">
@@ -63,7 +88,7 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -186,8 +211,9 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error || "Buddi could not answer right now.");
 
+      const answer = payload.answer || "I couldn't generate an answer.";
       setConversation((current) => [
-        { question: value, answer: payload.answer || "I couldn't generate an answer." },
+        { question: value, answer, actions: getSuggestedActions(value, businessContext, { onFinance, onCalendar, onJobs, onProduction }) },
         ...current,
       ].slice(0, 8));
     } catch (error) {
@@ -195,6 +221,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
         {
           question: value,
           answer: `I couldn't reach Buddi right now. ${error.message || "Please check that the assistant service is running."}`,
+          actions: [],
         },
         ...current,
       ].slice(0, 8));
@@ -260,6 +287,15 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <strong style={{ display: "block", marginBottom: 6 }}>Buddi</strong>
                     <div>{renderAnswer(entry.answer)}</div>
+                    {entry.actions?.length > 0 && (
+                      <div style={actionRowStyle}>
+                        {entry.actions.map((action) => (
+                          <button key={action.key} type="button" onClick={action.onClick} style={actionButtonStyle}>
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </article>
@@ -512,6 +548,24 @@ const bulletLineStyle = {
 const bulletMarkerStyle = {
   color: "#00B4DB",
   fontWeight: 800,
+};
+
+const actionRowStyle = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginTop: 14,
+};
+
+const actionButtonStyle = {
+  border: "1px solid rgba(0,180,219,.38)",
+  borderRadius: 10,
+  padding: "9px 11px",
+  background: "rgba(0,180,219,.07)",
+  color: "#FFFFFF",
+  fontSize: 11,
+  fontWeight: 700,
+  cursor: "pointer",
 };
 
 const privacyNoteStyle = {
