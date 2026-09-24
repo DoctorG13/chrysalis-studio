@@ -1188,9 +1188,12 @@ function HelpSupportPanel({
 }) {
   const [showGettingStarted, setShowGettingStarted] = useState(false);
   const [showFeatureGuides, setShowFeatureGuides] = useState(false);
+  const [showFaqs, setShowFaqs] = useState(false);
   const [activeFeatureGuide, setActiveFeatureGuide] = useState("people");
+  const [activeFaq, setActiveFaq] = useState(null);
   const gettingStartedRef = useRef(null);
   const featureGuidesRef = useRef(null);
+  const faqRef = useRef(null);
 
   useEffect(() => {
     if (!showGettingStarted || !gettingStartedRef.current) return undefined;
@@ -1217,6 +1220,19 @@ function HelpSupportPanel({
 
     return () => window.cancelAnimationFrame(frame);
   }, [showFeatureGuides]);
+
+  useEffect(() => {
+    if (!showFaqs || !faqRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      faqRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [showFaqs]);
 
   const helpItems = [
     {
@@ -1247,7 +1263,8 @@ function HelpSupportPanel({
       icon: "❓",
       title: "Frequently asked questions",
       description: "Find quick answers about accounts, memberships, data and how BizziBuddi works.",
-      action: "View FAQs",
+      action: showFaqs ? "Hide FAQs" : "View FAQs →",
+      onClick: () => setShowFaqs((current) => !current),
     },
     {
       icon: "✉️",
@@ -1375,6 +1392,49 @@ function HelpSupportPanel({
     },
   ];
 
+  const faqItems = [
+    {
+      question: "What is BizziBuddi?",
+      answer: "BizziBuddi is a business management platform designed to keep the important parts of your business together — people, jobs, calendar, finance, automation, production and reporting.",
+    },
+    {
+      question: "Which membership includes each feature?",
+      answer: "Free includes People & contacts, Basic jobs, Calendar and the Dashboard. Professional adds Advanced scheduling, Payments & invoices and Automation. Business adds Production tracking, Advanced reporting and additional business controls.",
+    },
+    {
+      question: "Can I start with the Free membership?",
+      answer: "Yes. The Free membership is designed as a starting point for independent operators. You can begin with your people, basic jobs, calendar and dashboard before deciding whether you need additional features.",
+    },
+    {
+      question: "What happens when I create a person or client?",
+      answer: "The person is added to your BizziBuddi business records so you can use that information when working with jobs and appointments. Keeping the record current helps the rest of BizziBuddi stay connected.",
+    },
+    {
+      question: "How do Jobs and People work together?",
+      answer: "A job is connected to the person or client it belongs to. This gives you a clearer picture of who the work is for and lets you manage the work and its status from the Jobs area.",
+    },
+    {
+      question: "What can I use the Calendar for?",
+      answer: "Use Calendar for appointments, bookings and important dates. Depending on your membership, additional scheduling information such as duration, buffer and booking status can also be used.",
+    },
+    {
+      question: "What does Buddi know about my business?",
+      answer: "Buddi can use the business information available to the assistant, including people, jobs, calendar activity, finance information, automation events and production records. Buddi is there to help you understand what is happening; you remain in control of your business decisions.",
+    },
+    {
+      question: "Can I change my membership later?",
+      answer: "Yes. BizziBuddi is structured so you can start with the membership that suits your needs and move to a membership with more functionality when you need it.",
+    },
+    {
+      question: "Where should I start if I'm new to BizziBuddi?",
+      answer: "Start with Getting started in this Help Centre. The five-step guide takes you through your business setup, people, first job, calendar and then Buddi.",
+    },
+    {
+      question: "Where can I get help if my question isn't answered here?",
+      answer: "Ask Buddi first for help understanding your business and how BizziBuddi works. If you need assistance with something specific that is not covered here, use the Contact support option in this Help Centre.",
+    },
+  ];
+
   const activeGuide = featureGuideItems.find((guide) => guide.id === activeFeatureGuide) || featureGuideItems[0];
 
   return (
@@ -1495,6 +1555,47 @@ function HelpSupportPanel({
               {activeGuide.action} →
             </button>
           </article>
+        </div>
+      )}
+
+      {showFaqs && (
+        <div ref={faqRef} style={faqPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI FAQ</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>Frequently asked questions.</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                Quick answers to the questions you're most likely to have while getting started with BizziBuddi.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowFaqs(false)} style={helpCloseButton} aria-label="Close frequently asked questions">×</button>
+          </div>
+
+          <div style={faqList}>
+            {faqItems.map((item, index) => {
+              const isOpen = activeFaq === index;
+
+              return (
+                <article key={item.question} style={faqItem}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFaq(isOpen ? null : index)}
+                    style={faqQuestion}
+                    aria-expanded={isOpen}
+                  >
+                    <span>{item.question}</span>
+                    <span style={faqQuestionIcon}>{isOpen ? "−" : "+"}</span>
+                  </button>
+
+                  {isOpen && (
+                    <div style={faqAnswer}>
+                      <p style={{ ...copyStyle, margin: 0 }}>{item.answer}</p>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
         </div>
       )}
 
@@ -1639,6 +1740,57 @@ const helpSecondaryButton = {
   cursor: "default",
 };
 
+const faqPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(37,99,235,.38)",
+  background: "linear-gradient(135deg, rgba(37,99,235,.08), rgba(0,180,219,.06))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const faqList = {
+  display: "grid",
+  gap: 8,
+  marginTop: 24,
+};
+const faqItem = {
+  overflow: "hidden",
+  border: "1px solid " + BORDER,
+  borderRadius: 11,
+  background: "rgba(255,255,255,.035)",
+};
+const faqQuestion = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  padding: "15px 16px",
+  border: "none",
+  background: "transparent",
+  color: TEXT,
+  fontSize: 14,
+  fontWeight: 800,
+  textAlign: "left",
+  cursor: "pointer",
+};
+const faqQuestionIcon = {
+  flex: "0 0 auto",
+  width: 24,
+  height: 24,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 7,
+  background: "rgba(0,180,219,.10)",
+  color: CYAN,
+  fontSize: 18,
+  lineHeight: 1,
+};
+const faqAnswer = {
+  padding: "0 16px 16px",
+  borderTop: "1px solid rgba(255,255,255,.08)",
+};
 const featureGuidesPanel = {
   marginTop: 18,
   padding: 24,
