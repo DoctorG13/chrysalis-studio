@@ -1,5 +1,12 @@
 # Changelog
 
+## BizziBuddi Help Centre Feature Guides
+
+- Made the **Getting Started** selection automatically scroll to the **BIZZIBUDDI QUICK START** guide.
+- Added an expandable **Feature Guides** Help Centre experience covering People, Jobs, Calendar, Finance, Automation, Production and Reports.
+- Added feature-specific explanations, practical steps and direct navigation into each available BizziBuddi area.
+- Kept the existing Help & Support structure and visual language intact.
+
 ## BizziBuddi Getting Started Style Collision Fix
 
 - Fixed the blank BizziBuddi account page caused by the Getting Started item array being passed to a React `style` prop.
