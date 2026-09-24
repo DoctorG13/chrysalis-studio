@@ -1,5 +1,10 @@
 # Changelog
 
+## BizziBuddi Support Form Runtime Fix
+
+- Fixed the Contact Support blank-page error caused by the support textarea style referencing `inputStyle` before that style was initialized.
+- Kept the support textarea styling visually consistent without introducing a dependency on declaration order.
+
 ## BizziBuddi Help Centre Contact Support
 
 - Added a functional **Contact support** panel to Help & Support.
