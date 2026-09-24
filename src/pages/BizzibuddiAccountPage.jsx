@@ -1189,11 +1189,14 @@ function HelpSupportPanel({
   const [showGettingStarted, setShowGettingStarted] = useState(false);
   const [showFeatureGuides, setShowFeatureGuides] = useState(false);
   const [showFaqs, setShowFaqs] = useState(false);
+  const [showContactSupport, setShowContactSupport] = useState(false);
+  const [supportSubmitted, setSupportSubmitted] = useState(false);
   const [activeFeatureGuide, setActiveFeatureGuide] = useState("people");
   const [activeFaq, setActiveFaq] = useState(null);
   const gettingStartedRef = useRef(null);
   const featureGuidesRef = useRef(null);
   const faqRef = useRef(null);
+  const contactSupportRef = useRef(null);
 
   useEffect(() => {
     if (!showGettingStarted || !gettingStartedRef.current) return undefined;
@@ -1233,6 +1236,18 @@ function HelpSupportPanel({
 
     return () => window.cancelAnimationFrame(frame);
   }, [showFaqs]);
+  useEffect(() => {
+    if (!showContactSupport || !contactSupportRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      contactSupportRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [showContactSupport]);
 
   const helpItems = [
     {
@@ -1269,8 +1284,12 @@ function HelpSupportPanel({
     {
       icon: "✉️",
       title: "Contact support",
-      description: "Need a hand with something specific? Keep support close at hand as BizziBuddi grows.",
-      action: "Contact support",
+      description: "Need a hand with something specific? Tell us what you need and keep your support request organised.",
+      action: showContactSupport ? "Hide support form" : "Contact support →",
+      onClick: () => {
+        setSupportSubmitted(false);
+        setShowContactSupport((current) => !current);
+      },
     },
   ];
 
@@ -1599,6 +1618,110 @@ function HelpSupportPanel({
         </div>
       )}
 
+      {showContactSupport && (
+        <div ref={contactSupportRef} style={supportPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI SUPPORT</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>How can we help?</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                Tell us what you need help with. In this local preview, your request is saved in this browser so you can test the support experience.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowContactSupport(false)} style={helpCloseButton} aria-label="Close contact support">×</button>
+          </div>
+
+          {supportSubmitted ? (
+            <div style={supportConfirmation}>
+              <div style={supportConfirmationIcon}>✓</div>
+              <div>
+                <strong style={{ display: "block", fontSize: 18 }}>Support request saved.</strong>
+                <p style={{ ...copyStyle, margin: "6px 0 0" }}>
+                  Your request has been saved locally in this demo environment. When BizziBuddi is connected to its support service, this form can send the request directly to the support team.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSupportSubmitted(false)}
+                style={helpSecondaryButton}
+              >
+                Submit another request
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const form = new FormData(event.currentTarget);
+                const request = {
+                  id: `support-${Date.now()}`,
+                  category: String(form.get("category") || ""),
+                  subject: String(form.get("subject") || "").trim(),
+                  message: String(form.get("message") || "").trim(),
+                  name: String(form.get("name") || "").trim(),
+                  email: String(form.get("email") || "").trim(),
+                  createdAt: new Date().toISOString(),
+                };
+
+                const existing = JSON.parse(localStorage.getItem("bizzibuddiMockSupportRequests") || "[]");
+                localStorage.setItem(
+                  "bizzibuddiMockSupportRequests",
+                  JSON.stringify([...existing, request])
+                );
+                setSupportSubmitted(true);
+              }}
+              style={supportForm}
+            >
+              <label style={fieldStyle}>
+                What do you need help with?
+                <select name="category" defaultValue="General help" style={inputStyle} required>
+                  <option>General help</option>
+                  <option>Account & membership</option>
+                  <option>People & clients</option>
+                  <option>Jobs</option>
+                  <option>Calendar</option>
+                  <option>Finance</option>
+                  <option>Automation</option>
+                  <option>Production</option>
+                  <option>Reports</option>
+                  <option>Buddi</option>
+                </select>
+              </label>
+
+              <label style={fieldStyle}>
+                Subject
+                <input name="subject" type="text" placeholder="Briefly describe the issue" style={inputStyle} required />
+              </label>
+
+              <label style={fieldStyle}>
+                Your message
+                <textarea
+                  name="message"
+                  placeholder="Tell us what is happening and what you need help with..."
+                  style={supportTextarea}
+                  required
+                />
+              </label>
+
+              <div style={supportFormGrid}>
+                <label style={fieldStyle}>
+                  Your name
+                  <input name="name" type="text" placeholder="Your name" style={inputStyle} required />
+                </label>
+                <label style={fieldStyle}>
+                  Email address
+                  <input name="email" type="email" placeholder="you@example.com" style={inputStyle} required />
+                </label>
+              </div>
+
+              <button type="submit" style={helpPrimaryButton}>
+                Save support request →
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
       <div style={helpTip}>
         <BizziBuddiLogo size={30} showWordmark={false} />
         <div>
@@ -1740,6 +1863,54 @@ const helpSecondaryButton = {
   cursor: "default",
 };
 
+const supportPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(37,99,235,.38)",
+  background: "linear-gradient(135deg, rgba(37,99,235,.08), rgba(0,180,219,.06))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const supportForm = {
+  display: "grid",
+  gap: 2,
+  marginTop: 18,
+};
+const supportTextarea = {
+  ...inputStyle,
+  minHeight: 150,
+  padding: "14px 15px",
+  resize: "vertical",
+  lineHeight: 1.5,
+  fontFamily: "inherit",
+};
+const supportFormGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 16,
+};
+const supportConfirmation = {
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
+  gap: 14,
+  alignItems: "start",
+  marginTop: 22,
+  padding: 18,
+  borderRadius: 13,
+  border: "1px solid rgba(0,180,219,.38)",
+  background: "rgba(0,180,219,.07)",
+};
+const supportConfirmationIcon = {
+  width: 38,
+  height: 38,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: "50%",
+  background: "rgba(0,180,219,.16)",
+  color: CYAN,
+  fontSize: 20,
+  fontWeight: 900,
+};
 const faqPanel = {
   marginTop: 18,
   padding: 24,
