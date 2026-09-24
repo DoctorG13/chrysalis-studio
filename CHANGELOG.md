@@ -1,5 +1,12 @@
 # Changelog
 
+## BizziBuddi Getting Started Guide
+
+- Added a guided five-step **Getting Started** experience inside Help & Support.
+- Added direct actions into the dashboard, People, Jobs, Calendar and Ask Buddi areas.
+- Kept the guide local and lightweight with no changes to account, billing or business data architecture.
+
+
 ## BizziBuddi Help Navigation Runtime Fix
 
 - Corrected the Ask Buddi/help navigation icon style reference that caused the account page to render blank.
