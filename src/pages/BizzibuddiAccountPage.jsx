@@ -1211,7 +1211,7 @@ function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }
     },
   ];
 
-  const gettingStartedSteps = [
+  const gettingStartedItems = [
     {
       number: "01",
       title: "Set up your business",
@@ -1297,8 +1297,8 @@ function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }
             <button type="button" onClick={() => setShowGettingStarted(false)} style={helpCloseButton} aria-label="Close getting started guide">×</button>
           </div>
 
-          <div style={gettingStartedSteps}>
-            {gettingStartedSteps.map((step, index) => (
+          <div style={gettingStartedStepsStyle}>
+            {gettingStartedItems.map((step, index) => (
               <article key={step.number} style={gettingStartedStep}>
                 <div style={gettingStartedNumber}>{step.number}</div>
                 <div style={{ flex: 1 }}>
@@ -1308,7 +1308,7 @@ function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }
                     {step.action} →
                   </button>
                 </div>
-                {index < gettingStartedSteps.length - 1 && <div style={gettingStartedConnector} aria-hidden="true" />}
+                {index < gettingStartedItems.length - 1 && <div style={gettingStartedConnector} aria-hidden="true" />}
               </article>
             ))}
           </div>
@@ -1470,7 +1470,7 @@ const gettingStartedIntro = {
   justifyContent: "space-between",
   gap: 20,
 };
-const gettingStartedSteps = {
+const gettingStartedStepsStyle = {
   display: "grid",
   gap: 0,
   marginTop: 24,
