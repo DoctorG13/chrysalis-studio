@@ -161,36 +161,36 @@ export default function BizzibuddiAccountPage() {
           <div style={previewBadge}>BizziBuddi gives you time · Local mock environment · No live data or payments</div>
         </section>
 
-        <nav aria-label="Account preview navigation" style={navStyle}>
-          <div style={navMainGroup}>
+        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={navStyle}>
+          <div className="bizzibuddi-account-nav-main">
             {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"]].map(([key, label]) => (
               <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
             ))}
           </div>
 
-          <div style={navAssistantGroup}>
-            <div style={navAssistantHeading}>
+          <div className="bizzibuddi-help-nav">
+            <div className="bizzibuddi-help-nav-heading">
               <span aria-hidden="true" />
               <span>NEED A HAND?</span>
               <span aria-hidden="true" />
             </div>
-            <p style={navAssistantSubheading}>Get answers. Find help. Keep moving.</p>
-            <div style={navAssistantButtons}>
-              <button type="button" onClick={() => selectView("buddi")} style={assistantNavButton(view === "buddi")}>
-                <span style={navAssistantIcon(true)} aria-hidden="true">•••</span>
-                <span style={navAssistantCopy}>
+            <p className="bizzibuddi-help-nav-subheading">Get answers. Find help. Keep moving.</p>
+            <div className="bizzibuddi-help-nav-buttons">
+              <button type="button" onClick={() => selectView("buddi")} className={view === "buddi" ? "bizzibuddi-help-action bizzibuddi-help-action-primary active" : "bizzibuddi-help-action bizzibuddi-help-action-primary"}>
+                <span className="bizzibuddi-help-action-icon primary" aria-hidden="true">•••</span>
+                <span className="bizzibuddi-help-action-copy">
                   <strong>ASK BUDDI</strong>
                   <small>Get instant help with your business</small>
                 </span>
-                <span style={navAssistantArrow(true)} aria-hidden="true">→</span>
+                <span className="bizzibuddi-help-action-arrow primary" aria-hidden="true">→</span>
               </button>
-              <button type="button" onClick={() => selectView("help")} style={helpNavButton(view === "help")}>
-                <span style={navAssistantIcon(false)} aria-hidden="true">◯</span>
-                <span style={navAssistantCopy}>
+              <button type="button" onClick={() => selectView("help")} className={view === "help" ? "bizzibuddi-help-action bizzibuddi-help-action-secondary active" : "bizzibuddi-help-action bizzibuddi-help-action-secondary"}>
+                <span className="bizzibuddi-help-action-icon" aria-hidden="true">◯</span>
+                <span className="bizzibuddi-help-action-copy">
                   <strong>HELP & SUPPORT</strong>
                   <small>Guides, FAQs and contact options</small>
                 </span>
-                <span style={navAssistantArrow(false)} aria-hidden="true">→</span>
+                <span className="bizzibuddi-help-action-arrow" aria-hidden="true">→</span>
               </button>
             </div>
           </div>
@@ -224,6 +224,28 @@ export default function BizzibuddiAccountPage() {
         {account && (
           <>
             <style>{`
+              .bizzibuddi-account-nav-main { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+              .bizzibuddi-help-nav { display:grid; gap:6px; justify-items:center; min-width:420px; padding:14px 0 0 20px; border-left:1px solid rgba(255,255,255,.18); }
+              .bizzibuddi-help-nav-heading { width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; color:#BFD8F0; font-size:11px; font-weight:900; letter-spacing:.18em; }
+              .bizzibuddi-help-nav-heading span:first-child,.bizzibuddi-help-nav-heading span:last-child { height:1px; background:rgba(0,180,219,.30); }
+              .bizzibuddi-help-nav-subheading { margin:0 0 8px; color:#B8C6D6; font-size:11px; font-style:italic; line-height:1.3; }
+              .bizzibuddi-help-nav-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
+              .bizzibuddi-help-action { display:grid; grid-template-columns:40px minmax(0,1fr) 34px; align-items:center; gap:11px; min-height:76px; padding:10px 12px; border-radius:38px; color:#fff; cursor:pointer; }
+              .bizzibuddi-help-action-primary { border:1px solid rgba(0,180,219,.48); background:linear-gradient(135deg,rgba(0,180,219,.13),rgba(37,99,235,.18)); box-shadow:0 8px 22px rgba(0,0,0,.12); }
+              .bizzibuddi-help-action-primary.active { border-color:#2DE8FF; background:linear-gradient(135deg,#12DDF5 0%,#1688F5 45%,#2563EB 100%); box-shadow:0 10px 28px rgba(0,180,219,.30),0 0 24px rgba(0,180,219,.18); }
+              .bizzibuddi-help-action-secondary { border:1px solid rgba(72,133,186,.58); background:rgba(7,31,51,.48); }
+              .bizzibuddi-help-action-secondary.active { border-color:rgba(0,180,219,.8); background:rgba(0,180,219,.13); }
+              .bizzibuddi-help-action-icon { width:38px; height:38px; display:grid; place-items:center; flex:0 0 auto; border-radius:12px; border:1px solid rgba(0,180,219,.42); color:#00B4DB; background:rgba(0,180,219,.08); font-size:20px; font-weight:900; }
+              .bizzibuddi-help-action-icon.primary { border-color:rgba(255,255,255,.45); color:#fff; background:rgba(255,255,255,.12); font-size:17px; letter-spacing:.08em; }
+              .bizzibuddi-help-action-copy { display:grid; gap:3px; min-width:0; text-align:left; }
+              .bizzibuddi-help-action-copy strong { font-size:14px; letter-spacing:.03em; }
+              .bizzibuddi-help-action-copy small { color:#B8C6D6; font-size:10px; line-height:1.25; }
+              .bizzibuddi-help-action-arrow { width:34px; height:34px; display:grid; place-items:center; flex:0 0 auto; border-radius:50%; background:rgba(37,99,235,.22); color:#fff; font-size:22px; font-weight:500; }
+              .bizzibuddi-help-action-arrow.primary { background:rgba(255,255,255,.16); }
+              @media (max-width: 760px) {
+                .bizzibuddi-help-nav { min-width:0; width:100%; padding:14px 0 0; border-left:0; border-top:1px solid rgba(255,255,255,.18); }
+                .bizzibuddi-help-nav-buttons { grid-template-columns:1fr; }
+              }
               @keyframes bizzibuddiBuddiPulse {
                 0%, 100% { box-shadow: 0 12px 30px rgba(0,0,0,.28), 0 0 0 0 rgba(0,180,219,.28); }
                 50% { box-shadow: 0 14px 34px rgba(0,0,0,.34), 0 0 0 10px rgba(0,180,219,0); }
@@ -1585,97 +1607,6 @@ const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 17, 
 const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(0,180,219,.08)", color: RED, fontSize: 12, fontWeight: 600 };
 const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "34px 0 28px" };
 const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
-const navAssistantGroup = {
-  display: "grid",
-  gap: 6,
-  justifyItems: "center",
-  minWidth: 420,
-  padding: "14px 0 0 20px",
-  borderLeft: "1px solid rgba(255,255,255,.18)",
-};
-const navAssistantHeading = {
-  width: "100%",
-  display: "grid",
-  gridTemplateColumns: "1fr auto 1fr",
-  alignItems: "center",
-  gap: 12,
-  color: "#BFD8F0",
-  fontSize: 11,
-  fontWeight: 900,
-  letterSpacing: ".18em",
-};
-const navAssistantSubheading = {
-  margin: "0 0 8px",
-  color: MUTED,
-  fontSize: 11,
-  fontStyle: "italic",
-  lineHeight: 1.3,
-};
-const navAssistantButtons = {
-  display: "grid",
-  gridTemplateColumns: "1fr 1fr",
-  gap: 10,
-  width: "100%",
-};
-const navAssistantCopy = {
-  display: "grid",
-  gap: 3,
-  minWidth: 0,
-  textAlign: "left",
-};
-const navAssistantIcon = (primary) => ({
-  width: 38,
-  height: 38,
-  display: "grid",
-  placeItems: "center",
-  flex: "0 0 auto",
-  borderRadius: 12,
-  border: "1px solid " + (primary ? "rgba(255,255,255,.45)" : "rgba(0,180,219,.42)"),
-  color: primary ? "#FFFFFF" : CYAN,
-  background: primary ? "rgba(255,255,255,.12)" : "rgba(0,180,219,.08)",
-  fontSize: primary ? 17 : 20,
-  fontWeight: 900,
-  letterSpacing: ".08em",
-});
-const navAssistantArrow = (primary) => ({
-  width: 34,
-  height: 34,
-  display: "grid",
-  placeItems: "center",
-  flex: "0 0 auto",
-  borderRadius: "50%",
-  background: primary ? "rgba(255,255,255,.16)" : "rgba(37,99,235,.22)",
-  color: "#FFFFFF",
-  fontSize: 22,
-  fontWeight: 500,
-});
-const assistantNavButton = (active) => ({
-  display: "grid",
-  gridTemplateColumns: "40px minmax(0,1fr) 34px",
-  alignItems: "center",
-  gap: 11,
-  minHeight: 76,
-  padding: "10px 12px",
-  border: "1px solid " + (active ? "#2DE8FF" : "rgba(0,180,219,.48)"),
-  borderRadius: 38,
-  background: active ? "linear-gradient(135deg, #12DDF5 0%, #1688F5 45%, #2563EB 100%)" : "linear-gradient(135deg, rgba(0,180,219,.13), rgba(37,99,235,.18))",
-  color: TEXT,
-  cursor: "pointer",
-  boxShadow: active ? "0 10px 28px rgba(0,180,219,.30), 0 0 24px rgba(0,180,219,.18)" : "0 8px 22px rgba(0,0,0,.12)",
-});
-const helpNavButton = (active) => ({
-  display: "grid",
-  gridTemplateColumns: "40px minmax(0,1fr) 34px",
-  alignItems: "center",
-  gap: 11,
-  minHeight: 76,
-  padding: "10px 12px",
-  border: "1px solid " + (active ? "rgba(0,180,219,.8)" : "rgba(72,133,186,.58)"),
-  borderRadius: 38,
-  background: active ? "rgba(0,180,219,.13)" : "rgba(7,31,51,.48)",
-  color: TEXT,
-  cursor: "pointer",
-});
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
 const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
