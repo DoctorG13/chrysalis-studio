@@ -18,6 +18,7 @@ export default function BizzibuddiAccountPage() {
   const [view, setView] = useState(initialView === "create" ? "create" : "login");
   const [account, setAccount] = useState(() => readAccount());
   const [message, setMessage] = useState("");
+  const [buddiPrompt, setBuddiPrompt] = useState("");
   const [people, setPeople] = useState(() => readPeople());
   const [jobs, setJobs] = useState(() => readJobs());
   const [appointments, setAppointments] = useState(() => readAppointments());
@@ -27,6 +28,13 @@ export default function BizzibuddiAccountPage() {
 
   function selectView(nextView) {
     setView(nextView);
+    setMessage("");
+    if (nextView !== "buddi") setBuddiPrompt("");
+  }
+
+  function openBuddi(prompt = "") {
+    setBuddiPrompt(String(prompt || "").trim());
+    setView("buddi");
     setMessage("");
   }
 
@@ -176,7 +184,7 @@ export default function BizzibuddiAccountPage() {
             </div>
             <p className="bizzibuddi-help-nav-subheading">Get answers. Find help. Keep moving.</p>
             <div className="bizzibuddi-help-nav-buttons">
-              <button type="button" onClick={() => selectView("buddi")} className={view === "buddi" ? "bizzibuddi-help-action bizzibuddi-help-action-primary active" : "bizzibuddi-help-action bizzibuddi-help-action-primary"}>
+              <button type="button" onClick={() => openBuddi()} className={view === "buddi" ? "bizzibuddi-help-action bizzibuddi-help-action-primary active" : "bizzibuddi-help-action bizzibuddi-help-action-primary"}>
                 <span className="bizzibuddi-help-action-icon primary" aria-hidden="true">•••</span>
                 <span className="bizzibuddi-help-action-copy">
                   <strong>ASK BUDDI</strong>
@@ -201,7 +209,7 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => selectView("buddi")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
@@ -209,7 +217,7 @@ export default function BizzibuddiAccountPage() {
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
         {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem("bizzibuddiMockProductionRecords", JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} onBack={() => selectView("dashboard")} />}
+        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onBack={() => selectView("dashboard")} />}
         {view === "help" && (
           <HelpSupportPanel
             onBuddi={() => selectView("buddi")}
@@ -263,7 +271,7 @@ export default function BizzibuddiAccountPage() {
               type="button"
               className="bizzibuddi-buddi-launcher"
               aria-label="Open Ask Buddi"
-              onClick={() => selectView(view === "buddi" ? "dashboard" : "buddi")}
+              onClick={() => (view === "buddi" ? selectView("dashboard") : openBuddi())}
               style={buddiFloatingButton}
             >
               <BizziBuddiLogo size={32} dark showWordmark={false} />
@@ -504,7 +512,7 @@ function PlansPanel({ onSelectPlan }) {
 
 function DashboardPanel({
   account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation,
-  onProduction, onReports, onBuddi, onReset, onLogout, people, jobs,
+  onProduction, onReports, onBuddi, onAttentionBuddi, onReset, onLogout, people, jobs,
   appointments, invoices, automationEvents, productionRecords,
 }) {
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -558,7 +566,7 @@ function DashboardPanel({
             <h3 style={{ margin: "6px 0 5px", fontSize: 28 }}>What needs attention today?</h3>
             <p style={{ ...copyStyle, margin: 0 }}>Buddi can help you make sense of the activity that matters most right now.</p>
           </div>
-          <button type="button" onClick={onBuddi} style={attentionBuddiButton}>
+          <button type="button" onClick={onAttentionBuddi} style={attentionBuddiButton}>
             <BizziBuddiLogo size={30} dark showWordmark={false} />
             <span>Ask Buddi</span>
           </button>
@@ -597,7 +605,7 @@ function DashboardPanel({
 
         <div style={attentionFooter}>
           <span>{recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and decide what to look at next."}</span>
-          <button type="button" onClick={onBuddi} style={attentionFooterButton}>Ask Buddi what needs attention →</button>
+          <button type="button" onClick={onAttentionBuddi} style={attentionFooterButton}>Ask Buddi what needs attention →</button>
         </div>
       </div>
 
