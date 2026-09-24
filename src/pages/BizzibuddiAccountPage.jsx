@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
 import BizziBuddiAccountBuddi from "../components/common/BizziBuddiAccountBuddi";
 import { bizzibuddiPlans, getBizzibuddiPlan, hasBizzibuddiFeature } from "../data/bizzibuddiPlans";
@@ -217,6 +217,10 @@ export default function BizzibuddiAccountPage() {
             onPeople={() => selectView("people")}
             onJobs={() => selectView("jobs")}
             onCalendar={() => selectView("calendar")}
+            onFinance={() => selectView("finance")}
+            onAutomation={() => selectView("automation")}
+            onProduction={() => selectView("production")}
+            onReports={() => selectView("reports")}
           />
         )}
 
@@ -1171,8 +1175,48 @@ function formatAppointmentDate(date, time) {
   return value.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 }
 
-function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }) {
+function HelpSupportPanel({
+  onBuddi,
+  onDashboard,
+  onPeople,
+  onJobs,
+  onCalendar,
+  onFinance,
+  onAutomation,
+  onProduction,
+  onReports,
+}) {
   const [showGettingStarted, setShowGettingStarted] = useState(false);
+  const [showFeatureGuides, setShowFeatureGuides] = useState(false);
+  const [activeFeatureGuide, setActiveFeatureGuide] = useState("people");
+  const gettingStartedRef = useRef(null);
+  const featureGuidesRef = useRef(null);
+
+  useEffect(() => {
+    if (!showGettingStarted || !gettingStartedRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      gettingStartedRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [showGettingStarted]);
+
+  useEffect(() => {
+    if (!showFeatureGuides || !featureGuidesRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      featureGuidesRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [showFeatureGuides]);
 
   const helpItems = [
     {
@@ -1195,7 +1239,9 @@ function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }
       icon: "🧭",
       title: "Feature guides",
       description: "Explore People, Jobs, Calendar, Finance, Automation, Production and Reports.",
-      action: "Explore features",
+      action: showFeatureGuides ? "Hide guides" : "Explore features →",
+      onClick: () => setShowFeatureGuides((current) => !current),
+      featured: false,
     },
     {
       icon: "❓",
@@ -1249,6 +1295,88 @@ function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }
     },
   ];
 
+  const featureGuideItems = [
+    {
+      id: "people",
+      number: "01",
+      title: "People",
+      icon: "👥",
+      summary: "Keep the people and clients connected to your business organised in one place.",
+      details: "Store names, contact details and business relationships so you can quickly find the people you work with and connect them to jobs and appointments.",
+      steps: ["Add a person or client.", "Keep their contact information up to date.", "Use their record when creating jobs and appointments."],
+      action: "Open People",
+      onClick: onPeople,
+    },
+    {
+      id: "jobs",
+      number: "02",
+      title: "Jobs",
+      icon: "📋",
+      summary: "Turn your work into trackable jobs from the first conversation through to completion.",
+      details: "Create jobs, assign them to people and keep the current status visible so you always know what work is new, underway, waiting or complete.",
+      steps: ["Create a job and choose the person it belongs to.", "Update the job status as work progresses.", "Use the job record as your central place for the work."],
+      action: "Open Jobs",
+      onClick: onJobs,
+    },
+    {
+      id: "calendar",
+      number: "03",
+      title: "Calendar",
+      icon: "📅",
+      summary: "Keep appointments, bookings and important dates together with your business activity.",
+      details: "Use the calendar to see upcoming appointments and keep your schedule connected to the people and jobs you are working with.",
+      steps: ["Add an appointment with a date and time.", "Link it to a person when useful.", "Use the calendar to see what is coming up."],
+      action: "Open Calendar",
+      onClick: onCalendar,
+    },
+    {
+      id: "finance",
+      number: "04",
+      title: "Finance",
+      icon: "💳",
+      summary: "Keep invoices, payments and outstanding money visible as your business grows.",
+      details: "Finance gives you a simple view of invoices and payment status, helping you see what has been issued, what has been paid and what remains outstanding.",
+      steps: ["Create an invoice for a person or client.", "Track its payment status.", "Use the finance summary to keep an eye on outstanding amounts."],
+      action: "Open Finance",
+      onClick: onFinance,
+    },
+    {
+      id: "automation",
+      number: "05",
+      title: "Automation",
+      icon: "⚡",
+      summary: "Let BizziBuddi prepare useful business follow-ups and surface things that need attention.",
+      details: "Automation helps reduce repetitive checking by preparing appointment reminders and identifying items such as overdue invoices that may need your attention.",
+      steps: ["Create appointments that can generate reminder events.", "Run an automation check when you want to review business activity.", "Review the event history and follow up where needed."],
+      action: "Open Automation",
+      onClick: onAutomation,
+    },
+    {
+      id: "production",
+      number: "06",
+      title: "Production",
+      icon: "🏭",
+      summary: "Track work through production stages so you can see what is being made and what is ready.",
+      details: "Production tracking gives you a clear stage-by-stage view of work, including readiness dates, notes and tasks.",
+      steps: ["Create a production record for a job.", "Move work through the production stages.", "Use tasks, notes and ready-by dates to keep production moving."],
+      action: "Open Production",
+      onClick: onProduction,
+    },
+    {
+      id: "reports",
+      number: "07",
+      title: "Reports",
+      icon: "📊",
+      summary: "Bring your business information together so you can see how things are tracking.",
+      details: "Reports turns your BizziBuddi information into a business-at-a-glance view covering people, jobs, calendar activity, finance and production.",
+      steps: ["Review the business summary.", "Check finance, jobs and calendar activity.", "Use production information to understand work in progress."],
+      action: "Open Reports",
+      onClick: onReports,
+    },
+  ];
+
+  const activeGuide = featureGuideItems.find((guide) => guide.id === activeFeatureGuide) || featureGuideItems[0];
+
   return (
     <section style={cardStyle(940)}>
       <div style={helpHero}>
@@ -1285,7 +1413,7 @@ function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }
       </div>
 
       {showGettingStarted && (
-        <div style={gettingStartedPanel}>
+        <div ref={gettingStartedRef} style={gettingStartedPanel}>
           <div style={gettingStartedIntro}>
             <div>
               <small style={smallText}>BIZZIBUDDI QUICK START</small>
@@ -1312,6 +1440,61 @@ function HelpSupportPanel({ onBuddi, onDashboard, onPeople, onJobs, onCalendar }
               </article>
             ))}
           </div>
+        </div>
+      )}
+
+      {showFeatureGuides && (
+        <div ref={featureGuidesRef} style={featureGuidesPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI FEATURE GUIDES</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>Understand each part of your business.</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                Choose a feature below to see what it does, how to use it and where it fits into your day-to-day business.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowFeatureGuides(false)} style={helpCloseButton} aria-label="Close feature guides">×</button>
+          </div>
+
+          <div style={featureGuideTabs}>
+            {featureGuideItems.map((guide) => (
+              <button
+                key={guide.id}
+                type="button"
+                onClick={() => setActiveFeatureGuide(guide.id)}
+                style={featureGuideTab(activeFeatureGuide === guide.id)}
+              >
+                <span style={featureGuideTabNumber}>{guide.number}</span>
+                <span>{guide.icon} {guide.title}</span>
+              </button>
+            ))}
+          </div>
+
+          <article style={featureGuideDetail}>
+            <div style={featureGuideDetailHeader}>
+              <div style={helpCardIcon}>{activeGuide.icon}</div>
+              <div>
+                <small style={smallText}>FEATURE {activeGuide.number}</small>
+                <h4 style={{ margin: "5px 0 6px", fontSize: 23 }}>{activeGuide.title}</h4>
+                <p style={{ ...copyStyle, margin: 0 }}>{activeGuide.summary}</p>
+              </div>
+            </div>
+
+            <p style={{ ...copyStyle, margin: "20px 0 0" }}>{activeGuide.details}</p>
+
+            <div style={featureGuideSteps}>
+              {activeGuide.steps.map((step, index) => (
+                <div key={step} style={featureGuideStep}>
+                  <span style={featureGuideStepNumber}>{String(index + 1).padStart(2, "0")}</span>
+                  <span>{step}</span>
+                </div>
+              ))}
+            </div>
+
+            <button type="button" onClick={activeGuide.onClick} style={helpPrimaryButton}>
+              {activeGuide.action} →
+            </button>
+          </article>
         </div>
       )}
 
@@ -1456,6 +1639,75 @@ const helpSecondaryButton = {
   cursor: "default",
 };
 
+const featureGuidesPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(37,99,235,.38)",
+  background: "linear-gradient(135deg, rgba(37,99,235,.08), rgba(0,180,219,.06))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const featureGuideTabs = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: 8,
+  marginTop: 24,
+};
+const featureGuideTab = (active) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  minHeight: 46,
+  padding: "8px 11px",
+  border: "1px solid " + (active ? "rgba(0,180,219,.65)" : BORDER),
+  borderRadius: 10,
+  background: active ? "rgba(0,180,219,.13)" : "rgba(255,255,255,.035)",
+  color: TEXT,
+  fontSize: 12,
+  fontWeight: active ? 800 : 700,
+  cursor: "pointer",
+  textAlign: "left",
+});
+const featureGuideTabNumber = {
+  color: CYAN,
+  fontSize: 10,
+  fontWeight: 900,
+  letterSpacing: ".06em",
+};
+const featureGuideDetail = {
+  marginTop: 14,
+  padding: 22,
+  borderRadius: 14,
+  border: "1px solid " + BORDER,
+  background: "rgba(255,255,255,.035)",
+};
+const featureGuideDetailHeader = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 14,
+};
+const featureGuideSteps = {
+  display: "grid",
+  gap: 9,
+  marginTop: 20,
+};
+const featureGuideStep = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 10,
+  padding: "10px 12px",
+  borderRadius: 9,
+  background: "rgba(0,180,219,.06)",
+  color: TEXT,
+  fontSize: 13,
+  lineHeight: 1.5,
+};
+const featureGuideStepNumber = {
+  color: CYAN,
+  fontSize: 11,
+  fontWeight: 900,
+  letterSpacing: ".06em",
+};
 const gettingStartedPanel = {
   marginTop: 18,
   padding: 24,
