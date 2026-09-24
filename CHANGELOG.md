@@ -1,3 +1,12 @@
+## BizziBuddi Mobile Dashboard Buddi Layout
+
+### Fixed
+
+- Made the Dashboard Ask Buddi card responsive on narrow mobile screens.
+- Stacked the Buddi card content and full-width action button on small screens so the description no longer collapses into a narrow column.
+- Hid the floating Ask Buddi launcher on the Dashboard at mobile widths to prevent it from obscuring dashboard content.
+- Preserved the existing desktop and tablet dashboard layout and Buddi access on other account views.
+
 # Changelog
 
 ## BizziBuddi Buddi Direct Actions
