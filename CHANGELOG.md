@@ -1,5 +1,11 @@
 # Changelog
 
+## BizziBuddi Getting Started Style Collision Fix
+
+- Fixed the blank BizziBuddi account page caused by the Getting Started item array being passed to a React `style` prop.
+- Renamed the Getting Started data collection separately from its layout style object.
+- Preserved the existing Getting Started design and behaviour.
+
 ## BizziBuddi Help Navigation CSS Rendering Fix
 
 - Moved the new help-navigation presentation from React inline style objects into scoped CSS classes.
