@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BizziBuddiLogo from "./BizziBuddiLogo";
 
 function normalise(value) {
@@ -63,7 +63,7 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -81,6 +81,28 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       stage,
       count: productionRecords.filter((record) => record.stage === stage).length,
     }));
+    const dashboardAttention = [
+      ...overdueInvoices.slice(0, 3).map((invoice) => ({
+        type: "overdue-payment",
+        title: invoice.clientName || invoice.client || "Invoice requires attention",
+        detail: `${formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
+      })),
+      ...appointments.filter((appointment) => appointment.date === today).slice(0, 3).map((appointment) => ({
+        type: "appointment-today",
+        title: appointment.title || "Appointment",
+        detail: `${appointment.time || "Time not set"}${appointment.personName ? ` · ${appointment.personName}` : ""}`,
+      })),
+      ...jobs.filter((job) => job.status === "Waiting").slice(0, 2).map((job) => ({
+        type: "waiting-job",
+        title: job.title || "Job waiting",
+        detail: job.clientName || job.client || "This job is waiting for the next step.",
+      })),
+      ...productionRecords.filter((record) => record.stage === "Ready").slice(0, 2).map((record) => ({
+        type: "production-ready",
+        title: record.jobTitle || "Production job",
+        detail: record.dueDate ? `Ready by ${record.dueDate}` : "Production has reached the Ready stage.",
+      })),
+    ];
 
     return {
       product: "BizziBuddi",
@@ -114,6 +136,10 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       },
       jobsByStatus: jobStatus,
       production: productionStatus,
+      dashboardAttention: {
+        count: dashboardAttention.length,
+        items: dashboardAttention,
+      },
       automation: {
         eventCount: automationEvents.length,
         recentEvents: automationEvents.slice(0, 8).map((event) => ({
@@ -131,6 +157,12 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     "Who owes me money?",
     "Which jobs are in progress?",
   ];
+
+  useEffect(() => {
+    const prompt = String(initialPrompt || "").trim();
+    if (!prompt) return;
+    askBuddi(prompt);
+  }, [initialPrompt]);
 
   async function askBuddi(rawQuestion) {
     const value = String(rawQuestion || "").trim();
