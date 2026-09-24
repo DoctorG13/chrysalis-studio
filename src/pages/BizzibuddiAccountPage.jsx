@@ -254,9 +254,35 @@ export default function BizzibuddiAccountPage() {
               .bizzibuddi-help-action-copy small { color:#B8C6D6; font-size:10px; line-height:1.25; }
               .bizzibuddi-help-action-arrow { width:34px; height:34px; display:grid; place-items:center; flex:0 0 auto; border-radius:50%; background:rgba(37,99,235,.22); color:#fff; font-size:22px; font-weight:500; }
               .bizzibuddi-help-action-arrow.primary { background:rgba(255,255,255,.16); }
+              .bizzibuddi-dashboard-buddi-content {
+                display: flex;
+                align-items: flex-start;
+                gap: 14px;
+              }
+              .bizzibuddi-dashboard-buddi-copy {
+                flex: 1;
+                min-width: 0;
+              }
               @media (max-width: 760px) {
                 .bizzibuddi-help-nav { min-width:0; width:100%; padding:14px 0 0; border-left:0; border-top:1px solid rgba(255,255,255,.18); }
                 .bizzibuddi-help-nav-buttons { grid-template-columns:1fr; }
+              }
+              @media (max-width: 760px) {
+                .bizzibuddi-dashboard-buddi-content {
+                  flex-direction: column;
+                  align-items: stretch;
+                  gap: 14px;
+                }
+                .bizzibuddi-dashboard-buddi-copy {
+                  min-width: 0;
+                  width: 100%;
+                }
+                .bizzibuddi-dashboard-buddi-button {
+                  width: 100% !important;
+                }
+                .bizzibuddi-buddi-launcher.dashboard {
+                  display: none;
+                }
               }
               @keyframes bizzibuddiBuddiPulse {
                 0%, 100% { box-shadow: 0 12px 30px rgba(0,0,0,.28), 0 0 0 0 rgba(0,180,219,.28); }
@@ -269,7 +295,7 @@ export default function BizzibuddiAccountPage() {
 
             <button
               type="button"
-              className="bizzibuddi-buddi-launcher"
+              className={view === "dashboard" ? "bizzibuddi-buddi-launcher dashboard" : "bizzibuddi-buddi-launcher"}
               aria-label="Open Ask Buddi"
               onClick={() => (view === "buddi" ? selectView("dashboard") : openBuddi())}
               style={buddiFloatingButton}
@@ -625,15 +651,15 @@ function DashboardPanel({
         ))}
       </div>
 
-      <div style={buddiDashboardCard}>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-          <div style={buddiDashboardIcon}><BizziBuddiLogo size={38} dark showWordmark={false} /></div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={buddiDashboardCard} className="bizzibuddi-dashboard-buddi-card">
+        <div className="bizzibuddi-dashboard-buddi-content">
+          <div style={buddiDashboardIcon} className="bizzibuddi-dashboard-buddi-icon"><BizziBuddiLogo size={38} dark showWordmark={false} /></div>
+          <div className="bizzibuddi-dashboard-buddi-copy">
             <small style={smallText}>YOUR BUSINESS ASSISTANT</small>
             <strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>Ask Buddi.</strong>
             <p style={{ ...copyStyle, margin: "6px 0 0" }}>Ask questions about your people, jobs, calendar, money and business activity.</p>
           </div>
-          <button type="button" onClick={onBuddi} style={{ ...primaryButton, width: "auto", marginTop: 0, whiteSpace: "nowrap" }}>Ask Buddi →</button>
+          <button type="button" onClick={onBuddi} style={{ ...primaryButton, width: "auto", marginTop: 0, whiteSpace: "nowrap" }} className="bizzibuddi-dashboard-buddi-button">Ask Buddi →</button>
         </div>
       </div>
 
