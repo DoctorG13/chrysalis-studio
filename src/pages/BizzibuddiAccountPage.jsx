@@ -1877,9 +1877,17 @@ const supportForm = {
   marginTop: 18,
 };
 const supportTextarea = {
-  ...inputStyle,
+  display: "block",
+  width: "100%",
   minHeight: 150,
+  marginTop: 8,
   padding: "14px 15px",
+  boxSizing: "border-box",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 10,
+  fontSize: 15,
+  color: TEXT,
+  background: SURFACE,
   resize: "vertical",
   lineHeight: 1.5,
   fontFamily: "inherit",
