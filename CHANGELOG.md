@@ -1,5 +1,12 @@
 # Changelog
 
+## BizziBuddi Help Navigation CSS Rendering Fix
+
+- Moved the new help-navigation presentation from React inline style objects into scoped CSS classes.
+- Removed the CSSStyleDeclaration indexed-property failure that could blank the local account page in Chromium.
+- Preserved the approved Ask Buddi / Help & Support visual design and responsive behaviour.
+
+
 ## BizziBuddi Getting Started Guide
 
 - Added a guided five-step **Getting Started** experience inside Help & Support.
