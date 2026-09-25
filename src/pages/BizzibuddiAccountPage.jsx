@@ -267,19 +267,13 @@ export default function BizzibuddiAccountPage() {
     }
   }
 
-  function resetDemo() {
+  async function resetDemo() {
     if (!account?.id) return;
 
-    // Production is now account-backed. Remove only any legacy browser copy.
+    // Persistent BizziBuddi records stay on the server. Only clear legacy browser-local Production data.
     localStorage.removeItem(storageKey("productionRecords", account.id));
-
-    setPeople([]);
-    setJobs([]);
-    setAppointments([]);
-    setInvoices([]);
-    setAutomationEvents([]);
-    setProductionRecords([]);
-    setMessage("Local preview data cleared. Your BizziBuddi account remains active.");
+    await applyAccount(account);
+    setMessage("Local legacy preview data cleared. Your BizziBuddi account data remains stored.");
     setView("dashboard");
   }
 
