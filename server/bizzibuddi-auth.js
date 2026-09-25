@@ -665,6 +665,158 @@ function deleteJob(userId, jobId) {
   return Boolean(result.changes);
 }
 
+function validateCalendarPayload(payload) {
+  const title = String(payload?.title || "").trim();
+  const date = String(payload?.date || "").trim();
+  const time = String(payload?.time || "").trim();
+  const personId = String(payload?.personId || "").trim();
+  const jobId = String(payload?.jobId || "").trim();
+  const notes = String(payload?.notes || "").trim();
+  const duration = Number(payload?.duration ?? 60);
+  const buffer = Number(payload?.buffer ?? 0);
+  const status = String(payload?.status || "Booked").trim();
+
+  if (!title || title.length > 160) throw new Error("Appointment title is required and must be 160 characters or fewer.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Please enter a valid appointment date.");
+  if (!/^\d{2}:\d{2}$/.test(time)) throw new Error("Please enter a valid appointment time.");
+  if (!Number.isInteger(duration) || duration < 5 || duration > 1440) throw new Error("Appointment duration must be between 5 and 1440 minutes.");
+  if (!Number.isInteger(buffer) || buffer < 0 || buffer > 480) throw new Error("Appointment buffer must be between 0 and 480 minutes.");
+  if (!["Booked", "Confirmed", "Pending", "Cancelled"].includes(status)) throw new Error("Please select a valid appointment status.");
+
+  return {
+    title,
+    date,
+    time,
+    personId: personId || null,
+    jobId: jobId || null,
+    duration,
+    buffer,
+    status,
+    notes: notes.slice(0, 2000),
+  };
+}
+
+function getCalendarPerson(userId, personId) {
+  if (!personId) return null;
+  return getDatabase().prepare(
+    `SELECT id, name FROM bizzibuddi_people WHERE id = ? AND user_id = ?`
+  ).get(personId, userId);
+}
+
+function getCalendarJob(userId, jobId) {
+  if (!jobId) return null;
+  return getDatabase().prepare(
+    `SELECT id, title FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?`
+  ).get(jobId, userId);
+}
+
+function toCalendarEntry(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    title: row.title,
+    date: row.date,
+    time: row.time,
+    personId: row.person_id || null,
+    personName: row.person_name || "",
+    jobId: row.job_id || null,
+    jobTitle: row.job_title || "",
+    duration: row.duration,
+    buffer: row.buffer,
+    status: row.status,
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getCalendar(userId) {
+  return getDatabase().prepare(
+    `SELECT calendar.id, calendar.title, calendar.date, calendar.time,
+            calendar.person_id, calendar.job_id, calendar.duration,
+            calendar.buffer, calendar.status, calendar.notes,
+            calendar.created_at, calendar.updated_at,
+            people.name AS person_name, jobs.title AS job_title
+     FROM bizzibuddi_calendar AS calendar
+     LEFT JOIN bizzibuddi_people AS people
+       ON people.id = calendar.person_id AND people.user_id = calendar.user_id
+     LEFT JOIN bizzibuddi_jobs AS jobs
+       ON jobs.id = calendar.job_id AND jobs.user_id = calendar.user_id
+     WHERE calendar.user_id = ?
+     ORDER BY calendar.date ASC, calendar.time ASC, calendar.created_at ASC`
+  ).all(userId);
+}
+
+function createCalendarEntry(userId, payload) {
+  const values = validateCalendarPayload(payload);
+  const person = getCalendarPerson(userId, values.personId);
+  const job = getCalendarJob(userId, values.jobId);
+
+  if (values.personId && !person) throw new Error("The selected person could not be found.");
+  if (values.jobId && !job) throw new Error("The selected job could not be found.");
+
+  const now = new Date().toISOString();
+  const entry = { id: randomUUID(), ...values, created_at: now, updated_at: now };
+
+  getDatabase().prepare(
+    `INSERT INTO bizzibuddi_calendar (
+      id, user_id, person_id, job_id, title, date, time,
+      duration, buffer, status, notes, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).run(
+    entry.id, userId, entry.personId, entry.jobId, entry.title,
+    entry.date, entry.time, entry.duration, entry.buffer,
+    entry.status, entry.notes, entry.created_at, entry.updated_at
+  );
+
+  return toCalendarEntry({ ...entry, person_name: person?.name || "", job_title: job?.title || "" });
+}
+
+function updateCalendarEntry(userId, entryId, payload) {
+  const values = validateCalendarPayload(payload);
+  const person = getCalendarPerson(userId, values.personId);
+  const job = getCalendarJob(userId, values.jobId);
+
+  if (values.personId && !person) throw new Error("The selected person could not be found.");
+  if (values.jobId && !job) throw new Error("The selected job could not be found.");
+
+  const now = new Date().toISOString();
+  const result = getDatabase().prepare(
+    `UPDATE bizzibuddi_calendar
+     SET person_id = ?, job_id = ?, title = ?, date = ?, time = ?,
+         duration = ?, buffer = ?, status = ?, notes = ?, updated_at = ?
+     WHERE id = ? AND user_id = ?`
+  ).run(
+    values.personId, values.jobId, values.title, values.date, values.time,
+    values.duration, values.buffer, values.status, values.notes,
+    now, entryId, userId
+  );
+
+  if (!result.changes) return null;
+
+  return toCalendarEntry(getDatabase().prepare(
+    `SELECT calendar.id, calendar.title, calendar.date, calendar.time,
+            calendar.person_id, calendar.job_id, calendar.duration,
+            calendar.buffer, calendar.status, calendar.notes,
+            calendar.created_at, calendar.updated_at,
+            people.name AS person_name, jobs.title AS job_title
+     FROM bizzibuddi_calendar AS calendar
+     LEFT JOIN bizzibuddi_people AS people
+       ON people.id = calendar.person_id AND people.user_id = calendar.user_id
+     LEFT JOIN bizzibuddi_jobs AS jobs
+       ON jobs.id = calendar.job_id AND jobs.user_id = calendar.user_id
+     WHERE calendar.id = ? AND calendar.user_id = ?`
+  ).get(entryId, userId));
+}
+
+function deleteCalendarEntry(userId, entryId) {
+  const result = getDatabase().prepare(
+    `DELETE FROM bizzibuddi_calendar WHERE id = ? AND user_id = ?`
+  ).run(entryId, userId);
+  return Boolean(result.changes);
+}
+
+
 function validatePersonPayload(payload) {
   const name = String(payload?.name || "").trim();
   const email = normalizeEmail(payload?.email);
@@ -880,6 +1032,67 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         { "Set-Cookie": createSessionCookie(user.id, request) }
       );
       return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/calendar" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      sendJson(response, 200, { ok: true, authenticated: true, calendar: getCalendar(user.id).map(toCalendarEntry) });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/calendar" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      const payload = await readJsonBody(request);
+      sendJson(response, 201, {
+        ok: true,
+        authenticated: true,
+        appointment: createCalendarEntry(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/calendar/")) {
+      const entryId = decodeURIComponent(url.pathname.slice("/api/bizzibuddi/auth/calendar/".length)).trim();
+
+      if (!entryId || entryId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Appointment not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const appointment = updateCalendarEntry(user.id, entryId, payload);
+        if (!appointment) {
+          sendJson(response, 404, { ok: false, error: "Appointment not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, appointment });
+        return true;
+      }
+
+      if (request.method === "DELETE") {
+        const deleted = deleteCalendarEntry(user.id, entryId);
+        if (!deleted) {
+          sendJson(response, 404, { ok: false, error: "Appointment not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, deleted: true, appointmentId: entryId });
+        return true;
+      }
     }
 
     if (url.pathname === "/api/bizzibuddi/auth/jobs" && request.method === "GET") {
