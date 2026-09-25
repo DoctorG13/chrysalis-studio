@@ -348,6 +348,28 @@ const MIGRATIONS = [
         ON bizzibuddi_sessions(expires_at);
     `,
   },
+  {
+    version: 7,
+    name: "bizzibuddi-people",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_people (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL DEFAULT '',
+        phone TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_people_user_id
+        ON bizzibuddi_people(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_people_created_at
+        ON bizzibuddi_people(created_at);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
