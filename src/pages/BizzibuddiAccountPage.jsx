@@ -51,8 +51,8 @@ export default function BizzibuddiAccountPage() {
   async function applyAccount(nextAccount) {
     setAccount(nextAccount);
     setPeople([]);
+    setJobs([]);
     applyAccountData(nextAccount, {
-      setJobs,
       setAppointments,
       setInvoices,
       setAutomationEvents,
@@ -60,10 +60,16 @@ export default function BizzibuddiAccountPage() {
     });
 
     try {
-      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people");
-      setPeople(Array.isArray(result.people) ? result.people : []);
+      const [peopleResult, jobsResult] = await Promise.all([
+        bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
+        bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
+      ]);
+
+      setPeople(Array.isArray(peopleResult.people) ? peopleResult.people : []);
+      setJobs(Array.isArray(jobsResult.jobs) ? jobsResult.jobs : []);
     } catch {
       setPeople([]);
+      setJobs([]);
     }
   }
 
@@ -342,11 +348,54 @@ export default function BizzibuddiAccountPage() {
                 }
               );
               setPeople((current) => current.filter((item) => item.id !== personId));
+              setJobs((current) =>
+                current.map((job) =>
+                  job.personId === personId
+                    ? { ...job, personId: null, clientName: "Unassigned" }
+                    : job
+                )
+              );
             }}
             onBack={() => selectView("dashboard")}
           />
         )}
-        {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem(storageKey("jobs", account?.id), JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
+        {view === "jobs" && (
+          <JobsPanel
+            jobs={jobs}
+            people={people}
+            onAddJob={async (job) => {
+              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs", {
+                method: "POST",
+                body: JSON.stringify(job),
+              });
+              setJobs((current) => [...current, result.job]);
+              return result.job;
+            }}
+            onUpdateJob={async (jobId, job) => {
+              const result = await bizzibuddiAuthRequest(
+                `/api/bizzibuddi/auth/jobs/${encodeURIComponent(jobId)}`,
+                {
+                  method: "PUT",
+                  body: JSON.stringify(job),
+                }
+              );
+              setJobs((current) =>
+                current.map((item) => (item.id === jobId ? result.job : item))
+              );
+              return result.job;
+            }}
+            onDeleteJob={async (jobId) => {
+              await bizzibuddiAuthRequest(
+                `/api/bizzibuddi/auth/jobs/${encodeURIComponent(jobId)}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              setJobs((current) => current.filter((item) => item.id !== jobId));
+            }}
+            onBack={() => selectView("dashboard")}
+          />
+        )}
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
         {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem(storageKey("productionRecords", account?.id), JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
@@ -436,7 +485,7 @@ export default function BizzibuddiAccountPage() {
             <span>Ask Buddi</span>
           </button>
         )}
-        <footer style={footerStyle}>Account authentication is live · Business records are still local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
+        <footer style={footerStyle}>Account authentication is live · People and Jobs are now persistent · Other business records remain local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
     </main>
   );
@@ -458,7 +507,6 @@ function readLocalList(key, accountId) {
 function applyAccountData(account, setters) {
   if (!account?.id) return;
 
-  setters.setJobs(readLocalList("jobs", account.id));
   setters.setAppointments(readLocalList("appointments", account.id));
   setters.setInvoices(readLocalList("invoices", account.id));
   setters.setAutomationEvents(readLocalList("automationEvents", account.id));
@@ -654,24 +702,75 @@ function PeoplePanel({ people, onAddPerson, onUpdatePerson, onDeletePerson, onBa
   </section>;
 }
 
-function JobsPanel({ jobs, people, onAddJob, onBack }) {
+function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const personId = String(form.get("personId") || "");
-    const person = people.find((item) => item.id === personId);
+  function startAdd() {
+    setError("");
+    setEditingJob(null);
+    setShowForm(true);
+  }
 
-    onAddJob({
-      id: `job-${Date.now()}`,
-      title: String(form.get("title") || "").trim(),
-      clientName: person?.name || "Unassigned",
-      status: String(form.get("status") || "New"),
-    });
+  function startEdit(job) {
+    setError("");
+    setEditingJob(job);
+    setShowForm(true);
+  }
 
-    event.currentTarget.reset();
+  function cancelForm() {
+    setError("");
+    setEditingJob(null);
     setShowForm(false);
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+
+    try {
+      const job = {
+        title: String(form.get("title") || "").trim(),
+        personId: String(form.get("personId") || ""),
+        status: String(form.get("status") || "New"),
+      };
+
+      if (editingJob) {
+        await onUpdateJob(editingJob.id, job);
+      } else {
+        await onAddJob(job);
+      }
+
+      formElement.reset();
+      setEditingJob(null);
+      setShowForm(false);
+    } catch (requestError) {
+      setError(requestError.message || "We could not save this job.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(job) {
+    const confirmed = window.confirm(
+      `Delete ${job.title}? This will permanently remove this job from your BizziBuddi Jobs list.`
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+
+    try {
+      await onDeleteJob(job.id);
+    } catch (requestError) {
+      setError(requestError.message || "We could not delete this job.");
+    }
   }
 
   return <section style={cardStyle(940)}>
@@ -686,11 +785,15 @@ function JobsPanel({ jobs, people, onAddJob, onBack }) {
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
         {jobs.map((job) => (
           <article key={job.id} style={jobCard}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <strong style={{ display: "block", fontSize: 17 }}>{job.title}</strong>
-              <span style={smallText}>{job.clientName}</span>
+              <span style={smallText}>{job.clientName || "Unassigned"}</span>
             </div>
-            <span style={jobStatus}>{job.status}</span>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <span style={jobStatus}>{job.status}</span>
+              <button type="button" onClick={() => startEdit(job)} style={smallActionButton}>Edit</button>
+              <button type="button" onClick={() => handleDelete(job)} style={smallDangerButton}>Delete</button>
+            </div>
           </article>
         ))}
       </div>
@@ -701,28 +804,45 @@ function JobsPanel({ jobs, people, onAddJob, onBack }) {
       </div>
     )}
 
+    {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
+
     {!showForm ? (
-      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 240 }}>+ Create a job</button>
+      <button type="button" onClick={startAdd} style={{ ...primaryButton, maxWidth: 240 }}>+ Create a job</button>
     ) : (
-      <form onSubmit={handleSubmit} style={personForm}>
-        <strong style={{ fontSize: 18 }}>Create a job</strong>
-        <Field name="title" label="Job name" type="text" placeholder="e.g. Wedding dress alteration" />
-        <label style={fieldStyle}>Client<select required name="personId" defaultValue="" style={inputStyle}>
-          <option value="" disabled>Select a person</option>
-          {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
-          {people.length === 0 && <option value="" disabled>Add a person first</option>}
-        </select></label>
-        <label style={fieldStyle}>Status<select name="status" defaultValue="New" style={inputStyle}>
-          <option>New</option>
-          <option>In progress</option>
-          <option>Waiting</option>
-          <option>Complete</option>
-        </select></label>
+      <form key={editingJob?.id || "new-job"} onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>{editingJob ? "Edit job" : "Create a job"}</strong>
+        <Field
+          name="title"
+          label="Job name"
+          type="text"
+          placeholder="e.g. Wedding dress alteration"
+          defaultValue={editingJob?.title || ""}
+        />
+        <label style={fieldStyle}>Client
+          <select required name="personId" defaultValue={editingJob?.personId || ""} style={inputStyle}>
+            <option value="" disabled>Select a person</option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>{person.name}</option>
+            ))}
+          </select>
+        </label>
+        <label style={fieldStyle}>Status
+          <select name="status" defaultValue={editingJob?.status || "New"} style={inputStyle}>
+            <option>New</option>
+            <option>In progress</option>
+            <option>Waiting</option>
+            <option>Complete</option>
+          </select>
+        </label>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
-          <button type="submit" disabled={people.length === 0} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 ? 0.5 : 1 }}>Save job</button>
-          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+          <button type="submit" disabled={people.length === 0 || saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}>
+            {saving ? "Saving…" : editingJob ? "Save changes" : "Save job"}
+          </button>
+          <button type="button" onClick={cancelForm} disabled={saving} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
+            Cancel
+          </button>
         </div>
-        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can assign the job.</p>}
+        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create a job.</p>}
       </form>
     )}
   </section>;
