@@ -268,7 +268,7 @@ export default function BizzibuddiAccountPage() {
     setInvoices([]);
     setAutomationEvents([]);
     setProductionRecords([]);
-    setMessage("Local business demo data cleared. Your BizziBuddi account remains active.");
+    setMessage("Local preview data cleared. Your BizziBuddi account remains active.");
     setView("dashboard");
   }
 
@@ -285,7 +285,7 @@ export default function BizzibuddiAccountPage() {
           <div style={eyebrowStyle}>BUSINESS SUPPORT, SIMPLIFIED</div>
           <h1 style={heroHeading}>Your business.<br /><span style={{ color: CYAN }}>Better organised.</span></h1>
           <p style={heroCopy}>Create a secure BizziBuddi account, set up your business and continue into your business workspace.</p>
-          <div style={previewBadge}>Secure account and login · Business records remain local demo data for now · No live billing</div>
+          <div style={previewBadge}>Secure account and login · People, Jobs, Calendar and Finance are account-backed · No live billing</div>
         </section>
 
         <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={navStyle}>
@@ -587,7 +587,7 @@ export default function BizzibuddiAccountPage() {
             <span>Ask Buddi</span>
           </button>
         )}
-        <footer style={footerStyle}>Account authentication is live · People and Jobs are now persistent · Other business records remain local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
+        <footer style={footerStyle}>Account authentication is live · People, Jobs, Calendar and Finance are now persistent · Other business records remain local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
     </main>
   );
