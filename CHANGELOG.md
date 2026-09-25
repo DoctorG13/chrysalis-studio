@@ -1,3 +1,14 @@
+## BizziBuddi Logged-Out Help Navigation Styling
+
+### Fixed
+
+- Moved the shared BizziBuddi account-page Help & Support navigation styles outside the authenticated-account conditional.
+- Logged-out users now see the intended styled Ask Buddi and Help & Support controls instead of browser-default buttons.
+- Kept the floating Ask Buddi launcher account-only.
+- Preserved the existing navigation, authentication protection and responsive layout.
+
+---
+
 ## BizziBuddi Registration Email Validation Fix
 
 ### Fixed
