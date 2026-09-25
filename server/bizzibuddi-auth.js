@@ -507,18 +507,7 @@ async function readJsonBody(request) {
   });
 }
 
-function getPeople(userId) {
-  return getDatabase()
-    .prepare(
-      `SELECT id, name, email, phone, created_at, updated_at
-       FROM bizzibuddi_people
-       WHERE user_id = ?
-       ORDER BY created_at DESC`
-    )
-    .all(userId);
-}
-
-function createPerson(userId, payload) {
+function validatePersonPayload(payload) {
   const name = String(payload?.name || "").trim();
   const email = normalizeEmail(payload?.email);
   const phone = String(payload?.phone || "").trim();
@@ -535,6 +524,35 @@ function createPerson(userId, payload) {
     throw new Error("Phone number must be 60 characters or fewer.");
   }
 
+  return { name, email, phone };
+}
+
+function toPerson(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getPeople(userId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, name, email, phone, created_at, updated_at
+       FROM bizzibuddi_people
+       WHERE user_id = ?
+       ORDER BY created_at DESC`
+    )
+    .all(userId);
+}
+
+function createPerson(userId, payload) {
+  const { name, email, phone } = validatePersonPayload(payload);
   const now = new Date().toISOString();
   const person = {
     id: randomUUID(),
@@ -561,14 +579,43 @@ function createPerson(userId, payload) {
       person.updated_at
     );
 
-  return {
-    id: person.id,
-    name: person.name,
-    email: person.email,
-    phone: person.phone,
-    createdAt: person.created_at,
-    updatedAt: person.updated_at,
-  };
+  return toPerson(person);
+}
+
+function updatePerson(userId, personId, payload) {
+  const { name, email, phone } = validatePersonPayload(payload);
+  const now = new Date().toISOString();
+
+  const result = getDatabase()
+    .prepare(
+      `UPDATE bizzibuddi_people
+       SET name = ?, email = ?, phone = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(name, email, phone, now, personId, userId);
+
+  if (!result.changes) return null;
+
+  return toPerson(
+    getDatabase()
+      .prepare(
+        `SELECT id, name, email, phone, created_at, updated_at
+         FROM bizzibuddi_people
+         WHERE id = ? AND user_id = ?`
+      )
+      .get(personId, userId)
+  );
+}
+
+function deletePerson(userId, personId) {
+  const result = getDatabase()
+    .prepare(
+      `DELETE FROM bizzibuddi_people
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(personId, userId);
+
+  return Boolean(result.changes);
 }
 
 export async function handleBizziBuddiAuthRequest(request, response) {
@@ -601,7 +648,12 @@ export async function handleBizziBuddiAuthRequest(request, response) {
 
   if (!url.pathname.startsWith("/api/bizzibuddi/auth/")) return false;
 
-  if (request.method !== "POST" && request.method !== "GET" && request.method !== "PUT") {
+  if (
+    request.method !== "POST" &&
+    request.method !== "GET" &&
+    request.method !== "PUT" &&
+    request.method !== "DELETE"
+  ) {
     sendJson(response, 405, { ok: false, error: "Method not allowed." });
     return true;
   }
@@ -687,14 +739,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       sendJson(response, 200, {
         ok: true,
         authenticated: true,
-        people: getPeople(user.id).map((person) => ({
-          id: person.id,
-          name: person.name,
-          email: person.email,
-          phone: person.phone,
-          createdAt: person.created_at,
-          updatedAt: person.updated_at,
-        })),
+        people: getPeople(user.id).map(toPerson),
       });
       return true;
     }
@@ -718,6 +763,68 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         person: createPerson(user.id, payload),
       });
       return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/people/")) {
+      const personId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/people/".length)
+      ).trim();
+
+      if (!personId || personId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Person not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const person = updatePerson(user.id, personId, payload);
+
+        if (!person) {
+          sendJson(response, 404, {
+            ok: false,
+            error: "Person not found.",
+          });
+          return true;
+        }
+
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          person,
+        });
+        return true;
+      }
+
+      if (request.method === "DELETE") {
+        const deleted = deletePerson(user.id, personId);
+
+        if (!deleted) {
+          sendJson(response, 404, {
+            ok: false,
+            error: "Person not found.",
+          });
+          return true;
+        }
+
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          deleted: true,
+          personId,
+        });
+        return true;
+      }
     }
 
     if (url.pathname === "/api/bizzibuddi/auth/me" && request.method === "GET") {
