@@ -438,6 +438,49 @@ const MIGRATIONS = [
         ON bizzibuddi_calendar(status);
     `,
   },
+  {
+    version: 10,
+    name: "bizzibuddi-finance",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_invoices (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        person_id TEXT,
+        number TEXT NOT NULL,
+        amount REAL NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'Issued',
+        issue_date TEXT NOT NULL,
+        due_date TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (person_id) REFERENCES bizzibuddi_people(id) ON DELETE SET NULL
+      );
+
+      CREATE TABLE IF NOT EXISTS bizzibuddi_payments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        invoice_id TEXT NOT NULL,
+        amount REAL NOT NULL DEFAULT 0,
+        date TEXT NOT NULL,
+        method TEXT NOT NULL DEFAULT '',
+        description TEXT NOT NULL DEFAULT 'Payment',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (invoice_id) REFERENCES bizzibuddi_invoices(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_user_id ON bizzibuddi_invoices(user_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_person_id ON bizzibuddi_invoices(person_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_due_date ON bizzibuddi_invoices(due_date);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_status ON bizzibuddi_invoices(status);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_number ON bizzibuddi_invoices(number);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_user_id ON bizzibuddi_payments(user_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_invoice_id ON bizzibuddi_payments(invoice_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_date ON bizzibuddi_payments(date);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
@@ -1058,63 +1101,6 @@ const DEFAULT_SETTINGS = {
     email: "",
     website: "",
     abn: "",
-  },  {
-    version: 10,
-    name: "bizzibuddi-finance",
-    sql: `
-      CREATE TABLE IF NOT EXISTS bizzibuddi_invoices (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        person_id TEXT,
-        number TEXT NOT NULL,
-        amount REAL NOT NULL DEFAULT 0,
-        status TEXT NOT NULL DEFAULT 'Issued',
-        issue_date TEXT NOT NULL,
-        due_date TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (person_id) REFERENCES bizzibuddi_people(id) ON DELETE SET NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS bizzibuddi_payments (
-        id TEXT PRIMARY KEY,
-        user_id TEXT NOT NULL,
-        invoice_id TEXT NOT NULL,
-        amount REAL NOT NULL DEFAULT 0,
-        date TEXT NOT NULL,
-        method TEXT NOT NULL DEFAULT '',
-        description TEXT NOT NULL DEFAULT 'Payment',
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (invoice_id) REFERENCES bizzibuddi_invoices(id) ON DELETE CASCADE
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_user_id
-        ON bizzibuddi_invoices(user_id);
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_person_id
-        ON bizzibuddi_invoices(person_id);
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_due_date
-        ON bizzibuddi_invoices(due_date);
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_status
-        ON bizzibuddi_invoices(status);
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_number
-        ON bizzibuddi_invoices(number);
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_user_id
-        ON bizzibuddi_payments(user_id);
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_invoice_id
-        ON bizzibuddi_payments(invoice_id);
-
-      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_date
-        ON bizzibuddi_payments(date);
-    `,
   },
 
   financial: {
