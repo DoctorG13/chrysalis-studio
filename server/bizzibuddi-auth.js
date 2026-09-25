@@ -205,7 +205,7 @@ function validateRegistration(payload) {
     throw new Error("Username must be 3–32 characters and use letters, numbers, dots, underscores or hyphens.");
   }
 
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email) || email.length > 254) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
     throw new Error("Please enter a valid email address.");
   }
 
