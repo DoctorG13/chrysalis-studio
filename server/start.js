@@ -12,6 +12,7 @@ const SERVICES = [
   { name: "invoices", script: "server/invoice-server.js", args: [], healthUrl: "http://127.0.0.1:4181/api/health", label: "Invoice API" },
   { name: "quotes", script: "server/quote-server.js", args: [], healthUrl: "http://127.0.0.1:4182/api/health", label: "Quote API" },
   { name: "auth", script: "server/auth-server.js", args: [], healthUrl: "http://127.0.0.1:4183/api/health", label: "Authentication API" },
+  { name: "bizzibuddi-auth", script: "server/bizzibuddi-auth-server.js", args: [], healthUrl: "http://127.0.0.1:4185/api/bizzibuddi/auth/health", label: "BizziBuddi Authentication API" },
   { name: "donna", script: "server/donna-server.js", args: [], healthUrl: "http://127.0.0.1:4184/api/health", label: "Donna AI API" },
 ];
 
