@@ -4,6 +4,11 @@ import { extname, join, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
 
 import {
+  handleBizziBuddiAuthRequest,
+  clearExpiredBizziBuddiAuthState,
+} from "./bizzibuddi-auth.js";
+
+import {
   allowLoginAttempt,
   authenticateLogin,
   clearExpiredLoginAttempts,
@@ -55,6 +60,7 @@ let shuttingDown = false;
 let authConfig = null;
 let loginCleanupTimer = null;
 let revokedSessionCleanupTimer = null;
+let bizziBuddiAuthCleanupTimer = null;
 
 function log(message) {
   console.log(`[Chrysalis production] ${message}`);
@@ -479,6 +485,11 @@ function createGateway() {
       return;
     }
 
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/")) {
+      const handled = await handleBizziBuddiAuthRequest(request, response);
+      if (handled) return;
+    }
+
     if (url.pathname === "/api/auth/me" && request.method === "GET") {
       const user = getAuthenticatedUser(request, authConfig);
 
@@ -573,6 +584,7 @@ function shutdown(code = 0) {
 
   if (loginCleanupTimer) clearInterval(loginCleanupTimer);
   if (revokedSessionCleanupTimer) clearInterval(revokedSessionCleanupTimer);
+  if (bizziBuddiAuthCleanupTimer) clearInterval(bizziBuddiAuthCleanupTimer);
 
   log("Stopping production gateway and backend services...");
 
@@ -597,6 +609,10 @@ async function main() {
   loginCleanupTimer = setInterval(clearExpiredLoginAttempts, 5 * 60 * 1000);
   revokedSessionCleanupTimer = setInterval(
     clearExpiredRevokedSessions,
+    5 * 60 * 1000
+  );
+  bizziBuddiAuthCleanupTimer = setInterval(
+    clearExpiredBizziBuddiAuthState,
     5 * 60 * 1000
   );
 
