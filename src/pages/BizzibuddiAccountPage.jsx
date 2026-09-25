@@ -491,6 +491,7 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
     setError("");
 
     const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
 
     try {
       await onAddPerson({
@@ -499,7 +500,7 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
         phone: String(form.get("phone") || "").trim(),
       });
 
-      event.currentTarget.reset();
+      formElement.reset();
       setShowForm(false);
     } catch (requestError) {
       setError(requestError.message || "We could not save this person.");
