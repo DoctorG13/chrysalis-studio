@@ -1,3 +1,13 @@
+## BizziBuddi People Save Form Fix
+
+### Fixed
+
+- Fixed the People form attempting to call `reset()` on React's cleared event target after the asynchronous database save completed.
+- People can now be saved without the post-save `Cannot read properties of null (reading 'reset')` error.
+- Preserved the server-backed People persistence introduced in the previous release.
+
+---
+
 ## BizziBuddi People Database Storage
 
 ### Added
