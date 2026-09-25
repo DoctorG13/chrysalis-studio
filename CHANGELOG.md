@@ -1,3 +1,10 @@
+## BizziBuddi Finance Migration Fix
+
+- Fixed an incorrectly placed Finance database migration that caused `server/index.js` to fail parsing.
+- Restored the migration to the main migration array so the backend can start and apply the Finance schema normally.
+
+---
+
 ## BizziBuddi Finance Database Storage
 
 ### Added
