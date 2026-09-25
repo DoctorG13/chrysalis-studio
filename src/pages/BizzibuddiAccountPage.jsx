@@ -310,14 +310,42 @@ export default function BizzibuddiAccountPage() {
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem(storageKey("appointments", account?.id), JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "people" && <PeoplePanel people={people} onAddPerson={async (person) => {
-          const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people", {
-            method: "POST",
-            body: JSON.stringify(person),
-          });
-          setPeople((current) => [...current, result.person]);
-          return result.person;
-        }} onBack={() => selectView("dashboard")} />}
+        {view === "people" && (
+          <PeoplePanel
+            people={people}
+            onAddPerson={async (person) => {
+              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people", {
+                method: "POST",
+                body: JSON.stringify(person),
+              });
+              setPeople((current) => [...current, result.person]);
+              return result.person;
+            }}
+            onUpdatePerson={async (personId, person) => {
+              const result = await bizzibuddiAuthRequest(
+                `/api/bizzibuddi/auth/people/${encodeURIComponent(personId)}`,
+                {
+                  method: "PUT",
+                  body: JSON.stringify(person),
+                }
+              );
+              setPeople((current) =>
+                current.map((item) => (item.id === personId ? result.person : item))
+              );
+              return result.person;
+            }}
+            onDeletePerson={async (personId) => {
+              await bizzibuddiAuthRequest(
+                `/api/bizzibuddi/auth/people/${encodeURIComponent(personId)}`,
+                {
+                  method: "DELETE",
+                }
+              );
+              setPeople((current) => current.filter((item) => item.id !== personId));
+            }}
+            onBack={() => selectView("dashboard")}
+          />
+        )}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem(storageKey("jobs", account?.id), JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
         {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem(storageKey("productionRecords", account?.id), JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
@@ -482,28 +510,74 @@ function OnboardingPanel({ account, onSubmit }) {
   return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your business.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your business a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
 }
 
-function PeoplePanel({ people, onAddPerson, onBack }) {
+function PeoplePanel({ people, onAddPerson, onUpdatePerson, onDeletePerson, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const [editingPerson, setEditingPerson] = useState(null);
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  function startAdd() {
+    setError("");
+    setEditingPerson(null);
+    setShowForm(true);
+  }
+
+  function startEdit(person) {
+    setError("");
+    setEditingPerson(person);
+    setShowForm(true);
+  }
+
+  function cancelForm() {
+    setError("");
+    setEditingPerson(null);
+    setShowForm(false);
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    setSaving(true);
 
-    const form = new FormData(event.currentTarget);
     const formElement = event.currentTarget;
+    const form = new FormData(formElement);
 
     try {
-      await onAddPerson({
+      const person = {
         name: String(form.get("name") || "").trim(),
         email: String(form.get("email") || "").trim(),
         phone: String(form.get("phone") || "").trim(),
-      });
+      };
+
+      if (editingPerson) {
+        await onUpdatePerson(editingPerson.id, person);
+      } else {
+        await onAddPerson(person);
+      }
 
       formElement.reset();
+      setEditingPerson(null);
       setShowForm(false);
     } catch (requestError) {
       setError(requestError.message || "We could not save this person.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(person) {
+    const confirmed = window.confirm(
+      `Delete ${person.name}? This will permanently remove this person from your BizziBuddi People list.`
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+
+    try {
+      await onDeletePerson(person.id);
+    } catch (requestError) {
+      setError(requestError.message || "We could not delete this person.");
     }
   }
 
@@ -519,9 +593,15 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
         {people.map((person) => (
           <article key={person.id} style={personCard}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <strong style={{ display: "block", fontSize: 17 }}>{person.name}</strong>
-              <span style={smallText}>{person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}</span>
+              <span style={smallText}>
+                {person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => startEdit(person)} style={smallActionButton}>Edit</button>
+              <button type="button" onClick={() => handleDelete(person)} style={smallDangerButton}>Delete</button>
             </div>
           </article>
         ))}
@@ -533,18 +613,41 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
       </div>
     )}
 
+    {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
+
     {!showForm ? (
-      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 240 }}>+ Add a person</button>
+      <button type="button" onClick={startAdd} style={{ ...primaryButton, maxWidth: 240 }}>+ Add a person</button>
     ) : (
-      <form onSubmit={handleSubmit} style={personForm}>
-        {error && <div role="alert" style={{ ...messageStyle, marginTop: 16 }}>{error}</div>}
-        <strong style={{ fontSize: 18 }}>Add a person</strong>
-        <Field name="name" label="Name" type="text" placeholder="Client or contact name" />
-        <Field name="email" label="Email address" type="email" placeholder="you@example.com" />
-        <Field name="phone" label="Phone" type="tel" placeholder="Phone number" />
+      <form key={editingPerson?.id || "new-person"} onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>{editingPerson ? "Edit person" : "Add a person"}</strong>
+        <Field
+          name="name"
+          label="Name"
+          type="text"
+          placeholder="Client or contact name"
+          defaultValue={editingPerson?.name || ""}
+        />
+        <Field
+          name="email"
+          label="Email address"
+          type="email"
+          placeholder="you@example.com"
+          defaultValue={editingPerson?.email || ""}
+        />
+        <Field
+          name="phone"
+          label="Phone"
+          type="tel"
+          placeholder="Phone number"
+          defaultValue={editingPerson?.phone || ""}
+        />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
-          <button type="submit" style={{ ...primaryButton, width: "auto", marginTop: 0 }}>Save person</button>
-          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+          <button type="submit" disabled={saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Saving…" : editingPerson ? "Save changes" : "Save person"}
+          </button>
+          <button type="button" onClick={cancelForm} disabled={saving} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
+            Cancel
+          </button>
         </div>
       </form>
     )}
@@ -2406,6 +2509,8 @@ const lockedFeatureCard = { display: "flex", alignItems: "flex-start", gap: 14, 
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
 const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const smallActionButton = { border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 11px", background: "rgba(255,255,255,.04)", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" };
+const smallDangerButton = { ...smallActionButton, borderColor: "rgba(255,23,79,.45)", color: "#FF6B8A" };
 const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px dashed ${BORDER}`, background: "rgba(255,255,255,.025)", textAlign: "center" };
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
 const businessNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
