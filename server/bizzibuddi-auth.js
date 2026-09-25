@@ -34,25 +34,6 @@ function getDatabase() {
   return database;
 }
 
-function base64Url(value) {
-  return Buffer.from(value)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
-}
-
-function fromBase64Url(value) {
-  const padded = String(value || "")
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-  const padding = padded.length % 4;
-  return Buffer.from(
-    padded + (padding ? "=".repeat(4 - padding) : ""),
-    "base64"
-  );
-}
-
 function safeEqual(left, right) {
   const a = Buffer.from(String(left || ""));
   const b = Buffer.from(String(right || ""));
