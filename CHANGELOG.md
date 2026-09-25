@@ -1,3 +1,13 @@
+## BizziBuddi People Compile Fix
+
+### Fixed
+
+- Removed a duplicate `smallActionButton` declaration introduced while finishing People edit and delete support.
+- Restored the BizziBuddi account page to a valid Vite/JSX build.
+- Preserved the existing People Edit and Delete functionality.
+
+---
+
 ## BizziBuddi People Edit, Delete & Cleanup
 
 ### Added
