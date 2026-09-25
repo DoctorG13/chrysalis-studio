@@ -507,6 +507,164 @@ async function readJsonBody(request) {
   });
 }
 
+const BIZZIBUDDI_JOB_STATUSES = ["New", "In progress", "Waiting", "Complete"];
+
+function validateJobPayload(payload) {
+  const title = String(payload?.title || "").trim();
+  const personId = String(payload?.personId || "").trim();
+  const status = String(payload?.status || "New").trim();
+
+  if (!title || title.length > 160) {
+    throw new Error("Job name is required and must be 160 characters or fewer.");
+  }
+
+  if (!personId) {
+    throw new Error("Please select a person for this job.");
+  }
+
+  if (!BIZZIBUDDI_JOB_STATUSES.includes(status)) {
+    throw new Error("Please select a valid job status.");
+  }
+
+  return { title, personId, status };
+}
+
+function toJob(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    personId: row.person_id || null,
+    title: row.title,
+    clientName: row.client_name || "Unassigned",
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getPersonForUser(userId, personId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, name
+       FROM bizzibuddi_people
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(personId, userId);
+}
+
+function getJobs(userId) {
+  return getDatabase()
+    .prepare(
+      `SELECT
+         jobs.id,
+         jobs.person_id,
+         jobs.title,
+         jobs.status,
+         jobs.created_at,
+         jobs.updated_at,
+         people.name AS client_name
+       FROM bizzibuddi_jobs AS jobs
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = jobs.person_id
+        AND people.user_id = jobs.user_id
+       WHERE jobs.user_id = ?
+       ORDER BY jobs.created_at DESC`
+    )
+    .all(userId);
+}
+
+function createJob(userId, payload) {
+  const { title, personId, status } = validateJobPayload(payload);
+  const person = getPersonForUser(userId, personId);
+
+  if (!person) {
+    throw new Error("The selected person could not be found.");
+  }
+
+  const now = new Date().toISOString();
+  const job = {
+    id: randomUUID(),
+    person_id: person.id,
+    title,
+    status,
+    created_at: now,
+    updated_at: now,
+  };
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO bizzibuddi_jobs (
+        id, user_id, person_id, title, status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      job.id,
+      userId,
+      job.person_id,
+      job.title,
+      job.status,
+      job.created_at,
+      job.updated_at
+    );
+
+  return toJob({
+    ...job,
+    client_name: person.name,
+  });
+}
+
+function updateJob(userId, jobId, payload) {
+  const { title, personId, status } = validateJobPayload(payload);
+  const person = getPersonForUser(userId, personId);
+
+  if (!person) {
+    throw new Error("The selected person could not be found.");
+  }
+
+  const now = new Date().toISOString();
+  const result = getDatabase()
+    .prepare(
+      `UPDATE bizzibuddi_jobs
+       SET person_id = ?, title = ?, status = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(person.id, title, status, now, jobId, userId);
+
+  if (!result.changes) return null;
+
+  return toJob(
+    getDatabase()
+      .prepare(
+        `SELECT
+           jobs.id,
+           jobs.person_id,
+           jobs.title,
+           jobs.status,
+           jobs.created_at,
+           jobs.updated_at,
+           people.name AS client_name
+         FROM bizzibuddi_jobs AS jobs
+         LEFT JOIN bizzibuddi_people AS people
+           ON people.id = jobs.person_id
+          AND people.user_id = jobs.user_id
+         WHERE jobs.id = ? AND jobs.user_id = ?`
+      )
+      .get(jobId, userId)
+  );
+}
+
+function deleteJob(userId, jobId) {
+  const result = getDatabase()
+    .prepare(
+      `DELETE FROM bizzibuddi_jobs
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(jobId, userId);
+
+  return Boolean(result.changes);
+}
+
 function validatePersonPayload(payload) {
   const name = String(payload?.name || "").trim();
   const email = normalizeEmail(payload?.email);
@@ -659,7 +817,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   }
 
   if (
-    ["POST", "PUT"].includes(request.method) &&
+    ["POST", "PUT", "DELETE"].includes(request.method) &&
     !isSameOrigin(request)
   ) {
     sendJson(response, 403, {
@@ -722,6 +880,109 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         { "Set-Cookie": createSessionCookie(user.id, request) }
       );
       return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/jobs" && request.method === "GET") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        jobs: getJobs(user.id).map(toJob),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/jobs" && request.method === "POST") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      sendJson(response, 201, {
+        ok: true,
+        authenticated: true,
+        job: createJob(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/jobs/")) {
+      const jobId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/jobs/".length)
+      ).trim();
+
+      if (!jobId || jobId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Job not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const job = updateJob(user.id, jobId, payload);
+
+        if (!job) {
+          sendJson(response, 404, {
+            ok: false,
+            error: "Job not found.",
+          });
+          return true;
+        }
+
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          job,
+        });
+        return true;
+      }
+
+      if (request.method === "DELETE") {
+        const deleted = deleteJob(user.id, jobId);
+
+        if (!deleted) {
+          sendJson(response, 404, {
+            ok: false,
+            error: "Job not found.",
+          });
+          return true;
+        }
+
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          deleted: true,
+          jobId,
+        });
+        return true;
+      }
     }
 
     if (url.pathname === "/api/bizzibuddi/auth/people" && request.method === "GET") {
