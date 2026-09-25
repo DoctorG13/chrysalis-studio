@@ -48,16 +48,23 @@ export default function BizzibuddiAccountPage() {
     };
   }, []);
 
-  function applyAccount(nextAccount) {
+  async function applyAccount(nextAccount) {
     setAccount(nextAccount);
+    setPeople([]);
     applyAccountData(nextAccount, {
-      setPeople,
       setJobs,
       setAppointments,
       setInvoices,
       setAutomationEvents,
       setProductionRecords,
     });
+
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people");
+      setPeople(Array.isArray(result.people) ? result.people : []);
+    } catch {
+      setPeople([]);
+    }
   }
 
   function selectView(nextView) {
@@ -112,7 +119,7 @@ export default function BizzibuddiAccountPage() {
         }),
       });
 
-      applyAccount(result.account);
+      await applyAccount(result.account);
       setMessage("Your BizziBuddi account has been created securely.");
       setView("onboarding");
     } catch (error) {
@@ -133,7 +140,7 @@ export default function BizzibuddiAccountPage() {
         }),
       });
 
-      applyAccount(result.account);
+      await applyAccount(result.account);
       setMessage(`Welcome back, ${result.account.name}.`);
       setView(result.account.business ? "dashboard" : "onboarding");
     } catch (error) {
@@ -171,7 +178,7 @@ export default function BizzibuddiAccountPage() {
         }),
       });
 
-      applyAccount(result.account);
+      await applyAccount(result.account);
       setMessage("Business setup complete. Your account is now ready.");
       setView("dashboard");
     } catch (error) {
@@ -303,7 +310,14 @@ export default function BizzibuddiAccountPage() {
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
         {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem(storageKey("appointments", account?.id), JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem(storageKey("people", account?.id), JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
+        {view === "people" && <PeoplePanel people={people} onAddPerson={async (person) => {
+          const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people", {
+            method: "POST",
+            body: JSON.stringify(person),
+          });
+          setPeople((current) => [...current, result.person]);
+          return result.person;
+        }} onBack={() => selectView("dashboard")} />}
         {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem(storageKey("jobs", account?.id), JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
         {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem(storageKey("productionRecords", account?.id), JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
@@ -416,7 +430,6 @@ function readLocalList(key, accountId) {
 function applyAccountData(account, setters) {
   if (!account?.id) return;
 
-  setters.setPeople(readLocalList("people", account.id));
   setters.setJobs(readLocalList("jobs", account.id));
   setters.setAppointments(readLocalList("appointments", account.id));
   setters.setInvoices(readLocalList("invoices", account.id));
@@ -471,18 +484,26 @@ function OnboardingPanel({ account, onSubmit }) {
 
 function PeoplePanel({ people, onAddPerson, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
+    setError("");
+
     const form = new FormData(event.currentTarget);
-    onAddPerson({
-      id: `person-${Date.now()}`,
-      name: String(form.get("name") || "").trim(),
-      email: String(form.get("email") || "").trim(),
-      phone: String(form.get("phone") || "").trim(),
-    });
-    event.currentTarget.reset();
-    setShowForm(false);
+
+    try {
+      await onAddPerson({
+        name: String(form.get("name") || "").trim(),
+        email: String(form.get("email") || "").trim(),
+        phone: String(form.get("phone") || "").trim(),
+      });
+
+      event.currentTarget.reset();
+      setShowForm(false);
+    } catch (requestError) {
+      setError(requestError.message || "We could not save this person.");
+    }
   }
 
   return <section style={cardStyle(940)}>
@@ -515,6 +536,7 @@ function PeoplePanel({ people, onAddPerson, onBack }) {
       <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 240 }}>+ Add a person</button>
     ) : (
       <form onSubmit={handleSubmit} style={personForm}>
+        {error && <div role="alert" style={{ ...messageStyle, marginTop: 16 }}>{error}</div>}
         <strong style={{ fontSize: 18 }}>Add a person</strong>
         <Field name="name" label="Name" type="text" placeholder="Client or contact name" />
         <Field name="email" label="Email address" type="email" placeholder="you@example.com" />
