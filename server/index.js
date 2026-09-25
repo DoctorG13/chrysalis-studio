@@ -370,6 +370,35 @@ const MIGRATIONS = [
         ON bizzibuddi_people(created_at);
     `,
   },
+  {
+    version: 8,
+    name: "bizzibuddi-jobs",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_jobs (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        person_id TEXT,
+        title TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'New',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (person_id) REFERENCES bizzibuddi_people(id) ON DELETE SET NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_jobs_user_id
+        ON bizzibuddi_jobs(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_jobs_person_id
+        ON bizzibuddi_jobs(person_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_jobs_status
+        ON bizzibuddi_jobs(status);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_jobs_created_at
+        ON bizzibuddi_jobs(created_at);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
