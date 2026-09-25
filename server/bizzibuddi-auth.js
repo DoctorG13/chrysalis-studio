@@ -1346,6 +1346,17 @@ function runAutomationChecks(userId) {
 
   const created = [];
 
+  if (overdueInvoices.length === 0) {
+    created.push(
+      createAutomationEvent(userId, {
+        type: "check-complete",
+        title: "Automation check complete",
+        detail: "No overdue invoices were found.",
+        sourceKey: `check-complete:${todayDate()}`,
+      })
+    );
+  }
+
   for (const invoice of overdueInvoices) {
     const balance = Math.max(
       0,
