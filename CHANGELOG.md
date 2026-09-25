@@ -1,3 +1,28 @@
+## BizziBuddi Calendar Database Storage
+
+### Added
+
+- Added a dedicated `bizzibuddi_calendar` database table tied to the authenticated BizziBuddi account.
+- Added persistent calendar entries linked to People and Jobs.
+- Added authenticated Calendar list, create, update and delete endpoints.
+- Added server-side validation for appointment title, date, time, duration, buffer and status.
+- Added safe `ON DELETE SET NULL` relationships so deleting a Person or Job does not delete calendar history.
+- Added Edit and Delete controls with confirmation and error handling.
+
+### Changed
+
+- Calendar appointments are no longer stored in browser localStorage.
+- Calendar data now survives refresh and logout/login.
+- Calendar selectors use the real persistent People and Jobs records.
+- Free accounts retain basic appointment details, while Professional and Business accounts expose the existing advanced scheduling controls.
+
+### Notes
+
+- People, Jobs and Calendar are now persistent BizziBuddi business-data modules.
+- Finance, Automation, Production and Reports remain browser-local preview data until their respective migration stages.
+
+---
+
 ## BizziBuddi Jobs Database Storage
 
 ### Added
