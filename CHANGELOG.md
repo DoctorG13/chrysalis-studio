@@ -1,3 +1,13 @@
+## BizziBuddi Registration Email Validation Fix
+
+### Fixed
+
+- Corrected the BizziBuddi server-side email validation regular expression.
+- Valid email addresses containing the letter `s` are now accepted correctly during account registration.
+- Preserved the existing authentication flow, password validation and account security behaviour.
+
+---
+
 ## BizziBuddi Real Account Authentication
 
 ### Added
