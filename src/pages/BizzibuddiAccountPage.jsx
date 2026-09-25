@@ -16,15 +16,49 @@ const plans = bizzibuddiPlans;
 export default function BizzibuddiAccountPage() {
   const initialView = new URLSearchParams(window.location.search).get("view");
   const [view, setView] = useState(initialView === "create" ? "create" : "login");
-  const [account, setAccount] = useState(() => readAccount());
+  const [account, setAccount] = useState(null);
   const [message, setMessage] = useState("");
   const [buddiPrompt, setBuddiPrompt] = useState("");
-  const [people, setPeople] = useState(() => readPeople());
-  const [jobs, setJobs] = useState(() => readJobs());
-  const [appointments, setAppointments] = useState(() => readAppointments());
-  const [invoices, setInvoices] = useState(() => readInvoices());
-  const [automationEvents, setAutomationEvents] = useState(() => readAutomationEvents());
-  const [productionRecords, setProductionRecords] = useState(() => readProductionRecords());
+  const [people, setPeople] = useState([]);
+  const [jobs, setJobs] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [automationEvents, setAutomationEvents] = useState([]);
+  const [productionRecords, setProductionRecords] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function restoreSession() {
+      try {
+        const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/me");
+        if (!active || !result?.account) return;
+
+        applyAccount(result.account);
+        setView(result.account.business ? "dashboard" : "onboarding");
+      } catch {
+        // A visitor without a BizziBuddi session remains on the requested public account view.
+      }
+    }
+
+    restoreSession();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function applyAccount(nextAccount) {
+    setAccount(nextAccount);
+    applyAccountData(nextAccount, {
+      setPeople,
+      setJobs,
+      setAppointments,
+      setInvoices,
+      setAutomationEvents,
+      setProductionRecords,
+    });
+  }
 
   function selectView(nextView) {
     setView(nextView);
@@ -38,63 +72,86 @@ export default function BizzibuddiAccountPage() {
     setMessage("");
   }
 
-  function handleCreateAccount(event) {
+  async function handleCreateAccount(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const nextAccount = {
-      name: String(form.get("name") || "").trim(),
-      username: String(form.get("username") || "").trim().toLowerCase(),
-      email: String(form.get("email") || "").trim().toLowerCase(),
-      business: "",
-      plan: "Free",
-    };
 
-    localStorage.setItem("bizzibuddiMockAccount", JSON.stringify(nextAccount));
-    setAccount(nextAccount);
-    setMessage("Your mock account has been created locally.");
-    setView("onboarding");
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          name: String(form.get("name") || "").trim(),
+          username: String(form.get("username") || "").trim().toLowerCase(),
+          email: String(form.get("email") || "").trim().toLowerCase(),
+          password: String(form.get("password") || ""),
+        }),
+      });
+
+      applyAccount(result.account);
+      setMessage("Your BizziBuddi account has been created securely.");
+      setView("onboarding");
+    } catch (error) {
+      setMessage(error.message || "We could not create your account.");
+    }
   }
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const identifier = String(form.get("identifier") || "").trim().toLowerCase();
-    const storedAccount = readAccount();
-    const storedEmail = String(storedAccount?.email || "").trim().toLowerCase();
-    const storedUsername = String(storedAccount?.username || deriveUsername(storedAccount)).trim().toLowerCase();
 
-    if (!storedAccount) {
-      setMessage("No mock account exists yet. Create one first.");
-      return;
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          identifier: String(form.get("identifier") || "").trim(),
+          password: String(form.get("password") || ""),
+        }),
+      });
+
+      applyAccount(result.account);
+      setMessage(`Welcome back, ${result.account.name}.`);
+      setView(result.account.business ? "dashboard" : "onboarding");
+    } catch (error) {
+      setMessage(error.message || "We could not sign you in.");
     }
-
-    if (identifier !== storedEmail && identifier !== storedUsername) {
-      setMessage("Enter the email address or username used for this mock account.");
-      return;
-    }
-
-    setAccount(storedAccount);
-    setMessage(`Welcome back, ${storedAccount.name}.`);
-    setView("onboarding");
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await bizzibuddiAuthRequest("/api/bizzibuddi/auth/logout", { method: "POST" });
+    } catch {
+      // Clear the client view even if the logout request cannot reach the server.
+    }
+
     setAccount(null);
-    setMessage("You have been logged out. Your local demo data remains saved in this browser.");
+    setPeople([]);
+    setJobs([]);
+    setAppointments([]);
+    setInvoices([]);
+    setAutomationEvents([]);
+    setProductionRecords([]);
+    setMessage("You have been logged out.");
     setView("login");
   }
 
-  function completeOnboarding(event) {
+  async function completeOnboarding(event) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const nextAccount = {
-      ...account,
-      business: String(form.get("business") || account?.business || "").trim(),
-    };
-    localStorage.setItem("bizzibuddiMockAccount", JSON.stringify(nextAccount));
-    setAccount(nextAccount);
-    setMessage("Business setup complete. This is still local demo data.");
-    setView("dashboard");
+
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/account", {
+        method: "PUT",
+        body: JSON.stringify({
+          business: String(form.get("business") || account?.business || "").trim(),
+        }),
+      });
+
+      applyAccount(result.account);
+      setMessage("Business setup complete. Your account is now ready.");
+      setView("dashboard");
+    } catch (error) {
+      setMessage(error.message || "We could not save your business details.");
+    }
   }
 
   function selectPlan(planName) {
@@ -110,7 +167,7 @@ export default function BizzibuddiAccountPage() {
     if (!hasBizzibuddiFeature(account?.plan, "automation")) return;
     setAutomationEvents((current) => {
       const nextEvents = [event, ...current].slice(0, 50);
-      localStorage.setItem("bizzibuddiMockAutomationEvents", JSON.stringify(nextEvents));
+      localStorage.setItem(storageKey("automationEvents", account?.id), JSON.stringify(nextEvents));
       return nextEvents;
     });
   }
@@ -141,16 +198,20 @@ export default function BizzibuddiAccountPage() {
   }
 
   function resetDemo() {
-    localStorage.removeItem("bizzibuddiMockAccount");
-    localStorage.removeItem("bizzibuddiMockPeople");
-    localStorage.removeItem("bizzibuddiMockJobs");
-    localStorage.removeItem("bizzibuddiMockAppointments");
-    localStorage.removeItem("bizzibuddiMockInvoices");
-    localStorage.removeItem("bizzibuddiMockAutomationEvents");
-    localStorage.removeItem("bizzibuddiMockProductionRecords");
-    setAccount(null);
-    setMessage("Local demo data cleared.");
-    setView("create");
+    if (!account?.id) return;
+
+    ["people", "jobs", "appointments", "invoices", "automationEvents", "productionRecords"].forEach((key) => {
+      localStorage.removeItem(storageKey(key, account.id));
+    });
+
+    setPeople([]);
+    setJobs([]);
+    setAppointments([]);
+    setInvoices([]);
+    setAutomationEvents([]);
+    setProductionRecords([]);
+    setMessage("Local business demo data cleared. Your BizziBuddi account remains active.");
+    setView("dashboard");
   }
 
   return (
@@ -165,8 +226,8 @@ export default function BizzibuddiAccountPage() {
         <section style={heroStyle}>
           <div style={eyebrowStyle}>BUSINESS SUPPORT, SIMPLIFIED</div>
           <h1 style={heroHeading}>Your business.<br /><span style={{ color: CYAN }}>Better organised.</span></h1>
-          <p style={heroCopy}>Explore the BizziBuddi account experience with local-only registration, business setup and membership tiers.</p>
-          <div style={previewBadge}>BizziBuddi gives you time · Local mock environment · No live data or payments</div>
+          <p style={heroCopy}>Create a secure BizziBuddi account, set up your business and continue into your business workspace.</p>
+          <div style={previewBadge}>Secure account and login · Business records remain local demo data for now · No live billing</div>
         </section>
 
         <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={navStyle}>
@@ -210,12 +271,12 @@ export default function BizzibuddiAccountPage() {
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
-        {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
-        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem("bizzibuddiMockAppointments", JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem("bizzibuddiMockPeople", JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
-        {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem("bizzibuddiMockJobs", JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
+        {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem("bizzibuddiMockInvoices", JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
+        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem(storageKey("appointments", account?.id), JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
+        {view === "people" && <PeoplePanel people={people} onAddPerson={(person) => { const nextPeople = [...people, person]; setPeople(nextPeople); localStorage.setItem(storageKey("people", account?.id), JSON.stringify(nextPeople)); }} onBack={() => selectView("dashboard")} />}
+        {view === "jobs" && <JobsPanel jobs={jobs} people={people} onAddJob={(job) => { const nextJobs = [...jobs, job]; setJobs(nextJobs); localStorage.setItem(storageKey("jobs", account?.id), JSON.stringify(nextJobs)); }} onBack={() => selectView("dashboard")} />}
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
-        {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem("bizzibuddiMockProductionRecords", JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
+        {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem(storageKey("productionRecords", account?.id), JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={() => selectView("production")} onBack={() => selectView("dashboard")} />}
         {view === "help" && (
@@ -305,93 +366,74 @@ export default function BizzibuddiAccountPage() {
             </button>
           </>
         )}
-        <footer style={footerStyle}>Mock environment · Data stays in this browser only · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
+        <footer style={footerStyle}>Account authentication is live · Business records are still local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
     </main>
   );
 }
 
-function readAccount() {
-  try {
-    const value = localStorage.getItem("bizzibuddiMockAccount");
-    return value ? JSON.parse(value) : null;
-  } catch {
-    return null;
-  }
+function storageKey(key, accountId) {
+  return `bizzibuddiMock${key.charAt(0).toUpperCase() + key.slice(1)}:${accountId}`;
 }
 
-function readPeople() {
+function readLocalList(key, accountId) {
   try {
-    const value = localStorage.getItem("bizzibuddiMockPeople");
+    const value = localStorage.getItem(storageKey(key, accountId));
     return value ? JSON.parse(value) : [];
   } catch {
     return [];
   }
 }
 
-function readJobs() {
-  try {
-    const value = localStorage.getItem("bizzibuddiMockJobs");
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
-  }
+function applyAccountData(account, setters) {
+  if (!account?.id) return;
+
+  setters.setPeople(readLocalList("people", account.id));
+  setters.setJobs(readLocalList("jobs", account.id));
+  setters.setAppointments(readLocalList("appointments", account.id));
+  setters.setInvoices(readLocalList("invoices", account.id));
+  setters.setAutomationEvents(readLocalList("automationEvents", account.id));
+  setters.setProductionRecords(readLocalList("productionRecords", account.id));
 }
 
-function readAppointments() {
-  try {
-    const value = localStorage.getItem("bizzibuddiMockAppointments");
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
-  }
-}
+function bizzibuddiAuthRequest(path, options = {}) {
+  return fetch(path, {
+    ...options,
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  }).then(async (response) => {
+    const payload = await response.json().catch(() => ({}));
 
-function readInvoices() {
-  try {
-    const value = localStorage.getItem("bizzibuddiMockInvoices");
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
-  }
-}
+    if (!response.ok) {
+      throw new Error(payload?.error || "The BizziBuddi account service could not complete that request.");
+    }
 
-function readAutomationEvents() {
-  try {
-    const value = localStorage.getItem("bizzibuddiMockAutomationEvents");
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
-  }
-}
-
-function readProductionRecords() {
-  try {
-    const value = localStorage.getItem("bizzibuddiMockProductionRecords");
-    return value ? JSON.parse(value) : [];
-  } catch {
-    return [];
-  }
-}
-
-function deriveUsername(account) {
-  return String(account?.email || "").split("@")[0];
+    return payload;
+  });
 }
 
 function AuthPanel({ mode, account, onSubmit, onSwitch }) {
   const login = mode === "login";
   return <section style={cardStyle(560)}>
-    <div style={centerStyle}><div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2><p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create a local test account and begin your business setup."}</p></div>
+    <div style={centerStyle}>
+      <div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div>
+      <BizziBuddiLogo size={78} dark showWordmark={false} />
+      <h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2>
+      <p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create your secure BizziBuddi account and begin your business setup."}</p>
+    </div>
     <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
       {!login && <Field name="name" label="Full name" type="text" placeholder="Your name" />}
       {!login && <Field name="username" label="Username" type="text" placeholder="Choose a username" />}
       {!login && <Field name="email" label="Email address" type="email" placeholder="you@example.com" />}
       {login && <Field name="identifier" label="Email address or username" type="text" placeholder="you@example.com or username" />}
-      <Field name="password" label="Password" type="password" placeholder="Demo password" />
-      <button type="submit" style={primaryButton}>{login ? "Log in · Demo" : "Continue to business setup →"}</button>
+      <Field name="password" label="Password" type="password" placeholder={login ? "Your password" : "At least 10 characters"} />
+      <button type="submit" style={primaryButton}>{login ? "Log in" : "Create account →"}</button>
     </form>
     <p style={switchText}>{login ? "New to BizziBuddi?" : "Already have an account?"} <button type="button" onClick={onSwitch} style={textButton}>{login ? "Create an account" : "Log in"}</button></p>
-    {login && account && <p style={smallText}>Local account detected for {account.email}{account.username ? ` · @${account.username}` : ""}.</p>}
+    {login && account && <p style={smallText}>Signed in account available for {account.email} · @{account.username}.</p>}
   </section>;
 }
 
@@ -686,10 +728,10 @@ function DashboardPanel({
       </div>
 
       <MembershipAccessPanel planName={account?.plan} />
-      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>This business preview is still running on local demo data. Real authentication, databases and billing are not connected yet.</p></div>
+      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>Your BizziBuddi account and login are connected to the server. People, jobs, calendar, finance, production and reports still use browser-local demo data until the next data-storage stage.</p></div>
       <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 18 }}>
         <button type="button" onClick={onLogout} style={textButton}>Log out</button>
-        <button type="button" onClick={onReset} style={textButton}>Reset local demo</button>
+        <button type="button" onClick={onReset} style={textButton}>Reset local business demo</button>
       </div>
     </section>
   );
