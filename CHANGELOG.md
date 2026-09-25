@@ -1,3 +1,32 @@
+## BizziBuddi Real Account Authentication
+
+### Added
+
+- Replaced the BizziBuddi browser-only mock registration and login with a real server-backed account flow.
+- Added persistent BizziBuddi user records using the existing account foundation database.
+- Added username support with a unique database index.
+- Added secure password hashing using Node's built-in scrypt implementation with per-password salts.
+- Added server-side BizziBuddi sessions stored in SQLite with random session tokens, expiry and server-side logout invalidation.
+- Added same-origin authentication endpoints for registration, login, session recovery, business setup and logout.
+- Added local BizziBuddi authentication service and Vite proxy support.
+- Connected the production gateway to the same BizziBuddi authentication service logic so local and public builds use the same account behaviour.
+- Scoped the remaining browser-local BizziBuddi demo business records to the authenticated account ID to prevent users in the same browser from sharing those preview records.
+
+### Changed
+
+- BizziBuddi account creation and login no longer store account credentials in localStorage.
+- Business setup now persists the business name to the server account record.
+- The account preview now clearly distinguishes live account authentication from the remaining local business-data preview.
+- Existing Chrysalis authentication remains separate and unchanged.
+- Membership plan selection remains a local preview until billing/subscriptions are implemented.
+
+### Notes
+
+- People, Jobs, Calendar, Finance, Automation, Production and Reports are still browser-local preview data at this stage.
+- The next data-storage stage will move those records behind the authenticated account and server database.
+
+---
+
 ## BizziBuddi Mobile Dashboard Buddi Layout
 
 ### Fixed
