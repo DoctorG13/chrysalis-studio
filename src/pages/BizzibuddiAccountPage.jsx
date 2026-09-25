@@ -2509,7 +2509,6 @@ const lockedFeatureCard = { display: "flex", alignItems: "flex-start", gap: 14, 
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
 const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
-const smallActionButton = { border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 11px", background: "rgba(255,255,255,.04)", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" };
 const smallDangerButton = { ...smallActionButton, borderColor: "rgba(255,23,79,.45)", color: "#FF6B8A" };
 const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px dashed ${BORDER}`, background: "rgba(255,255,255,.025)", textAlign: "center" };
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
