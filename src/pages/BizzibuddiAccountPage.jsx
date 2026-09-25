@@ -59,21 +59,27 @@ export default function BizzibuddiAccountPage() {
       setProductionRecords,
     });
 
-    try {
-      const [peopleResult, jobsResult, calendarResult] = await Promise.all([
-        bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
-        bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
-        bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
-      ]);
+    const [peopleResult, jobsResult, calendarResult] = await Promise.allSettled([
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
+    ]);
 
-      setPeople(Array.isArray(peopleResult.people) ? peopleResult.people : []);
-      setJobs(Array.isArray(jobsResult.jobs) ? jobsResult.jobs : []);
-      setAppointments(Array.isArray(calendarResult.calendar) ? calendarResult.calendar : []);
-    } catch {
-      setPeople([]);
-      setJobs([]);
-      setAppointments([]);
-    }
+    setPeople(
+      peopleResult.status === "fulfilled" && Array.isArray(peopleResult.value.people)
+        ? peopleResult.value.people
+        : []
+    );
+    setJobs(
+      jobsResult.status === "fulfilled" && Array.isArray(jobsResult.value.jobs)
+        ? jobsResult.value.jobs
+        : []
+    );
+    setAppointments(
+      calendarResult.status === "fulfilled" && Array.isArray(calendarResult.value.calendar)
+        ? calendarResult.value.calendar
+        : []
+    );
   }
 
   function selectView(nextView) {
