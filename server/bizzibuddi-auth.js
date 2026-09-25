@@ -35,8 +35,8 @@ function getDatabase() {
 }
 
 function safeEqual(left, right) {
-  const a = Buffer.from(String(left || ""));
-  const b = Buffer.from(String(right || ""));
+  const a = Buffer.isBuffer(left) ? left : Buffer.from(String(left || ""));
+  const b = Buffer.isBuffer(right) ? right : Buffer.from(String(right || ""));
 
   if (a.length !== b.length) return false;
 
