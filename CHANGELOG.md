@@ -1,3 +1,26 @@
+## BizziBuddi People Database Storage
+
+### Added
+
+- Added a dedicated `bizzibuddi_people` database table linked to the authenticated BizziBuddi account.
+- Added authenticated People list and create endpoints.
+- Added server-side validation for person name, email and phone details.
+- Updated the BizziBuddi People screen to load records from the server database.
+- Updated new People records to persist through the authenticated account session.
+
+### Changed
+
+- People are no longer stored in browser localStorage.
+- Existing local demo storage remains in place for the other BizziBuddi modules until each module is migrated.
+- People records are scoped to the authenticated BizziBuddi account.
+
+### Notes
+
+- This is the first BizziBuddi business-data module moved to persistent server storage.
+- Jobs, Calendar, Finance, Automation, Production and Reports remain browser-local preview data for their respective migration stages.
+
+---
+
 ## BizziBuddi Logged-Out Help Navigation Styling
 
 ### Fixed
