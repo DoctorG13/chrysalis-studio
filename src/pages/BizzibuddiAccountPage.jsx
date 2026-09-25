@@ -59,10 +59,11 @@ export default function BizzibuddiAccountPage() {
       setProductionRecords,
     });
 
-    const [peopleResult, jobsResult, calendarResult] = await Promise.allSettled([
+    const [peopleResult, jobsResult, calendarResult, invoicesResult] = await Promise.allSettled([
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices"),
     ]);
 
     setPeople(
@@ -78,6 +79,11 @@ export default function BizzibuddiAccountPage() {
     setAppointments(
       calendarResult.status === "fulfilled" && Array.isArray(calendarResult.value.calendar)
         ? calendarResult.value.calendar
+        : []
+    );
+    setInvoices(
+      invoicesResult.status === "fulfilled" && Array.isArray(invoicesResult.value.invoices)
+        ? invoicesResult.value.invoices
         : []
     );
   }
@@ -252,7 +258,7 @@ export default function BizzibuddiAccountPage() {
   function resetDemo() {
     if (!account?.id) return;
 
-    ["people", "jobs", "appointments", "invoices", "automationEvents", "productionRecords"].forEach((key) => {
+    ["automationEvents", "productionRecords"].forEach((key) => {
       localStorage.removeItem(storageKey(key, account.id));
     });
 
@@ -323,7 +329,40 @@ export default function BizzibuddiAccountPage() {
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
-        {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
+        {view === "finance" && (
+          <FinancePanel
+            account={account}
+            invoices={invoices}
+            people={people}
+            onPlans={() => selectView("plans")}
+            onAddInvoice={async (invoice) => {
+              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices", {
+                method: "POST",
+                body: JSON.stringify(invoice),
+              });
+              setInvoices((current) =>
+                [...current, result.invoice].sort((a, b) =>
+                  (a.dueDate || "").localeCompare(b.dueDate || "")
+                )
+              );
+              return result.invoice;
+            }}
+            onMarkPaid={async (invoiceId) => {
+              const result = await bizzibuddiAuthRequest(
+                "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/payments",
+                {
+                  method: "POST",
+                  body: JSON.stringify({ method: "Other" }),
+                }
+              );
+              setInvoices((current) =>
+                current.map((invoice) => invoice.id === invoiceId ? result.invoice : invoice)
+              );
+              return result.invoice;
+            }}
+            onBack={() => selectView("dashboard")}
+          />
+        )}
         {view === "calendar" && (
           <CalendarPanel
             appointments={appointments}
@@ -570,7 +609,6 @@ function readLocalList(key, accountId) {
 function applyAccountData(account, setters) {
   if (!account?.id) return;
 
-  setters.setInvoices(readLocalList("invoices", account.id));
   setters.setAutomationEvents(readLocalList("automationEvents", account.id));
   setters.setProductionRecords(readLocalList("productionRecords", account.id));
 }
@@ -1428,27 +1466,48 @@ function ReportsPanel({ account, people, jobs, appointments, invoices, productio
 
 function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    setError("");
+    setSaving(true);
+
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const personId = String(form.get("personId") || "");
-    const person = people.find((item) => item.id === personId);
     const amount = Number(form.get("amount") || 0);
 
-    onAddInvoice({
-      id: "invoice-" + Date.now(),
-      number: "INV-" + String(Date.now()).slice(-6),
-      personName: person?.name || "No client linked",
-      amount: Number.isFinite(amount) ? amount : 0,
-      amountPaid: 0,
-      dueDate: String(form.get("dueDate") || ""),
-      status: "Issued",
-    });
+    try {
+      await onAddInvoice({
+        personId,
+        amount: Number.isFinite(amount) ? amount : 0,
+        issueDate: String(form.get("issueDate") || ""),
+        dueDate: String(form.get("dueDate") || ""),
+      });
 
-    event.currentTarget.reset();
-    setShowForm(false);
+      formElement.reset();
+      setShowForm(false);
+    } catch (requestError) {
+      setError(requestError.message || "We could not save this invoice.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleMarkPaid(invoice) {
+    setError("");
+    setSaving(true);
+
+    try {
+      await onMarkPaid(invoice.id);
+    } catch (requestError) {
+      setError(requestError.message || "We could not record this payment.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!available) {
@@ -1462,7 +1521,7 @@ function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMark
           <span style={{ fontSize: 28 }}>🔒</span>
           <div>
             <strong style={{ display: "block", fontSize: 18 }}>Available on Professional</strong>
-            <p style={{ ...copyStyle, marginBottom: 0 }}>Upgrade your local preview to explore invoice and payment management.</p>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Upgrade your membership preview to explore invoice and payment management.</p>
           </div>
         </div>
         <button type="button" onClick={onPlans} style={{ ...primaryButton, maxWidth: 260 }}>View membership plans</button>
@@ -1470,34 +1529,69 @@ function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMark
     </section>;
   }
 
+  const outstanding = invoices.reduce(
+    (sum, invoice) => sum + Math.max(0, Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0),
+    0
+  );
+  const paidCount = invoices.filter((invoice) => invoice.status === "Paid").length;
+
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>FINANCE</p>
       <h2 style={sectionHeading}>Your finances.</h2>
-      <p style={copyStyle}>Create invoices and keep track of what has been paid. This Professional preview is local-only.</p>
+      <p style={copyStyle}>Create invoices and keep track of what has been paid. Your financial records are now stored with your BizziBuddi account.</p>
     </div>
 
     <div style={financeSummary}>
-      <div><small style={smallText}>OUTSTANDING</small><strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{formatCurrency(invoices.reduce((sum, invoice) => sum + Math.max(0, invoice.amount - (invoice.amountPaid || 0)), 0))}</strong></div>
-      <div><small style={smallText}>INVOICES</small><strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{invoices.length}</strong></div>
-      <div><small style={smallText}>PAID</small><strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{invoices.filter((invoice) => invoice.status === "Paid").length}</strong></div>
+      <div>
+        <small style={smallText}>OUTSTANDING</small>
+        <strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{formatCurrency(outstanding)}</strong>
+      </div>
+      <div>
+        <small style={smallText}>INVOICES</small>
+        <strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{invoices.length}</strong>
+      </div>
+      <div>
+        <small style={smallText}>PAID</small>
+        <strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{paidCount}</strong>
+      </div>
     </div>
+
+    {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
     {invoices.length > 0 ? (
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
         {invoices.map((invoice) => {
-          const balance = Math.max(0, invoice.amount - (invoice.amountPaid || 0));
+          const balance = Math.max(
+            0,
+            Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
+          );
+
           return <article key={invoice.id} style={invoiceCard}>
             <div>
               <strong style={{ display: "block", fontSize: 17 }}>{invoice.number}</strong>
-              <span style={smallText}>{invoice.personName} · Due {formatInvoiceDate(invoice.dueDate)}</span>
+              <span style={smallText}>
+                {invoice.personName} · Due {formatInvoiceDate(invoice.dueDate)}
+              </span>
+              <span style={{ ...smallText, display: "block", marginTop: 4 }}>
+                Issued {formatInvoiceDate(invoice.issueDate)}
+              </span>
             </div>
             <div style={invoiceMeta}>
               <strong>{formatCurrency(invoice.amount)}</strong>
               <span style={invoiceStatus(invoice.status)}>{invoice.status}</span>
-              {invoice.status !== "Paid" && <button type="button" onClick={() => onMarkPaid(invoice.id)} style={smallActionButton}>Mark paid</button>}
-              {invoice.status !== "Paid" && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
+              {invoice.status !== "Paid" && (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => handleMarkPaid(invoice)}
+                  style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                >
+                  Mark paid
+                </button>
+              )}
+              {balance > 0 && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
             </div>
           </article>;
         })}
@@ -1510,23 +1604,48 @@ function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMark
     )}
 
     {!showForm ? (
-      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 240 }}>+ Create an invoice</button>
+      <button type="button" onClick={() => { setError(""); setShowForm(true); }} style={{ ...primaryButton, maxWidth: 240 }}>
+        + Create an invoice
+      </button>
     ) : (
       <form onSubmit={handleSubmit} style={personForm}>
         <strong style={{ fontSize: 18 }}>Create an invoice</strong>
-        <label style={fieldStyle}>Client<select required name="personId" defaultValue="" style={inputStyle}>
-          <option value="" disabled>Select a person</option>
-          {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
-          {people.length === 0 && <option value="" disabled>Add a person first</option>}
-        </select></label>
+
+        <label style={fieldStyle}>
+          Client
+          <select required name="personId" defaultValue="" style={inputStyle}>
+            <option value="" disabled>Select a person</option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>{person.name}</option>
+            ))}
+            {people.length === 0 && <option value="" disabled>Add a person first</option>}
+          </select>
+        </label>
+
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
           <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
+          <Field name="issueDate" label="Issue date" type="date" required />
           <Field name="dueDate" label="Due date" type="date" required />
         </div>
+
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
-          <button type="submit" disabled={people.length === 0} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 ? 0.5 : 1 }}>Save invoice</button>
-          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+          <button
+            type="submit"
+            disabled={people.length === 0 || saving}
+            style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+          >
+            {saving ? "Saving…" : "Save invoice"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setError(""); setShowForm(false); }}
+            disabled={saving}
+            style={{ ...secondaryButton, width: "auto", marginTop: 0 }}
+          >
+            Cancel
+          </button>
         </div>
+
         {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create an invoice for them.</p>}
       </form>
     )}
