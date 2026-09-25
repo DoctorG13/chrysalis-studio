@@ -1,3 +1,28 @@
+## BizziBuddi Automation Database Storage
+
+### Added
+
+- Added persistent BizziBuddi automation event storage tied to the authenticated account.
+- Added authenticated Automation event list and event creation endpoints.
+- Added a server-side automation check for overdue invoices.
+- Added duplicate-safe automation source keys so repeated checks do not create duplicate flags.
+- Added persistent appointment reminder events linked to the saved calendar appointment.
+
+### Changed
+
+- Automation events are no longer stored in browser localStorage.
+- Automation events now survive refresh and logout/login.
+- Running Automation checks now evaluates the account's persistent Finance records on the server.
+- The Automation screen now reports newly flagged items from the server.
+
+### Notes
+
+- Automation remains available to Professional and Business membership levels.
+- Automation currently prepares and stores follow-up events; it does not send email, SMS or external notifications.
+- Production and Reports remain browser-local preview data until their migration stages.
+
+---
+
 ## BizziBuddi Finance Migration Fix
 
 - Fixed an incorrectly placed Finance database migration that caused `server/index.js` to fail parsing.
