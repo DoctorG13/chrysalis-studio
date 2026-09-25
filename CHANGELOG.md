@@ -1,3 +1,26 @@
+## BizziBuddi People Edit, Delete & Cleanup
+
+### Added
+
+- Added server-backed People editing.
+- Added server-backed People deletion with account ownership checks.
+- Added Edit and Delete actions to each People record.
+- Added confirmation before permanently deleting a person.
+- Added clear save/delete error handling and save-state feedback.
+
+### Changed
+
+- People now have complete first-stage CRUD support: create, read, update and delete.
+- The People form now supports both adding and editing records without changing the existing visual direction.
+- The previous duplicate test records can now be safely cleaned up through the People interface.
+
+### Notes
+
+- People remain persistent database records tied to the authenticated BizziBuddi account.
+- Jobs have not yet been migrated and therefore are not yet linked to People at the database level.
+
+---
+
 ## BizziBuddi People Save Form Fix
 
 ### Fixed
