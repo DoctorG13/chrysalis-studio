@@ -1,3 +1,29 @@
+## BizziBuddi Jobs Database Storage
+
+### Added
+
+- Added a dedicated `bizzibuddi_jobs` database table linked to the authenticated BizziBuddi account.
+- Linked each job to a persistent BizziBuddi Person record.
+- Added authenticated Jobs list, create, update and delete endpoints.
+- Added server-side validation for job name, assigned person and status.
+- Added safe `ON DELETE SET NULL` handling so deleting a Person does not delete their Jobs.
+- Updated the Jobs screen to load and save records through the server database.
+- Added Edit and Delete actions with confirmation and save-state/error handling.
+
+### Changed
+
+- Jobs are no longer stored in browser localStorage.
+- Jobs now survive refresh and logout/login through persistent account storage.
+- The Jobs client selector uses the real People database IDs.
+- If a linked Person is deleted, the Job remains and is displayed as Unassigned.
+
+### Notes
+
+- People and Jobs are now the first two persistent BizziBuddi business-data modules.
+- Calendar, Finance, Automation, Production and Reports remain browser-local preview data until their respective migration stages.
+
+---
+
 ## BizziBuddi People Compile Fix
 
 ### Fixed
