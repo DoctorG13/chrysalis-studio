@@ -1,3 +1,31 @@
+## BizziBuddi Finance Database Storage
+
+### Added
+
+- Added persistent BizziBuddi invoice and payment tables.
+- Added authenticated Finance list and create endpoints.
+- Added authenticated invoice payment recording.
+- Added automatic invoice balance calculation from recorded payments.
+- Added automatic financial status handling for Issued, Part Paid, Paid and Overdue invoices.
+- Added account-safe links between invoices and People.
+- Added server-side validation for invoice amounts, dates and payments.
+
+### Changed
+
+- Finance is no longer stored in browser localStorage.
+- Invoice records now survive refresh and logout/login.
+- Mark paid now records a real payment against the invoice instead of changing a browser-only status.
+- Finance totals now use server-authoritative balances and payment totals.
+- BizziBuddi account messaging now identifies People, Jobs, Calendar and Finance as persistent account-backed modules.
+
+### Notes
+
+- Finance remains available to Professional and Business membership levels.
+- Billing/subscriptions are still not connected; membership selection remains a local preview.
+- Automation, Production and Reports remain browser-local preview data for their future migration stages.
+
+---
+
 ## BizziBuddi Calendar Load Fix
 
 - Prevent a Calendar API/load failure from clearing successfully loaded People and Jobs.
