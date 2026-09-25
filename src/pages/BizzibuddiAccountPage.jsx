@@ -156,10 +156,9 @@ export default function BizzibuddiAccountPage() {
 
   function selectPlan(planName) {
     const selectedPlan = getBizzibuddiPlan(planName);
-    const nextAccount = { ...(account || { name: "Demo User", username: "demo", email: "demo@example.com", business: "" }), plan: selectedPlan.name };
-    localStorage.setItem("bizzibuddiMockAccount", JSON.stringify(nextAccount));
+    const nextAccount = { ...account, plan: selectedPlan.name };
     setAccount(nextAccount);
-    setMessage(`${planName} selected for this mock account. No payment was made.`);
+    setMessage(`${planName} selected for this local membership preview. No payment or subscription was created.`);
     setView("dashboard");
   }
 
