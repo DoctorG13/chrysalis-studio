@@ -507,6 +507,70 @@ async function readJsonBody(request) {
   });
 }
 
+function getPeople(userId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, name, email, phone, created_at, updated_at
+       FROM bizzibuddi_people
+       WHERE user_id = ?
+       ORDER BY created_at DESC`
+    )
+    .all(userId);
+}
+
+function createPerson(userId, payload) {
+  const name = String(payload?.name || "").trim();
+  const email = normalizeEmail(payload?.email);
+  const phone = String(payload?.phone || "").trim();
+
+  if (!name || name.length > 120) {
+    throw new Error("Person name is required and must be 120 characters or fewer.");
+  }
+
+  if (email && (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254)) {
+    throw new Error("Please enter a valid email address.");
+  }
+
+  if (phone.length > 60) {
+    throw new Error("Phone number must be 60 characters or fewer.");
+  }
+
+  const now = new Date().toISOString();
+  const person = {
+    id: randomUUID(),
+    name,
+    email,
+    phone,
+    created_at: now,
+    updated_at: now,
+  };
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO bizzibuddi_people (
+        id, user_id, name, email, phone, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      person.id,
+      userId,
+      person.name,
+      person.email,
+      person.phone,
+      person.created_at,
+      person.updated_at
+    );
+
+  return {
+    id: person.id,
+    name: person.name,
+    email: person.email,
+    phone: person.phone,
+    createdAt: person.created_at,
+    updatedAt: person.updated_at,
+  };
+}
+
 export async function handleBizziBuddiAuthRequest(request, response) {
   const url = new URL(
     request.url || "/",
@@ -605,6 +669,54 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         { ok: true, authenticated: true, account },
         { "Set-Cookie": createSessionCookie(user.id, request) }
       );
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/people" && request.method === "GET") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        people: getPeople(user.id).map((person) => ({
+          id: person.id,
+          name: person.name,
+          email: person.email,
+          phone: person.phone,
+          createdAt: person.created_at,
+          updatedAt: person.updated_at,
+        })),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/people" && request.method === "POST") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      sendJson(response, 201, {
+        ok: true,
+        authenticated: true,
+        person: createPerson(user.id, payload),
+      });
       return true;
     }
 
