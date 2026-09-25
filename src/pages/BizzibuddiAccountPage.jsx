@@ -59,12 +59,13 @@ export default function BizzibuddiAccountPage() {
       setProductionRecords,
     });
 
-    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult] = await Promise.allSettled([
+    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult, productionResult] = await Promise.allSettled([
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/production"),
     ]);
 
     setPeople(
@@ -92,6 +93,11 @@ export default function BizzibuddiAccountPage() {
         ? automationResult.value.events
         : []
     );
+    const serverProductionRecords =
+      productionResult.status === "fulfilled" && Array.isArray(productionResult.value.records)
+        ? productionResult.value.records
+        : [];
+    setProductionRecords(await loadProductionRecords(nextAccount.id, serverProductionRecords));
   }
 
   function selectView(nextView) {
@@ -264,9 +270,8 @@ export default function BizzibuddiAccountPage() {
   function resetDemo() {
     if (!account?.id) return;
 
-    ["productionRecords"].forEach((key) => {
-      localStorage.removeItem(storageKey(key, account.id));
-    });
+    // Production is now account-backed. Remove only any legacy browser copy.
+    localStorage.removeItem(storageKey("productionRecords", account.id));
 
     setPeople([]);
     setJobs([]);
@@ -508,7 +513,26 @@ export default function BizzibuddiAccountPage() {
           />
         )}
         {view === "automation" && <AutomationPanel account={account} events={automationEvents} invoices={invoices} onPlans={() => selectView("plans")} onRunChecks={runAutomationChecks} onBack={() => selectView("dashboard")} />}
-        {view === "production" && <ProductionPanel account={account} jobs={jobs} records={productionRecords} onPlans={() => selectView("plans")} onSave={(record) => { const nextRecords = [...productionRecords.filter((item) => item.jobId !== record.jobId), record]; setProductionRecords(nextRecords); localStorage.setItem(storageKey("productionRecords", account?.id), JSON.stringify(nextRecords)); }} onBack={() => selectView("dashboard")} />}
+        {view === "production" && (
+          <ProductionPanel
+            account={account}
+            jobs={jobs}
+            records={productionRecords}
+            onPlans={() => selectView("plans")}
+            onSave={async (record) => {
+              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
+                method: "POST",
+                body: JSON.stringify(record),
+              });
+              setProductionRecords((current) => [
+                result.record,
+                ...current.filter((item) => item.jobId !== result.record.jobId),
+              ]);
+              return result.record;
+            }}
+            onBack={() => selectView("dashboard")}
+          />
+        )}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
         {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={() => selectView("production")} onBack={() => selectView("dashboard")} />}
         {view === "help" && (
@@ -596,7 +620,7 @@ export default function BizzibuddiAccountPage() {
             <span>Ask Buddi</span>
           </button>
         )}
-        <footer style={footerStyle}>Account authentication is live · People, Jobs, Calendar and Finance are now persistent · Other business records remain local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
+        <footer style={footerStyle}>Account authentication is live · People, Jobs, Calendar, Finance, Automation and Production are now persistent · Reports remains local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
     </main>
   );
@@ -619,7 +643,40 @@ function applyAccountData(account, setters) {
   if (!account?.id) return;
 
   setters.setAutomationEvents(readLocalList("automationEvents", account.id));
-  setters.setProductionRecords(readLocalList("productionRecords", account.id));
+}
+
+async function loadProductionRecords(accountId, serverRecords) {
+  const current = Array.isArray(serverRecords) ? serverRecords : [];
+  const legacy = readLocalList("productionRecords", accountId);
+
+  if (!legacy.length) return current;
+
+  const recordsByJobId = new Map(current.map((record) => [record.jobId, record]));
+  let migrationFailed = false;
+
+  for (const legacyRecord of legacy) {
+    if (!legacyRecord?.jobId || recordsByJobId.has(legacyRecord.jobId)) continue;
+
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
+        method: "POST",
+        body: JSON.stringify(legacyRecord),
+      });
+      if (result?.record?.jobId) recordsByJobId.set(result.record.jobId, result.record);
+    } catch {
+      migrationFailed = true;
+    }
+  }
+
+  const merged = Array.from(recordsByJobId.values()).sort((a, b) =>
+    String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))
+  );
+
+  if (!migrationFailed && legacy.every((record) => record?.jobId && recordsByJobId.has(record.jobId))) {
+    localStorage.removeItem(storageKey("productionRecords", accountId));
+  }
+
+  return merged;
 }
 
 function bizzibuddiAuthRequest(path, options = {}) {
@@ -1111,7 +1168,7 @@ function DashboardPanel({
       </div>
 
       <MembershipAccessPanel planName={account?.plan} />
-      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>Your BizziBuddi account and login are connected to the server. People, jobs, calendar, finance and automation are now account-backed; production and reports remain browser-local until their migration stages.</p></div>
+      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>Your BizziBuddi account and login are connected to the server. People, jobs, calendar, finance, automation and production are now account-backed; reports remain browser-local until its migration stage.</p></div>
       <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 18 }}>
         <button type="button" onClick={onLogout} style={textButton}>Log out</button>
         <button type="button" onClick={onReset} style={textButton}>Reset local business demo</button>
@@ -1209,6 +1266,8 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
   const available = hasBizzibuddiFeature(account?.plan, "production");
   const stages = ["Not started", "In production", "Quality check", "Ready", "Complete"];
   const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const selectedJob = jobs.find((job) => job.id === selectedJobId);
   const existing = records.find((record) => record.jobId === selectedJobId);
 
@@ -1233,28 +1292,37 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     );
   }
 
-  function handleSave(event) {
+  async function handleSave(event) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const taskText = String(form.get("tasks") || "").trim();
-    const tasks = taskText
-      ? taskText.split("\n").map((task) => task.trim()).filter(Boolean).map((title, index) => ({
-          id: `task-${Date.now()}-${index}`,
-          title,
-          complete: false,
-        }))
-      : [];
+    setError("");
+    setSaving(true);
 
-    onSave({
-      id: existing?.id || `production-${Date.now()}`,
-      jobId: selectedJobId,
-      jobTitle: selectedJob?.title || "Untitled job",
-      stage: String(form.get("stage") || "Not started"),
-      dueDate: String(form.get("dueDate") || ""),
-      notes: String(form.get("notes") || "").trim(),
-      tasks,
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      const form = new FormData(event.currentTarget);
+      const taskText = String(form.get("tasks") || "").trim();
+      const tasks = taskText
+        ? taskText.split("\n").map((task) => task.trim()).filter(Boolean).map((title, index) => ({
+            id: "task-" + Date.now() + "-" + index,
+            title,
+            complete: false,
+          }))
+        : [];
+
+      await onSave({
+        id: existing?.id || "production-" + Date.now(),
+        jobId: selectedJobId,
+        jobTitle: selectedJob?.title || "Untitled job",
+        stage: String(form.get("stage") || "Not started"),
+        dueDate: String(form.get("dueDate") || ""),
+        notes: String(form.get("notes") || "").trim(),
+        tasks,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (requestError) {
+      setError(requestError.message || "We could not save production progress.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -1323,7 +1391,10 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
 
             <Field name="notes" label="Production notes" type="text" placeholder="Optional production notes" defaultValue={existing?.notes || ""} />
 
-            <button type="submit" style={{ ...primaryButton, maxWidth: 260 }}>Save production progress</button>
+            <button type="submit" disabled={saving} style={{ ...primaryButton, maxWidth: 260, opacity: saving ? 0.65 : 1 }}>
+              {saving ? "Saving…" : "Save production progress"}
+            </button>
+            {error && <div role="alert" style={{ ...messageStyle, marginTop: 16 }}>{error}</div>}
           </form>
         </div>
       )}
@@ -1338,7 +1409,7 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
                   <strong style={{ display: "block", fontSize: 16 }}>{record.jobTitle}</strong>
                   <span style={smallText}>
                     {record.stage}
-                    {record.dueDate ? ` · Ready ${formatProductionDate(record.dueDate)}` : ""}
+                    {record.dueDate ? " · Ready " + formatProductionDate(record.dueDate) : ""}
                   </span>
                   {record.tasks?.length > 0 && (
                     <span style={{ ...smallText, display: "block", marginTop: 5 }}>
@@ -1355,7 +1426,6 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     </section>
   );
 }
-
 function formatProductionDate(date) {
   if (!date) return "";
   const value = new Date(date + "T00:00");

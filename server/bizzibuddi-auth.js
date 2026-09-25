@@ -1214,6 +1214,103 @@ function deletePerson(userId, personId) {
 }
 
 
+
+const BIZZIBUDDI_PRODUCTION_STAGES = [
+  "Not started",
+  "In production",
+  "Quality check",
+  "Ready",
+  "Complete",
+];
+
+function validateProductionPayload(payload) {
+  const jobId = String(payload?.jobId || "").trim();
+  const stage = String(payload?.stage || "Not started").trim();
+  const dueDate = String(payload?.dueDate || "").trim();
+  const notes = String(payload?.notes || "").trim();
+  const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
+
+  if (!jobId) throw new Error("Please select a job for this production record.");
+  if (!BIZZIBUDDI_PRODUCTION_STAGES.includes(stage)) throw new Error("Please select a valid production stage.");
+  if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) throw new Error("Please enter a valid production ready-by date.");
+  if (notes.length > 2000) throw new Error("Production notes must be 2000 characters or fewer.");
+  if (tasks.length > 100) throw new Error("Production cannot contain more than 100 tasks.");
+
+  const normalizedTasks = tasks.map((task, index) => {
+    const title = String(task?.title || "").trim();
+    if (!title || title.length > 200) throw new Error("Production task " + (index + 1) + " must contain a title of 200 characters or fewer.");
+    return { id: String(task?.id || randomUUID()), title, complete: Boolean(task?.complete) };
+  });
+
+  return { jobId, stage, dueDate, notes, tasks: normalizedTasks };
+}
+
+function toProductionRecord(row) {
+  if (!row) return null;
+  let tasks = [];
+  try {
+    const parsed = JSON.parse(String(row.tasks_json || "[]"));
+    tasks = Array.isArray(parsed) ? parsed : [];
+  } catch {
+    tasks = [];
+  }
+  return {
+    id: row.id, jobId: row.job_id, jobTitle: row.job_title || "Untitled job",
+    stage: row.stage, dueDate: row.due_date || "", notes: row.notes || "", tasks,
+    createdAt: row.created_at, updatedAt: row.updated_at,
+  };
+}
+
+function getProductionRecords(userId) {
+  return getDatabase().prepare(`SELECT id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at
+    FROM bizzibuddi_production WHERE user_id = ? ORDER BY updated_at DESC`).all(userId);
+}
+
+function saveProductionRecord(userId, payload) {
+  const values = validateProductionPayload(payload);
+  const database = getDatabase();
+  const job = database.prepare(`SELECT id, title FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?`).get(values.jobId, userId);
+  if (!job) throw new Error("The selected job could not be found.");
+
+  const existing = database.prepare(`SELECT id, created_at FROM bizzibuddi_production WHERE job_id = ? AND user_id = ?`).get(values.jobId, userId);
+  const now = new Date().toISOString();
+  const id = existing?.id || randomUUID();
+
+  database.prepare(`INSERT INTO bizzibuddi_production
+    (id, user_id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, job_id) DO UPDATE SET
+      job_title = excluded.job_title, stage = excluded.stage, due_date = excluded.due_date,
+      notes = excluded.notes, tasks_json = excluded.tasks_json, updated_at = excluded.updated_at`).run(
+    id, userId, job.id, job.title, values.stage, values.dueDate, values.notes,
+    JSON.stringify(values.tasks), existing?.created_at || now, now
+  );
+
+  return toProductionRecord(database.prepare(`SELECT id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at
+    FROM bizzibuddi_production WHERE id = ? AND user_id = ?`).get(id, userId));
+}
+
+function updateProductionRecord(userId, recordId, payload) {
+  const values = validateProductionPayload(payload);
+  const database = getDatabase();
+  const job = database.prepare(`SELECT id, title FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?`).get(values.jobId, userId);
+  if (!job) throw new Error("The selected job could not be found.");
+
+  const result = database.prepare(`UPDATE bizzibuddi_production
+    SET job_id = ?, job_title = ?, stage = ?, due_date = ?, notes = ?, tasks_json = ?, updated_at = ?
+    WHERE id = ? AND user_id = ?`).run(
+    job.id, job.title, values.stage, values.dueDate, values.notes, JSON.stringify(values.tasks),
+    new Date().toISOString(), recordId, userId
+  );
+  if (!result.changes) return null;
+  return toProductionRecord(database.prepare(`SELECT id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at
+    FROM bizzibuddi_production WHERE id = ? AND user_id = ?`).get(recordId, userId));
+}
+
+function deleteProductionRecord(userId, recordId) {
+  const result = getDatabase().prepare(`DELETE FROM bizzibuddi_production WHERE id = ? AND user_id = ?`).run(recordId, userId);
+  return Boolean(result.changes);
+}
 const BIZZIBUDDI_AUTOMATION_TYPES = [
   "appointment-created",
   "invoice-overdue",
@@ -1498,6 +1595,60 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         { "Set-Cookie": createSessionCookie(user.id, request) }
       );
       return true;
+    }
+
+
+    if (url.pathname === "/api/bizzibuddi/auth/production" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      sendJson(response, 200, { ok: true, authenticated: true, records: getProductionRecords(user.id).map(toProductionRecord) });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/production" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      const payload = await readJsonBody(request);
+      sendJson(response, 200, { ok: true, authenticated: true, record: saveProductionRecord(user.id, payload) });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/production/")) {
+      const recordId = decodeURIComponent(url.pathname.slice("/api/bizzibuddi/auth/production/".length)).trim();
+      if (!recordId || recordId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Production record not found." });
+        return true;
+      }
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const record = updateProductionRecord(user.id, recordId, payload);
+        if (!record) {
+          sendJson(response, 404, { ok: false, error: "Production record not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, record });
+        return true;
+      }
+      if (request.method === "DELETE") {
+        const deleted = deleteProductionRecord(user.id, recordId);
+        if (!deleted) {
+          sendJson(response, 404, { ok: false, error: "Production record not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, deleted: true, productionId: recordId });
+        return true;
+      }
     }
 
     if (url.pathname === "/api/bizzibuddi/auth/automation" && request.method === "GET") {

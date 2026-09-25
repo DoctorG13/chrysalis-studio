@@ -504,6 +504,33 @@ const MIGRATIONS = [
         ON bizzibuddi_automation_events(type);
     `,
   },
+  {
+    version: 12,
+    name: "bizzibuddi-production",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_production (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        job_id TEXT NOT NULL,
+        job_title TEXT NOT NULL DEFAULT '',
+        stage TEXT NOT NULL DEFAULT 'Not started',
+        due_date TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        tasks_json TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (job_id) REFERENCES bizzibuddi_jobs(id) ON DELETE CASCADE,
+        UNIQUE (user_id, job_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_user_id ON bizzibuddi_production(user_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_job_id ON bizzibuddi_production(job_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_stage ON bizzibuddi_production(stage);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_due_date ON bizzibuddi_production(due_date);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_updated_at ON bizzibuddi_production(updated_at);
+    `,
+  },
 
 ];
 

@@ -1,3 +1,28 @@
+## BizziBuddi Production Database Storage
+
+### Added
+
+- Added a persistent `bizzibuddi_production` database table tied to the authenticated BizziBuddi account.
+- Added authenticated Production list, save, update and delete endpoints.
+- Added server-side validation for production stages, ready-by dates, notes and production tasks.
+- Added account-safe links between Production records and persistent Jobs.
+- Added one-time migration support for legacy browser-local Production records.
+
+### Changed
+
+- Production records are no longer stored as the primary browser-local business data.
+- Production progress now survives refresh and logout/login through the BizziBuddi account database.
+- Saving production progress now reports server-side failures instead of silently storing browser data.
+- Dashboard and account messaging now identify Production as an account-backed module.
+
+### Notes
+
+- Production remains available to Business membership level.
+- Reports remains browser-local until its migration stage.
+- Billing/subscriptions remain disconnected; membership selection is still a local preview.
+
+---
+
 ## BizziBuddi Automation Database Storage
 
 ### Added
