@@ -1,3 +1,10 @@
+## BizziBuddi Calendar Load Fix
+
+- Prevent a Calendar API/load failure from clearing successfully loaded People and Jobs.
+- Account startup now handles People, Jobs and Calendar loading independently.
+
+---
+
 ## BizziBuddi Calendar Database Storage
 
 ### Added
