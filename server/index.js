@@ -329,6 +329,36 @@ const MIGRATIONS = [
         WHERE username IS NOT NULL AND username <> '';
     `,
   },
+  {
+    version: 5,
+    name: "bizzibuddi-account-usernames",
+    sql: `
+      ALTER TABLE users ADD COLUMN username TEXT COLLATE NOCASE;
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username
+        ON users(username)
+        WHERE username IS NOT NULL AND username <> '';
+    `,
+  },
+  {
+    version: 6,
+    name: "bizzibuddi-account-sessions",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_sessions (
+        token_hash TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_sessions_user_id
+        ON bizzibuddi_sessions(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_sessions_expires_at
+        ON bizzibuddi_sessions(expires_at);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
