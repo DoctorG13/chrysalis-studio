@@ -324,9 +324,7 @@ export default function BizzibuddiAccountPage() {
         )}
 
 
-        {account && (
-          <>
-            <style>{`
+        <style>{`
               .bizzibuddi-account-nav-main { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
               .bizzibuddi-help-nav { display:grid; gap:6px; justify-items:center; min-width:420px; padding:14px 0 0 20px; border-left:1px solid rgba(255,255,255,.18); }
               .bizzibuddi-help-nav-heading { width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; color:#BFD8F0; font-size:11px; font-weight:900; letter-spacing:.18em; }
@@ -382,19 +380,19 @@ export default function BizzibuddiAccountPage() {
               @media (prefers-reduced-motion: reduce) {
                 .bizzibuddi-buddi-launcher { animation: none !important; }
               }
-            `}</style>
+        `}</style>
 
-            <button
-              type="button"
-              className={view === "dashboard" ? "bizzibuddi-buddi-launcher dashboard" : "bizzibuddi-buddi-launcher"}
-              aria-label="Open Ask Buddi"
-              onClick={() => (view === "buddi" ? selectView("dashboard") : openBuddi())}
-              style={buddiFloatingButton}
-            >
-              <BizziBuddiLogo size={32} dark showWordmark={false} />
-              <span>Ask Buddi</span>
-            </button>
-          </>
+        {account && (
+          <button
+            type="button"
+            className={view === "dashboard" ? "bizzibuddi-buddi-launcher dashboard" : "bizzibuddi-buddi-launcher"}
+            aria-label="Open Ask Buddi"
+            onClick={() => (view === "buddi" ? selectView("dashboard") : openBuddi())}
+            style={buddiFloatingButton}
+          >
+            <BizziBuddiLogo size={32} dark showWordmark={false} />
+            <span>Ask Buddi</span>
+          </button>
         )}
         <footer style={footerStyle}>Account authentication is live · Business records are still local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
