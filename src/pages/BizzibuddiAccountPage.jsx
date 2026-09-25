@@ -52,24 +52,27 @@ export default function BizzibuddiAccountPage() {
     setAccount(nextAccount);
     setPeople([]);
     setJobs([]);
+    setAppointments([]);
     applyAccountData(nextAccount, {
-      setAppointments,
       setInvoices,
       setAutomationEvents,
       setProductionRecords,
     });
 
     try {
-      const [peopleResult, jobsResult] = await Promise.all([
+      const [peopleResult, jobsResult, calendarResult] = await Promise.all([
         bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
         bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
+        bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
       ]);
 
       setPeople(Array.isArray(peopleResult.people) ? peopleResult.people : []);
       setJobs(Array.isArray(jobsResult.jobs) ? jobsResult.jobs : []);
+      setAppointments(Array.isArray(calendarResult.calendar) ? calendarResult.calendar : []);
     } catch {
       setPeople([]);
       setJobs([]);
+      setAppointments([]);
     }
   }
 
@@ -315,7 +318,61 @@ export default function BizzibuddiAccountPage() {
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
         {view === "finance" && <FinancePanel account={account} invoices={invoices} people={people} onPlans={() => selectView("plans")} onAddInvoice={(invoice) => { const nextInvoices = [...invoices, invoice].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || "")); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onMarkPaid={(invoiceId) => { const nextInvoices = invoices.map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "Paid", amountPaid: invoice.amount } : invoice); setInvoices(nextInvoices); localStorage.setItem(storageKey("invoices", account?.id), JSON.stringify(nextInvoices)); }} onBack={() => selectView("dashboard")} />}
-        {view === "calendar" && <CalendarPanel appointments={appointments} people={people} account={account} onAddAppointment={(appointment) => { const nextAppointments = [...appointments, appointment].sort((a, b) => (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)); setAppointments(nextAppointments); localStorage.setItem(storageKey("appointments", account?.id), JSON.stringify(nextAppointments)); addAutomationEvent({ id: `automation-${Date.now()}`, type: "appointment-created", title: "Appointment reminder prepared", detail: `Reminder prepared for ${appointment.title || "appointment"} on ${appointment.date}.`, createdAt: new Date().toISOString() }); }} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
+        {view === "calendar" && (
+          <CalendarPanel
+            appointments={appointments}
+            people={people}
+            jobs={jobs}
+            account={account}
+            onAddAppointment={async (appointment) => {
+              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar", {
+                method: "POST",
+                body: JSON.stringify(appointment),
+              });
+              setAppointments((current) =>
+                [...current, result.appointment].sort((a, b) =>
+                  (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)
+                )
+              );
+              addAutomationEvent({
+                id: "automation-" + Date.now(),
+                type: "appointment-created",
+                title: "Appointment reminder prepared",
+                detail: "Reminder prepared for " + (result.appointment.title || "appointment") + " on " + result.appointment.date + ".",
+                createdAt: new Date().toISOString(),
+              });
+              return result.appointment;
+            }}
+            onUpdateAppointment={async (appointmentId, appointment) => {
+              const result = await bizzibuddiAuthRequest(
+                "/api/bizzibuddi/auth/calendar/" + encodeURIComponent(appointmentId),
+                {
+                  method: "PUT",
+                  body: JSON.stringify(appointment),
+                }
+              );
+              setAppointments((current) =>
+                current
+                  .map((item) => (item.id === appointmentId ? result.appointment : item))
+                  .sort((a, b) =>
+                    (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)
+                  )
+              );
+              return result.appointment;
+            }}
+            onDeleteAppointment={async (appointmentId) => {
+              await bizzibuddiAuthRequest(
+                "/api/bizzibuddi/auth/calendar/" + encodeURIComponent(appointmentId),
+                { method: "DELETE" }
+              );
+              setAppointments((current) =>
+                current.filter((item) => item.id !== appointmentId)
+              );
+            }}
+            onPlans={() => selectView("plans")}
+            onBack={() => selectView("dashboard")}
+          />
+        )}
         {view === "people" && (
           <PeoplePanel
             people={people}
@@ -507,7 +564,6 @@ function readLocalList(key, accountId) {
 function applyAccountData(account, setters) {
   if (!account?.id) return;
 
-  setters.setAppointments(readLocalList("appointments", account.id));
   setters.setInvoices(readLocalList("invoices", account.id));
   setters.setAutomationEvents(readLocalList("automationEvents", account.id));
   setters.setProductionRecords(readLocalList("productionRecords", account.id));
@@ -1482,31 +1538,87 @@ function formatInvoiceDate(date) {
   return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-function CalendarPanel({ appointments, people, account, onAddAppointment, onBack, onPlans }) {
+function CalendarPanel({
+  appointments,
+  people,
+  jobs,
+  account,
+  onAddAppointment,
+  onUpdateAppointment,
+  onDeleteAppointment,
+  onBack,
+}) {
   const [showForm, setShowForm] = useState(false);
+  const [editingAppointment, setEditingAppointment] = useState(null);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const personId = String(form.get("personId") || "");
-    const person = people.find((item) => item.id === personId);
+  function startAdd() {
+    setError("");
+    setEditingAppointment(null);
+    setShowForm(true);
+  }
 
-    const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
+  function startEdit(appointment) {
+    setError("");
+    setEditingAppointment(appointment);
+    setShowForm(true);
+  }
 
-    onAddAppointment({
-      id: "appointment-" + Date.now(),
-      title: String(form.get("title") || "").trim(),
-      date: String(form.get("date") || ""),
-      time: String(form.get("time") || ""),
-      personName: person?.name || "",
-      notes: String(form.get("notes") || "").trim(),
-      duration: advancedScheduling ? Number(form.get("duration") || 60) : 60,
-      buffer: advancedScheduling ? Number(form.get("buffer") || 0) : 0,
-      status: advancedScheduling ? String(form.get("status") || "Booked") : "Booked",
-    });
-
-    event.currentTarget.reset();
+  function cancelForm() {
+    setError("");
+    setEditingAppointment(null);
     setShowForm(false);
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+
+    try {
+      const appointment = {
+        title: String(form.get("title") || "").trim(),
+        date: String(form.get("date") || ""),
+        time: String(form.get("time") || ""),
+        personId: String(form.get("personId") || ""),
+        jobId: String(form.get("jobId") || ""),
+        notes: String(form.get("notes") || "").trim(),
+        duration: advancedScheduling ? Number(form.get("duration") || 60) : 60,
+        buffer: advancedScheduling ? Number(form.get("buffer") || 0) : 0,
+        status: advancedScheduling ? String(form.get("status") || "Booked") : "Booked",
+      };
+
+      if (editingAppointment) {
+        await onUpdateAppointment(editingAppointment.id, appointment);
+      } else {
+        await onAddAppointment(appointment);
+      }
+
+      formElement.reset();
+      setEditingAppointment(null);
+      setShowForm(false);
+    } catch (requestError) {
+      setError(requestError.message || "We could not save this appointment.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(appointment) {
+    if (!window.confirm("Delete " + appointment.title + "? This will permanently remove this calendar entry.")) {
+      return;
+    }
+
+    setError("");
+    try {
+      await onDeleteAppointment(appointment.id);
+    } catch (requestError) {
+      setError(requestError.message || "We could not delete this appointment.");
+    }
   }
 
   return <section style={cardStyle(940)}>
@@ -1515,18 +1627,44 @@ function CalendarPanel({ appointments, people, account, onAddAppointment, onBack
       <p style={eyebrowStyle}>CALENDAR</p>
       <h2 style={sectionHeading}>Your calendar.</h2>
       <p style={copyStyle}>Keep appointments, fittings, meetings and important business dates organised.</p>
-      {hasBizzibuddiFeature(account?.plan, "advancedScheduling") && <div style={schedulingSummary}><span><strong>Advanced scheduling</strong><small>Duration, buffer time and appointment status are enabled.</small></span><span style={advancedBadge}>PROFESSIONAL</span></div>}
+      {advancedScheduling && (
+        <div style={schedulingSummary}>
+          <span>
+            <strong>Advanced scheduling</strong>
+            <small>Duration, buffer time and appointment status are enabled.</small>
+          </span>
+          <span style={advancedBadge}>PROFESSIONAL</span>
+        </div>
+      )}
     </div>
 
     {appointments.length > 0 ? (
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
         {appointments.map((appointment) => (
           <article key={appointment.id} style={appointmentCard}>
-            <div>
+            <div style={{ minWidth: 0 }}>
               <strong style={{ display: "block", fontSize: 17 }}>{appointment.title}</strong>
-              <span style={smallText}>{formatAppointmentDate(appointment.date, appointment.time)}{appointment.personName ? " · " + appointment.personName : ""}</span>
-              {appointment.notes && <span style={{ ...smallText, display: "block", marginTop: 5 }}>{appointment.notes}</span>}
-              {hasBizzibuddiFeature(account?.plan, "advancedScheduling") && <span style={{ ...smallText, display: "block", marginTop: 5 }}>{appointment.duration || 60} min{appointment.buffer ? ` · ${appointment.buffer} min buffer` : ""} · {appointment.status || "Booked"}</span>}
+              <span style={smallText}>
+                {formatAppointmentDate(appointment.date, appointment.time)}
+                {appointment.personName ? " · " + appointment.personName : ""}
+                {appointment.jobTitle ? " · " + appointment.jobTitle : ""}
+              </span>
+              {appointment.notes && (
+                <span style={{ ...smallText, display: "block", marginTop: 5 }}>
+                  {appointment.notes}
+                </span>
+              )}
+              {advancedScheduling && (
+                <span style={{ ...smallText, display: "block", marginTop: 5 }}>
+                  {(appointment.duration || 60) + " min"}
+                  {appointment.buffer ? " · " + appointment.buffer + " min buffer" : ""}
+                  {" · " + (appointment.status || "Booked")}
+                </span>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => startEdit(appointment)} style={smallActionButton}>Edit</button>
+              <button type="button" onClick={() => handleDelete(appointment)} style={smallDangerButton}>Delete</button>
             </div>
           </article>
         ))}
@@ -1538,34 +1676,59 @@ function CalendarPanel({ appointments, people, account, onAddAppointment, onBack
       </div>
     )}
 
+    {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
+
     {!showForm ? (
-      <button type="button" onClick={() => setShowForm(true)} style={{ ...primaryButton, maxWidth: 260 }}>+ Add an appointment</button>
+      <button type="button" onClick={startAdd} style={{ ...primaryButton, maxWidth: 260 }}>+ Add an appointment</button>
     ) : (
-      <form onSubmit={handleSubmit} style={personForm}>
-        <strong style={{ fontSize: 18 }}>Add an appointment</strong>
-        <Field name="title" label="Appointment" type="text" placeholder="e.g. Client fitting" />
+      <form key={editingAppointment?.id || "new-appointment"} onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>{editingAppointment ? "Edit appointment" : "Add an appointment"}</strong>
+        <Field name="title" label="Appointment" type="text" placeholder="e.g. Client fitting" defaultValue={editingAppointment?.title || ""} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-          <Field name="date" label="Date" type="date" required />
-          <Field name="time" label="Time" type="time" required />
+          <Field name="date" label="Date" type="date" required defaultValue={editingAppointment?.date || ""} />
+          <Field name="time" label="Time" type="time" required defaultValue={editingAppointment?.time || ""} />
         </div>
-        <label style={fieldStyle}>Person<select name="personId" defaultValue="" style={inputStyle}>
-          <option value="">No person linked</option>
-          {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
-        </select></label>
-        {hasBizzibuddiFeature(account?.plan, "advancedScheduling") && <div style={advancedScheduleFields}>
-          <Field name="duration" label="Duration (minutes)" type="number" placeholder="60" defaultValue="60" />
-          <Field name="buffer" label="Buffer after (minutes)" type="number" placeholder="0" defaultValue="0" />
-          <label style={fieldStyle}>Status<select name="status" defaultValue="Booked" style={inputStyle}>
-            <option>Booked</option>
-            <option>Confirmed</option>
-            <option>Pending</option>
-            <option>Cancelled</option>
-          </select></label>
-        </div>}
-        <Field name="notes" label="Notes" type="text" placeholder="Optional notes" />
+        <label style={fieldStyle}>
+          Person
+          <select name="personId" defaultValue={editingAppointment?.personId || ""} style={inputStyle}>
+            <option value="">No person linked</option>
+            {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+          </select>
+        </label>
+        <label style={fieldStyle}>
+          Job
+          <select name="jobId" defaultValue={editingAppointment?.jobId || ""} style={inputStyle}>
+            <option value="">No job linked</option>
+            {jobs.map((job) => (
+              <option key={job.id} value={job.id}>
+                {job.title}{job.clientName ? " — " + job.clientName : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        {advancedScheduling && (
+          <div style={advancedScheduleFields}>
+            <Field name="duration" label="Duration (minutes)" type="number" placeholder="60" defaultValue={String(editingAppointment?.duration || 60)} />
+            <Field name="buffer" label="Buffer after (minutes)" type="number" placeholder="0" defaultValue={String(editingAppointment?.buffer || 0)} />
+            <label style={fieldStyle}>
+              Status
+              <select name="status" defaultValue={editingAppointment?.status || "Booked"} style={inputStyle}>
+                <option>Booked</option>
+                <option>Confirmed</option>
+                <option>Pending</option>
+                <option>Cancelled</option>
+              </select>
+            </label>
+          </div>
+        )}
+        <Field name="notes" label="Notes" type="text" placeholder="Optional notes" defaultValue={editingAppointment?.notes || ""} />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
-          <button type="submit" style={{ ...primaryButton, width: "auto", marginTop: 0 }}>Save appointment</button>
-          <button type="button" onClick={() => setShowForm(false)} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+          <button type="submit" disabled={saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Saving…" : editingAppointment ? "Save changes" : "Save appointment"}
+          </button>
+          <button type="button" onClick={cancelForm} disabled={saving} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
+            Cancel
+          </button>
         </div>
       </form>
     )}
