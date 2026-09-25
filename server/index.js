@@ -480,7 +480,31 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_invoice_id ON bizzibuddi_payments(invoice_id);
       CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_date ON bizzibuddi_payments(date);
     `,
+  },  {
+    version: 11,
+    name: "bizzibuddi-automation",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_automation_events (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT NOT NULL,
+        detail TEXT NOT NULL DEFAULT '',
+        source_key TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE (user_id, source_key)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_automation_events_user_id
+        ON bizzibuddi_automation_events(user_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_automation_events_created_at
+        ON bizzibuddi_automation_events(created_at);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_automation_events_type
+        ON bizzibuddi_automation_events(type);
+    `,
   },
+
 ];
 
 function assertSupportedNode() {
