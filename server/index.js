@@ -330,17 +330,6 @@ const MIGRATIONS = [
     `,
   },
   {
-    version: 5,
-    name: "bizzibuddi-account-usernames",
-    sql: `
-      ALTER TABLE users ADD COLUMN username TEXT COLLATE NOCASE;
-
-      CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username
-        ON users(username)
-        WHERE username IS NOT NULL AND username <> '';
-    `,
-  },
-  {
     version: 6,
     name: "bizzibuddi-account-sessions",
     sql: `
