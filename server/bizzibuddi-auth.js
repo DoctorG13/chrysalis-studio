@@ -1,5 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import { createHmac, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -19,30 +19,7 @@ const DATA_DIR = resolve(
 const DB_PATH = join(DATA_DIR, "chrysalis.db");
 
 const loginAttempts = new Map();
-const revokedSessions = new Map();
 let database = null;
-let sessionSecret = null;
-
-function getSessionSecret() {
-  if (sessionSecret) return sessionSecret;
-
-  const configured = String(process.env.BIZZIBUDDI_SESSION_SECRET || "").trim();
-
-  if (configured) {
-    if (configured.length < 32) {
-      throw new Error("BIZZIBUDDI_SESSION_SECRET must be at least 32 characters long.");
-    }
-    sessionSecret = configured;
-    return sessionSecret;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Missing required production authentication environment variable: BIZZIBUDDI_SESSION_SECRET");
-  }
-
-  sessionSecret = randomBytes(48).toString("base64url");
-  return sessionSecret;
-}
 
 function getDatabase() {
   if (database) return database;
@@ -85,22 +62,26 @@ function safeEqual(left, right) {
   return timingSafeEqual(a, b);
 }
 
-function sign(value) {
-  return base64Url(
-    createHmac("sha256", getSessionSecret())
-      .update(value)
-      .digest()
-  );
+function hashSessionToken(token) {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 function createSession(userId) {
-  const payload = JSON.stringify({
-    userId,
-    expiresAt: Date.now() + SESSION_MAX_AGE_SECONDS * 1000,
-  });
-  const encoded = base64Url(payload);
+  const token = randomBytes(32).toString("base64url");
+  const now = new Date();
+  const expiresAt = new Date(
+    now.getTime() + SESSION_MAX_AGE_SECONDS * 1000
+  ).toISOString();
 
-  return `${encoded}.${sign(encoded)}`;
+  getDatabase()
+    .prepare(
+      `INSERT INTO bizzibuddi_sessions (
+        token_hash, user_id, expires_at, created_at
+      ) VALUES (?, ?, ?, ?)`
+    )
+    .run(hashSessionToken(token), userId, expiresAt, now.toISOString());
+
+  return token;
 }
 
 function readCookie(request, name) {
@@ -115,38 +96,28 @@ function readCookie(request, name) {
   return "";
 }
 
-function parseSession(token) {
-  if (!token || revokedSessions.has(token)) return null;
-
-  const parts = token.split(".");
-  if (parts.length !== 2) return null;
-
-  const [encoded, providedSignature] = parts;
-  const expectedSignature = sign(encoded);
-
-  if (!safeEqual(providedSignature, expectedSignature)) return null;
-
-  try {
-    const payload = JSON.parse(fromBase64Url(encoded).toString("utf8"));
-
-    if (!payload?.userId || !Number.isFinite(payload.expiresAt)) {
-      return null;
-    }
-
-    if (payload.expiresAt <= Date.now()) return null;
-
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
 function getSessionUser(request) {
-  const session = parseSession(readCookie(request, COOKIE_NAME));
+  const token = readCookie(request, COOKIE_NAME);
+  if (!token) return null;
+
+  const db = getDatabase();
+  const tokenHash = hashSessionToken(token);
+  const session = db
+    .prepare(
+      `SELECT user_id, expires_at
+       FROM bizzibuddi_sessions
+       WHERE token_hash = ?`
+    )
+    .get(tokenHash);
 
   if (!session) return null;
 
-  return getUserById(session.userId);
+  if (String(session.expires_at) <= new Date().toISOString()) {
+    db.prepare("DELETE FROM bizzibuddi_sessions WHERE token_hash = ?").run(tokenHash);
+    return null;
+  }
+
+  return getUserById(session.user_id);
 }
 
 function clientAddress(request) {
@@ -180,11 +151,9 @@ export function clearExpiredBizziBuddiAuthState() {
     if (entry.startedAt < cutoff) loginAttempts.delete(key);
   }
 
-  const now = Date.now();
-
-  for (const [token, expiresAt] of revokedSessions) {
-    if (expiresAt <= now) revokedSessions.delete(token);
-  }
+  getDatabase()
+    .prepare("DELETE FROM bizzibuddi_sessions WHERE expires_at <= ?")
+    .run(new Date().toISOString());
 }
 
 function hashPassword(password) {
@@ -451,19 +420,9 @@ function revokeSession(request) {
   const token = readCookie(request, COOKIE_NAME);
   if (!token) return;
 
-  const parts = token.split(".");
-  if (parts.length !== 2) return;
-
-  try {
-    const payload = JSON.parse(fromBase64Url(parts[0]).toString("utf8"));
-    const expiresAt = Number(payload?.expiresAt);
-
-    if (Number.isFinite(expiresAt) && expiresAt > Date.now()) {
-      revokedSessions.set(token, expiresAt);
-    }
-  } catch {
-    // Ignore malformed session tokens during logout.
-  }
+  getDatabase()
+    .prepare("DELETE FROM bizzibuddi_sessions WHERE token_hash = ?")
+    .run(hashSessionToken(token));
 }
 
 function isSameOrigin(request) {
