@@ -1213,6 +1213,176 @@ function deletePerson(userId, personId) {
   return Boolean(result.changes);
 }
 
+
+const BIZZIBUDDI_AUTOMATION_TYPES = [
+  "appointment-created",
+  "invoice-overdue",
+  "check-complete",
+];
+
+function validateAutomationEventPayload(payload) {
+  const type = String(payload?.type || "").trim();
+  const title = String(payload?.title || "").trim();
+  const detail = String(payload?.detail || "").trim();
+  const sourceKey = String(payload?.sourceKey || "").trim();
+
+  if (!BIZZIBUDDI_AUTOMATION_TYPES.includes(type)) {
+    throw new Error("Please provide a valid automation event type.");
+  }
+
+  if (!title || title.length > 160) {
+    throw new Error("Automation event title is required and must be 160 characters or fewer.");
+  }
+
+  if (detail.length > 1000) {
+    throw new Error("Automation event detail must be 1000 characters or fewer.");
+  }
+
+  if (sourceKey.length > 240) {
+    throw new Error("Automation event source key must be 240 characters or fewer.");
+  }
+
+  return { type, title, detail, sourceKey };
+}
+
+function toAutomationEvent(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    detail: row.detail,
+    sourceKey: row.source_key || "",
+    createdAt: row.created_at,
+  };
+}
+
+function getAutomationEvents(userId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, type, title, detail, source_key, created_at
+       FROM bizzibuddi_automation_events
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT 100`
+    )
+    .all(userId);
+}
+
+function createAutomationEvent(userId, payload) {
+  const values = validateAutomationEventPayload(payload);
+  const now = new Date().toISOString();
+  const event = {
+    id: randomUUID(),
+    type: values.type,
+    title: values.title,
+    detail: values.detail,
+    source_key: values.sourceKey,
+    created_at: now,
+  };
+
+  const database = getDatabase();
+
+  if (values.sourceKey) {
+    const existing = database
+      .prepare(
+        `SELECT id, type, title, detail, source_key, created_at
+         FROM bizzibuddi_automation_events
+         WHERE user_id = ? AND source_key = ?`
+      )
+      .get(userId, values.sourceKey);
+
+    if (existing) return toAutomationEvent(existing);
+  }
+
+  database
+    .prepare(
+      `INSERT INTO bizzibuddi_automation_events (
+        id, user_id, type, title, detail, source_key, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      event.id,
+      userId,
+      event.type,
+      event.title,
+      event.detail,
+      event.source_key,
+      event.created_at
+    );
+
+  return toAutomationEvent({
+    ...event,
+  });
+}
+
+function runAutomationChecks(userId) {
+  const database = getDatabase();
+  const overdueInvoices = database
+    .prepare(
+      `SELECT
+         invoices.id,
+         invoices.number,
+         invoices.due_date,
+         people.name AS person_name,
+         invoices.amount,
+         COALESCE(
+           (SELECT SUM(payments.amount)
+            FROM bizzibuddi_payments AS payments
+            WHERE payments.invoice_id = invoices.id
+              AND payments.user_id = invoices.user_id),
+           0
+         ) AS amount_paid
+       FROM bizzibuddi_invoices AS invoices
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = invoices.person_id
+        AND people.user_id = invoices.user_id
+       WHERE invoices.user_id = ?
+         AND invoices.due_date < ?
+         AND invoices.status <> 'Paid'`
+    )
+    .all(userId, todayDate());
+
+  const created = [];
+
+  for (const invoice of overdueInvoices) {
+    const balance = Math.max(
+      0,
+      Number(invoice.amount || 0) - Number(invoice.amount_paid || 0)
+    );
+
+    if (balance <= 0) continue;
+
+    const event = createAutomationEvent(userId, {
+      type: "invoice-overdue",
+      title: "Overdue invoice flagged",
+      detail: `${invoice.number} for ${invoice.person_name || "a client"} is overdue.`,
+      sourceKey: `invoice-overdue:${invoice.id}:${invoice.due_date}`,
+    });
+
+    created.push(event);
+  }
+
+  return {
+    checkedAt: new Date().toISOString(),
+    overdueCount: overdueInvoices.length,
+    created,
+    events: getAutomationEvents(userId).map(toAutomationEvent),
+  };
+}
+
+function deleteAutomationEvents(userId) {
+  const result = getDatabase()
+    .prepare(
+      `DELETE FROM bizzibuddi_automation_events
+       WHERE user_id = ?`
+    )
+    .run(userId);
+
+  return Number(result.changes || 0);
+}
+
 export async function handleBizziBuddiAuthRequest(request, response) {
   const url = new URL(
     request.url || "/",
@@ -1316,6 +1486,69 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         { ok: true, authenticated: true, account },
         { "Set-Cookie": createSessionCookie(user.id, request) }
       );
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/automation" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        events: getAutomationEvents(user.id).map(toAutomationEvent),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/automation/events" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      const event = createAutomationEvent(user.id, payload);
+
+      sendJson(response, 201, {
+        ok: true,
+        authenticated: true,
+        event,
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/automation/checks" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        ...runAutomationChecks(user.id),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/automation/reset" && request.method === "DELETE") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        deleted: deleteAutomationEvents(user.id),
+      });
       return true;
     }
 
