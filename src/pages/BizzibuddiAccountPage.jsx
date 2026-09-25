@@ -61,12 +61,37 @@ export default function BizzibuddiAccountPage() {
   }
 
   function selectView(nextView) {
+    const protectedViews = new Set([
+      "onboarding",
+      "dashboard",
+      "people",
+      "jobs",
+      "calendar",
+      "finance",
+      "automation",
+      "production",
+      "reports",
+      "buddi",
+    ]);
+
+    if (protectedViews.has(nextView) && !account) {
+      setMessage("Please log in or create your BizziBuddi account first.");
+      setView("login");
+      return;
+    }
+
     setView(nextView);
     setMessage("");
     if (nextView !== "buddi") setBuddiPrompt("");
   }
 
   function openBuddi(prompt = "") {
+    if (!account) {
+      setMessage("Please log in or create your BizziBuddi account first.");
+      setView("login");
+      return;
+    }
+
     setBuddiPrompt(String(prompt || "").trim());
     setView("buddi");
     setMessage("");
@@ -155,6 +180,12 @@ export default function BizzibuddiAccountPage() {
   }
 
   function selectPlan(planName) {
+    if (!account) {
+      setMessage("Please create or log in to your BizziBuddi account before previewing membership features.");
+      setView("login");
+      return;
+    }
+
     const selectedPlan = getBizzibuddiPlan(planName);
     const nextAccount = { ...account, plan: selectedPlan.name };
     setAccount(nextAccount);
