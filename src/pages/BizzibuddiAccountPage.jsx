@@ -59,11 +59,12 @@ export default function BizzibuddiAccountPage() {
       setProductionRecords,
     });
 
-    const [peopleResult, jobsResult, calendarResult, invoicesResult] = await Promise.allSettled([
+    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult] = await Promise.allSettled([
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation"),
     ]);
 
     setPeople(
@@ -84,6 +85,11 @@ export default function BizzibuddiAccountPage() {
     setInvoices(
       invoicesResult.status === "fulfilled" && Array.isArray(invoicesResult.value.invoices)
         ? invoicesResult.value.invoices
+        : []
+    );
+    setAutomationEvents(
+      automationResult.status === "fulfilled" && Array.isArray(automationResult.value.events)
+        ? automationResult.value.events
         : []
     );
   }
@@ -221,44 +227,44 @@ export default function BizzibuddiAccountPage() {
     setView("dashboard");
   }
 
-  function addAutomationEvent(event) {
-    if (!hasBizzibuddiFeature(account?.plan, "automation")) return;
+  async function addAutomationEvent(event) {
+    if (!hasBizzibuddiFeature(account?.plan, "automation")) return null;
+
+    const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation/events", {
+      method: "POST",
+      body: JSON.stringify(event),
+    });
+
     setAutomationEvents((current) => {
-      const nextEvents = [event, ...current].slice(0, 50);
-      localStorage.setItem(storageKey("automationEvents", account?.id), JSON.stringify(nextEvents));
+      const nextEvents = [result.event, ...current.filter((item) => item.id !== result.event.id)].slice(0, 100);
       return nextEvents;
     });
+
+    return result.event;
   }
 
-  function runAutomationChecks() {
+  async function runAutomationChecks() {
     if (!hasBizzibuddiFeature(account?.plan, "automation")) return;
-    const today = new Date().toISOString().slice(0, 10);
-    const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < today);
-    if (overdueInvoices.length === 0) {
-      addAutomationEvent({
-        id: `automation-${Date.now()}`,
-        type: "check-complete",
-        title: "Automation check complete",
-        detail: "No overdue invoices were found.",
-        createdAt: new Date().toISOString(),
+
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation/checks", {
+        method: "POST",
       });
-      return;
+      setAutomationEvents(Array.isArray(result.events) ? result.events : []);
+      setMessage(
+        result.created?.length
+          ? `${result.created.length} automation item${result.created.length === 1 ? "" : "s"} flagged.`
+          : "Automation check complete. Nothing new needs attention."
+      );
+    } catch (error) {
+      setMessage(error.message || "We could not run the automation checks.");
     }
-    overdueInvoices.forEach((invoice, index) => {
-      addAutomationEvent({
-        id: `automation-${Date.now()}-${index}`,
-        type: "invoice-overdue",
-        title: "Overdue invoice flagged",
-        detail: `${invoice.number} for ${invoice.clientName || "a client"} is overdue.`,
-        createdAt: new Date().toISOString(),
-      });
-    });
   }
 
   function resetDemo() {
     if (!account?.id) return;
 
-    ["automationEvents", "productionRecords"].forEach((key) => {
+    ["productionRecords"].forEach((key) => {
       localStorage.removeItem(storageKey(key, account.id));
     });
 
@@ -379,13 +385,16 @@ export default function BizzibuddiAccountPage() {
                   (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)
                 )
               );
-              addAutomationEvent({
-                id: "automation-" + Date.now(),
-                type: "appointment-created",
-                title: "Appointment reminder prepared",
-                detail: "Reminder prepared for " + (result.appointment.title || "appointment") + " on " + result.appointment.date + ".",
-                createdAt: new Date().toISOString(),
-              });
+              try {
+                await addAutomationEvent({
+                  type: "appointment-created",
+                  title: "Appointment reminder prepared",
+                  detail: "Reminder prepared for " + (result.appointment.title || "appointment") + " on " + result.appointment.date + ".",
+                  sourceKey: "appointment:" + result.appointment.id,
+                });
+              } catch {
+                // The appointment itself is already saved; automation can be retried from the Automation screen.
+              }
               return result.appointment;
             }}
             onUpdateAppointment={async (appointmentId, appointment) => {
@@ -1102,7 +1111,7 @@ function DashboardPanel({
       </div>
 
       <MembershipAccessPanel planName={account?.plan} />
-      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>Your BizziBuddi account and login are connected to the server. People, jobs, calendar, finance, production and reports still use browser-local demo data until the next data-storage stage.</p></div>
+      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>Your BizziBuddi account and login are connected to the server. People, jobs, calendar, finance and automation are now account-backed; production and reports remain browser-local until their migration stages.</p></div>
       <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 18 }}>
         <button type="button" onClick={onLogout} style={textButton}>Log out</button>
         <button type="button" onClick={onReset} style={textButton}>Reset local business demo</button>
@@ -1191,7 +1200,7 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
 
     <div style={businessNote}>
       <strong>Local preview</strong>
-      <p style={copyStyle}>These automations only create local browser events. They do not send emails, messages or external notifications.</p>
+      <p style={copyStyle}>These automations are stored with your BizziBuddi account. They do not send emails, messages or external notifications yet.</p>
     </div>
   </section>;
 }
