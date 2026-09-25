@@ -399,6 +399,45 @@ const MIGRATIONS = [
         ON bizzibuddi_jobs(created_at);
     `,
   },
+  {
+    version: 9,
+    name: "bizzibuddi-calendar",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_calendar (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        person_id TEXT,
+        job_id TEXT,
+        title TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        duration INTEGER NOT NULL DEFAULT 60,
+        buffer INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'Booked',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (person_id) REFERENCES bizzibuddi_people(id) ON DELETE SET NULL,
+        FOREIGN KEY (job_id) REFERENCES bizzibuddi_jobs(id) ON DELETE SET NULL
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_calendar_user_id
+        ON bizzibuddi_calendar(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_calendar_person_id
+        ON bizzibuddi_calendar(person_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_calendar_job_id
+        ON bizzibuddi_calendar(job_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_calendar_date_time
+        ON bizzibuddi_calendar(date, time);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_calendar_status
+        ON bizzibuddi_calendar(status);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
