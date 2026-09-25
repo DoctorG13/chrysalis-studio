@@ -11,6 +11,7 @@
 - Added local BizziBuddi authentication service and Vite proxy support.
 - Connected the production gateway to the same BizziBuddi authentication service logic so local and public builds use the same account behaviour.
 - Scoped the remaining browser-local BizziBuddi demo business records to the authenticated account ID to prevent users in the same browser from sharing those preview records.
+- Protected the account dashboard and business modules from unauthenticated access in the account UI.
 
 ### Changed
 
