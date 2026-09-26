@@ -43,7 +43,7 @@ If not, it probably belongs in a later release.
 ## 🚧 Dashboard
 
 - [x] Smart priorities
-- [ ] Recent activity
+- [x] Recent activity
 - [ ] Business health indicators
 
 ---
