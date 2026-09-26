@@ -1,3 +1,13 @@
+## BizziBuddi Business Insights
+
+### Added
+
+- Added a server-backed Business Insights panel to Reports.
+- Added descriptive three-month trend comparisons for invoicing, payments, new client activity and job activity.
+- Added current workload and outstanding-balance signals from persisted account data.
+- Added Business Insights to the existing CSV export.
+- Kept insights descriptive rather than prescriptive; trend comparisons use the most recent three months against the preceding three months.
+
 ## BizziBuddi Monthly Statistics
 
 ### Added
