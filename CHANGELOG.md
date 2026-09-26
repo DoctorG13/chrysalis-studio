@@ -1,3 +1,18 @@
+## BizziBuddi Client Timeline
+
+### Added
+
+- Added a Timeline action to each person in the People workspace.
+- Added a unified client activity view covering person creation, related jobs, appointments, invoices and production updates.
+- Timeline entries are derived from the existing account-backed business data, so no second client-history store is required.
+- Added chronological activity formatting with direct context for each related business record.
+
+### Workflow
+
+`Person → Jobs → Appointments → Invoices → Production → Client timeline`
+
+---
+
 ## BizziBuddi Today View
 
 ### Added
