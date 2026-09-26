@@ -1,3 +1,18 @@
+## BizziBuddi Production Due Date Highlighting
+
+### Added
+
+- Job cards now visually distinguish production ready-by dates that are overdue or due within the next two days.
+- Due-today and due-tomorrow labels provide clearer operational timing.
+- Normal future ready-by dates remain visible without urgent styling.
+- Completed production keeps its ready-by date informational rather than urgent.
+
+### Workflow
+
+`Job → Production stage → Tasks → Readiness → Due-date signal`
+
+---
+
 ## BizziBuddi Production Completion Intelligence
 
 ### Added
