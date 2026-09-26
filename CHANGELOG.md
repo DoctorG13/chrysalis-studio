@@ -1,3 +1,18 @@
+## BizziBuddi Outstanding Payment Warnings
+
+### Added
+
+- Finance now highlights overdue invoices directly in the invoice list.
+- Invoices due today or within the next seven days receive a clear due-soon signal.
+- Finance summary now shows overdue and due-within-seven-days invoice counts.
+- Paid invoices remain visually clear without payment warnings.
+
+### Workflow
+
+`Invoice → Balance → Due date → Payment warning → Mark paid`
+
+---
+
 ## BizziBuddi Production Due Date Highlighting
 
 ### Added
