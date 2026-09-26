@@ -994,6 +994,11 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
                   <div style={{ ...jobProgressFill, width: (job.productionProgress || 0) + "%" }} />
                 </div>
               </div>
+              {job.productionTaskCount > 0 && (
+                <span style={{ ...smallText, display: "block", marginTop: 5 }}>
+                  Tasks: {job.productionCompletedTaskCount || 0}/{job.productionTaskCount}
+                </span>
+              )}
               {job.productionDueDate && <span style={{ ...smallText, display: "block", marginTop: 5 }}>Ready by {formatProductionDate(job.productionDueDate)}</span>}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -1307,10 +1312,27 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
   const available = hasBizzibuddiFeature(account?.plan, "production");
   const stages = ["Not started", "In production", "Quality check", "Ready", "Complete"];
   const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
+  const [taskDrafts, setTaskDrafts] = useState([]);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const selectedJob = jobs.find((job) => job.id === selectedJobId);
   const existing = records.find((record) => record.jobId === selectedJobId);
+
+  useEffect(() => {
+    if (!selectedJobId && jobs[0]?.id) setSelectedJobId(jobs[0].id);
+  }, [jobs, selectedJobId]);
+
+  useEffect(() => {
+    setTaskDrafts(
+      (existing?.tasks || []).map((task, index) => ({
+        id: String(task.id || "task-" + index + "-" + Date.now()),
+        title: String(task.title || "").trim(),
+        complete: Boolean(task.complete),
+      }))
+    );
+    setNewTaskTitle("");
+  }, [selectedJobId, existing?.id]);
 
   if (!available) {
     return (
@@ -1340,14 +1362,13 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
 
     try {
       const form = new FormData(event.currentTarget);
-      const taskText = String(form.get("tasks") || "").trim();
-      const tasks = taskText
-        ? taskText.split("\n").map((task) => task.trim()).filter(Boolean).map((title, index) => ({
-            id: "task-" + Date.now() + "-" + index,
-            title,
-            complete: false,
-          }))
-        : [];
+      const tasks = taskDrafts
+        .map((task) => ({
+          id: String(task.id),
+          title: String(task.title || "").trim(),
+          complete: Boolean(task.complete),
+        }))
+        .filter((task) => task.title);
 
       await onSave({
         id: existing?.id || "production-" + Date.now(),
@@ -1365,6 +1386,33 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
       setSaving(false);
     }
   }
+
+  function addTask(event) {
+    event.preventDefault();
+    const title = newTaskTitle.trim();
+    if (!title || taskDrafts.length >= 100) return;
+
+    setTaskDrafts((current) => [
+      ...current,
+      { id: "task-" + Date.now() + "-" + current.length, title, complete: false },
+    ]);
+    setNewTaskTitle("");
+  }
+
+  function toggleTask(taskId) {
+    setTaskDrafts((current) =>
+      current.map((task) =>
+        task.id === taskId ? { ...task, complete: !task.complete } : task
+      )
+    );
+  }
+
+  function removeTask(taskId) {
+    setTaskDrafts((current) => current.filter((task) => task.id !== taskId));
+  }
+
+  const completedTasks = taskDrafts.filter((task) => task.complete).length;
+  const taskPercent = taskDrafts.length ? Math.round((completedTasks / taskDrafts.length) * 100) : 0;
 
   return (
     <section style={cardStyle(940)}>
@@ -1406,6 +1454,59 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
             })}
           </div>
 
+          <div style={productionTaskPanel}>
+            <div style={productionTaskHeader}>
+              <div>
+                <small style={smallText}>TASK PROGRESS</small>
+                <strong style={{ display: "block", marginTop: 5, fontSize: 21 }}>
+                  {completedTasks}/{taskDrafts.length} complete
+                </strong>
+              </div>
+              <span style={productionTaskPercent}>{taskPercent}%</span>
+            </div>
+
+            <div style={{ ...jobProgressTrack, marginTop: 12 }}>
+              <div style={{ ...jobProgressFill, width: taskPercent + "%" }} />
+            </div>
+
+            {taskDrafts.length > 0 ? (
+              <div style={productionTaskList}>
+                {taskDrafts.map((task) => (
+                  <div key={task.id} style={productionTaskRow(task.complete)}>
+                    <label style={productionTaskLabel}>
+                      <input
+                        type="checkbox"
+                        checked={task.complete}
+                        onChange={() => toggleTask(task.id)}
+                      />
+                      <span style={{ textDecoration: task.complete ? "line-through" : "none", opacity: task.complete ? 0.65 : 1 }}>
+                        {task.title}
+                      </span>
+                    </label>
+                    <button type="button" onClick={() => removeTask(task.id)} style={smallDangerButton} disabled={saving}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ ...smallText, margin: "14px 0 0" }}>No production tasks yet. Add the work that needs to be completed.</p>
+            )}
+
+            <form onSubmit={addTask} style={productionTaskAdd}>
+              <input
+                value={newTaskTitle}
+                onChange={(event) => setNewTaskTitle(event.target.value)}
+                placeholder="Add a production task"
+                maxLength={200}
+                style={inputStyle}
+              />
+              <button type="submit" disabled={!newTaskTitle.trim() || taskDrafts.length >= 100} style={{ ...secondaryButton, width: "auto", marginTop: 0, opacity: !newTaskTitle.trim() || taskDrafts.length >= 100 ? 0.5 : 1 }}>
+                + Add task
+              </button>
+            </form>
+          </div>
+
           <form onSubmit={handleSave} style={personForm}>
             <strong style={{ fontSize: 18 }}>Update production</strong>
 
@@ -1419,18 +1520,16 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
             <Field name="dueDate" label="Ready by" type="date" defaultValue={existing?.dueDate || ""} />
 
             <label style={fieldStyle}>
-              Production tasks
-              <small style={{ display: "block", color: MUTED, marginTop: 5, fontWeight: 400 }}>One task per line.</small>
+              Production notes
               <textarea
-                name="tasks"
-                defaultValue={(existing?.tasks || []).map((task) => task.title).join("\n")}
-                placeholder={"Cut fabric\nSew panels\nFinal fitting"}
-                rows="5"
+                name="notes"
+                defaultValue={existing?.notes || ""}
+                placeholder="Optional production notes"
+                rows="4"
+                maxLength={2000}
                 style={{ ...inputStyle, padding: 15, resize: "vertical" }}
               />
             </label>
-
-            <Field name="notes" label="Production notes" type="text" placeholder="Optional production notes" defaultValue={existing?.notes || ""} />
 
             <button type="submit" disabled={saving} style={{ ...primaryButton, maxWidth: 260, opacity: saving ? 0.65 : 1 }}>
               {saving ? "Saving…" : "Save production progress"}
@@ -1444,23 +1543,28 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
         <div style={{ marginTop: 28 }}>
           <small style={smallText}>TRACKED JOBS</small>
           <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            {records.map((record) => (
-              <article key={record.id} style={productionRecordCard}>
-                <div>
-                  <strong style={{ display: "block", fontSize: 16 }}>{record.jobTitle}</strong>
-                  <span style={smallText}>
-                    {record.stage}
-                    {record.dueDate ? " · Ready " + formatProductionDate(record.dueDate) : ""}
-                  </span>
-                  {record.tasks?.length > 0 && (
-                    <span style={{ ...smallText, display: "block", marginTop: 5 }}>
-                      {record.tasks.length} production task{record.tasks.length === 1 ? "" : "s"}
+            {records.map((record) => {
+              const completed = (record.tasks || []).filter((task) => task.complete).length;
+              const total = (record.tasks || []).length;
+
+              return (
+                <article key={record.id} style={productionRecordCard}>
+                  <div>
+                    <strong style={{ display: "block", fontSize: 16 }}>{record.jobTitle}</strong>
+                    <span style={smallText}>
+                      {record.stage}
+                      {record.dueDate ? " · Ready " + formatProductionDate(record.dueDate) : ""}
                     </span>
-                  )}
-                </div>
-                <span style={productionBadge}>{record.stage.toUpperCase()}</span>
-              </article>
-            ))}
+                    {total > 0 && (
+                      <span style={{ ...smallText, display: "block", marginTop: 5 }}>
+                        Tasks {completed}/{total} complete
+                      </span>
+                    )}
+                  </div>
+                  <span style={productionBadge}>{record.stage.toUpperCase()}</span>
+                </article>
+              );
+            })}
           </div>
         </div>
       )}
@@ -3215,6 +3319,13 @@ const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAli
 const actionIcon = { fontSize: 22, lineHeight: 1 };
 const productionProgress = { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginTop: 24, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const productionStage = (current, reached) => ({ display: "grid", justifyItems: "center", gap: 7, textAlign: "center", color: current ? TEXT : reached ? CYAN : MUTED, fontWeight: current ? 800 : 600, fontSize: 12 });
+const productionTaskPanel = { marginTop: 18, padding: 18, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const productionTaskHeader = { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16 };
+const productionTaskPercent = { color: CYAN, fontSize: 22, fontWeight: 800 };
+const productionTaskList = { display: "grid", gap: 8, marginTop: 14 };
+const productionTaskRow = (complete) => ({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 12px", borderRadius: 9, border: "1px solid " + (complete ? "rgba(0,180,219,.28)" : BORDER), background: complete ? "rgba(0,180,219,.07)" : "rgba(255,255,255,.025)" });
+const productionTaskLabel = { display: "flex", alignItems: "center", gap: 10, minWidth: 0, color: TEXT, fontSize: 14, lineHeight: 1.4, cursor: "pointer" };
+const productionTaskAdd = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, marginTop: 12 };
 const productionRecordCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
 const productionBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", whiteSpace: "nowrap" };
 const reportSummaryGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginTop: 28 };
