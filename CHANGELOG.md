@@ -1,3 +1,19 @@
+## BizziBuddi Measurement History
+
+### Added
+
+- Added persistent measurement snapshots for each BizziBuddi person.
+- Added common dressmaking measurement fields including bust, waist, hip, shoulder, sleeve, neck, back waist, inseam and height.
+- Added optional snapshot labels and fitting notes.
+- Added chronological measurement history directly inside the People workspace.
+- Measurements are stored per authenticated account and survive refresh and logout/login.
+
+### Workflow
+
+`Person → Measurement snapshot → History → Compare changes over time`
+
+---
+
 ## BizziBuddi Client Timeline
 
 ### Added
