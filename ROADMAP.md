@@ -54,7 +54,7 @@ If not, it probably belongs in a later release.
 - [x] Notifications
 - [x] Better appointment management
 - [x] Garment scheduling
-- [ ] Keyboard shortcuts
+- [x] Keyboard shortcuts
 
 ---
 
