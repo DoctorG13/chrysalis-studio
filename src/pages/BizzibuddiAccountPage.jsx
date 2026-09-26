@@ -1318,7 +1318,6 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           </button>
         )}
       </div>
-    )}
       );
     })()}
 
