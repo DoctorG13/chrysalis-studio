@@ -1491,6 +1491,58 @@ function deleteAutomationEvents(userId) {
   return Number(result.changes || 0);
 }
 
+function getBizziBuddiReports(userId) {
+  const people = getPeople(userId).map(toPerson);
+  const jobs = getJobs(userId).map(toJob);
+  const appointments = getCalendar(userId).map(toCalendarEntry);
+  const invoices = getInvoices(userId).map(toInvoice);
+  const productionRecords = getProductionRecords(userId).map(toProductionRecord);
+  const totalInvoiced = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
+  const totalPaid = invoices.reduce((sum, invoice) => sum + (Number(invoice.amountPaid) || 0), 0);
+  const completedJobs = jobs.filter((job) => job.status === "Complete").length;
+  const openJobs = jobs.filter((job) => job.status !== "Complete").length;
+  const today = todayDate();
+  const now = new Date();
+  const currentTime = now.toTimeString().slice(0, 5);
+  const upcomingAppointments = appointments.filter((appointment) => {
+    if (!appointment.date) return false;
+    if (appointment.date > today) return true;
+    if (appointment.date < today) return false;
+    return String(appointment.time || "23:59") >= currentTime;
+  }).length;
+  const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < today).length;
+  const jobStatusGroups = [
+    ["New", jobs.filter((job) => job.status === "New").length],
+    ["In progress", jobs.filter((job) => job.status === "In progress").length],
+    ["Waiting", jobs.filter((job) => job.status === "Waiting").length],
+    ["Complete", completedJobs],
+  ];
+  const productionComplete = productionRecords.filter((record) => record.stage === "Complete").length;
+  const productionActive = productionRecords.filter((record) => record.stage && record.stage !== "Complete").length;
+  const productionStageGroups = BIZZIBUDDI_PRODUCTION_STAGES.map((stage) => [
+    stage,
+    productionRecords.filter((record) => record.stage === stage).length,
+  ]);
+  return {
+    generatedAt: now.toISOString(),
+    people: { total: people.length },
+    jobs: { total: jobs.length, open: openJobs, completed: completedJobs, statusGroups: jobStatusGroups },
+    calendar: {
+      total: appointments.length,
+      upcoming: upcomingAppointments,
+      bookedConfirmed: appointments.filter((item) => !item.status || item.status === "Booked" || item.status === "Confirmed").length,
+      cancelled: appointments.filter((item) => item.status === "Cancelled").length,
+    },
+    finance: {
+      totalInvoiced: Math.round(totalInvoiced * 100) / 100,
+      totalPaid: Math.round(totalPaid * 100) / 100,
+      outstanding: Math.max(0, Math.round((totalInvoiced - totalPaid) * 100) / 100),
+      overdueInvoices,
+    },
+    production: { total: productionRecords.length, active: productionActive, complete: productionComplete, stageGroups: productionStageGroups },
+  };
+}
+
 export async function handleBizziBuddiAuthRequest(request, response) {
   const url = new URL(
     request.url || "/",
@@ -1597,6 +1649,16 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       return true;
     }
 
+
+    if (url.pathname === "/api/bizzibuddi/auth/reports" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      sendJson(response, 200, { ok: true, authenticated: true, reports: getBizziBuddiReports(user.id) });
+      return true;
+    }
 
     if (url.pathname === "/api/bizzibuddi/auth/production" && request.method === "GET") {
       const user = getSessionUser(request);
