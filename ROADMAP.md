@@ -51,7 +51,7 @@ If not, it probably belongs in a later release.
 # Release 0.6 — Studio
 
 - [x] Calendar improvements
-- [ ] Notifications
+- [x] Notifications
 - [ ] Better appointment management
 - [ ] Garment scheduling
 - [ ] Keyboard shortcuts
