@@ -1,3 +1,13 @@
+## BizziBuddi Membership & Reporting Cleanup
+
+### Changed
+
+- Removed the obsolete statement that Reports were browser-local.
+- Development preview messaging now reflects the current account-backed People, Jobs, Calendar, Finance, Automation, Production and Reports modules.
+- Membership persistence and server-backed reporting are now represented consistently in the account UI.
+
+---
+
 ## BizziBuddi Membership Persistence
 
 ### Changed
