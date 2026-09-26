@@ -1300,6 +1300,123 @@ function deletePerson(userId, personId) {
   return Boolean(result.changes);
 }
 
+function getMeasurements(userId, personId) {
+  const person = getDatabase()
+    .prepare(
+      `SELECT id FROM bizzibuddi_people
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(personId, userId);
+
+  if (!person) return null;
+
+  return getDatabase()
+    .prepare(
+      `SELECT id, person_id, label, data_json, created_at, updated_at
+       FROM bizzibuddi_measurements
+       WHERE person_id = ? AND user_id = ?
+       ORDER BY created_at DESC`
+    )
+    .all(personId, userId)
+    .map(toMeasurement);
+}
+
+function toMeasurement(row) {
+  if (!row) return null;
+  let data = {};
+  try {
+    const parsed = JSON.parse(String(row.data_json || "{}"));
+    data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    data = {};
+  }
+
+  return {
+    id: row.id,
+    personId: row.person_id,
+    label: row.label || "Measurement set",
+    data,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function validateMeasurementPayload(payload) {
+  const label = String(payload?.label || "Measurement set").trim();
+  const allowedFields = [
+    "bust",
+    "waist",
+    "hip",
+    "shoulder",
+    "sleeve",
+    "neck",
+    "backWaist",
+    "inseam",
+    "height",
+    "notes",
+  ];
+  const data = {};
+
+  if (!label || label.length > 120) {
+    throw new Error("Measurement label is required and must be 120 characters or fewer.");
+  }
+
+  for (const field of allowedFields) {
+    const value = String(payload?.data?.[field] ?? "").trim();
+    if (value.length > 120) {
+      throw new Error("Measurement values must be 120 characters or fewer.");
+    }
+    if (value) data[field] = value;
+  }
+
+  if (!Object.keys(data).length) {
+    throw new Error("Please enter at least one measurement.");
+  }
+
+  return { label, data };
+}
+
+function createMeasurement(userId, personId, payload) {
+  const person = getDatabase()
+    .prepare(
+      `SELECT id FROM bizzibuddi_people
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(personId, userId);
+
+  if (!person) return null;
+
+  const { label, data } = validateMeasurementPayload(payload);
+  const now = new Date().toISOString();
+  const measurement = {
+    id: randomUUID(),
+    user_id: userId,
+    person_id: personId,
+    label,
+    data_json: JSON.stringify(data),
+    created_at: now,
+    updated_at: now,
+  };
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO bizzibuddi_measurements (
+        id, user_id, person_id, label, data_json, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      measurement.id,
+      measurement.user_id,
+      measurement.person_id,
+      measurement.label,
+      measurement.data_json,
+      measurement.created_at,
+      measurement.updated_at
+    );
+
+  return toMeasurement(measurement);
+}
+
 
 
 const BIZZIBUDDI_PRODUCTION_STAGES = [
@@ -2355,6 +2472,38 @@ export async function handleBizziBuddiAuthRequest(request, response) {
           deleted: true,
           personId,
         });
+        return true;
+      }
+    }
+
+    if (url.pathname.match(/^\/api\/bizzibuddi\/auth\/people\/[^/]+\/measurements$/)) {
+      const match = url.pathname.match(/^\/api\/bizzibuddi\/auth\/people\/([^/]+)\/measurements$/);
+      const personId = decodeURIComponent(match[1]).trim();
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      if (request.method === "GET") {
+        const measurements = getMeasurements(user.id, personId);
+        if (measurements === null) {
+          sendJson(response, 404, { ok: false, error: "Person not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, measurements });
+        return true;
+      }
+
+      if (request.method === "POST") {
+        const payload = await readJsonBody(request);
+        const measurement = createMeasurement(user.id, personId, payload);
+        if (!measurement) {
+          sendJson(response, 404, { ok: false, error: "Person not found." });
+          return true;
+        }
+        sendJson(response, 201, { ok: true, authenticated: true, measurement });
         return true;
       }
     }
