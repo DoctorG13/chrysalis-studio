@@ -541,6 +541,30 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_updated_at ON bizzibuddi_production(updated_at);
     `,
   },
+  {
+    version: 14,
+    name: "bizzibuddi-measurements",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_measurements (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        person_id TEXT NOT NULL,
+        label TEXT NOT NULL DEFAULT 'Measurement set',
+        data_json TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (person_id) REFERENCES bizzibuddi_people(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_measurements_user_id
+        ON bizzibuddi_measurements(user_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_measurements_person_id
+        ON bizzibuddi_measurements(person_id);
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_measurements_created_at
+        ON bizzibuddi_measurements(created_at);
+    `,
+  },
 
 ];
 
