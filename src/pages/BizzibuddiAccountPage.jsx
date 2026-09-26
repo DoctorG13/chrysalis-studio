@@ -833,17 +833,26 @@ async function loadProductionRecords(accountId, serverRecords) {
   const recordsByJobId = new Map(current.map((record) => [record.jobId, record]));
   let migrationFailed = false;
 
-  for (const legacyRecord of legacy) {
-    if (!legacyRecord?.jobId || recordsByJobId.has(legacyRecord.jobId)) continue;
+  const legacyToMigrate = legacy.filter(
+    (record) => record?.jobId && !recordsByJobId.has(record.jobId)
+  );
 
-    try {
-      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
-        method: "POST",
-        body: JSON.stringify(legacyRecord),
-      });
-      if (result?.record?.jobId) recordsByJobId.set(result.record.jobId, result.record);
-    } catch {
-      migrationFailed = true;
+  if (legacyToMigrate.length) {
+    const migrationResults = await Promise.allSettled(
+      legacyToMigrate.map((legacyRecord) =>
+        bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
+          method: "POST",
+          body: JSON.stringify(legacyRecord),
+        })
+      )
+    );
+
+    for (const result of migrationResults) {
+      if (result.status === "fulfilled" && result.value?.record?.jobId) {
+        recordsByJobId.set(result.value.record.jobId, result.value.record);
+      } else if (result.status === "rejected") {
+        migrationFailed = true;
+      }
     }
   }
 
