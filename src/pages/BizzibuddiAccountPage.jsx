@@ -686,7 +686,7 @@ export default function BizzibuddiAccountPage() {
             <span>Ask Buddi</span>
           </button>
         )}
-        <footer style={footerStyle}>Account authentication is live · People, Jobs, Calendar, Finance, Automation and Production are now persistent · Reports remains local demo data for this stage · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
+        <footer style={footerStyle}>Account authentication is live · People, Jobs, Calendar, Finance, Automation, Production and Reports are now account-backed · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
     </main>
   );
