@@ -345,9 +345,11 @@ export default function BizzibuddiAccountPage() {
       </div>
     )}
 
+    <a className="bizzibuddi-skip-link" href="#bizzibuddi-account-content">Skip to account content</a>
+
     <main className="bizzibuddi-account-page" style={pageStyle}>
       <div style={ambientGlow} />
-      <div style={shellStyle}>
+      <div id="bizzibuddi-account-content" tabIndex="-1" style={shellStyle}>
         <header style={headerStyle}>
           <a href="/bizzibuddi" style={{ color: TEXT, textDecoration: "none", display: "inline-flex", alignItems: "center" }}><BizziBuddiLogo size={42} dark showWordmark /></a>
           <a href="/bizzibuddi" style={backLink}>Back to website ↗</a>
@@ -395,7 +397,7 @@ export default function BizzibuddiAccountPage() {
           </div>
         </nav>
 
-        {message && <div role="status" style={messageStyle}>{message}</div>}
+        {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
         {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} />}
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
@@ -617,6 +619,25 @@ export default function BizzibuddiAccountPage() {
 
 
         <style>{`
+              .bizzibuddi-skip-link {
+                position: fixed;
+                left: 16px;
+                top: -80px;
+                z-index: 2000;
+                padding: 10px 14px;
+                border-radius: 9px;
+                background: #FFFFFF;
+                color: #061A2B;
+                font-weight: 800;
+                text-decoration: none;
+                box-shadow: 0 10px 24px rgba(0,0,0,.25);
+                transition: top .16s ease;
+              }
+              .bizzibuddi-skip-link:focus {
+                top: 16px;
+                outline: 3px solid rgba(0,180,219,.55);
+                outline-offset: 3px;
+              }
               .bizzibuddi-account-page {
                 -webkit-font-smoothing: antialiased;
                 text-rendering: optimizeLegibility;
