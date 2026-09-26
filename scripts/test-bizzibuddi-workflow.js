@@ -79,6 +79,9 @@ assertContains(page, "bizzibuddi-table-scroll", "responsive reporting table");
 assertContains(page, "bizzibuddi-skip-link", "keyboard skip navigation");
 assertContains(page, "<>\n      {account && shortcutHelpOpen && (", "account page fragment wrapper");
 assertContains(page, "</main>\n    </>", "account page fragment closure");
+assertContains(page, "const filteredPeople = normalizedQuery", "people search filtering");
+assertContains(page, "{filteredPeople.map((person) => {", "filtered people render");
+if (page.includes("{(() => {")) throw new Error("Legacy People filter IIFE must not return.");
 assertContains(page, "days <= 7;", "Today View production due-soon seven-day window");
 
 console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 13 UI workflow contracts.`);
