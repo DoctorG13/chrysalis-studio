@@ -53,7 +53,7 @@ If not, it probably belongs in a later release.
 - [x] Calendar improvements
 - [x] Notifications
 - [x] Better appointment management
-- [ ] Garment scheduling
+- [x] Garment scheduling
 - [ ] Keyboard shortcuts
 
 ---
