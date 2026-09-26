@@ -26,7 +26,7 @@ If not, it probably belongs in a later release.
 
 - [x] Automatic workflow events
 - [x] Job timeline automation
-- [ ] Job progress tracker
+- [x] Job progress tracker
 - [ ] Due date highlighting
 - [ ] Outstanding payment warnings
 
