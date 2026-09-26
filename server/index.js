@@ -505,6 +505,16 @@ const MIGRATIONS = [
     `,
   },
   {
+    version: 13,
+    name: "bizzibuddi-job-timeline",
+    sql: `
+      ALTER TABLE bizzibuddi_automation_events ADD COLUMN job_id TEXT;
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_automation_events_job_id
+        ON bizzibuddi_automation_events(job_id);
+    `,
+  },
+  {
     version: 12,
     name: "bizzibuddi-production",
     sql: `
