@@ -1213,6 +1213,70 @@ function DashboardPanel({
         </div>
       </div>
 
+      <div style={todayViewPanel}>
+        <div style={todayViewHeader}>
+          <div>
+            <small style={smallText}>DAILY OPERATING VIEW</small>
+            <h3 style={{ margin: "6px 0 5px", fontSize: 24 }}>Today & next up.</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>A quick view of what is happening today and what is coming up next.</p>
+          </div>
+          <span style={todayViewDate}>{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</span>
+        </div>
+
+        <div style={todayViewGrid}>
+          <div style={todayViewCard}>
+            <small style={smallText}>TODAY</small>
+            <strong style={todayViewMetric}>{appointmentsToday.length}</strong>
+            <span style={todayViewLabel}>{appointmentsToday.length === 1 ? "appointment" : "appointments"}</span>
+            {appointmentsToday.slice(0, 3).map((appointment) => (
+              <button key={appointment.id} type="button" onClick={onCalendar} style={todayViewItem}>
+                <span>{appointment.time || "Time not set"}</span>
+                <strong>{appointment.title || "Appointment"}</strong>
+              </button>
+            ))}
+            {appointmentsToday.length === 0 && <span style={todayViewEmpty}>No appointments booked for today.</span>}
+          </div>
+
+          <div style={todayViewCard}>
+            <small style={smallText}>DUE SOON</small>
+            <strong style={todayViewMetric}>{dueSoonInvoices.length + productionDueSoon.length}</strong>
+            <span style={todayViewLabel}>items in the next 7 days</span>
+            {dueSoonInvoices.slice(0, 2).map((invoice) => (
+              <button key={`today-invoice-${invoice.id}`} type="button" onClick={onFinance} style={todayViewItem}>
+                <span>{invoice.dueDate === todayKey ? "Today" : `Due ${invoice.dueDate}`}</span>
+                <strong>{invoice.clientName || invoice.client || "Invoice"}</strong>
+              </button>
+            ))}
+            {productionDueSoon.slice(0, 2).map((job) => (
+              <button key={`today-production-${job.id}`} type="button" onClick={onJobs} style={todayViewItem}>
+                <span>Production · {formatProductionDate(job.productionDueDate)}</span>
+                <strong>{job.title || "Production job"}</strong>
+              </button>
+            ))}
+            {dueSoonInvoices.length === 0 && productionDueSoon.length === 0 && <span style={todayViewEmpty}>Nothing due in the next few days.</span>}
+          </div>
+
+          <div style={todayViewCard}>
+            <small style={smallText}>WORKFLOW</small>
+            <strong style={todayViewMetric}>{productionNeedsAttention.length + waitingJobs.length}</strong>
+            <span style={todayViewLabel}>jobs needing a workflow step</span>
+            {productionNeedsAttention.slice(0, 2).map((job) => (
+              <button key={`today-workflow-${job.id}`} type="button" onClick={onJobs} style={todayViewItem}>
+                <span>{job.productionReadiness}</span>
+                <strong>{job.title || "Production job"}</strong>
+              </button>
+            ))}
+            {waitingJobs.slice(0, 2).map((job) => (
+              <button key={`today-waiting-${job.id}`} type="button" onClick={onJobs} style={todayViewItem}>
+                <span>Waiting</span>
+                <strong>{job.title || "Job waiting"}</strong>
+              </button>
+            ))}
+            {productionNeedsAttention.length === 0 && waitingJobs.length === 0 && <span style={todayViewEmpty}>No workflow blockers are showing.</span>}
+          </div>
+        </div>
+      </div>
+
       <div style={statsGrid}>
         {[
           ["Business", account?.business ? "Ready" : "Not set up"],
