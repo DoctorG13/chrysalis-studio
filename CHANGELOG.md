@@ -1,3 +1,15 @@
+## BizziBuddi Calendar Improvements
+
+### Added
+
+- Added Upcoming, Today, Past and All calendar filters.
+- Added appointment counts for each calendar view.
+- Sorted appointments chronologically by date and time.
+- Added a clearer calendar-view summary and empty-state handling.
+- Kept existing appointment creation, editing, deletion and advanced scheduling intact.
+
+---
+
 ## BizziBuddi Business Health Indicators
 
 ### Added
