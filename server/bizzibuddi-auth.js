@@ -1850,7 +1850,13 @@ function getBizziBuddiReports(userId) {
     if (appointment.date < today) return false;
     return String(appointment.time || "23:59") >= currentTime;
   }).length;
-  const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < today).length;
+  const overdueInvoiceRecords = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < today);
+  const outstandingInvoiceRecords = invoices.filter((invoice) => invoice.status !== "Paid");
+  const paidInvoices = invoices.filter((invoice) => invoice.status === "Paid");
+  const overdueAmount = overdueInvoiceRecords.reduce((sum, invoice) => sum + Math.max(0, Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0), 0);
+  const outstandingInvoiceCount = outstandingInvoiceRecords.length;
+  const paidInvoiceCount = paidInvoices.length;
+  const averageInvoice = invoices.length ? totalInvoiced / invoices.length : 0;
   const jobStatusGroups = [
     ["New", jobs.filter((job) => job.status === "New").length],
     ["In progress", jobs.filter((job) => job.status === "In progress").length],
@@ -1881,6 +1887,11 @@ function getBizziBuddiReports(userId) {
       totalPaid: Math.round(totalPaid * 100) / 100,
       outstanding: Math.max(0, Math.round((totalInvoiced - totalPaid) * 100) / 100),
       overdueInvoices,
+      overdueAmount: Math.round(overdueAmount * 100) / 100,
+      outstandingInvoiceCount,
+      paidInvoiceCount,
+      averageInvoice: Math.round(averageInvoice * 100) / 100,
+      collectionRate: totalInvoiced > 0 ? Math.round((Math.min(totalPaid, totalInvoiced) / totalInvoiced) * 100) : 0,
     },
     production: { total: productionRecords.length, active: productionActive, complete: productionComplete, stageGroups: productionStageGroups },
     insights: { jobCompletionRate, paymentCollectionRate, productionCompletionRate },
