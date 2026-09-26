@@ -566,6 +566,8 @@ function toJob(row) {
     productionTaskCount: Number(row.production_task_count || 0),
     productionCompletedTaskCount: Number(row.production_completed_task_count || 0),
     productionTaskProgress: Number(row.production_task_progress || 0),
+    productionReadiness: row.production_readiness || "In progress",
+    productionReadinessDetail: row.production_readiness_detail || "",
   };
 }
 
@@ -614,6 +616,16 @@ function getJobs(userId) {
       production_task_count: tasks.length,
       production_completed_task_count: tasks.filter((task) => task.complete).length,
       production_task_progress: productionTaskProgress(tasks),
+      production_readiness: productionReadiness(
+        production?.stage,
+        production?.dueDate,
+        tasks
+      ).status,
+      production_readiness_detail: productionReadiness(
+        production?.stage,
+        production?.dueDate,
+        tasks
+      ).detail,
     };
   });
 }
@@ -1309,6 +1321,38 @@ function productionTaskProgress(tasks) {
   if (!total) return 0;
   const completed = tasks.filter((task) => task.complete).length;
   return Math.round((completed / total) * 100);
+}
+
+function productionReadiness(stage, dueDate, tasks) {
+  const normalizedStage = String(stage || "Not started");
+  const totalTasks = Array.isArray(tasks) ? tasks.length : 0;
+  const completedTasks = Array.isArray(tasks) ? tasks.filter((task) => task.complete).length : 0;
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (normalizedStage === "Complete") {
+    return { status: "Complete", detail: "Production is complete." };
+  }
+
+  if (dueDate && dueDate < today) {
+    return { status: "Overdue", detail: "Ready-by date has passed." };
+  }
+
+  if (normalizedStage === "Ready") {
+    if (totalTasks > 0 && completedTasks < totalTasks) {
+      return { status: "Tasks outstanding", detail: (totalTasks - completedTasks) + " production task(s) remain." };
+    }
+    return { status: "Ready", detail: "Production is ready for completion." };
+  }
+
+  if (totalTasks > 0 && completedTasks === totalTasks) {
+    return { status: "Stage update needed", detail: "All production tasks are complete." };
+  }
+
+  if (normalizedStage === "Not started") {
+    return { status: "Not started", detail: "Production has not started." };
+  }
+
+  return { status: "In progress", detail: "Production is moving through its workflow." };
 }
 
 function validateProductionPayload(payload) {
