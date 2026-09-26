@@ -1,3 +1,13 @@
+## BizziBuddi Bug Fixing
+
+### Fixed
+
+- Fixed the Dashboard Today View production due-soon window so it matches the displayed “next 7 days” label.
+- Production ready-by dates within seven days now appear consistently alongside invoices due within seven days.
+- Added a workflow contract check to prevent the production due-soon window from regressing to a shorter range.
+
+---
+
 ## BizziBuddi Business Insights
 
 ### Added

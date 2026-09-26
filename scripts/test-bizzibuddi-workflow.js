@@ -77,5 +77,6 @@ assertContains(page, "Promise.allSettled", "concurrent legacy production migrati
 assertContains(page, "aria-live=\"polite\"", "accessible status messaging");
 assertContains(page, "bizzibuddi-table-scroll", "responsive reporting table");
 assertContains(page, "bizzibuddi-skip-link", "keyboard skip navigation");
+assertContains(page, "days <= 7;", "Today View production due-soon seven-day window");
 
 console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 13 UI workflow contracts.`);

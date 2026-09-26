@@ -1592,7 +1592,7 @@ function DashboardPanel({
     if (!job.productionDueDate || job.productionReadiness === "Complete") return false;
     const due = new Date(job.productionDueDate + "T00:00:00");
     const days = Math.ceil((due - today) / 86400000);
-    return days >= 0 && days <= 2;
+    return days >= 0 && days <= 7;
   });
   const readyProduction = jobs.filter((job) => job.productionReadiness === "Ready");
   const recentAutomationFlags = automationEvents.filter((event) => event.type === "invoice-overdue");
