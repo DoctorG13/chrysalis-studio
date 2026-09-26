@@ -1,3 +1,20 @@
+## BizziBuddi Dashboard Intelligence
+
+### Added
+
+- Upgraded the dashboard attention panel into a unified business action queue.
+- Added due-soon and overdue invoice visibility alongside production workflow issues, due-soon production work, today's appointments and waiting jobs.
+- Added action-item summary counts so the dashboard shows the current workload at a glance.
+- Kept each attention item linked directly to the relevant BizziBuddi module.
+- Preserved the Buddi assistant handoff so the dashboard can turn the current picture into a next action.
+
+### Changed
+
+- Dashboard attention is now derived from account-backed Jobs and Finance data rather than relying only on a small subset of urgent items.
+- Production readiness and production due dates now contribute directly to the dashboard action queue.
+
+---
+
 ## BizziBuddi Outstanding Payment Warnings
 
 ### Added
