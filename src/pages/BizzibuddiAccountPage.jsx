@@ -982,9 +982,19 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
         {jobs.map((job) => (
           <article key={job.id} style={jobCard}>
-            <div style={{ minWidth: 0 }}>
+            <div style={{ minWidth: 0, flex: "1 1 240px" }}>
               <strong style={{ display: "block", fontSize: 17 }}>{job.title}</strong>
               <span style={smallText}>{job.clientName || "Unassigned"}</span>
+              <div style={{ marginTop: 10, maxWidth: 360 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 5 }}>
+                  <span style={{ ...smallText, fontSize: 11 }}>Production: {job.productionStage || "Not started"}</span>
+                  <span style={{ ...smallText, fontSize: 11, fontWeight: 700 }}>{job.productionProgress || 0}%</span>
+                </div>
+                <div style={jobProgressTrack}>
+                  <div style={{ ...jobProgressFill, width: (job.productionProgress || 0) + "%" }} />
+                </div>
+              </div>
+              {job.productionDueDate && <span style={{ ...smallText, display: "block", marginTop: 5 }}>Ready by {formatProductionDate(job.productionDueDate)}</span>}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
               <span style={jobStatus}>{job.status}</span>
@@ -3247,6 +3257,20 @@ const jobTimelineItem = {
   borderRadius: 10,
   border: "1px solid " + BORDER,
   background: "rgba(255,255,255,.025)",
+};
+
+const jobProgressTrack = {
+  height: 7,
+  overflow: "hidden",
+  borderRadius: 999,
+  background: "rgba(255,255,255,.08)",
+};
+
+const jobProgressFill = {
+  height: "100%",
+  borderRadius: 999,
+  background: "linear-gradient(90deg, " + CYAN + ", " + RED + ")",
+  transition: "width .2s ease",
 };
 
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
