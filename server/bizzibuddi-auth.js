@@ -690,9 +690,6 @@ function createJob(userId, payload) {
   });
 
   return getJobs(userId).find((item) => item.id === job.id) || null;
-    ...job,
-    client_name: person.name,
-  });
 }
 
 function updateJob(userId, jobId, payload) {
