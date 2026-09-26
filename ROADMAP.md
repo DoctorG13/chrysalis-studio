@@ -52,7 +52,7 @@ If not, it probably belongs in a later release.
 
 - [x] Calendar improvements
 - [x] Notifications
-- [ ] Better appointment management
+- [x] Better appointment management
 - [ ] Garment scheduling
 - [ ] Keyboard shortcuts
 
