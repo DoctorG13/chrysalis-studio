@@ -1,3 +1,20 @@
+## BizziBuddi Production Completion Intelligence
+
+### Added
+
+- Jobs now derive a production readiness state from stage, task completion and ready-by date.
+- Jobs can surface `Ready`, `Tasks outstanding`, `Stage update needed`, `Overdue`, `In progress`, `Not started` or `Complete`.
+- Job cards now show the current readiness state alongside production progress.
+- Readiness details are available as contextual information on the job card.
+
+### Workflow
+
+`Job → Stage → Tasks → Readiness → Action`
+
+The readiness state is derived from persisted production data and does not replace the existing five-stage production workflow.
+
+---
+
 ## BizziBuddi Production Task Progress
 
 ### Added
