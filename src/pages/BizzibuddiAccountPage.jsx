@@ -878,6 +878,32 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
   const [editingJob, setEditingJob] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [timelineJobId, setTimelineJobId] = useState(null);
+  const [timeline, setTimeline] = useState([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+
+  async function toggleTimeline(job) {
+    if (timelineJobId === job.id) {
+      setTimelineJobId(null);
+      setTimeline([]);
+      return;
+    }
+
+    setTimelineJobId(job.id);
+    setTimeline([]);
+    setTimelineLoading(true);
+
+    try {
+      const result = await bizzibuddiAuthRequest(
+        "/api/bizzibuddi/auth/jobs/" + encodeURIComponent(job.id)
+      );
+      setTimeline(result.timeline || []);
+    } catch (requestError) {
+      setError(requestError.message || "We could not load the job timeline.");
+    } finally {
+      setTimelineLoading(false);
+    }
+  }
 
   function startAdd() {
     setError("");
@@ -1431,6 +1457,19 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     </section>
   );
 }
+function formatTimelineDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function formatProductionDate(date) {
   if (!date) return "";
   const value = new Date(date + "T00:00");
@@ -3192,6 +3231,24 @@ const invoiceMeta = { display: "flex", alignItems: "center", gap: 10, flexWrap: 
 const invoiceStatus = (status) => ({ padding: "6px 9px", borderRadius: 999, background: status === "Paid" ? "rgba(0,180,219,.12)" : "rgba(37,99,235,.12)", color: status === "Paid" ? CYAN : RED, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" });
 const smallActionButton = { border: `1px solid ${RED}`, borderRadius: 8, padding: "7px 10px", background: "transparent", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" };
 const lockedFeatureCard = { display: "flex", alignItems: "flex-start", gap: 14, maxWidth: 520, margin: "24px auto 0", padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", textAlign: "left" };
+const jobTimelinePanel = {
+  gridColumn: "1 / -1",
+  marginTop: 12,
+  padding: 14,
+  borderRadius: 12,
+  border: "1px solid " + BORDER,
+  background: "rgba(0,0,0,.12)",
+};
+
+const jobTimelineItem = {
+  display: "grid",
+  gap: 4,
+  padding: 10,
+  borderRadius: 10,
+  border: "1px solid " + BORDER,
+  background: "rgba(255,255,255,.025)",
+};
+
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
 const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
