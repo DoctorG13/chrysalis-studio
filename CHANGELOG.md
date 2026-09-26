@@ -1,3 +1,26 @@
+## BizziBuddi Job Timeline & Workflow Events
+
+### Added
+
+- Added persistent job-linked workflow events using the existing Automation event store.
+- Jobs now record creation events automatically.
+- Job status changes are recorded automatically with the previous and new status.
+- Other job edits are recorded as job update events.
+- Added an authenticated job timeline endpoint.
+- Added a Timeline control to each BizziBuddi job so its workflow history can be viewed without leaving the Jobs screen.
+
+### Changed
+
+- Automation events can now optionally reference a persistent Job.
+- Job workflow history now survives refresh and logout/login with the BizziBuddi account database.
+
+### Notes
+
+- This feature uses the existing Automation event infrastructure rather than introducing a second timeline data store.
+- Timeline events are account-scoped and limited to the authenticated user's jobs.
+
+---
+
 ## BizziBuddi Membership & Reporting Cleanup
 
 ### Changed
