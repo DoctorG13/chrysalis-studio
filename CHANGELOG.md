@@ -1047,6 +1047,15 @@ All notable changes to Chrysalis are recorded here.
 
 All notable changes to Chrysalis are recorded here.
 
+## BizziBuddi Accessibility Improvements
+
+### Added
+
+- Added a keyboard-accessible skip link to jump directly to the account workspace content.
+- Added a focusable account-content landmark for keyboard and assistive-technology navigation.
+- Added polite live-region announcements for account status and action messages.
+- Preserved the existing visible UI, workflows and responsive behaviour.
+
 ## BizziBuddi Performance Optimisation
 
 ### Changed
