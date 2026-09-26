@@ -25,6 +25,42 @@ export default function BizzibuddiAccountPage() {
   const [invoices, setInvoices] = useState([]);
   const [automationEvents, setAutomationEvents] = useState([]);
   const [productionRecords, setProductionRecords] = useState([]);
+  const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+
+  useEffect(() => {
+    function handleKeyboardShortcuts(event) {
+      const target = event.target;
+      const isTyping =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        target?.isContentEditable;
+      if (isTyping) return;
+
+      if (event.key === "?") {
+        event.preventDefault();
+        setShortcutHelpOpen((current) => !current);
+        return;
+      }
+
+      if (event.key === "Escape") {
+        setShortcutHelpOpen(false);
+        return;
+      }
+
+      const shortcuts = { d: "dashboard", p: "people", j: "jobs", c: "calendar", f: "finance", a: "automation", r: "reports" };
+      const nextView = shortcuts[event.key.toLowerCase()];
+      if (!nextView || !account) return;
+
+      event.preventDefault();
+      setView(nextView);
+      setMessage("");
+      setBuddiPrompt("");
+    }
+
+    window.addEventListener("keydown", handleKeyboardShortcuts);
+    return () => window.removeEventListener("keydown", handleKeyboardShortcuts);
+  }, [account]);
 
   useEffect(() => {
     let active = true;
@@ -289,6 +325,26 @@ export default function BizzibuddiAccountPage() {
   }
 
   return (
+    {account && shortcutHelpOpen && (
+      <div role="dialog" aria-label="Keyboard shortcuts" style={{ position: "fixed", right: 24, bottom: 24, zIndex: 1000, width: "min(360px, calc(100vw - 48px))", padding: 20, borderRadius: 16, border: "1px solid " + BORDER, background: SURFACE, boxShadow: "0 18px 45px rgba(0,0,0,.35)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
+          <div>
+            <small style={smallText}>KEYBOARD SHORTCUTS</small>
+            <h3 style={{ margin: "6px 0 0", fontSize: 20 }}>Move around BizziBuddi faster.</h3>
+          </div>
+          <button type="button" onClick={() => setShortcutHelpOpen(false)} style={smallActionButton}>Close</button>
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
+          {[["D","Dashboard"],["P","People"],["J","Jobs"],["C","Calendar"],["F","Finance"],["A","Automation"],["R","Reports"],["?","Show / hide shortcuts"],["Esc","Close shortcuts"]].map(([key,label]) => (
+            <div key={key} style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
+              <span style={{ color: MUTED, fontSize: 13 }}>{label}</span>
+              <kbd style={{ minWidth: 34, padding: "5px 8px", borderRadius: 7, border: "1px solid " + BORDER, background: "rgba(255,255,255,.06)", color: TEXT, textAlign: "center", fontSize: 12, fontWeight: 800 }}>{key}</kbd>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
     <main style={pageStyle}>
       <div style={ambientGlow} />
       <div style={shellStyle}>
