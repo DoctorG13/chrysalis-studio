@@ -1431,6 +1431,14 @@ function DashboardPanel({
     .sort((a, b) => b.priorityScore - a.priorityScore);
   const priorityItems = uniqueAttentionItems.slice(0, 6);
   const actionCount = uniqueAttentionItems.length;
+  const recentActivity = [
+    ...(automationEvents || []).map((event) => ({ key: "automation-" + event.id, date: event.createdAt || event.updatedAt, icon: "⚙️", label: "Automation", title: event.title || event.type || "Automation event", detail: event.detail || "A business automation event was recorded.", onClick: onAutomation })),
+    ...(jobs || []).map((job) => ({ key: "job-" + job.id, date: job.updatedAt || job.createdAt, icon: "📋", label: "Job", title: job.title || "Job updated", detail: "Status: " + (job.status || "New"), onClick: onJobs })),
+    ...(appointments || []).map((appointment) => ({ key: "appointment-" + appointment.id, date: appointment.updatedAt || appointment.createdAt || appointment.date, icon: "📅", label: "Calendar", title: appointment.title || "Appointment", detail: (appointment.date || "Date not set") + (appointment.time ? " · " + appointment.time : ""), onClick: onCalendar })),
+    ...(invoices || []).map((invoice) => ({ key: "invoice-" + invoice.id, date: invoice.updatedAt || invoice.createdAt || invoice.issueDate, icon: "💳", label: "Finance", title: invoice.number || "Invoice", detail: (invoice.status || "Issued") + " · " + formatCurrency(Number(invoice.amount) || 0), onClick: onFinance })),
+    ...(productionRecords || []).map((record) => ({ key: "production-" + record.id, date: record.updatedAt || record.createdAt, icon: "🏭", label: "Production", title: record.jobTitle || "Production job", detail: "Stage: " + (record.stage || "Not started"), onClick: onProduction })),
+  ].filter((item) => item.date).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
+  const recentActivityCount = recentActivity.length;
   const outstanding = invoices.reduce((sum, invoice) => invoice.status === "Paid" ? sum : sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0);
 
   return (
@@ -1551,6 +1559,34 @@ function DashboardPanel({
             {productionNeedsAttention.length === 0 && waitingJobs.length === 0 && <span style={todayViewEmpty}>No workflow blockers are showing.</span>}
           </div>
         </div>
+      </div>
+
+      <div style={{ ...todayViewPanel, marginTop: 18 }}>
+        <div style={todayViewHeader}>
+          <div>
+            <small style={smallText}>RECENT ACTIVITY</small>
+            <h3 style={{ margin: "6px 0 5px", fontSize: 24 }}>What has been happening.</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>The latest activity across jobs, calendar, finance, automation and production.</p>
+          </div>
+          <span style={todayViewDate}>{recentActivityCount} recent</span>
+        </div>
+        {recentActivityCount > 0 ? (
+          <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
+            {recentActivity.map((item) => (
+              <button key={item.key} type="button" onClick={item.onClick} style={{ display: "grid", gridTemplateColumns: "38px minmax(0,1fr) auto", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.025)", color: TEXT, textAlign: "left", cursor: "pointer" }}>
+                <span style={{ width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 9, background: "rgba(0,180,219,.10)" }}>{item.icon}</span>
+                <span style={{ minWidth: 0 }}>
+                  <small style={smallText}>{item.label}</small>
+                  <strong style={{ display: "block", marginTop: 2, fontSize: 14 }}>{item.title}</strong>
+                  <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 12 }}>{item.detail}</span>
+                </span>
+                <span style={{ color: MUTED, fontSize: 11, whiteSpace: "nowrap" }}>{formatTimelineDate(item.date)}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <span style={todayViewEmpty}>No recent business activity has been recorded yet.</span>
+        )}
       </div>
 
       <div style={statsGrid}>
