@@ -759,6 +759,7 @@ function OnboardingPanel({ account, onSubmit }) {
 function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [timelinePersonId, setTimelinePersonId] = useState(null);
   const [measurementPersonId, setMeasurementPersonId] = useState(null);
   const [measurements, setMeasurements] = useState([]);
@@ -943,8 +944,31 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       <p style={copyStyle}>Keep your clients and contacts organised in one simple place.</p>
     </div>
 
-    {people.length > 0 ? (
-      <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
+    <div style={{ marginTop: 22, padding: 14, borderRadius: 12, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
+      <label style={{ ...fieldStyle, marginTop: 0 }}>
+        Search people
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Search by name, email or phone"
+          aria-label="Search people by name, email or phone"
+          style={inputStyle}
+        />
+      </label>
+    </div>
+
+    {(() => {
+      const normalizedQuery = searchQuery.trim().toLowerCase();
+      const filteredPeople = normalizedQuery
+        ? people.filter((person) =>
+            [person.name, person.email, person.phone]
+              .some((value) => String(value || "").toLowerCase().includes(normalizedQuery))
+          )
+        : people;
+
+      return filteredPeople.length > 0 ? (
+      <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
         {people.map((person) => {
           const isTimelineOpen = timelinePersonId === person.id;
           const timelineItems = isTimelineOpen ? personTimeline(person) : [];
@@ -1051,10 +1075,21 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       </div>
     ) : (
       <div style={emptyPeople}>
-        <strong>No people added yet.</strong>
-        <p style={copyStyle}>Add your first client or contact to start building your business.</p>
+        <strong>{people.length > 0 ? "No matching people." : "No people added yet."}</strong>
+        <p style={copyStyle}>
+          {people.length > 0
+            ? "Try a different name, email address or phone number."
+            : "Add your first client or contact to start building your business."}
+        </p>
+        {people.length > 0 && searchQuery && (
+          <button type="button" onClick={() => setSearchQuery("")} style={{ ...secondaryButton, width: "auto", marginTop: 14 }}>
+            Clear search
+          </button>
+        )}
       </div>
     )}
+      );
+    })()}
 
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
