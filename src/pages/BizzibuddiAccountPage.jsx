@@ -3377,6 +3377,38 @@ const membershipAccess = { marginTop: 20, padding: 20, borderRadius: 14, border:
 const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginTop: 16 };
 const membershipFeature = (available) => ({ display: "flex", alignItems: "flex-start", gap: 9, padding: 12, borderRadius: 10, border: "1px solid " + (available ? "rgba(0,180,219,.28)" : BORDER), background: available ? "rgba(0,180,219,.08)" : "rgba(255,255,255,.025)", color: available ? TEXT : MUTED });
 
+const todayViewPanel = {
+  marginTop: 18, padding: 20, borderRadius: 16,
+  border: "1px solid " + BORDER,
+  background: "rgba(255,255,255,.025)",
+};
+const todayViewHeader = {
+  display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+  gap: 16, flexWrap: "wrap",
+};
+const todayViewDate = {
+  display: "inline-flex", alignItems: "center", minHeight: 34,
+  padding: "0 10px", borderRadius: 9, border: "1px solid " + BORDER,
+  color: MUTED, fontSize: 12, fontWeight: 700,
+};
+const todayViewGrid = {
+  display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+  gap: 10, marginTop: 16,
+};
+const todayViewCard = {
+  display: "flex", flexDirection: "column", minWidth: 0, padding: 15,
+  borderRadius: 13, border: "1px solid " + BORDER, background: "rgba(6,26,43,.42)",
+};
+const todayViewMetric = { display: "block", marginTop: 7, fontSize: 30, lineHeight: 1 };
+const todayViewLabel = { display: "block", marginTop: 5, color: MUTED, fontSize: 12 };
+const todayViewItem = {
+  display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%",
+  marginTop: 10, padding: "9px 10px", border: "1px solid rgba(255,255,255,.10)",
+  borderRadius: 9, background: "rgba(255,255,255,.025)", color: TEXT,
+  textAlign: "left", cursor: "pointer",
+};
+const todayViewEmpty = { display: "block", marginTop: 14, color: MUTED, fontSize: 12 };
+ 
 const attentionPanel = {
   marginTop: 24, padding: 22, borderRadius: 18,
   border: "1px solid rgba(0,180,219,.55)",
