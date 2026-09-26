@@ -1047,6 +1047,15 @@ All notable changes to Chrysalis are recorded here.
 
 All notable changes to Chrysalis are recorded here.
 
+## BizziBuddi Data Validation
+
+### Added
+
+- Added strict calendar-date validation for invoices, payments, appointments and production ready-by dates.
+- Added strict 24-hour time validation for appointments.
+- Prevented impossible dates such as February 30 from entering persistent business records.
+- Kept existing business rules and user-facing workflows intact.
+
 ## BizziBuddi Workflow Testing
 
 ### Added
