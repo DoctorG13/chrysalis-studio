@@ -71,7 +71,7 @@ If not, it probably belongs in a later release.
 # Release 0.8 — Polish
 
 - [x] UI refinement
-- [ ] Performance optimisation
+- [x] Performance optimisation
 - [ ] Accessibility
 - [ ] Responsive improvements
 
