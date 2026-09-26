@@ -565,6 +565,7 @@ function toJob(row) {
     productionDueDate: row.production_due_date || "",
     productionTaskCount: Number(row.production_task_count || 0),
     productionCompletedTaskCount: Number(row.production_completed_task_count || 0),
+    productionTaskProgress: Number(row.production_task_progress || 0),
   };
 }
 
@@ -604,13 +605,15 @@ function getJobs(userId) {
 
   return jobs.map((job) => {
     const production = productionByJob.get(job.id);
+    const tasks = production?.tasks || [];
     return {
       ...job,
       production_stage: production?.stage || "Not started",
       production_progress: production ? productionStageProgress(production.stage) : 0,
       production_due_date: production?.dueDate || "",
-      production_task_count: production?.tasks?.length || 0,
-      production_completed_task_count: production?.tasks?.filter((task) => task.complete).length || 0,
+      production_task_count: tasks.length,
+      production_completed_task_count: tasks.filter((task) => task.complete).length,
+      production_task_progress: productionTaskProgress(tasks),
     };
   });
 }
@@ -1301,6 +1304,13 @@ function productionStageProgress(stage) {
   return Math.round((index / (BIZZIBUDDI_PRODUCTION_STAGES.length - 1)) * 100);
 }
 
+function productionTaskProgress(tasks) {
+  const total = Array.isArray(tasks) ? tasks.length : 0;
+  if (!total) return 0;
+  const completed = tasks.filter((task) => task.complete).length;
+  return Math.round((completed / total) * 100);
+}
+
 function validateProductionPayload(payload) {
   const jobId = String(payload?.jobId || "").trim();
   const stage = String(payload?.stage || "Not started").trim();
@@ -1340,8 +1350,13 @@ function toProductionRecord(row) {
 }
 
 function getProductionRecords(userId) {
-  return getDatabase().prepare(`SELECT id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at
-    FROM bizzibuddi_production WHERE user_id = ? ORDER BY updated_at DESC`).all(userId);
+  return getDatabase()
+    .prepare(`SELECT id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at
+      FROM bizzibuddi_production
+      WHERE user_id = ?
+      ORDER BY updated_at DESC`)
+    .all(userId)
+    .map(toProductionRecord);
 }
 
 function saveProductionRecord(userId, payload) {
@@ -1350,7 +1365,16 @@ function saveProductionRecord(userId, payload) {
   const job = database.prepare(`SELECT id, title FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?`).get(values.jobId, userId);
   if (!job) throw new Error("The selected job could not be found.");
 
-  const existing = database.prepare(`SELECT id, stage, created_at FROM bizzibuddi_production WHERE job_id = ? AND user_id = ?`).get(values.jobId, userId);
+  const existing = database.prepare(`SELECT id, stage, tasks_json, created_at FROM bizzibuddi_production WHERE job_id = ? AND user_id = ?`).get(values.jobId, userId);
+  const existingTasks = (() => {
+    if (!existing?.tasks_json) return [];
+    try {
+      const parsed = JSON.parse(String(existing.tasks_json));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  })();
   const now = new Date().toISOString();
   const id = existing?.id || randomUUID();
 
@@ -1381,6 +1405,21 @@ function saveProductionRecord(userId, payload) {
       jobId: job.id,
     });
   }
+
+  const previousTasksById = new Map(existingTasks.map((task) => [String(task.id), task]));
+  values.tasks.forEach((task) => {
+    const previous = previousTasksById.get(String(task.id));
+    if (!previous || previous.complete === task.complete) return;
+    const type = task.complete ? "job-production-task-completed" : "job-production-task-reopened";
+    const title = task.complete ? "Production task completed" : "Production task reopened";
+    createAutomationEvent(userId, {
+      type,
+      title,
+      detail: job.title + ": " + task.title + ".",
+      sourceKey: type + ":" + job.id + ":" + task.id + ":" + now,
+      jobId: job.id,
+    });
+  });
 
   return toProductionRecord(database.prepare(`SELECT id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at
     FROM bizzibuddi_production WHERE id = ? AND user_id = ?`).get(id, userId));
@@ -1430,6 +1469,8 @@ const BIZZIBUDDI_AUTOMATION_TYPES = [
   "job-updated",
   "job-production-started",
   "job-production-stage-changed",
+  "job-production-task-completed",
+  "job-production-task-reopened",
 ];
 
 function validateAutomationEventPayload(payload) {
@@ -1634,7 +1675,7 @@ function getBizziBuddiReports(userId) {
   const jobs = getJobs(userId).map(toJob);
   const appointments = getCalendar(userId).map(toCalendarEntry);
   const invoices = getInvoices(userId).map(toInvoice);
-  const productionRecords = getProductionRecords(userId).map(toProductionRecord);
+  const productionRecords = getProductionRecords(userId);
   const totalInvoiced = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
   const totalPaid = invoices.reduce((sum, invoice) => sum + (Number(invoice.amountPaid) || 0), 0);
   const completedJobs = jobs.filter((job) => job.status === "Complete").length;
@@ -1804,7 +1845,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
         return true;
       }
-      sendJson(response, 200, { ok: true, authenticated: true, records: getProductionRecords(user.id).map(toProductionRecord) });
+      sendJson(response, 200, { ok: true, authenticated: true, records: getProductionRecords(user.id) });
       return true;
     }
 
