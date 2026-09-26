@@ -440,6 +440,10 @@ export default function BizzibuddiAccountPage() {
         {view === "people" && (
           <PeoplePanel
             people={people}
+            jobs={jobs}
+            appointments={appointments}
+            invoices={invoices}
+            productionRecords={productionRecords}
             onAddPerson={async (person) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people", {
                 method: "POST",
@@ -631,6 +635,14 @@ export default function BizzibuddiAccountPage() {
   );
 }
 
+function formatTimelineDate(value) {
+  const raw = String(value || "");
+  if (!raw) return "Date not set";
+  const date = new Date(raw.length === 10 ? raw + "T00:00:00" : raw);
+  if (Number.isNaN(date.getTime())) return raw.slice(0, 16);
+  return date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
 function storageKey(key, accountId) {
   return `bizzibuddiMock${key.charAt(0).toUpperCase() + key.slice(1)}:${accountId}`;
 }
@@ -729,11 +741,54 @@ function OnboardingPanel({ account, onSubmit }) {
   return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your business.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your business a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
 }
 
-function PeoplePanel({ people, onAddPerson, onUpdatePerson, onDeletePerson, onBack }) {
+function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
+  const [timelinePersonId, setTimelinePersonId] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  function personTimeline(person) {
+    const items = [
+      ...(person?.createdAt ? [{
+        id: `person-created-${person.id}`,
+        date: person.createdAt,
+        label: "Person added",
+        detail: "This person was added to BizziBuddi.",
+      }] : []),
+      ...(jobs || []).filter((job) => job.personId === person.id).map((job) => ({
+        id: `person-job-${job.id}`,
+        date: job.createdAt || job.updatedAt,
+        label: `Job · ${job.status || "New"}`,
+        detail: job.title || "Untitled job",
+      })),
+      ...(appointments || []).filter((appointment) => appointment.personId === person.id).map((appointment) => ({
+        id: `person-appointment-${appointment.id}`,
+        date: appointment.date || appointment.createdAt,
+        label: "Appointment",
+        detail: `${appointment.date || "Date not set"}${appointment.time ? ` · ${appointment.time}` : ""}${appointment.title ? ` · ${appointment.title}` : ""}`,
+      })),
+      ...(invoices || []).filter((invoice) => invoice.personId === person.id).map((invoice) => ({
+        id: `person-invoice-${invoice.id}`,
+        date: invoice.dueDate || invoice.issueDate || invoice.createdAt,
+        label: `Invoice · ${invoice.status || "Issued"}`,
+        detail: `${invoice.number || "Invoice"} · ${formatCurrency(Number(invoice.amount) || 0)}`,
+      })),
+      ...(productionRecords || []).filter((record) => {
+        const job = (jobs || []).find((item) => item.id === record.jobId);
+        return job?.personId === person.id;
+      }).map((record) => ({
+        id: `person-production-${record.id}`,
+        date: record.updatedAt || record.createdAt,
+        label: `Production · ${record.stage || "Not started"}`,
+        detail: record.jobTitle || "Production job",
+      })),
+    ];
+
+    return items
+      .filter((item) => item.date)
+      .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  }
 
   function startAdd() {
     setError("");
@@ -810,20 +865,49 @@ function PeoplePanel({ people, onAddPerson, onUpdatePerson, onDeletePerson, onBa
 
     {people.length > 0 ? (
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
-        {people.map((person) => (
-          <article key={person.id} style={personCard}>
-            <div style={{ minWidth: 0 }}>
-              <strong style={{ display: "block", fontSize: 17 }}>{person.name}</strong>
-              <span style={smallText}>
-                {person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => startEdit(person)} style={smallActionButton}>Edit</button>
-              <button type="button" onClick={() => handleDelete(person)} style={smallDangerButton}>Delete</button>
-            </div>
-          </article>
-        ))}
+        {people.map((person) => {
+          const isTimelineOpen = timelinePersonId === person.id;
+          const timelineItems = isTimelineOpen ? personTimeline(person) : [];
+          return (
+            <article key={person.id} style={personCard}>
+              <div style={{ minWidth: 0, flex: "1 1 280px" }}>
+                <strong style={{ display: "block", fontSize: 17 }}>{person.name}</strong>
+                <span style={smallText}>
+                  {person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}
+                </span>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                <button type="button" onClick={() => setTimelinePersonId(isTimelineOpen ? null : person.id)} style={smallActionButton}>
+                  {isTimelineOpen ? "Hide timeline" : "Timeline"}
+                </button>
+                <button type="button" onClick={() => startEdit(person)} style={smallActionButton}>Edit</button>
+                <button type="button" onClick={() => handleDelete(person)} style={smallDangerButton}>Delete</button>
+              </div>
+              {isTimelineOpen && (
+                <div style={{ width: "100%", marginTop: 14, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
+                  <small style={smallText}>CLIENT TIMELINE</small>
+                  {timelineItems.length > 0 ? (
+                    <div style={{ display: "grid", gap: 9, marginTop: 10 }}>
+                      {timelineItems.map((item) => (
+                        <div key={item.id} style={{ display: "grid", gridTemplateColumns: "112px minmax(0,1fr)", gap: 10, padding: "9px 10px", borderRadius: 9, background: "rgba(255,255,255,.025)", border: "1px solid rgba(255,255,255,.08)" }}>
+                          <span style={{ color: MUTED, fontSize: 11, fontWeight: 700 }}>
+                            {formatTimelineDate(item.date)}
+                          </span>
+                          <div>
+                            <strong style={{ display: "block", fontSize: 13 }}>{item.label}</strong>
+                            <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 12 }}>{item.detail}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ display: "block", marginTop: 9, color: MUTED, fontSize: 12 }}>No activity recorded for this person yet.</span>
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        })}
       </div>
     ) : (
       <div style={emptyPeople}>
