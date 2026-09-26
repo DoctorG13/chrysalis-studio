@@ -1085,41 +1085,76 @@ function DashboardPanel({
   appointments, invoices, automationEvents, productionRecords,
 }) {
   const todayKey = new Date().toISOString().slice(0, 10);
+  const today = new Date(todayKey + "T00:00:00");
   const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < todayKey);
+  const dueSoonInvoices = invoices.filter((invoice) => {
+    if (invoice.status === "Paid" || !invoice.dueDate) return false;
+    const due = new Date(invoice.dueDate + "T00:00:00");
+    const days = Math.ceil((due - today) / 86400000);
+    return days >= 0 && days <= 7;
+  });
   const appointmentsToday = appointments.filter((appointment) => appointment.date === todayKey);
   const waitingJobs = jobs.filter((job) => job.status === "Waiting");
   const openJobs = jobs.filter((job) => job.status !== "Complete").length;
-  const readyProduction = productionRecords.filter((record) => record.stage === "Ready");
+  const productionNeedsAttention = jobs.filter((job) =>
+    ["Overdue", "Tasks outstanding", "Stage update needed"].includes(job.productionReadiness)
+  );
+  const productionDueSoon = jobs.filter((job) => {
+    if (!job.productionDueDate || job.productionReadiness === "Complete") return false;
+    const due = new Date(job.productionDueDate + "T00:00:00");
+    const days = Math.ceil((due - today) / 86400000);
+    return days >= 0 && days <= 2;
+  });
+  const readyProduction = jobs.filter((job) => job.productionReadiness === "Ready");
   const recentAutomationFlags = automationEvents.filter((event) => event.type === "invoice-overdue");
 
   const attentionItems = [
-    ...overdueInvoices.slice(0, 3).map((invoice) => ({
-      key: `invoice-${invoice.id}`, icon: "💳", label: "Overdue payment",
+    ...overdueInvoices.map((invoice) => ({
+      key: `invoice-overdue-${invoice.id}`, icon: "💳", label: "Payment overdue",
       title: invoice.clientName || invoice.client || "Invoice requires attention",
       detail: `${formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
       action: "Open finance", onClick: onFinance, tone: "urgent",
     })),
-    ...appointmentsToday.slice(0, 3).map((appointment) => ({
+    ...dueSoonInvoices.map((invoice) => ({
+      key: `invoice-soon-${invoice.id}`, icon: "💰", label: invoice.dueDate === todayKey ? "Due today" : "Due soon",
+      title: invoice.clientName || invoice.client || "Invoice due soon",
+      detail: `${formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
+      action: "Open finance", onClick: onFinance, tone: "attention",
+    })),
+    ...productionNeedsAttention.map((job) => ({
+      key: `production-attention-${job.id}`, icon: "🏭", label: job.productionReadiness,
+      title: job.title || "Production job",
+      detail: job.productionReadinessDetail || "Production needs a workflow update.",
+      action: "Open jobs", onClick: onJobs, tone: job.productionReadiness === "Overdue" ? "urgent" : "attention",
+    })),
+    ...productionDueSoon.filter((job) => !productionNeedsAttention.some((item) => item.id === job.id)).map((job) => ({
+      key: `production-due-${job.id}`, icon: "📦", label: "Production due soon",
+      title: job.title || "Production job",
+      detail: `Ready by ${formatProductionDate(job.productionDueDate)}`,
+      action: "Open jobs", onClick: onJobs, tone: "today",
+    })),
+    ...appointmentsToday.map((appointment) => ({
       key: `appointment-${appointment.id}`, icon: "📅", label: "Today",
       title: appointment.title || "Appointment",
       detail: `${appointment.time || "Time not set"}${appointment.personName ? ` · ${appointment.personName}` : ""}`,
       action: "Open calendar", onClick: onCalendar, tone: "today",
     })),
-    ...waitingJobs.slice(0, 2).map((job) => ({
+    ...waitingJobs.map((job) => ({
       key: `waiting-${job.id}`, icon: "⏳", label: "Waiting",
       title: job.title || "Job waiting",
       detail: job.clientName || job.client ? `Waiting on ${job.clientName || job.client}` : "This job is waiting for the next step.",
       action: "Open jobs", onClick: onJobs, tone: "attention",
     })),
-    ...readyProduction.slice(0, 2).map((record) => ({
-      key: `production-${record.id}`, icon: "🏭", label: "Ready",
-      title: record.jobTitle || "Production job",
-      detail: record.dueDate ? `Ready by ${formatProductionDate(record.dueDate)}` : "Production has reached the Ready stage.",
-      action: "Open production", onClick: onProduction, tone: "ready",
+    ...readyProduction.map((job) => ({
+      key: `production-ready-${job.id}`, icon: "✅", label: "Ready",
+      title: job.title || "Production job",
+      detail: job.productionDueDate ? `Ready by ${formatProductionDate(job.productionDueDate)}` : "Production has reached the Ready stage.",
+      action: "Open jobs", onClick: onJobs, tone: "ready",
     })),
   ];
   const uniqueAttentionItems = attentionItems.filter((item, index, items) => items.findIndex((candidate) => candidate.key === item.key) === index);
   const attentionCount = uniqueAttentionItems.length;
+  const actionCount = overdueInvoices.length + productionNeedsAttention.length + dueSoonInvoices.length + productionDueSoon.length;
   const outstanding = invoices.reduce((sum, invoice) => invoice.status === "Paid" ? sum : sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0);
 
   return (
@@ -1132,8 +1167,8 @@ function DashboardPanel({
         <div style={attentionHeader}>
           <div>
             <small style={smallText}>TODAY'S BUSINESS PICTURE</small>
-            <h3 style={{ margin: "6px 0 5px", fontSize: 28 }}>What needs attention today?</h3>
-            <p style={{ ...copyStyle, margin: 0 }}>Buddi can help you make sense of the activity that matters most right now.</p>
+            <h3 style={{ margin: "6px 0 5px", fontSize: 28 }}>Your business at a glance.</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>One queue for the work, money and activity that needs your attention now.</p>
           </div>
           <button type="button" onClick={onAttentionBuddi} style={attentionBuddiButton}>
             <BizziBuddiLogo size={30} dark showWordmark={false} />
@@ -1142,7 +1177,7 @@ function DashboardPanel({
         </div>
 
         <div style={attentionSummary}>
-          <div><strong>{attentionCount}</strong><span>{attentionCount === 1 ? "item needs attention" : "items need attention"}</span></div>
+          <div><strong>{actionCount}</strong><span>{actionCount === 1 ? "action item" : "action items"}</span></div>
           <div><strong>{appointmentsToday.length}</strong><span>{appointmentsToday.length === 1 ? "appointment today" : "appointments today"}</span></div>
           <div><strong>{openJobs}</strong><span>{openJobs === 1 ? "open job" : "open jobs"}</span></div>
           <div><strong>{formatCurrency(outstanding)}</strong><span>outstanding</span></div>
@@ -1166,14 +1201,14 @@ function DashboardPanel({
           <div style={attentionClear}>
             <div style={attentionClearIcon}>✓</div>
             <div>
-              <strong style={{ display: "block", fontSize: 17 }}>Nothing urgent is showing.</strong>
-              <p style={{ ...copyStyle, margin: "5px 0 0" }}>Your dashboard has no overdue payments, today's appointments or waiting jobs requiring immediate attention.</p>
+              <strong style={{ display: "block", fontSize: 17 }}>Your dashboard is clear.</strong>
+              <p style={{ ...copyStyle, margin: "5px 0 0" }}>No overdue payments, production actions, due-soon work, today's appointments or waiting jobs are currently showing.</p>
             </div>
           </div>
         )}
 
         <div style={attentionFooter}>
-          <span>{recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and decide what to look at next."}</span>
+          <span>{recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and turn it into your next action."}</span>
           <button type="button" onClick={onAttentionBuddi} style={attentionFooterButton}>Ask Buddi what needs attention →</button>
         </div>
       </div>
@@ -1237,7 +1272,6 @@ function DashboardPanel({
     </section>
   );
 }
-
 function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBack }) {
   const available = hasBizzibuddiFeature(account?.plan, "automation");
 
