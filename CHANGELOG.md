@@ -1,3 +1,15 @@
+## BizziBuddi Appointment Management
+
+### Added
+
+- Added appointment search across title, person, job and notes.
+- Added appointment status filtering.
+- Kept the existing Upcoming, Today, Past and All views working together with search and status filters.
+- Added a compact search toggle so the calendar stays uncluttered when search is not needed.
+- Preserved existing appointment creation, editing, deletion, duration and buffer controls.
+
+---
+
 ## BizziBuddi Notifications
 
 ### Added
