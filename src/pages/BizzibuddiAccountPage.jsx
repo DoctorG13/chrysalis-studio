@@ -1343,6 +1343,7 @@ function DashboardPanel({
   onProduction, onReports, onBuddi, onAttentionBuddi, onReset, onLogout, people, jobs,
   appointments, invoices, automationEvents, productionRecords,
 }) {
+  const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const todayKey = new Date().toISOString().slice(0, 10);
   const today = new Date(todayKey + "T00:00:00");
   const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < todayKey);
@@ -1453,6 +1454,44 @@ function DashboardPanel({
     { label: "Production flow", value: productionRecords.length ? productionActive + " active" : "—", detail: productionRecords.length ? productionComplete + " completed" : "No production records yet", tone: productionActive > 0 ? "good" : "neutral" },
     { label: "Today's schedule", value: appointmentsToday.length, detail: appointmentsToday.length === 1 ? "appointment booked" : "appointments booked", tone: appointmentsToday.length > 0 ? "good" : "neutral" },
   ];
+  const notificationItems = [
+    ...overdueInvoices.map((invoice) => ({
+      key: "notification-invoice-" + invoice.id,
+      icon: "💳",
+      title: "Payment overdue",
+      detail: (invoice.number || "Invoice") + " has an outstanding balance of " + formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0))) + ".",
+      onClick: onFinance,
+      tone: "urgent",
+    })),
+    ...productionNeedsAttention.map((job) => ({
+      key: "notification-production-" + job.id,
+      icon: "🏭",
+      title: job.productionReadiness || "Production needs attention",
+      detail: (job.title || "Production job") + (job.productionReadinessDetail ? " · " + job.productionReadinessDetail : "."),
+      onClick: onProduction,
+      tone: "attention",
+    })),
+    ...appointmentsToday.map((appointment) => ({
+      key: "notification-appointment-" + appointment.id,
+      icon: "📅",
+      title: "Appointment today",
+      detail: (appointment.title || "Appointment") + " · " + (appointment.time || "Time not set"),
+      onClick: onCalendar,
+      tone: "today",
+    })),
+    ...(automationEvents || []).slice(0, 8).map((event) => ({
+      key: "notification-automation-" + event.id,
+      icon: "⚙️",
+      title: event.title || "Automation event",
+      detail: event.detail || "A BizziBuddi automation event was recorded.",
+      onClick: onAutomation,
+      tone: event.type === "invoice-overdue" ? "urgent" : "attention",
+    })),
+  ]
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.key === item.key) === index)
+    .filter((item) => !dismissedNotifications.includes(item.key))
+    .slice(0, 8);
+  const notificationCount = notificationItems.length;
   const recentActivityCount = recentActivity.length;
   const outstanding = invoices.reduce((sum, invoice) => invoice.status === "Paid" ? sum : sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0);
 
@@ -1601,6 +1640,38 @@ function DashboardPanel({
           </div>
         ) : (
           <span style={todayViewEmpty}>No recent business activity has been recorded yet.</span>
+        )}
+      </div>
+
+      <div style={{ ...todayViewPanel, marginTop: 18 }}>
+        <div style={todayViewHeader}>
+          <div>
+            <small style={smallText}>NOTIFICATIONS</small>
+            <h3 style={{ margin: "6px 0 5px", fontSize: 24 }}>What needs your attention.</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>Important business events gathered into one notification feed.</p>
+          </div>
+          {notificationCount > 0 && (
+            <span style={todayViewDate}>{notificationCount} active</span>
+          )}
+        </div>
+        {notificationItems.length > 0 ? (
+          <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
+            {notificationItems.map((item) => (
+              <article key={item.key} style={attentionItem(item.tone)}>
+                <div style={attentionItemIcon}>{item.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <strong style={{ display: "block", fontSize: 15 }}>{item.title}</strong>
+                  <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 13 }}>{item.detail}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button type="button" onClick={item.onClick} style={attentionAction}>Open →</button>
+                  <button type="button" onClick={() => setDismissedNotifications((current) => [...current, item.key])} style={smallActionButton}>Dismiss</button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div style={todayViewEmpty}>No active notifications. Your notification feed is clear.</div>
         )}
       </div>
 
