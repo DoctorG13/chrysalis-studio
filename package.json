@@ -1,7 +1,7 @@
 {
   "name": "chrysalis-studio",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": ">=24.15.0"
@@ -19,7 +19,8 @@
     "db:backup": "node server/index.js db:backup",
     "db:import": "node scripts/import-legacy.js",
     "db:audit": "node scripts/audit-database.js",
-    "test:workflow": "node scripts/test-bizzibuddi-workflow.js"
+    "test:workflow": "node scripts/test-bizzibuddi-workflow.js",
+    "release:check": "node scripts/check-production-release.js"
   },
   "dependencies": {
     "react": "^19.2.7",
