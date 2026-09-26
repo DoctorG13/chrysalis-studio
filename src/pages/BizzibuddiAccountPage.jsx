@@ -1427,11 +1427,90 @@ function formatProductionDate(date) {
   return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
-function ReportsPanel({ account, people, jobs, appointments, invoices, productionRecords, onPlans, onBack }) {
+function ReportsPanel({ account, onPlans, onBack }) {
+  const [reportData, setReportData] = useState(null);
+  const [reportError, setReportError] = useState("");
+  const [loading, setLoading] = useState(true);
   const available = hasBizzibuddiFeature(account?.plan, "reports");
 
   if (!available) {
     return <section style={cardStyle(720)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 24 }}>
+        <p style={eyebrowStyle}>REPORTS</p>
+        <h2 style={sectionHeading}>See the bigger picture.</h2>
+        <p style={copyStyle}>Advanced reporting is included with Business membership. Bring your people, jobs, calendar, finance and production activity together in one view.</p>
+        <div style={lockedFeatureCard}>
+          <span style={{ fontSize: 26 }}>🔒</span>
+          <div>
+            <strong style={{ display: "block", fontSize: 18 }}>Business advanced reporting</strong>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Business reporting turns your existing BizziBuddi activity into a clearer operating picture.</p>
+          </div>
+        </div>
+        <button type="button" onClick={onPlans} style={primaryButton}>View membership plans</button>
+      </div>
+    </section>;
+  }
+
+
+  useEffect(() => {
+    let active = true;
+    async function loadReports() {
+      setLoading(true);
+      setReportError("");
+      try {
+        const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/reports");
+        if (!active) return;
+        setReportData(result?.reports || null);
+      } catch (error) {
+        if (!active) return;
+        setReportData(null);
+        setReportError(error instanceof Error ? error.message : "Unable to load reports.");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    loadReports();
+    return () => { active = false; };
+  }, [account?.id]);
+
+  if (loading) {
+    return <section style={cardStyle(720)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 24 }}>
+        <p style={eyebrowStyle}>REPORTS</p>
+        <h2 style={sectionHeading}>Preparing your business report.</h2>
+        <p style={copyStyle}>BizziBuddi is loading the latest account-backed figures.</p>
+      </div>
+    </section>;
+  }
+
+  if (reportError || !reportData) {
+    return <section style={cardStyle(720)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 24 }}>
+        <p style={eyebrowStyle}>REPORTS</p>
+        <h2 style={sectionHeading}>Reports could not be loaded.</h2>
+        <p style={copyStyle}>{reportError || "No report data was returned by the BizziBuddi server."}</p>
+        <button type="button" onClick={() => window.location.reload()} style={primaryButton}>Try again</button>
+      </div>
+    </section>;
+  }
+
+  const { people, jobs, calendar, finance, production } = reportData;
+  const totalInvoiced = finance.totalInvoiced;
+  const totalPaid = finance.totalPaid;
+  const outstanding = finance.outstanding;
+  const completedJobs = jobs.completed;
+  const openJobs = jobs.open;
+  const upcomingAppointments = calendar.upcoming;
+  const productionComplete = production.complete;
+  const productionActive = production.active;
+  const overdueInvoices = finance.overdueInvoices;
+  const jobStatusGroups = jobs.statusGroups;
+  const productionStageGroups = production.stageGroups;
+
+  return <section style={cardStyle(720)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
       <div style={{ ...centerStyle, marginTop: 24 }}>
         <p style={eyebrowStyle}>REPORTS</p>
@@ -1481,62 +1560,63 @@ function ReportsPanel({ account, people, jobs, appointments, invoices, productio
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>REPORTS</p>
       <h2 style={sectionHeading}>Your business at a glance.</h2>
-      <p style={copyStyle}>A Business-level view of the activity already captured in BizziBuddi. This preview calculates reports locally from your current browser data.</p>
+      <p style={copyStyle}>A Business-level view of the activity already captured in BizziBuddi. These figures are generated from your account-backed business data.</p>
     </div>
 
     <div style={reportSummaryGrid}>
-      <div style={reportSummaryCard}><small style={smallText}>PEOPLE</small><strong style={reportSummaryValue}>{people.length}</strong><span style={smallText}>contacts</span></div>
-      <div style={reportSummaryCard}><small style={smallText}>OPEN JOBS</small><strong style={reportSummaryValue}>{openJobs}</strong><span style={smallText}>{completedJobs} completed</span></div>
-      <div style={reportSummaryCard}><small style={smallText}>UPCOMING</small><strong style={reportSummaryValue}>{upcomingAppointments}</strong><span style={smallText}>appointments</span></div>
-      <div style={reportSummaryCard}><small style={smallText}>OUTSTANDING</small><strong style={reportSummaryValue}>{formatCurrency(outstanding)}</strong><span style={smallText}>{overdueInvoices} overdue</span></div>
+      <div style={reportSummaryCard}><small style={smallText}>PEOPLE</small><strong style={reportSummaryValue}>{people.total}</strong><span style={smallText}>contacts</span></div>
+      <div style={reportSummaryCard}><small style={smallText}>OPEN JOBS</small><strong style={reportSummaryValue}>{jobs.open}</strong><span style={smallText}>{jobs.completed} completed</span></div>
+      <div style={reportSummaryCard}><small style={smallText}>UPCOMING</small><strong style={reportSummaryValue}>{calendar.upcoming}</strong><span style={smallText}>appointments</span></div>
+      <div style={reportSummaryCard}><small style={smallText}>OUTSTANDING</small><strong style={reportSummaryValue}>{formatCurrency(finance.outstanding)}</strong><span style={smallText}>{finance.overdueInvoices} overdue</span></div>
     </div>
 
     <div style={reportSectionGrid}>
       <article style={reportCard}>
-        <div style={reportCardHeading}><div><small style={smallText}>FINANCE</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Money overview</strong></div><span style={reportMetric}>{formatCurrency(totalInvoiced)}</span></div>
+        <div style={reportCardHeading}><div><small style={smallText}>FINANCE</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Money overview</strong></div><span style={reportMetric}>{formatCurrency(finance.totalInvoiced)}</span></div>
         <div style={reportRows}>
-          <div style={reportRow}><span>Total invoiced</span><strong>{formatCurrency(totalInvoiced)}</strong></div>
-          <div style={reportRow}><span>Paid</span><strong>{formatCurrency(totalPaid)}</strong></div>
-          <div style={reportRow}><span>Outstanding</span><strong>{formatCurrency(outstanding)}</strong></div>
-          <div style={reportRow}><span>Overdue invoices</span><strong>{overdueInvoices}</strong></div>
+          <div style={reportRow}><span>Total invoiced</span><strong>{formatCurrency(finance.totalInvoiced)}</strong></div>
+          <div style={reportRow}><span>Paid</span><strong>{formatCurrency(finance.totalPaid)}</strong></div>
+          <div style={reportRow}><span>Outstanding</span><strong>{formatCurrency(finance.outstanding)}</strong></div>
+          <div style={reportRow}><span>Overdue invoices</span><strong>{finance.overdueInvoices}</strong></div>
         </div>
       </article>
 
       <article style={reportCard}>
-        <div style={reportCardHeading}><div><small style={smallText}>JOBS</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Work status</strong></div><span style={reportMetric}>{jobs.length}</span></div>
+        <div style={reportCardHeading}><div><small style={smallText}>JOBS</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Work status</strong></div><span style={reportMetric}>{jobs.total}</span></div>
         <div style={reportRows}>
           {jobStatusGroups.map(([label, count]) => <div key={label} style={reportRow}><span>{label}</span><strong>{count}</strong></div>)}
         </div>
       </article>
 
       <article style={reportCard}>
-        <div style={reportCardHeading}><div><small style={smallText}>CALENDAR</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Scheduled activity</strong></div><span style={reportMetric}>{appointments.length}</span></div>
+        <div style={reportCardHeading}><div><small style={smallText}>CALENDAR</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Scheduled activity</strong></div><span style={reportMetric}>{calendar.total}</span></div>
         <div style={reportRows}>
-          <div style={reportRow}><span>Total appointments</span><strong>{appointments.length}</strong></div>
-          <div style={reportRow}><span>Upcoming</span><strong>{upcomingAppointments}</strong></div>
-          <div style={reportRow}><span>Booked / confirmed</span><strong>{appointments.filter((item) => !item.status || item.status === "Booked" || item.status === "Confirmed").length}</strong></div>
-          <div style={reportRow}><span>Cancelled</span><strong>{appointments.filter((item) => item.status === "Cancelled").length}</strong></div>
+          <div style={reportRow}><span>Total appointments</span><strong>{calendar.total}</strong></div>
+          <div style={reportRow}><span>Upcoming</span><strong>{calendar.upcoming}</strong></div>
+          <div style={reportRow}><span>Booked / confirmed</span><strong>{calendar.bookedConfirmed}</strong></div>
+          <div style={reportRow}><span>Cancelled</span><strong>{calendar.cancelled}</strong></div>
         </div>
       </article>
 
       <article style={reportCard}>
-        <div style={reportCardHeading}><div><small style={smallText}>PRODUCTION</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Production status</strong></div><span style={reportMetric}>{productionRecords.length}</span></div>
+        <div style={reportCardHeading}><div><small style={smallText}>PRODUCTION</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Production status</strong></div><span style={reportMetric}>{production.total}</span></div>
         <div style={reportRows}>
           <div style={reportRow}><span>Active</span><strong>{productionActive}</strong></div>
           <div style={reportRow}><span>Complete</span><strong>{productionComplete}</strong></div>
           {productionStageGroups.filter(([, count]) => count > 0).map(([stage, count]) => <div key={stage} style={reportRow}><span>{stage}</span><strong>{count}</strong></div>)}
-          {productionRecords.length === 0 && <div style={reportRow}><span>No production records yet</span><strong>—</strong></div>}
+          {production.total === 0 && <div style={reportRow}><span>No production records yet</span><strong>—</strong></div>}
         </div>
       </article>
     </div>
 
     <div style={businessNote}>
       <strong>Advanced reporting preview</strong>
-      <p style={copyStyle}>These figures are calculated from your local BizziBuddi people, jobs, calendar, finance and production data. Nothing is sent to an external reporting service.</p>
+      <p style={copyStyle}>These figures are generated on the BizziBuddi server from your account-backed people, jobs, calendar, finance and production data.</p>
     </div>
   </section>;
 }
 
+}
 function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
