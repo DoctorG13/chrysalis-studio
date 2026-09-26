@@ -1,3 +1,13 @@
+## BizziBuddi Financial Summaries
+
+### Added
+
+- Shipped the Release 0.7 Financial Summaries module inside Reports.
+- Added account-backed invoiced, paid, outstanding and overdue amounts.
+- Added paid/open invoice counts and average invoice value.
+- Added collection rate and overdue balance reporting.
+- Kept the summary descriptive and based on persisted BizziBuddi invoice data.
+
 ## BizziBuddi Reporting
 
 ### Added
