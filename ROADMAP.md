@@ -61,7 +61,7 @@ If not, it probably belongs in a later release.
 # Release 0.7 — Business
 
 - [x] Reporting
-- [ ] Financial summaries
+- [x] Financial summaries
 - [ ] Exporting
 - [ ] Monthly statistics
 - [ ] Business insights
