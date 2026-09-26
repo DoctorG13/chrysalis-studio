@@ -31,6 +31,7 @@ If not, it probably belongs in a later release.
 - [x] Production completion intelligence
 - [x] Due date highlighting
 - [x] Outstanding payment warnings
+- [x] Dashboard intelligence
 
 ## 🚧 Clients
 
