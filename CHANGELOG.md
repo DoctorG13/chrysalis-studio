@@ -1,3 +1,19 @@
+## BizziBuddi Membership Persistence
+
+### Changed
+
+- Membership selections now persist to the authenticated BizziBuddi workspace.
+- Selecting Free, Professional or Business updates the stored workspace membership plan.
+- Refreshing or signing back in now restores the selected membership from the server.
+- The Plans screen now describes the development-preview persistence accurately.
+
+### Notes
+
+- This is still a development membership preview; no payment or live subscription billing is created.
+- The stored plan controls BizziBuddi feature access after refresh.
+
+---
+
 ## BizziBuddi Reports Server Storage
 
 ### Added
