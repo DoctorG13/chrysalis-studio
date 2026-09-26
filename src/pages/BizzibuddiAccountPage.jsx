@@ -706,6 +706,58 @@ export default function BizzibuddiAccountPage() {
               .bizzibuddi-account-page kbd {
                 box-shadow: inset 0 -1px 0 rgba(255,255,255,.10);
               }
+              .bizzibuddi-account-page img {
+                max-width: 100%;
+                height: auto;
+              }
+              .bizzibuddi-table-scroll {
+                width: 100%;
+                max-width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                border-radius: 12px;
+                scrollbar-width: thin;
+              }
+              .bizzibuddi-table-scroll:focus-visible {
+                outline: 3px solid rgba(0,180,219,.45);
+                outline-offset: 4px;
+              }
+              @media (max-width: 900px) {
+                .bizzibuddi-account-page .bizzibuddi-account-nav-main {
+                  width: 100%;
+                }
+                .bizzibuddi-account-page .bizzibuddi-account-nav-main button {
+                  flex: 1 1 120px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-help-nav {
+                  min-width: 0;
+                }
+              }
+              @media (max-width: 560px) {
+                .bizzibuddi-account-page {
+                  padding-top: 18px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-account-nav-main {
+                  display: grid;
+                  grid-template-columns: repeat(2, minmax(0, 1fr));
+                  width: 100%;
+                }
+                .bizzibuddi-account-page .bizzibuddi-account-nav-main button {
+                  width: 100%;
+                  min-width: 0;
+                }
+                .bizzibuddi-account-page .bizzibuddi-help-action {
+                  grid-template-columns: 38px minmax(0, 1fr) 30px;
+                  gap: 8px;
+                  padding: 9px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-help-action-copy strong {
+                  font-size: 13px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-help-action-copy small {
+                  font-size: 9px;
+                }
+              }
               @media (max-width: 760px) {
                 .bizzibuddi-account-page {
                   padding-left: 14px !important;
@@ -2743,7 +2795,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
         {monthlyStatistics.length ? (
           <div style={{ overflowX: "auto", marginTop: 16 }}>
-            <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", fontSize: 13 }}>
+            <div className="bizzibuddi-table-scroll" role="region" aria-label="Monthly statistics" tabIndex="0"><table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
                   {["Month", "New people", "Jobs", "Appointments", "Invoiced", "Paid", "Production complete"].map((heading) => (
@@ -2766,7 +2818,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         ) : (
           <p style={{ ...copyStyle, marginTop: 16, marginBottom: 0 }}>No monthly activity is available yet.</p>
