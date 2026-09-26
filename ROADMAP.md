@@ -80,7 +80,7 @@ If not, it probably belongs in a later release.
 # Release 0.9 — Beta
 
 - [x] Full workflow testing
-- [ ] Data validation
+- [x] Data validation
 - [ ] Bug fixing
 - [ ] Documentation
 
