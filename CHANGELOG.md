@@ -1047,6 +1047,17 @@ All notable changes to Chrysalis are recorded here.
 
 All notable changes to Chrysalis are recorded here.
 
+## BizziBuddi UI Refinement
+
+### Changed
+
+- Added a consistent account-page interaction layer with smoother button, form-control and focus states.
+- Added keyboard-visible focus treatment for navigation, actions and form controls.
+- Refined the account navigation into a contained glass-style panel with clearer separation from the page background.
+- Improved mobile account-page spacing and navigation containment.
+- Respected reduced-motion preferences for the new interaction transitions.
+- Preserved all existing account workflows, data handling and branding.
+
 ---
 
 ## BizziBuddi Mobile Pricing Card Compactness
