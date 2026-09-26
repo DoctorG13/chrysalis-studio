@@ -1,3 +1,16 @@
+## BizziBuddi Documentation
+
+### Added
+
+- Updated the project README to describe the current BizziBuddi modules, persistence model, development commands and documentation set.
+- Replaced the outdated development guide with current repository workflow and quality rules.
+- Added `docs/BIZZIBUDDI.md` as the current application architecture and operating guide.
+- Documented Dashboard, People, Jobs, Production, Calendar, Finance, Automation, Reports and Buddi workflows.
+- Documented keyboard shortcuts, persistence boundaries and the static workflow verification command.
+- Marked Release 0.9 Documentation complete in the roadmap.
+
+---
+
 ## BizziBuddi Bug Fixing
 
 ### Fixed
