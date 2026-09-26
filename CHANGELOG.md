@@ -1,3 +1,15 @@
+## BizziBuddi Notifications
+
+### Added
+
+- Added a dashboard notification feed for important business events.
+- Surfaces overdue payments, production attention items, today's appointments and automation events.
+- Added direct navigation from each notification to its source module.
+- Added per-session dismissal controls and a clear notification state.
+- Kept notifications local to the existing BizziBuddi account data; no external messaging service is introduced.
+
+---
+
 ## BizziBuddi Calendar Improvements
 
 ### Added
