@@ -1,3 +1,19 @@
+## BizziBuddi Client Search Improvements
+
+### Added
+
+- Added a search field to the People workspace.
+- Added instant filtering across client name, email address and phone number.
+- Added a clear empty state when a search returns no matching people.
+- Added a one-click Clear search action.
+- Preserved Timeline, Measurements, Edit and Delete actions for filtered client records.
+
+### Workflow
+
+`People → Search → Match client → Continue client workflow`
+
+---
+
 ## BizziBuddi Measurement History
 
 ### Added
