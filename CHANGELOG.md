@@ -1,3 +1,13 @@
+## BizziBuddi Account Page Parse Fix
+
+### Fixed
+
+- Restored the missing React fragment wrapper around the account page return tree.
+- Fixed the Vite/Oxc JSX parse error at the keyboard-shortcuts dialog.
+- Added workflow contract checks so the required fragment wrapper and closure cannot be accidentally removed again.
+
+---
+
 ## BizziBuddi 1.0.0 Production Release
 
 ### Added
