@@ -82,7 +82,7 @@ If not, it probably belongs in a later release.
 - [x] Full workflow testing
 - [x] Data validation
 - [x] Bug fixing
-- [ ] Documentation
+- [x] Documentation
 
 ---
 
