@@ -2219,6 +2219,15 @@ function exportBizziBuddiReportCsv(reportData) {
       month.paid,
       month.productionCompleted,
     ]),
+    ["" , ""],
+    ["Business insights", "Metric", "Value", "Change", "Detail"],
+    ...(reportData.businessInsights || []).map((item) => [
+      "Business insights",
+      item.label,
+      item.value,
+      item.change,
+      item.detail,
+    ]),
   ];
 
   const csv = rows
@@ -2363,7 +2372,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
     );
   }
 
-  const { jobs, calendar, finance, production, insights, monthlyStatistics = [] } = reportData;
+  const { jobs, calendar, finance, production, insights, monthlyStatistics = [], businessInsights = [] } = reportData;
   const jobStatusGroups = jobs.statusGroups || [];
   const productionStageGroups = production.stageGroups || [];
 
@@ -2645,6 +2654,35 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
         <p style={{ ...copyStyle, marginTop: 14, marginBottom: 0 }}>
           Monthly figures are generated from persisted BizziBuddi activity. Invoiced amounts use invoice issue dates and paid amounts use recorded payment dates.
+        </p>
+      </article>
+
+      <article style={{ ...reportCard, marginTop: 14 }}>
+        <div style={reportCardHeading}>
+          <div>
+            <small style={smallText}>BUSINESS INSIGHTS</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>
+              What the current data shows
+            </strong>
+          </div>
+          <span style={reportMetric}>{businessInsights.length}</span>
+        </div>
+
+        <div style={{ ...reportSummaryGrid, marginTop: 16 }}>
+          {businessInsights.map((item) => (
+            <div key={item.key} style={reportSummaryCard}>
+              <small style={smallText}>{item.label}</small>
+              <strong style={reportSummaryValue}>{item.value}</strong>
+              <span style={{ display: "block", marginTop: 4, fontSize: 12, color: item.trend === "down" ? "#ffb0b0" : item.trend === "up" ? CYAN : MUTED }}>
+                {item.change}
+              </span>
+              <span style={{ ...smallText, display: "block", marginTop: 8 }}>{item.detail}</span>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ ...copyStyle, marginTop: 14, marginBottom: 0 }}>
+          Insights are descriptive account metrics. Trend comparisons use the most recent three months against the preceding three months.
         </p>
       </article>
 
