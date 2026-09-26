@@ -1,3 +1,14 @@
+## BizziBuddi Reporting
+
+### Added
+
+- Shipped the Release 0.7 Reporting module as an account-backed business reporting view.
+- Added live operational reporting for people, jobs, calendar, finance and production activity.
+- Added job completion, payment collection and production completion indicators.
+- Added a report refresh control so the current server-backed snapshot can be reloaded without leaving Reports.
+- Added report generation timestamp so the displayed figures are clearly identified as a current account snapshot.
+- Kept reporting descriptive and separate from the upcoming dedicated Financial Summaries work.
+
 ## BizziBuddi Keyboard Shortcuts
 
 ### Added
