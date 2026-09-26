@@ -628,6 +628,14 @@ function createJob(userId, payload) {
       job.updated_at
     );
 
+  createAutomationEvent(userId, {
+    type: "job-created",
+    title: "Job created",
+    detail: job.title + " was created for " + person.name + ".",
+    sourceKey: "job-created:" + job.id + ":" + job.created_at,
+    jobId: job.id,
+  });
+
   return toJob({
     ...job,
     client_name: person.name,
@@ -642,6 +650,12 @@ function updateJob(userId, jobId, payload) {
     throw new Error("The selected person could not be found.");
   }
 
+  const existing = getDatabase()
+    .prepare("SELECT id, title, status, person_id FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?")
+    .get(jobId, userId);
+
+  if (!existing) return null;
+
   const now = new Date().toISOString();
   const result = getDatabase()
     .prepare(
@@ -652,6 +666,24 @@ function updateJob(userId, jobId, payload) {
     .run(person.id, title, status, now, jobId, userId);
 
   if (!result.changes) return null;
+
+  if (existing.status !== status) {
+    createAutomationEvent(userId, {
+      type: "job-status-changed",
+      title: "Job status changed",
+      detail: title + ": " + existing.status + " → " + status + ".",
+      sourceKey: "job-status:" + jobId + ":" + existing.status + ":" + status + ":" + now,
+      jobId,
+    });
+  } else if (existing.title !== title || existing.person_id !== person.id) {
+    createAutomationEvent(userId, {
+      type: "job-updated",
+      title: "Job updated",
+      detail: title + " was updated.",
+      sourceKey: "job-updated:" + jobId + ":" + now,
+      jobId,
+    });
+  }
 
   return toJob(
     getDatabase()
@@ -1335,6 +1367,9 @@ const BIZZIBUDDI_AUTOMATION_TYPES = [
   "appointment-created",
   "invoice-overdue",
   "check-complete",
+  "job-created",
+  "job-status-changed",
+  "job-updated",
 ];
 
 function validateAutomationEventPayload(payload) {
@@ -1342,6 +1377,7 @@ function validateAutomationEventPayload(payload) {
   const title = String(payload?.title || "").trim();
   const detail = String(payload?.detail || "").trim();
   const sourceKey = String(payload?.sourceKey || "").trim();
+  const jobId = payload?.jobId ? String(payload.jobId).trim() : null;
 
   if (!BIZZIBUDDI_AUTOMATION_TYPES.includes(type)) {
     throw new Error("Please provide a valid automation event type.");
@@ -1359,7 +1395,7 @@ function validateAutomationEventPayload(payload) {
     throw new Error("Automation event source key must be 240 characters or fewer.");
   }
 
-  return { type, title, detail, sourceKey };
+  return { type, title, detail, sourceKey, jobId };
 }
 
 function toAutomationEvent(row) {
@@ -1371,6 +1407,7 @@ function toAutomationEvent(row) {
     title: row.title,
     detail: row.detail,
     sourceKey: row.source_key || "",
+    jobId: row.job_id || null,
     createdAt: row.created_at,
   };
 }
@@ -1396,6 +1433,7 @@ function createAutomationEvent(userId, payload) {
     title: values.title,
     detail: values.detail,
     source_key: values.sourceKey,
+    job_id: values.jobId,
     created_at: now,
   };
 
@@ -1426,12 +1464,32 @@ function createAutomationEvent(userId, payload) {
       event.title,
       event.detail,
       event.source_key,
+      event.job_id,
       event.created_at
     );
 
   return toAutomationEvent({
     ...event,
   });
+}
+
+function getJobTimeline(userId, jobId) {
+  const job = getDatabase()
+    .prepare("SELECT id FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?")
+    .get(jobId, userId);
+
+  if (!job) return null;
+
+  return getDatabase()
+    .prepare(
+      `SELECT id, type, title, detail, source_key, job_id, created_at
+       FROM bizzibuddi_automation_events
+       WHERE user_id = ? AND job_id = ?
+       ORDER BY created_at DESC
+       LIMIT 100`
+    )
+    .all(userId, jobId)
+    .map(toAutomationEvent);
 }
 
 function runAutomationChecks(userId) {
@@ -1956,6 +2014,37 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         ok: true,
         authenticated: true,
         job: createJob(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/jobs/") && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const jobId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/jobs/".length)
+      ).trim();
+
+      if (!jobId || jobId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Job not found." });
+        return true;
+      }
+
+      const timeline = getJobTimeline(user.id, jobId);
+
+      if (!timeline) {
+        sendJson(response, 404, { ok: false, error: "Job not found." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        timeline,
       });
       return true;
     }
