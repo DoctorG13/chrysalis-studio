@@ -64,7 +64,7 @@ If not, it probably belongs in a later release.
 - [x] Financial summaries
 - [x] Exporting
 - [x] Monthly statistics
-- [ ] Business insights
+- [x] Business insights
 
 ---
 
