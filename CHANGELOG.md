@@ -1047,6 +1047,16 @@ All notable changes to Chrysalis are recorded here.
 
 All notable changes to Chrysalis are recorded here.
 
+## BizziBuddi Performance Optimisation
+
+### Changed
+
+- Parallelised legacy Production record migration during account loading.
+- Replaced sequential migration requests with Promise.allSettled() so multiple legacy records can migrate concurrently.
+- Preserved successful migrations when an individual legacy record fails.
+- Preserved the existing cleanup and sorting behaviour after migration.
+- Kept the persistent server-backed Production workflow unchanged for current accounts.
+
 ## BizziBuddi UI Refinement
 
 ### Changed
