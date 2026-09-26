@@ -44,7 +44,7 @@ If not, it probably belongs in a later release.
 
 - [x] Smart priorities
 - [x] Recent activity
-- [ ] Business health indicators
+- [x] Business health indicators
 
 ---
 
