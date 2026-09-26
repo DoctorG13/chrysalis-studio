@@ -385,6 +385,7 @@ export default function BizzibuddiAccountPage() {
             people={people}
             jobs={jobs}
             account={account}
+            productionRecords={productionRecords}
             onAddAppointment={async (appointment) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar", {
                 method: "POST",
@@ -2656,6 +2657,7 @@ function CalendarPanel({
   people,
   jobs,
   account,
+  productionRecords,
   onAddAppointment,
   onUpdateAppointment,
   onDeleteAppointment,
@@ -2696,6 +2698,14 @@ function CalendarPanel({
     upcoming: appointments.filter((appointment) => !appointment.date || appointment.date >= calendarTodayKey).length,
     past: appointments.filter((appointment) => appointment.date && appointment.date < calendarTodayKey).length,
   };
+  const scheduledProduction = (productionRecords || [])
+    .filter((record) => record.dueDate)
+    .map((record) => ({
+      ...record,
+      dueDateValue: String(record.dueDate),
+    }))
+    .sort((a, b) => a.dueDateValue.localeCompare(b.dueDateValue));
+  const productionSchedule = scheduledProduction.filter((record) => record.dueDateValue >= calendarTodayKey).slice(0, 6);
 
   function startAdd() {
     setError("");
@@ -2780,6 +2790,29 @@ function CalendarPanel({
         </div>
       )}
     </div>
+
+    {productionSchedule.length > 0 && (
+      <div style={{ ...todayViewPanel, marginTop: 18 }}>
+        <div style={todayViewHeader}>
+          <div>
+            <small style={smallText}>GARMENT SCHEDULE</small>
+            <h3 style={{ margin: "6px 0 5px", fontSize: 20 }}>Production ready-by dates.</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>Upcoming production deadlines alongside your appointments.</p>
+          </div>
+          <span style={todayViewDate}>{productionSchedule.length} scheduled</span>
+        </div>
+        <div style={{ display: "grid", gap: 9, marginTop: 14 }}>
+          {productionSchedule.map((record) => (
+            <article key={record.id} style={todayViewItem}>
+              <strong>{record.jobTitle || "Production job"}</strong>
+              <span style={{ ...smallText, marginTop: 3 }}>
+                Ready by {formatProductionDate(record.dueDateValue)} · {record.stage || "Not started"}
+              </span>
+            </article>
+          ))}
+        </div>
+      </div>
+    )}
 
     {appointments.length > 0 ? (
       <>
