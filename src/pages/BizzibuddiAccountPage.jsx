@@ -325,7 +325,8 @@ export default function BizzibuddiAccountPage() {
   }
 
   return (
-    {account && shortcutHelpOpen && (
+    <>
+      {account && shortcutHelpOpen && (
       <div role="dialog" aria-label="Keyboard shortcuts" style={{ position: "fixed", right: 24, bottom: 24, zIndex: 1000, width: "min(360px, calc(100vw - 48px))", padding: 20, borderRadius: 16, border: "1px solid " + BORDER, background: SURFACE, boxShadow: "0 18px 45px rgba(0,0,0,.35)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
           <div>
@@ -852,6 +853,7 @@ export default function BizzibuddiAccountPage() {
         <footer style={footerStyle}>Account authentication is live · People, Jobs, Calendar, Finance, Automation, Production and Reports are now account-backed · <a href="/bizzibuddi" style={{ color: RED }}>Return to BizziBuddi</a></footer>
       </div>
     </main>
+    </>
   );
 }
 
