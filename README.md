@@ -94,6 +94,20 @@ Development membership selection is still a preview feature; it does not create 
 
 ---
 
+## Release 1.0
+
+The current repository baseline is version `1.0.0`.
+
+The Release 1.0 gate covers the documented BizziBuddi workflows, production entrypoint, authenticated backend, backup/restore gateway and static workflow contracts. Use the release check before deployment:
+
+```bash
+npm run release:check
+```
+
+Live subscription billing remains intentionally outside the current product scope.
+
+---
+
 ## Development
 
 ### Requirements
