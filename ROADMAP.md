@@ -30,7 +30,7 @@ If not, it probably belongs in a later release.
 - [x] Production task progress
 - [x] Production completion intelligence
 - [x] Due date highlighting
-- [ ] Outstanding payment warnings
+- [x] Outstanding payment warnings
 
 ## 🚧 Clients
 
