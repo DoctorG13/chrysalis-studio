@@ -32,6 +32,7 @@ If not, it probably belongs in a later release.
 - [x] Due date highlighting
 - [x] Outstanding payment warnings
 - [x] Dashboard intelligence
+- [x] Today view
 
 ## 🚧 Clients
 
