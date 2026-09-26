@@ -1047,6 +1047,15 @@ All notable changes to Chrysalis are recorded here.
 
 All notable changes to Chrysalis are recorded here.
 
+## BizziBuddi Workflow Testing
+
+### Added
+
+- Added a repeatable workflow contract test covering the authenticated BizziBuddi backend route surface.
+- Added UI workflow contract checks for Dashboard, People, Jobs, Calendar, Finance, Automation, Production, Reports and Buddi.
+- Added checks for persistent reporting, production, job timeline and measurement-history integrations.
+- Added the `npm run test:workflow` command for local beta validation without introducing a new test framework.
+
 ## BizziBuddi Responsive Improvements
 
 ### Added
