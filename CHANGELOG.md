@@ -1,3 +1,14 @@
+## BizziBuddi Garment Scheduling
+
+### Added
+
+- Added a Garment Schedule to the Calendar.
+- Upcoming production ready-by dates now appear alongside appointments.
+- Production entries show the garment/job, ready-by date and current production stage.
+- The schedule uses the existing persistent Production records, keeping calendar and production information connected without duplicating data.
+
+---
+
 ## BizziBuddi Appointment Management
 
 ### Added
