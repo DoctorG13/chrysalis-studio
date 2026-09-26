@@ -28,6 +28,7 @@ If not, it probably belongs in a later release.
 - [x] Job timeline automation
 - [x] Job progress tracker
 - [x] Production task progress
+- [x] Production completion intelligence
 - [ ] Due date highlighting
 - [ ] Outstanding payment warnings
 
