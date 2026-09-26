@@ -1,3 +1,19 @@
+## BizziBuddi Recent Activity
+
+### Added
+
+- Added a unified Recent Activity panel to the dashboard.
+- Recent activity combines Jobs, Calendar, Finance, Automation and Production updates.
+- Activity is ordered newest first using the latest available record timestamp.
+- Added direct navigation from each activity item to its source module.
+- Limited the dashboard display to the latest eight activity items to keep the operating view compact.
+
+### Workflow
+
+`Business activity → Recent activity → Source module → Continue work`
+
+---
+
 ## BizziBuddi Smart Priorities
 
 ### Added
