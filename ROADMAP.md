@@ -29,7 +29,7 @@ If not, it probably belongs in a later release.
 - [x] Job progress tracker
 - [x] Production task progress
 - [x] Production completion intelligence
-- [ ] Due date highlighting
+- [x] Due date highlighting
 - [ ] Outstanding payment warnings
 
 ## 🚧 Clients
