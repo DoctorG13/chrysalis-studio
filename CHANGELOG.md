@@ -1,3 +1,15 @@
+## BizziBuddi Keyboard Shortcuts
+
+### Added
+
+- Added keyboard navigation for Dashboard, People, Jobs, Calendar, Finance, Automation and Reports.
+- Added `?` to show or hide the shortcut guide.
+- Added `Esc` to close the shortcut guide.
+- Shortcuts are ignored while typing in form controls.
+- Added an in-app shortcut reference.
+
+---
+
 ## BizziBuddi Garment Scheduling
 
 ### Added
