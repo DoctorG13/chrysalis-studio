@@ -1980,6 +1980,15 @@ function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMark
     0
   );
   const paidCount = invoices.filter((invoice) => invoice.status === "Paid").length;
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < todayKey);
+  const dueSoonInvoices = invoices.filter((invoice) => {
+    if (invoice.status === "Paid" || !invoice.dueDate) return false;
+    const due = new Date(invoice.dueDate + "T00:00:00");
+    const today = new Date(todayKey + "T00:00:00");
+    const days = Math.ceil((due - today) / 86400000);
+    return days >= 0 && days <= 7;
+  });
 
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -2002,6 +2011,14 @@ function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMark
         <small style={smallText}>PAID</small>
         <strong style={{ display: "block", marginTop: 7, fontSize: 24 }}>{paidCount}</strong>
       </div>
+      <div>
+        <small style={smallText}>OVERDUE</small>
+        <strong style={{ display: "block", marginTop: 7, fontSize: 24, color: overdueInvoices.length ? "#ff8c8c" : TEXT }}>{overdueInvoices.length}</strong>
+      </div>
+      <div>
+        <small style={smallText}>DUE WITHIN 7 DAYS</small>
+        <strong style={{ display: "block", marginTop: 7, fontSize: 24, color: dueSoonInvoices.length ? "#f6c453" : TEXT }}>{dueSoonInvoices.length}</strong>
+      </div>
     </div>
 
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
@@ -2023,6 +2040,15 @@ function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMark
               <span style={{ ...smallText, display: "block", marginTop: 4 }}>
                 Issued {formatInvoiceDate(invoice.issueDate)}
               </span>
+              {invoice.status !== "Paid" && (
+                <span style={invoiceDueSignal(invoice, todayKey)}>
+                  {invoice.status === "Overdue"
+                    ? "Payment overdue"
+                    : invoice.dueDate === todayKey
+                      ? "Due today"
+                      : "Due soon"}
+                </span>
+              )}
             </div>
             <div style={invoiceMeta}>
               <strong>{formatCurrency(invoice.amount)}</strong>
@@ -3364,7 +3390,28 @@ const advancedBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba
 const financeSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 28 };
 const invoiceCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
 const invoiceMeta = { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" };
-const invoiceStatus = (status) => ({ padding: "6px 9px", borderRadius: 999, background: status === "Paid" ? "rgba(0,180,219,.12)" : "rgba(37,99,235,.12)", color: status === "Paid" ? CYAN : RED, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" });
+const invoiceStatus = (status) => ({ padding: "6px 9px", borderRadius: 999, background: status === "Paid" ? "rgba(0,180,219,.12)" : status === "Overdue" ? "rgba(220,50,50,.10)" : "rgba(37,99,235,.12)", color: status === "Paid" ? CYAN : status === "Overdue" ? "#ff8c8c" : RED, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" });
+const invoiceDueSignal = (invoice, today) => {
+  if (!invoice?.dueDate || invoice.status === "Paid") return { display: "none" };
+  const due = new Date(invoice.dueDate + "T00:00:00");
+  const current = new Date(today + "T00:00:00");
+  const days = Math.ceil((due - current) / 86400000);
+  const overdue = invoice.status === "Overdue" || days < 0;
+  const urgent = days >= 0 && days <= 7;
+
+  return {
+    display: "inline-flex",
+    width: "fit-content",
+    marginTop: 7,
+    padding: "4px 8px",
+    borderRadius: 999,
+    border: "1px solid " + (overdue ? "rgba(220,50,50,.42)" : urgent ? "rgba(245,158,11,.42)" : "rgba(255,255,255,.12)"),
+    background: overdue ? "rgba(220,50,50,.09)" : urgent ? "rgba(245,158,11,.08)" : "rgba(255,255,255,.04)",
+    color: overdue ? "#ff8c8c" : urgent ? "#f6c453" : MUTED,
+    fontSize: 10,
+    fontWeight: 800,
+  };
+};
 const smallActionButton = { border: `1px solid ${RED}`, borderRadius: 8, padding: "7px 10px", background: "transparent", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" };
 const lockedFeatureCard = { display: "flex", alignItems: "flex-start", gap: 14, maxWidth: 520, margin: "24px auto 0", padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", textAlign: "left" };
 const jobTimelinePanel = {
