@@ -999,6 +999,12 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
                   Tasks: {job.productionCompletedTaskCount || 0}/{job.productionTaskCount}
                 </span>
               )}
+              <span
+                style={{ ...jobReadinessBadge(job.productionReadiness || "In progress"), marginTop: 7 }}
+                title={job.productionReadinessDetail || ""}
+              >
+                {job.productionReadiness || "In progress"}
+              </span>
               {job.productionDueDate && <span style={{ ...smallText, display: "block", marginTop: 5 }}>Ready by {formatProductionDate(job.productionDueDate)}</span>}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -3383,6 +3389,18 @@ const jobProgressFill = {
   background: "linear-gradient(90deg, " + CYAN + ", " + RED + ")",
   transition: "width .2s ease",
 };
+
+const jobReadinessBadge = (status) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "4px 8px",
+  borderRadius: 999,
+  border: "1px solid " + (status === "Complete" || status === "Ready" ? "rgba(0,200,140,.35)" : status === "Overdue" ? "rgba(220,50,50,.4)" : "rgba(255,255,255,.12)"),
+  background: status === "Complete" || status === "Ready" ? "rgba(0,200,140,.08)" : status === "Overdue" ? "rgba(220,50,50,.1)" : "rgba(255,255,255,.04)",
+  color: status === "Complete" || status === "Ready" ? "#58e0b1" : status === "Overdue" ? "#ff8c8c" : TEXT,
+  fontSize: 11,
+  fontWeight: 800,
+});
 
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
