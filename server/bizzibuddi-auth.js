@@ -336,9 +336,20 @@ function createAccount(payload) {
 
 function updateAccount(userId, payload) {
   const business = String(payload?.business || "").trim();
+  const requestedPlan = payload?.plan == null ? null : String(payload.plan || "").trim();
 
   if (business.length > 120) {
     throw new Error("Business name must be 120 characters or fewer.");
+  }
+
+  const planMap = new Map([
+    ["Free", "free"],
+    ["Professional", "professional"],
+    ["Business", "business"],
+  ]);
+
+  if (requestedPlan && !planMap.has(requestedPlan)) {
+    throw new Error("Please select a valid BizziBuddi membership.");
   }
 
   const db = getDatabase();
@@ -354,15 +365,24 @@ function updateAccount(userId, payload) {
 
   if (!workspace) throw new Error("Business account could not be found.");
 
-  db.prepare(
-    `UPDATE workspaces
-     SET name = ?, updated_at = ?
-     WHERE id = ? AND owner_user_id = ?`
-  ).run(business, new Date().toISOString(), workspace.id, userId);
+  const nextPlan = requestedPlan ? planMap.get(requestedPlan) : null;
+
+  if (nextPlan) {
+    db.prepare(
+      `UPDATE workspaces
+       SET name = ?, subscription_plan = ?, updated_at = ?
+       WHERE id = ? AND owner_user_id = ?`
+    ).run(business, nextPlan, new Date().toISOString(), workspace.id, userId);
+  } else {
+    db.prepare(
+      `UPDATE workspaces
+       SET name = ?, updated_at = ?
+       WHERE id = ? AND owner_user_id = ?`
+    ).run(business, new Date().toISOString(), workspace.id, userId);
+  }
 
   return toAccount(getUserById(userId));
 }
-
 function createSessionCookie(userId, request) {
   const secure =
     process.env.NODE_ENV === "production" ||
