@@ -2207,6 +2207,18 @@ function exportBizziBuddiReportCsv(reportData) {
     ["Insights", "Job completion rate", reportData.insights?.jobCompletionRate ?? 0],
     ["Insights", "Payment collection rate", reportData.insights?.paymentCollectionRate ?? 0],
     ["Insights", "Production completion rate", reportData.insights?.productionCompletionRate ?? 0],
+    ["" , ""],
+    ["Monthly statistics", "Month", "New people", "Jobs", "Appointments", "Invoiced", "Paid", "Production complete"],
+    ...(reportData.monthlyStatistics || []).map((month) => [
+      "Monthly statistics",
+      month.label,
+      month.newPeople,
+      month.jobsCreated,
+      month.appointments,
+      month.invoiced,
+      month.paid,
+      month.productionCompleted,
+    ]),
   ];
 
   const csv = rows
@@ -2351,7 +2363,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
     );
   }
 
-  const { jobs, calendar, finance, production, insights } = reportData;
+  const { jobs, calendar, finance, production, insights, monthlyStatistics = [] } = reportData;
   const jobStatusGroups = jobs.statusGroups || [];
   const productionStageGroups = production.stageGroups || [];
 
@@ -2588,6 +2600,53 @@ function ReportsPanel({ account, onPlans, onBack }) {
           </div>
         </article>
       </div>
+
+      <article style={{ ...reportCard, marginTop: 14 }}>
+        <div style={reportCardHeading}>
+          <div>
+            <small style={smallText}>MONTHLY STATISTICS</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>
+              Last 12 months
+            </strong>
+          </div>
+          <span style={reportMetric}>{monthlyStatistics.length}</span>
+        </div>
+
+        {monthlyStatistics.length ? (
+          <div style={{ overflowX: "auto", marginTop: 16 }}>
+            <table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+                <tr>
+                  {["Month", "New people", "Jobs", "Appointments", "Invoiced", "Paid", "Production complete"].map((heading) => (
+                    <th key={heading} style={{ textAlign: heading === "Month" ? "left" : "right", padding: "9px 10px", borderBottom: "1px solid " + BORDER, color: MUTED, fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }}>
+                      {heading}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyStatistics.map((month) => (
+                  <tr key={month.key}>
+                    <td style={{ padding: "10px", borderBottom: "1px solid rgba(255,255,255,.08)", fontWeight: 700 }}>{month.label}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{month.newPeople}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{month.jobsCreated}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{month.appointments}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{formatCurrency(month.invoiced)}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{formatCurrency(month.paid)}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{month.productionCompleted}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p style={{ ...copyStyle, marginTop: 16, marginBottom: 0 }}>No monthly activity is available yet.</p>
+        )}
+
+        <p style={{ ...copyStyle, marginTop: 14, marginBottom: 0 }}>
+          Monthly figures are generated from persisted BizziBuddi activity. Invoiced amounts use invoice issue dates and paid amounts use recorded payment dates.
+        </p>
+      </article>
 
       <div style={businessNote}>
         <strong>Advanced reporting</strong>
