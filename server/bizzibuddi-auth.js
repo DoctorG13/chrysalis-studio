@@ -1831,6 +1831,100 @@ function deleteAutomationEvents(userId) {
   return Number(result.changes || 0);
 }
 
+function buildBizziBuddiBusinessInsights(monthlyStatistics, finance, jobs, calendar, production) {
+  const recent = monthlyStatistics.slice(-3);
+  const previous = monthlyStatistics.slice(-6, -3);
+
+  const sum = (rows, field) => rows.reduce((total, row) => total + (Number(row[field]) || 0), 0);
+  const percentageChange = (current, previousValue) => {
+    if (previousValue === 0) return current > 0 ? null : 0;
+    return Math.round(((current - previousValue) / previousValue) * 100);
+  };
+  const trend = (change) => {
+    if (change === null) return "new";
+    if (Math.abs(change) < 5) return "stable";
+    return change > 0 ? "up" : "down";
+  };
+  const trendLabel = (change) => {
+    if (change === null) return "New activity";
+    if (change === 0) return "No change";
+    return `${change > 0 ? "+" : ""}${change}%`;
+  };
+
+  const recentInvoiced = sum(recent, "invoiced");
+  const previousInvoiced = sum(previous, "invoiced");
+  const recentPaid = sum(recent, "paid");
+  const previousPaid = sum(previous, "paid");
+  const recentPeople = sum(recent, "newPeople");
+  const previousPeople = sum(previous, "newPeople");
+  const recentJobs = sum(recent, "jobsCreated");
+  const previousJobs = sum(previous, "jobsCreated");
+
+  const invoicedChange = percentageChange(recentInvoiced, previousInvoiced);
+  const paidChange = percentageChange(recentPaid, previousPaid);
+  const peopleChange = percentageChange(recentPeople, previousPeople);
+  const jobsChange = percentageChange(recentJobs, previousJobs);
+
+  return [
+    {
+      key: "invoiced-trend",
+      label: "Invoicing trend",
+      value: formatBusinessInsightCurrency(recentInvoiced),
+      trend: trend(invoicedChange),
+      change: trendLabel(invoicedChange),
+      detail: "Total invoices issued across the most recent three months.",
+    },
+    {
+      key: "paid-trend",
+      label: "Payments recorded",
+      value: formatBusinessInsightCurrency(recentPaid),
+      trend: trend(paidChange),
+      change: trendLabel(paidChange),
+      detail: "Payments recorded across the most recent three months.",
+    },
+    {
+      key: "client-activity",
+      label: "New client activity",
+      value: String(recentPeople),
+      trend: trend(peopleChange),
+      change: trendLabel(peopleChange),
+      detail: "New people added across the most recent three months.",
+    },
+    {
+      key: "job-activity",
+      label: "Job activity",
+      value: String(recentJobs),
+      trend: trend(jobsChange),
+      change: trendLabel(jobsChange),
+      detail: "Jobs created across the most recent three months.",
+    },
+    {
+      key: "current-workload",
+      label: "Current workload",
+      value: String(jobs.open),
+      trend: "current",
+      change: `${calendar.upcoming} upcoming appointments`,
+      detail: `${production.active} production record${production.active === 1 ? "" : "s"} currently active.`,
+    },
+    {
+      key: "outstanding-exposure",
+      label: "Outstanding balance",
+      value: formatBusinessInsightCurrency(finance.outstanding),
+      trend: finance.overdueInvoices > 0 ? "attention" : "current",
+      change: `${finance.overdueInvoices} overdue invoice${finance.overdueInvoices === 1 ? "" : "s"}`,
+      detail: "Current unpaid invoice balance from the account finance records.",
+    },
+  ];
+}
+
+function formatBusinessInsightCurrency(value) {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+}
+
 function getMonthlyBizziBuddiStatistics(userId, now = new Date()) {
   const people = getPeople(userId).map(toPerson);
   const jobs = getJobs(userId).map(toJob);
@@ -1975,6 +2069,7 @@ function getBizziBuddiReports(userId) {
     production: { total: productionRecords.length, active: productionActive, complete: productionComplete, stageGroups: productionStageGroups },
     insights: { jobCompletionRate, paymentCollectionRate, productionCompletionRate },
     monthlyStatistics: getMonthlyBizziBuddiStatistics(userId, now),
+    businessInsights: buildBizziBuddiBusinessInsights(monthlyStatistics, finance, jobs, calendar, production),
   };
 }
 
