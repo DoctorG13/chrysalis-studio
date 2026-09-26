@@ -1438,6 +1438,21 @@ function DashboardPanel({
     ...(invoices || []).map((invoice) => ({ key: "invoice-" + invoice.id, date: invoice.updatedAt || invoice.createdAt || invoice.issueDate, icon: "💳", label: "Finance", title: invoice.number || "Invoice", detail: (invoice.status || "Issued") + " · " + formatCurrency(Number(invoice.amount) || 0), onClick: onFinance })),
     ...(productionRecords || []).map((record) => ({ key: "production-" + record.id, date: record.updatedAt || record.createdAt, icon: "🏭", label: "Production", title: record.jobTitle || "Production job", detail: "Stage: " + (record.stage || "Not started"), onClick: onProduction })),
   ].filter((item) => item.date).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
+  const completedJobs = jobs.filter((job) => job.status === "Complete").length;
+  const completionRate = jobs.length ? Math.round((completedJobs / jobs.length) * 100) : 0;
+  const paidInvoices = invoices.filter((invoice) => invoice.status === "Paid");
+  const invoicedTotal = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
+  const paidTotal = paidInvoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
+  const collectionRate = invoicedTotal > 0 ? Math.round((paidTotal / invoicedTotal) * 100) : 0;
+  const overdueAmount = overdueInvoices.reduce((sum, invoice) => sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0);
+  const productionComplete = productionRecords.filter((record) => record.stage === "Complete").length;
+  const productionActive = productionRecords.filter((record) => record.stage && record.stage !== "Complete").length;
+  const healthMetrics = [
+    { label: "Work completion", value: jobs.length ? completionRate + "%" : "—", detail: jobs.length ? completedJobs + " of " + jobs.length + " jobs complete" : "No jobs recorded yet", tone: completionRate >= 75 ? "good" : completionRate >= 40 ? "watch" : "neutral" },
+    { label: "Payment collection", value: invoices.length ? collectionRate + "%" : "—", detail: invoices.length ? formatCurrency(overdueAmount) + " currently overdue" : "No invoices recorded yet", tone: overdueAmount > 0 ? "watch" : "good" },
+    { label: "Production flow", value: productionRecords.length ? productionActive + " active" : "—", detail: productionRecords.length ? productionComplete + " completed" : "No production records yet", tone: productionActive > 0 ? "good" : "neutral" },
+    { label: "Today's schedule", value: appointmentsToday.length, detail: appointmentsToday.length === 1 ? "appointment booked" : "appointments booked", tone: appointmentsToday.length > 0 ? "good" : "neutral" },
+  ];
   const recentActivityCount = recentActivity.length;
   const outstanding = invoices.reduce((sum, invoice) => invoice.status === "Paid" ? sum : sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0);
 
@@ -1587,6 +1602,26 @@ function DashboardPanel({
         ) : (
           <span style={todayViewEmpty}>No recent business activity has been recorded yet.</span>
         )}
+      </div>
+
+      <div style={{ ...todayViewPanel, marginTop: 18 }}>
+        <div style={todayViewHeader}>
+          <div>
+            <small style={smallText}>BUSINESS HEALTH</small>
+            <h3 style={{ margin: "6px 0 5px", fontSize: 24 }}>How the business is tracking.</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>A compact health snapshot based on the activity already recorded in BizziBuddi.</p>
+          </div>
+        </div>
+        <div style={{ ...todayViewGrid, marginTop: 16 }}>
+          {healthMetrics.map((metric) => (
+            <article key={metric.label} style={todayViewCard}>
+              <small style={smallText}>{metric.label.toUpperCase()}</small>
+              <strong style={{ ...todayViewMetric, color: metric.tone === "watch" ? "#f6c453" : metric.tone === "good" ? "#58e0b1" : TEXT }}>{metric.value}</strong>
+              <span style={todayViewLabel}>{metric.detail}</span>
+            </article>
+          ))}
+        </div>
+        <p style={{ ...smallText, margin: "14px 0 0" }}>These indicators are descriptive snapshots, not financial or business advice.</p>
       </div>
 
       <div style={statsGrid}>
