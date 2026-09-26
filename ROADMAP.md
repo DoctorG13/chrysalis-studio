@@ -38,7 +38,7 @@ If not, it probably belongs in a later release.
 
 - [x] Client timeline
 - [x] Measurement history
-- [ ] Client search improvements
+- [x] Client search improvements
 
 ## 🚧 Dashboard
 
