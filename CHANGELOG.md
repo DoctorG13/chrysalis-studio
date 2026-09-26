@@ -1,3 +1,19 @@
+## BizziBuddi Business Health Indicators
+
+### Added
+
+- Added a dashboard Business Health panel.
+- Added descriptive work-completion, payment-collection, production-flow and daily-schedule indicators.
+- Added clear empty-state handling when a business area has no recorded data.
+- Kept health indicators derived from existing account-backed BizziBuddi data.
+- Added contextual detail beneath each indicator so the numbers remain understandable.
+
+### Workflow
+
+`Business data → Health indicator → Context → Operating decision`
+
+---
+
 ## BizziBuddi Recent Activity
 
 ### Added
