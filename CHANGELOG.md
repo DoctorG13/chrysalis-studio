@@ -1,3 +1,20 @@
+## BizziBuddi Job Progress Tracker
+
+### Added
+
+- Production tracking is automatically initialised when a new Job is created.
+- Jobs expose their linked production stage and progress percentage.
+- Job cards show a visual production progress bar and ready-by date.
+- Production stage changes are recorded in the Job Timeline.
+
+### Workflow
+
+`Job → Production stage → Progress → Timeline`
+
+The existing five-stage Production workflow remains the source of truth for production progress.
+
+---
+
 ## BizziBuddi Job Timeline & Workflow Events
 
 ### Added
