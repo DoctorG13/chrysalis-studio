@@ -1,3 +1,22 @@
+## BizziBuddi Production Task Progress
+
+### Added
+
+- Production tasks are now persistent checklist items rather than text-only task lines.
+- Tasks can be checked, reopened, added and removed from the Production workspace.
+- Task completion counts and percentages are shown in Production.
+- Job cards now show completed production tasks alongside stage progress.
+- Production task completion and reopening are recorded in the Job Timeline.
+- Fixed Production record normalization so Job progress correctly reads persisted stage and task data.
+
+### Workflow
+
+`Job → Production stage → Tasks → Task progress → Timeline`
+
+The five production stages remain the primary workflow state, while task completion provides the granular work-progress view.
+
+---
+
 ## BizziBuddi Job Progress Tracker
 
 ### Added
