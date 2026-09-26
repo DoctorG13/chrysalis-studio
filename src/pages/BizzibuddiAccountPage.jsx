@@ -2179,6 +2179,59 @@ function formatProductionDate(date) {
   return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function exportBizziBuddiReportCsv(reportData) {
+  const rows = [
+    ["BizziBuddi Report", ""],
+    ["Generated", reportData.generatedAt || ""],
+    ["" , ""],
+    ["People", "Total", reportData.people?.total ?? 0],
+    ["Jobs", "Total", reportData.jobs?.total ?? 0],
+    ["Jobs", "Open", reportData.jobs?.open ?? 0],
+    ["Jobs", "Completed", reportData.jobs?.completed ?? 0],
+    ["Calendar", "Total appointments", reportData.calendar?.total ?? 0],
+    ["Calendar", "Upcoming", reportData.calendar?.upcoming ?? 0],
+    ["Calendar", "Booked / confirmed", reportData.calendar?.bookedConfirmed ?? 0],
+    ["Calendar", "Cancelled", reportData.calendar?.cancelled ?? 0],
+    ["Finance", "Total invoiced", reportData.finance?.totalInvoiced ?? 0],
+    ["Finance", "Total paid", reportData.finance?.totalPaid ?? 0],
+    ["Finance", "Outstanding", reportData.finance?.outstanding ?? 0],
+    ["Finance", "Overdue amount", reportData.finance?.overdueAmount ?? 0],
+    ["Finance", "Paid invoices", reportData.finance?.paidInvoiceCount ?? 0],
+    ["Finance", "Outstanding invoices", reportData.finance?.outstandingInvoiceCount ?? 0],
+    ["Finance", "Overdue invoices", reportData.finance?.overdueInvoices ?? 0],
+    ["Finance", "Average invoice", reportData.finance?.averageInvoice ?? 0],
+    ["Finance", "Collection rate", reportData.finance?.collectionRate ?? 0],
+    ["Production", "Total", reportData.production?.total ?? 0],
+    ["Production", "Active", reportData.production?.active ?? 0],
+    ["Production", "Complete", reportData.production?.complete ?? 0],
+    ["Insights", "Job completion rate", reportData.insights?.jobCompletionRate ?? 0],
+    ["Insights", "Payment collection rate", reportData.insights?.paymentCollectionRate ?? 0],
+    ["Insights", "Production completion rate", reportData.insights?.productionCompletionRate ?? 0],
+  ];
+
+  const csv = rows
+    .map((row) =>
+      row
+        .map((value) => {
+          const text = String(value ?? "");
+          return `"${text.replaceAll('"', '""')}"`;
+        })
+        .join(",")
+    )
+    .join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const date = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `bizzibuddi-report-${date}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function ReportsPanel({ account, onPlans, onBack }) {
   const [reportData, setReportData] = useState(null);
   const [reportError, setReportError] = useState("");
@@ -2317,20 +2370,25 @@ function ReportsPanel({ account, onPlans, onBack }) {
             These figures are generated from your account-backed business data.
           </p>
         </div>
-        <button type="button" disabled={refreshing} onClick={async () => {
-          setRefreshing(true);
-          setReportError("");
-          try {
-            const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/reports");
-            setReportData(result?.reports || null);
-          } catch (error) {
-            setReportError(error instanceof Error ? error.message : "Unable to refresh reports.");
-          } finally {
-            setRefreshing(false);
-          }
-        }} style={{ ...smallActionButton, opacity: refreshing ? 0.6 : 1 }}>
-          {refreshing ? "Refreshing…" : "↻ Refresh report"}
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => exportBizziBuddiReportCsv(reportData)} style={smallActionButton}>
+            ↓ Export CSV
+          </button>
+          <button type="button" disabled={refreshing} onClick={async () => {
+            setRefreshing(true);
+            setReportError("");
+            try {
+              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/reports");
+              setReportData(result?.reports || null);
+            } catch (error) {
+              setReportError(error instanceof Error ? error.message : "Unable to refresh reports.");
+            } finally {
+              setRefreshing(false);
+            }
+          }} style={{ ...smallActionButton, opacity: refreshing ? 0.6 : 1 }}>
+            {refreshing ? "Refreshing…" : "↻ Refresh report"}
+          </button>
+        </div>
       </div>
 
       <div style={reportSummaryGrid}>
