@@ -1,3 +1,20 @@
+## BizziBuddi 1.0.0 Production Release
+
+### Added
+
+- Established the Chrysalis/BizziBuddi `1.0.0` production release baseline.
+- Added a dedicated `npm run release:check` production release gate.
+- Added static verification for the production build/start scripts, authenticated backend, production gateway, backup validation, workflow contracts and current documentation.
+- Updated README release guidance and documented the current production boundary.
+- Marked Release 1.0 Production release complete in the roadmap.
+
+### Release boundary
+
+- Live subscription billing remains outside the current product scope.
+- The release gate verifies repository structure and contracts; it does not replace deployment-specific browser, infrastructure or operational checks.
+
+---
+
 ## BizziBuddi Documentation
 
 ### Added
