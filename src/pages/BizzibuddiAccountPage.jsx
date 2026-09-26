@@ -999,13 +999,22 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
                   Tasks: {job.productionCompletedTaskCount || 0}/{job.productionTaskCount}
                 </span>
               )}
-              <span
-                style={{ ...jobReadinessBadge(job.productionReadiness || "In progress"), marginTop: 7 }}
-                title={job.productionReadinessDetail || ""}
-              >
-                {job.productionReadiness || "In progress"}
-              </span>
-              {job.productionDueDate && <span style={{ ...smallText, display: "block", marginTop: 5 }}>Ready by {formatProductionDate(job.productionDueDate)}</span>}
+              <div style={{ display: "flex", gap: 7, alignItems: "center", flexWrap: "wrap", marginTop: 7 }}>
+                <span
+                  style={jobReadinessBadge(job.productionReadiness || "In progress")}
+                  title={job.productionReadinessDetail || ""}
+                >
+                  {job.productionReadiness || "In progress"}
+                </span>
+                {job.productionDueDate && (
+                  <span
+                    style={jobDueDateBadge(job.productionDueDate, job.productionReadiness || "In progress")}
+                    title="Production ready-by date"
+                  >
+                    {jobDueDateLabel(job.productionDueDate, job.productionReadiness || "In progress")}
+                  </span>
+                )}
+              </div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
               <span style={jobStatus}>{job.status}</span>
@@ -3401,6 +3410,38 @@ const jobReadinessBadge = (status) => ({
   fontSize: 11,
   fontWeight: 800,
 });
+
+const jobDueDateBadge = (dueDate, readiness) => {
+  if (!dueDate) return { display: "none" };
+  const today = new Date().toISOString().slice(0, 10);
+  const daysUntilDue = Math.ceil((new Date(dueDate + "T00:00:00") - new Date(today + "T00:00:00")) / 86400000);
+  const overdue = readiness === "Overdue" || daysUntilDue < 0;
+  const urgent = readiness !== "Complete" && daysUntilDue >= 0 && daysUntilDue <= 2;
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "4px 8px",
+    borderRadius: 999,
+    border: "1px solid " + (overdue ? "rgba(220,50,50,.45)" : urgent ? "rgba(245,158,11,.45)" : "rgba(255,255,255,.12)"),
+    background: overdue ? "rgba(220,50,50,.10)" : urgent ? "rgba(245,158,11,.10)" : "rgba(255,255,255,.04)",
+    color: overdue ? "#ff8c8c" : urgent ? "#f6c453" : MUTED,
+    fontSize: 11,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+  };
+};
+
+const jobDueDateLabel = (dueDate, readiness) => {
+  if (!dueDate) return "";
+  const today = new Date().toISOString().slice(0, 10);
+  const daysUntilDue = Math.ceil((new Date(dueDate + "T00:00:00") - new Date(today + "T00:00:00")) / 86400000);
+  if (readiness === "Complete") return "Ready by " + formatProductionDate(dueDate);
+  if (daysUntilDue < 0) return "Overdue · " + formatProductionDate(dueDate);
+  if (daysUntilDue === 0) return "Due today · " + formatProductionDate(dueDate);
+  if (daysUntilDue === 1) return "Due tomorrow · " + formatProductionDate(dueDate);
+  return "Ready by " + formatProductionDate(dueDate);
+};
 
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
