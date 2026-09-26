@@ -1831,6 +1831,85 @@ function deleteAutomationEvents(userId) {
   return Number(result.changes || 0);
 }
 
+function getMonthlyBizziBuddiStatistics(userId, now = new Date()) {
+  const people = getPeople(userId).map(toPerson);
+  const jobs = getJobs(userId).map(toJob);
+  const appointments = getCalendar(userId).map(toCalendarEntry);
+  const invoices = getInvoices(userId).map(toInvoice);
+  const productionRecords = getProductionRecords(userId);
+
+  const months = [];
+  const cursor = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  for (let index = 0; index < 12; index += 1) {
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth();
+    const key = `${year}-${String(month + 1).padStart(2, "0")}`;
+    months.push({
+      key,
+      label: cursor.toLocaleDateString("en-AU", { month: "short", year: "numeric" }),
+      newPeople: 0,
+      jobsCreated: 0,
+      appointments: 0,
+      invoiced: 0,
+      paid: 0,
+      productionCompleted: 0,
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  const byMonth = new Map(months.map((month) => [month.key, month]));
+  const monthKey = (value) => {
+    const text = String(value || "");
+    return /^\d{4}-\d{2}-\d{2}/.test(text) ? text.slice(0, 7) : "";
+  };
+
+  for (const person of people) {
+    const month = byMonth.get(monthKey(person.createdAt));
+    if (month) month.newPeople += 1;
+  }
+
+  for (const job of jobs) {
+    const month = byMonth.get(monthKey(job.createdAt));
+    if (month) month.jobsCreated += 1;
+  }
+
+  for (const appointment of appointments) {
+    const month = byMonth.get(monthKey(appointment.date));
+    if (month) month.appointments += 1;
+  }
+
+  for (const invoice of invoices) {
+    const month = byMonth.get(monthKey(invoice.issueDate || invoice.createdAt));
+    if (month) month.invoiced += Number(invoice.amount) || 0;
+  }
+
+  const payments = getDatabase()
+    .prepare(
+      `SELECT amount, date
+       FROM bizzibuddi_payments
+       WHERE user_id = ?
+       ORDER BY date ASC, created_at ASC`
+    )
+    .all(userId);
+
+  for (const payment of payments) {
+    const month = byMonth.get(monthKey(payment.date));
+    if (month) month.paid += Number(payment.amount) || 0;
+  }
+
+  for (const record of productionRecords) {
+    if (record.stage !== "Complete") continue;
+    const month = byMonth.get(monthKey(record.updatedAt || record.createdAt));
+    if (month) month.productionCompleted += 1;
+  }
+
+  return months.map((month) => ({
+    ...month,
+    invoiced: Math.round(month.invoiced * 100) / 100,
+    paid: Math.round(month.paid * 100) / 100,
+  }));
+}
+
 function getBizziBuddiReports(userId) {
   const people = getPeople(userId).map(toPerson);
   const jobs = getJobs(userId).map(toJob);
@@ -1895,6 +1974,7 @@ function getBizziBuddiReports(userId) {
     },
     production: { total: productionRecords.length, active: productionActive, complete: productionComplete, stageGroups: productionStageGroups },
     insights: { jobCompletionRate, paymentCollectionRate, productionCompletionRate },
+    monthlyStatistics: getMonthlyBizziBuddiStatistics(userId, now),
   };
 }
 
