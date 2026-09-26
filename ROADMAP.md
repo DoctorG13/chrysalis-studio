@@ -88,6 +88,8 @@ If not, it probably belongs in a later release.
 
 # Release 1.0
 
-Production release.
+- [x] Production release
+
+Version `1.0.0` establishes the production application baseline with documented workflows, persistent account-backed business data, production startup, backup/restore support and release verification.
 
 Donna can comfortably run Chrysalis as her primary business application every day.
