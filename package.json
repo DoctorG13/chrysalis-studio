@@ -18,7 +18,8 @@
     "db:info": "node server/index.js db:info",
     "db:backup": "node server/index.js db:backup",
     "db:import": "node scripts/import-legacy.js",
-    "db:audit": "node scripts/audit-database.js"
+    "db:audit": "node scripts/audit-database.js",
+    "test:workflow": "node scripts/test-bizzibuddi-workflow.js"
   },
   "dependencies": {
     "react": "^19.2.7",
