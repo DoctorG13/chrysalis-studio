@@ -345,7 +345,7 @@ export default function BizzibuddiAccountPage() {
       </div>
     )}
 
-    <main style={pageStyle}>
+    <main className="bizzibuddi-account-page" style={pageStyle}>
       <div style={ambientGlow} />
       <div style={shellStyle}>
         <header style={headerStyle}>
@@ -617,6 +617,96 @@ export default function BizzibuddiAccountPage() {
 
 
         <style>{`
+              .bizzibuddi-account-page {
+                -webkit-font-smoothing: antialiased;
+                text-rendering: optimizeLegibility;
+              }
+              .bizzibuddi-account-page button,
+              .bizzibuddi-account-page input,
+              .bizzibuddi-account-page select,
+              .bizzibuddi-account-page textarea {
+                font: inherit;
+              }
+              .bizzibuddi-account-page button {
+                transition: transform .16s ease, border-color .16s ease, background-color .16s ease, box-shadow .16s ease, opacity .16s ease;
+              }
+              .bizzibuddi-account-page button:not(:disabled):hover {
+                transform: translateY(-1px);
+              }
+              .bizzibuddi-account-page button:not(:disabled):active {
+                transform: translateY(0);
+              }
+              .bizzibuddi-account-page button:focus-visible,
+              .bizzibuddi-account-page a:focus-visible,
+              .bizzibuddi-account-page input:focus-visible,
+              .bizzibuddi-account-page select:focus-visible,
+              .bizzibuddi-account-page textarea:focus-visible {
+                outline: 3px solid rgba(0,180,219,.45);
+                outline-offset: 3px;
+              }
+              .bizzibuddi-account-page input::placeholder,
+              .bizzibuddi-account-page textarea::placeholder {
+                color: rgba(184,198,214,.62);
+              }
+              .bizzibuddi-account-page input,
+              .bizzibuddi-account-page select,
+              .bizzibuddi-account-page textarea {
+                transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+              }
+              .bizzibuddi-account-page input:hover,
+              .bizzibuddi-account-page select:hover,
+              .bizzibuddi-account-page textarea:hover {
+                border-color: rgba(0,180,219,.42) !important;
+              }
+              .bizzibuddi-account-page input:focus,
+              .bizzibuddi-account-page select:focus,
+              .bizzibuddi-account-page textarea:focus {
+                border-color: rgba(0,180,219,.78) !important;
+                box-shadow: 0 0 0 3px rgba(0,180,219,.10);
+              }
+              .bizzibuddi-account-page .bizzibuddi-account-nav {
+                padding: 12px;
+                border: 1px solid rgba(255,255,255,.10);
+                border-radius: 18px;
+                background: rgba(6,26,43,.46);
+                box-shadow: 0 14px 32px rgba(0,0,0,.12);
+                backdrop-filter: blur(14px);
+              }
+              .bizzibuddi-account-page .bizzibuddi-account-nav-main button {
+                min-height: 42px;
+              }
+              .bizzibuddi-account-page .bizzibuddi-help-action:hover {
+                border-color: rgba(0,180,219,.78);
+                box-shadow: 0 10px 26px rgba(0,0,0,.18);
+              }
+              .bizzibuddi-account-page .bizzibuddi-help-action-secondary:hover {
+                background: rgba(0,180,219,.09);
+              }
+              .bizzibuddi-account-page kbd {
+                box-shadow: inset 0 -1px 0 rgba(255,255,255,.10);
+              }
+              @media (max-width: 760px) {
+                .bizzibuddi-account-page {
+                  padding-left: 14px !important;
+                  padding-right: 14px !important;
+                  padding-bottom: 48px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-account-nav {
+                  padding: 10px;
+                  margin-top: 26px !important;
+                }
+              }
+              @media (prefers-reduced-motion: reduce) {
+                .bizzibuddi-account-page button,
+                .bizzibuddi-account-page input,
+                .bizzibuddi-account-page select,
+                .bizzibuddi-account-page textarea {
+                  transition: none !important;
+                }
+                .bizzibuddi-account-page button:not(:disabled):hover {
+                  transform: none;
+                }
+              }
               .bizzibuddi-account-nav-main { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
               .bizzibuddi-help-nav { display:grid; gap:6px; justify-items:center; min-width:420px; padding:14px 0 0 20px; border-left:1px solid rgba(255,255,255,.18); }
               .bizzibuddi-help-nav-heading { width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; color:#BFD8F0; font-size:11px; font-weight:900; letter-spacing:.18em; }
