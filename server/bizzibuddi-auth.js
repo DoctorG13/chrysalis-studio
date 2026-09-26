@@ -754,6 +754,34 @@ function deleteJob(userId, jobId) {
 
 const BIZZIBUDDI_INVOICE_STATUSES = ["Issued", "Part Paid", "Paid", "Overdue"];
 
+function isValidDateString(value) {
+  const text = String(value || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
+
+  const [year, month, day] = text.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    Number.isInteger(year) &&
+    Number.isInteger(month) &&
+    Number.isInteger(day) &&
+    month >= 1 &&
+    month <= 12 &&
+    day >= 1 &&
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+function isValidTimeString(value) {
+  const text = String(value || "").trim();
+  if (!/^\d{2}:\d{2}$/.test(text)) return false;
+
+  const [hours, minutes] = text.split(":").map(Number);
+  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
+}
+
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -768,10 +796,10 @@ function validateInvoicePayload(payload) {
   if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
     throw new Error("Invoice amount must be greater than zero.");
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate)) {
+  if (!isValidDateString(issueDate)) {
     throw new Error("Please enter a valid invoice issue date.");
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+  if (!isValidDateString(dueDate)) {
     throw new Error("Please enter a valid invoice due date.");
   }
 
@@ -970,7 +998,7 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
   if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
     throw new Error(`Payment amount must be greater than zero and no more than the remaining balance of ${balance.toFixed(2)}.`);
   }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  if (!isValidDateString(date)) {
     throw new Error("Please enter a valid payment date.");
   }
 
@@ -1049,8 +1077,8 @@ function validateCalendarPayload(payload) {
   const status = String(payload?.status || "Booked").trim();
 
   if (!title || title.length > 160) throw new Error("Appointment title is required and must be 160 characters or fewer.");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Please enter a valid appointment date.");
-  if (!/^\d{2}:\d{2}$/.test(time)) throw new Error("Please enter a valid appointment time.");
+  if (!isValidDateString(date)) throw new Error("Please enter a valid appointment date.");
+  if (!isValidTimeString(time)) throw new Error("Please enter a valid appointment time.");
   if (!Number.isInteger(duration) || duration < 5 || duration > 1440) throw new Error("Appointment duration must be between 5 and 1440 minutes.");
   if (!Number.isInteger(buffer) || buffer < 0 || buffer > 480) throw new Error("Appointment buffer must be between 0 and 480 minutes.");
   if (!["Booked", "Confirmed", "Pending", "Cancelled"].includes(status)) throw new Error("Please select a valid appointment status.");
@@ -1481,7 +1509,7 @@ function validateProductionPayload(payload) {
 
   if (!jobId) throw new Error("Please select a job for this production record.");
   if (!BIZZIBUDDI_PRODUCTION_STAGES.includes(stage)) throw new Error("Please select a valid production stage.");
-  if (dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) throw new Error("Please enter a valid production ready-by date.");
+  if (dueDate && !isValidDateString(dueDate)) throw new Error("Please enter a valid production ready-by date.");
   if (notes.length > 2000) throw new Error("Production notes must be 2000 characters or fewer.");
   if (tasks.length > 100) throw new Error("Production cannot contain more than 100 tasks.");
 
