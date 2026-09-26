@@ -73,7 +73,7 @@ If not, it probably belongs in a later release.
 - [x] UI refinement
 - [x] Performance optimisation
 - [x] Accessibility
-- [ ] Responsive improvements
+- [x] Responsive improvements
 
 ---
 
