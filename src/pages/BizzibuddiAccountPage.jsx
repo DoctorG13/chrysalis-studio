@@ -635,6 +635,21 @@ export default function BizzibuddiAccountPage() {
   );
 }
 
+function measurementFieldLabel(key) {
+  const labels = {
+    bust: "Bust",
+    waist: "Waist",
+    hip: "Hip",
+    shoulder: "Shoulder",
+    sleeve: "Sleeve",
+    neck: "Neck",
+    backWaist: "Back waist",
+    inseam: "Inseam",
+    height: "Height",
+  };
+  return labels[key] || key;
+}
+
 function formatTimelineDate(value) {
   const raw = String(value || "");
   if (!raw) return "Date not set";
@@ -745,6 +760,10 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [timelinePersonId, setTimelinePersonId] = useState(null);
+  const [measurementPersonId, setMeasurementPersonId] = useState(null);
+  const [measurements, setMeasurements] = useState([]);
+  const [measurementsLoading, setMeasurementsLoading] = useState(false);
+  const [measurementSaving, setMeasurementSaving] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -855,6 +874,67 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
     }
   }
 
+  async function toggleMeasurements(person) {
+    if (measurementPersonId === person.id) {
+      setMeasurementPersonId(null);
+      setMeasurements([]);
+      return;
+    }
+
+    setMeasurementPersonId(person.id);
+    setMeasurements([]);
+    setError("");
+    setMeasurementsLoading(true);
+
+    try {
+      const result = await bizzibuddiAuthRequest(
+        "/api/bizzibuddi/auth/people/" + encodeURIComponent(person.id) + "/measurements"
+      );
+      setMeasurements(result.measurements || []);
+    } catch (requestError) {
+      setError(requestError.message || "We could not load this person's measurements.");
+    } finally {
+      setMeasurementsLoading(false);
+    }
+  }
+
+  async function handleMeasurementSubmit(event, person) {
+    event.preventDefault();
+    setError("");
+    setMeasurementSaving(true);
+
+    try {
+      const form = new FormData(event.currentTarget);
+      const result = await bizzibuddiAuthRequest(
+        "/api/bizzibuddi/auth/people/" + encodeURIComponent(person.id) + "/measurements",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            label: String(form.get("measurementLabel") || "Measurement set").trim(),
+            data: {
+              bust: String(form.get("bust") || "").trim(),
+              waist: String(form.get("waist") || "").trim(),
+              hip: String(form.get("hip") || "").trim(),
+              shoulder: String(form.get("shoulder") || "").trim(),
+              sleeve: String(form.get("sleeve") || "").trim(),
+              neck: String(form.get("neck") || "").trim(),
+              backWaist: String(form.get("backWaist") || "").trim(),
+              inseam: String(form.get("inseam") || "").trim(),
+              height: String(form.get("height") || "").trim(),
+              notes: String(form.get("measurementNotes") || "").trim(),
+            },
+          }),
+        }
+      );
+      setMeasurements((current) => [result.measurement, ...current]);
+      event.currentTarget.reset();
+    } catch (requestError) {
+      setError(requestError.message || "We could not save these measurements.");
+    } finally {
+      setMeasurementSaving(false);
+    }
+  }
+
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
@@ -880,9 +960,69 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                 <button type="button" onClick={() => setTimelinePersonId(isTimelineOpen ? null : person.id)} style={smallActionButton}>
                   {isTimelineOpen ? "Hide timeline" : "Timeline"}
                 </button>
+                <button type="button" onClick={() => toggleMeasurements(person)} style={smallActionButton}>
+                  {measurementPersonId === person.id ? "Hide measurements" : "Measurements"}
+                </button>
                 <button type="button" onClick={() => startEdit(person)} style={smallActionButton}>Edit</button>
                 <button type="button" onClick={() => handleDelete(person)} style={smallDangerButton}>Delete</button>
               </div>
+              {measurementPersonId === person.id && (
+                <div style={{ width: "100%", marginTop: 14, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
+                  <small style={smallText}>MEASUREMENT HISTORY</small>
+                  <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 12 }}>Save dated measurement snapshots so changes can be tracked over time.</p>
+
+                  <form onSubmit={(event) => handleMeasurementSubmit(event, person)} style={{ marginTop: 12, padding: 14, borderRadius: 10, border: "1px solid " + BORDER, background: "rgba(0,180,219,.045)" }}>
+                    <label style={{ ...fieldStyle, marginTop: 0 }}>Snapshot label
+                      <input name="measurementLabel" type="text" placeholder="e.g. Initial fitting" defaultValue="Measurement set" style={inputStyle} />
+                    </label>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 9, marginTop: 10 }}>
+                      {[
+                        ["bust", "Bust"], ["waist", "Waist"], ["hip", "Hip"], ["shoulder", "Shoulder"],
+                        ["sleeve", "Sleeve"], ["neck", "Neck"], ["backWaist", "Back waist"], ["inseam", "Inseam"], ["height", "Height"],
+                      ].map(([name, label]) => (
+                        <label key={name} style={{ ...fieldStyle, marginTop: 0 }}>{label}
+                          <input name={name} type="text" placeholder="e.g. 92 cm" style={inputStyle} />
+                        </label>
+                      ))}
+                    </div>
+                    <label style={fieldStyle}>Notes
+                      <input name="measurementNotes" type="text" placeholder="Optional fitting notes" style={inputStyle} />
+                    </label>
+                    <button type="submit" disabled={measurementSaving} style={{ ...primaryButton, width: "auto", marginTop: 14, opacity: measurementSaving ? 0.7 : 1 }}>
+                      {measurementSaving ? "Saving…" : "Save measurement snapshot"}
+                    </button>
+                  </form>
+
+                  {measurementsLoading ? (
+                    <span style={{ display: "block", marginTop: 14, color: MUTED, fontSize: 12 }}>Loading measurement history…</span>
+                  ) : measurements.length > 0 ? (
+                    <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+                      {measurements.map((measurement) => (
+                        <article key={measurement.id} style={{ padding: 13, borderRadius: 10, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                            <div>
+                              <strong style={{ display: "block", fontSize: 14 }}>{measurement.label}</strong>
+                              <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 11 }}>{formatTimelineDate(measurement.createdAt)}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 7, marginTop: 10 }}>
+                            {Object.entries(measurement.data || {}).filter(([key]) => key !== "notes").map(([key, value]) => (
+                              <div key={key} style={{ padding: "7px 8px", borderRadius: 7, background: "rgba(255,255,255,.035)" }}>
+                                <small style={{ color: MUTED, fontSize: 10, textTransform: "uppercase" }}>{measurementFieldLabel(key)}</small>
+                                <strong style={{ display: "block", marginTop: 2, fontSize: 12 }}>{value}</strong>
+                              </div>
+                            ))}
+                          </div>
+                          {measurement.data?.notes && <p style={{ ...copyStyle, margin: "9px 0 0", fontSize: 12 }}>{measurement.data.notes}</p>}
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ display: "block", marginTop: 12, color: MUTED, fontSize: 12 }}>No measurement snapshots recorded yet.</span>
+                  )}
+                </div>
+              )}
+
               {isTimelineOpen && (
                 <div style={{ width: "100%", marginTop: 14, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
                   <small style={smallText}>CLIENT TIMELINE</small>
