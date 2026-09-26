@@ -1047,6 +1047,15 @@ All notable changes to Chrysalis are recorded here.
 
 All notable changes to Chrysalis are recorded here.
 
+## BizziBuddi Responsive Improvements
+
+### Added
+
+- Improved account navigation behaviour at tablet and mobile widths.
+- Added a horizontally scrollable, keyboard-focusable container for the monthly statistics table.
+- Added mobile-safe image sizing and tighter help navigation layouts.
+- Added extra-small-screen navigation and spacing adjustments without changing desktop presentation.
+
 ## BizziBuddi Accessibility Improvements
 
 ### Added
