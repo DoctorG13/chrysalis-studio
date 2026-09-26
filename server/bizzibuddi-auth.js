@@ -1863,6 +1863,9 @@ function getBizziBuddiReports(userId) {
     stage,
     productionRecords.filter((record) => record.stage === stage).length,
   ]);
+  const jobCompletionRate = jobs.length ? Math.round((completedJobs / jobs.length) * 100) : 0;
+  const paymentCollectionRate = totalInvoiced > 0 ? Math.round((Math.min(totalPaid, totalInvoiced) / totalInvoiced) * 100) : 0;
+  const productionCompletionRate = productionRecords.length ? Math.round((productionComplete / productionRecords.length) * 100) : 0;
   return {
     generatedAt: now.toISOString(),
     people: { total: people.length },
@@ -1880,6 +1883,7 @@ function getBizziBuddiReports(userId) {
       overdueInvoices,
     },
     production: { total: productionRecords.length, active: productionActive, complete: productionComplete, stageGroups: productionStageGroups },
+    insights: { jobCompletionRate, paymentCollectionRate, productionCompletionRate },
   };
 }
 
