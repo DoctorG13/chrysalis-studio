@@ -219,20 +219,31 @@ export default function BizzibuddiAccountPage() {
     }
   }
 
-  function selectPlan(planName) {
+  async function selectPlan(planName) {
     if (!account) {
-      setMessage("Please create or log in to your BizziBuddi account before previewing membership features.");
+      setMessage("Please create or log in to your BizziBuddi account before selecting a membership.");
       setView("login");
       return;
     }
 
     const selectedPlan = getBizzibuddiPlan(planName);
-    const nextAccount = { ...account, plan: selectedPlan.name };
-    setAccount(nextAccount);
-    setMessage(`${planName} selected for this local membership preview. No payment or subscription was created.`);
-    setView("dashboard");
-  }
 
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/account", {
+        method: "PUT",
+        body: JSON.stringify({
+          business: account.business || "",
+          plan: selectedPlan.name,
+        }),
+      });
+
+      await applyAccount(result.account);
+      setMessage(`${selectedPlan.name} membership selected. Your choice is saved to your BizziBuddi account.`);
+      setView("dashboard");
+    } catch (error) {
+      setMessage(error.message || "We could not save your membership selection.");
+    }
+  }
   async function addAutomationEvent(event) {
     if (!hasBizzibuddiFeature(account?.plan, "automation")) return null;
 
@@ -1009,7 +1020,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
 }
 
 function PlansPanel({ onSelectPlan }) {
-  return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. No subscription is created in this preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
+  return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. Your selected membership is saved to your BizziBuddi account in this development preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
 function DashboardPanel({
