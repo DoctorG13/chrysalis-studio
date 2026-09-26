@@ -62,7 +62,7 @@ If not, it probably belongs in a later release.
 
 - [x] Reporting
 - [x] Financial summaries
-- [ ] Exporting
+- [x] Exporting
 - [ ] Monthly statistics
 - [ ] Business insights
 
