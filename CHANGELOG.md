@@ -1,3 +1,13 @@
+## BizziBuddi Report Export
+
+### Added
+
+- Added CSV export to the Release 0.7 Reports workspace.
+- Exported the current account-backed people, jobs, calendar, finance, production and insight summary metrics.
+- Added generated-date and metric labels to keep exported data self-describing.
+- Added a dated `bizzibuddi-report-YYYY-MM-DD.csv` filename for each export.
+- Kept exporting client-side so no additional server storage or export service is required.
+
 ## BizziBuddi Financial Summaries
 
 ### Added
