@@ -2387,35 +2387,54 @@ function ReportsPanel({ account, onPlans, onBack }) {
       </div>
 
       <div style={reportSectionGrid}>
-        <article style={reportCard}>
+        <article style={{ ...reportCard, gridColumn: "1 / -1" }}>
           <div style={reportCardHeading}>
             <div>
-              <small style={smallText}>FINANCE</small>
+              <small style={smallText}>FINANCIAL SUMMARY</small>
               <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>
-                Money overview
+                Money position
               </strong>
             </div>
             <span style={reportMetric}>
-              {formatCurrency(finance.totalInvoiced)}
+              {formatCurrency(finance.outstanding)}
             </span>
           </div>
 
-          <div style={reportRows}>
+          <div style={{ ...reportSummaryGrid, marginTop: 16 }}>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>INVOICED</small>
+              <strong style={reportSummaryValue}>{formatCurrency(finance.totalInvoiced)}</strong>
+              <span style={smallText}>{finance.averageInvoice ? formatCurrency(finance.averageInvoice) : "—"} average invoice</span>
+            </div>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>PAID</small>
+              <strong style={reportSummaryValue}>{formatCurrency(finance.totalPaid)}</strong>
+              <span style={smallText}>{finance.paidInvoiceCount} paid invoice{finance.paidInvoiceCount === 1 ? "" : "s"}</span>
+            </div>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>OUTSTANDING</small>
+              <strong style={reportSummaryValue}>{formatCurrency(finance.outstanding)}</strong>
+              <span style={smallText}>{finance.outstandingInvoiceCount} open invoice{finance.outstandingInvoiceCount === 1 ? "" : "s"}</span>
+            </div>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>OVERDUE</small>
+              <strong style={{ ...reportSummaryValue, color: finance.overdueInvoices ? "#ff8c8c" : TEXT }}>{formatCurrency(finance.overdueAmount)}</strong>
+              <span style={smallText}>{finance.overdueInvoices} overdue invoice{finance.overdueInvoices === 1 ? "" : "s"}</span>
+            </div>
+          </div>
+
+          <div style={{ ...reportRows, marginTop: 18 }}>
             <div style={reportRow}>
-              <span>Total invoiced</span>
-              <strong>{formatCurrency(finance.totalInvoiced)}</strong>
+              <span>Collection rate</span>
+              <strong>{finance.collectionRate}%</strong>
             </div>
             <div style={reportRow}>
-              <span>Paid</span>
-              <strong>{formatCurrency(finance.totalPaid)}</strong>
-            </div>
-            <div style={reportRow}>
-              <span>Outstanding</span>
+              <span>Outstanding balance</span>
               <strong>{formatCurrency(finance.outstanding)}</strong>
             </div>
             <div style={reportRow}>
-              <span>Overdue invoices</span>
-              <strong>{finance.overdueInvoices}</strong>
+              <span>Overdue balance</span>
+              <strong>{formatCurrency(finance.overdueAmount)}</strong>
             </div>
           </div>
         </article>
