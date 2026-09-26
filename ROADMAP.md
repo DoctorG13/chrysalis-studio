@@ -50,7 +50,7 @@ If not, it probably belongs in a later release.
 
 # Release 0.6 — Studio
 
-- [ ] Calendar improvements
+- [x] Calendar improvements
 - [ ] Notifications
 - [ ] Better appointment management
 - [ ] Garment scheduling
