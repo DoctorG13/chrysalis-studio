@@ -1,3 +1,25 @@
+## BizziBuddi Reports Server Storage
+
+### Added
+
+- Added an authenticated BizziBuddi Reports endpoint that generates business reporting from the persistent account database.
+- Added server-authoritative totals for People, Jobs, Calendar, Finance and Production.
+- Added server-side calculation of upcoming appointments and overdue invoices.
+- Added grouped Job status and Production stage reporting.
+
+### Changed
+
+- Reports no longer calculate their primary figures from browser-local BizziBuddi records.
+- The Reports screen now loads the latest account-backed figures when opened.
+- Reports now shows a clear server-load error instead of silently falling back to local preview data.
+
+### Notes
+
+- Reports remains available to Business membership levels.
+- No separate Reports data table is required because the report is derived from the persistent business modules.
+
+---
+
 ## BizziBuddi Production Database Storage
 
 ### Added
