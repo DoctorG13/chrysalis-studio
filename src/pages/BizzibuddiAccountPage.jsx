@@ -1411,9 +1411,26 @@ function DashboardPanel({
       action: "Open jobs", onClick: onJobs, tone: "ready",
     })),
   ];
-  const uniqueAttentionItems = attentionItems.filter((item, index, items) => items.findIndex((candidate) => candidate.key === item.key) === index);
-  const attentionCount = uniqueAttentionItems.length;
-  const actionCount = overdueInvoices.length + productionNeedsAttention.length + dueSoonInvoices.length + productionDueSoon.length;
+  const priorityWeight = {
+    urgent: 400,
+    attention: 300,
+    today: 200,
+    ready: 100,
+  };
+  const uniqueAttentionItems = attentionItems
+    .filter((item, index, items) => items.findIndex((candidate) => candidate.key === item.key) === index)
+    .map((item) => ({
+      ...item,
+      priorityScore:
+        (priorityWeight[item.tone] || 0) +
+        (item.label === "Payment overdue" ? 40 : 0) +
+        (item.label === "Overdue" ? 30 : 0) +
+        (item.label === "Due today" ? 20 : 0) +
+        (item.label === "Today" ? 15 : 0),
+    }))
+    .sort((a, b) => b.priorityScore - a.priorityScore);
+  const priorityItems = uniqueAttentionItems.slice(0, 6);
+  const actionCount = uniqueAttentionItems.length;
   const outstanding = invoices.reduce((sum, invoice) => invoice.status === "Paid" ? sum : sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0);
 
   return (
@@ -1427,7 +1444,7 @@ function DashboardPanel({
           <div>
             <small style={smallText}>TODAY'S BUSINESS PICTURE</small>
             <h3 style={{ margin: "6px 0 5px", fontSize: 28 }}>Your business at a glance.</h3>
-            <p style={{ ...copyStyle, margin: 0 }}>One queue for the work, money and activity that needs your attention now.</p>
+            <p style={{ ...copyStyle, margin: 0 }}>One queue for the work, money and activity that needs your attention now. Items are ordered by urgency so the most important actions appear first.</p>
           </div>
           <button type="button" onClick={onAttentionBuddi} style={attentionBuddiButton}>
             <BizziBuddiLogo size={30} dark showWordmark={false} />
@@ -1442,9 +1459,9 @@ function DashboardPanel({
           <div><strong>{formatCurrency(outstanding)}</strong><span>outstanding</span></div>
         </div>
 
-        {uniqueAttentionItems.length > 0 ? (
+        {priorityItems.length > 0 ? (
           <div style={attentionList}>
-            {uniqueAttentionItems.map((item) => (
+            {priorityItems.map((item) => (
               <article key={item.key} style={attentionItem(item.tone)}>
                 <div style={attentionItemIcon}>{item.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1467,7 +1484,7 @@ function DashboardPanel({
         )}
 
         <div style={attentionFooter}>
-          <span>{recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and turn it into your next action."}</span>
+          <span>{uniqueAttentionItems.length > priorityItems.length ? `${uniqueAttentionItems.length - priorityItems.length} lower-priority item${uniqueAttentionItems.length - priorityItems.length === 1 ? "" : "s"} also available below.` : recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and turn it into your next action."}</span>
           <button type="button" onClick={onAttentionBuddi} style={attentionFooterButton}>Ask Buddi what needs attention →</button>
         </div>
       </div>
