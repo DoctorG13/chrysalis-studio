@@ -1167,6 +1167,15 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
     }
   }
 
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const filteredPeople = normalizedQuery
+    ? people.filter((person) =>
+        [person.name, person.email, person.phone].some((value) =>
+          String(value || "").toLowerCase().includes(normalizedQuery)
+        )
+      )
+    : people;
+
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
@@ -1189,18 +1198,9 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       </label>
     </div>
 
-    {(() => {
-      const normalizedQuery = searchQuery.trim().toLowerCase();
-      const filteredPeople = normalizedQuery
-        ? people.filter((person) =>
-            [person.name, person.email, person.phone]
-              .some((value) => String(value || "").toLowerCase().includes(normalizedQuery))
-          )
-        : people;
-
-      return filteredPeople.length > 0 ? (
+    {filteredPeople.length > 0 ? (
       <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-        {people.map((person) => {
+        {filteredPeople.map((person) => {
           const isTimelineOpen = timelinePersonId === person.id;
           const timelineItems = isTimelineOpen ? personTimeline(person) : [];
           return (
@@ -1318,8 +1318,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           </button>
         )}
       </div>
-      );
-    })()}
+    )}
 
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
