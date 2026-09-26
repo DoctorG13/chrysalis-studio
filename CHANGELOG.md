@@ -1,3 +1,14 @@
+## BizziBuddi People Render Parse Fix
+
+### Fixed
+
+- Removed the inline People search IIFE from the JSX render tree.
+- Moved People search filtering into the component logic before the JSX return.
+- Corrected the People list to render the filtered collection.
+- Added workflow contract checks for the simplified People render structure.
+
+---
+
 ## BizziBuddi Account Page Parse Fix
 
 ### Fixed
