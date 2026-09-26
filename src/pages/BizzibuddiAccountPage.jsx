@@ -1173,7 +1173,7 @@ function DashboardPanel({
       </div>
 
       <MembershipAccessPanel planName={account?.plan} />
-      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>Your BizziBuddi account and login are connected to the server. People, jobs, calendar, finance, automation and production are now account-backed; reports remain browser-local until its migration stage.</p></div>
+      <div style={businessNote}><strong>Development preview</strong><p style={copyStyle}>Your BizziBuddi account and login are connected to the server. People, jobs, calendar, finance, automation, production and reporting are now account-backed.</p></div>
       <div style={{ display: "flex", alignItems: "center", gap: 18, flexWrap: "wrap", marginTop: 18 }}>
         <button type="button" onClick={onLogout} style={textButton}>Log out</button>
         <button type="button" onClick={onReset} style={textButton}>Reset local business demo</button>
