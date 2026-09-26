@@ -2183,6 +2183,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
   const [reportData, setReportData] = useState(null);
   const [reportError, setReportError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const available = hasBizzibuddiFeature(account?.plan, "reports");
 
   useEffect(() => {
@@ -2297,7 +2298,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
     );
   }
 
-  const { jobs, calendar, finance, production } = reportData;
+  const { jobs, calendar, finance, production, insights } = reportData;
   const jobStatusGroups = jobs.statusGroups || [];
   const productionStageGroups = production.stageGroups || [];
 
@@ -2307,13 +2308,29 @@ function ReportsPanel({ account, onPlans, onBack }) {
         ← Back to business
       </button>
 
-      <div style={{ marginTop: 22 }}>
-        <p style={eyebrowStyle}>REPORTS</p>
-        <h2 style={sectionHeading}>Your business at a glance.</h2>
-        <p style={copyStyle}>
-          A Business-level view of the activity already captured in BizziBuddi.
-          These figures are generated from your account-backed business data.
-        </p>
+      <div style={{ marginTop: 22, display: "flex", justifyContent: "space-between", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div style={{ minWidth: 0, flex: "1 1 520px" }}>
+          <p style={eyebrowStyle}>REPORTS</p>
+          <h2 style={sectionHeading}>Your business at a glance.</h2>
+          <p style={copyStyle}>
+            A Business-level view of the activity already captured in BizziBuddi.
+            These figures are generated from your account-backed business data.
+          </p>
+        </div>
+        <button type="button" disabled={refreshing} onClick={async () => {
+          setRefreshing(true);
+          setReportError("");
+          try {
+            const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/reports");
+            setReportData(result?.reports || null);
+          } catch (error) {
+            setReportError(error instanceof Error ? error.message : "Unable to refresh reports.");
+          } finally {
+            setRefreshing(false);
+          }
+        }} style={{ ...smallActionButton, opacity: refreshing ? 0.6 : 1 }}>
+          {refreshing ? "Refreshing…" : "↻ Refresh report"}
+        </button>
       </div>
 
       <div style={reportSummaryGrid}>
@@ -2343,6 +2360,29 @@ function ReportsPanel({ account, onPlans, onBack }) {
           <span style={smallText}>
             {finance.overdueInvoices} overdue
           </span>
+        </div>
+      </div>
+
+      <div style={{ ...reportSummaryGrid, marginTop: 14 }}>
+        <div style={reportSummaryCard}>
+          <small style={smallText}>JOB COMPLETION</small>
+          <strong style={reportSummaryValue}>{insights?.jobCompletionRate ?? 0}%</strong>
+          <span style={smallText}>jobs complete</span>
+        </div>
+        <div style={reportSummaryCard}>
+          <small style={smallText}>PAYMENT COLLECTION</small>
+          <strong style={reportSummaryValue}>{insights?.paymentCollectionRate ?? 0}%</strong>
+          <span style={smallText}>of invoiced value paid</span>
+        </div>
+        <div style={reportSummaryCard}>
+          <small style={smallText}>PRODUCTION COMPLETION</small>
+          <strong style={reportSummaryValue}>{insights?.productionCompletionRate ?? 0}%</strong>
+          <span style={smallText}>production records complete</span>
+        </div>
+        <div style={reportSummaryCard}>
+          <small style={smallText}>REPORT GENERATED</small>
+          <strong style={{ ...reportSummaryValue, fontSize: 16 }}>{formatTimelineDate(reportData.generatedAt)}</strong>
+          <span style={smallText}>account-backed snapshot</span>
         </div>
       </div>
 
