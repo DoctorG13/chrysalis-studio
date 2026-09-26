@@ -1,3 +1,20 @@
+## BizziBuddi Today View
+
+### Added
+
+- Added a structured Today & Next Up dashboard view.
+- Added a dedicated Today card for appointments.
+- Added a Due Soon card covering upcoming invoice and production dates.
+- Added a Workflow card for production actions and waiting jobs.
+- Kept each item linked directly to the relevant BizziBuddi module.
+
+### Changed
+
+- The dashboard now combines high-level attention intelligence with a compact daily operating view.
+- The Today view uses the same account-backed Jobs, Calendar, Finance and Production data already powering the dashboard.
+
+---
+
 ## BizziBuddi Dashboard Intelligence
 
 ### Added
