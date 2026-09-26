@@ -2594,7 +2594,25 @@ function CalendarPanel({
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [calendarFilter, setCalendarFilter] = useState("upcoming");
   const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
+  const calendarTodayKey = new Date().toISOString().slice(0, 10);
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    const aKey = String(a.date || "") + "T" + String(a.time || "00:00");
+    const bKey = String(b.date || "") + "T" + String(b.time || "00:00");
+    return aKey.localeCompare(bKey);
+  });
+  const visibleAppointments = sortedAppointments.filter((appointment) => {
+    if (calendarFilter === "today") return appointment.date === calendarTodayKey;
+    if (calendarFilter === "past") return appointment.date && appointment.date < calendarTodayKey;
+    if (calendarFilter === "upcoming") return !appointment.date || appointment.date >= calendarTodayKey;
+    return true;
+  });
+  const calendarCounts = {
+    today: appointments.filter((appointment) => appointment.date === calendarTodayKey).length,
+    upcoming: appointments.filter((appointment) => !appointment.date || appointment.date >= calendarTodayKey).length,
+    past: appointments.filter((appointment) => appointment.date && appointment.date < calendarTodayKey).length,
+  };
 
   function startAdd() {
     setError("");
@@ -2681,8 +2699,36 @@ function CalendarPanel({
     </div>
 
     {appointments.length > 0 ? (
-      <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
-        {appointments.map((appointment) => (
+      <>
+        <div style={{ ...todayViewPanel, marginTop: 24 }}>
+          <div style={todayViewHeader}>
+            <div>
+              <small style={smallText}>CALENDAR VIEW</small>
+              <h3 style={{ margin: "6px 0 5px", fontSize: 20 }}>See what is coming up.</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>Appointments are sorted by date and time so the next work is always easy to find.</p>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[
+                ["upcoming", "Upcoming", calendarCounts.upcoming],
+                ["today", "Today", calendarCounts.today],
+                ["past", "Past", calendarCounts.past],
+                ["all", "All", appointments.length],
+              ].map(([value, label, count]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setCalendarFilter(value)}
+                  style={calendarFilter === value ? smallActionButton : secondaryButton}
+                >
+                  {label} · {count}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        {visibleAppointments.length > 0 ? (
+          <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+            {visibleAppointments.map((appointment) => (
           <article key={appointment.id} style={appointmentCard}>
             <div style={{ minWidth: 0 }}>
               <strong style={{ display: "block", fontSize: 17 }}>{appointment.title}</strong>
@@ -2708,9 +2754,16 @@ function CalendarPanel({
               <button type="button" onClick={() => startEdit(appointment)} style={smallActionButton}>Edit</button>
               <button type="button" onClick={() => handleDelete(appointment)} style={smallDangerButton}>Delete</button>
             </div>
-          </article>
-        ))}
-      </div>
+            </article>
+            ))}
+          </div>
+        ) : (
+          <div style={{ ...emptyPeople, marginTop: 16 }}>
+            <strong>No appointments in this view.</strong>
+            <p style={copyStyle}>Try another calendar filter or add a new appointment.</p>
+          </div>
+        )}
+      </>
     ) : (
       <div style={emptyPeople}>
         <strong>No appointments yet.</strong>
