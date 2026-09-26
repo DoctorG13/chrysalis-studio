@@ -1,3 +1,19 @@
+## BizziBuddi Smart Priorities
+
+### Added
+
+- Added priority scoring to the dashboard business action queue.
+- Urgent payment and production issues now rise above routine attention items.
+- Due-today and same-day activity are prioritised ahead of lower-urgency work.
+- The dashboard now presents the six highest-priority actions first.
+- Lower-priority actions remain counted so the dashboard still reflects the complete workload.
+
+### Workflow
+
+`Business activity → Priority signal → Ordered action queue → Next action`
+
+---
+
 ## BizziBuddi Client Search Improvements
 
 ### Added
