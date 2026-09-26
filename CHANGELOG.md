@@ -1,3 +1,14 @@
+## BizziBuddi Monthly Statistics
+
+### Added
+
+- Added a server-backed 12-month monthly statistics view to Reports.
+- Added monthly counts for new people, jobs and appointments.
+- Added monthly invoiced and recorded payment amounts.
+- Added monthly completed-production counts.
+- Added the monthly statistics to the existing CSV export.
+- Kept month calculations account-scoped and derived from persisted BizziBuddi data.
+
 ## BizziBuddi Report Export
 
 ### Added
