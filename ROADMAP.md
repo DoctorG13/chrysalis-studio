@@ -70,7 +70,7 @@ If not, it probably belongs in a later release.
 
 # Release 0.8 — Polish
 
-- [ ] UI refinement
+- [x] UI refinement
 - [ ] Performance optimisation
 - [ ] Accessibility
 - [ ] Responsive improvements
