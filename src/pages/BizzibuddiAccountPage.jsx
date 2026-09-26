@@ -2666,6 +2666,9 @@ function CalendarPanel({
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [calendarFilter, setCalendarFilter] = useState("upcoming");
+  const [showCalendarSearch, setShowCalendarSearch] = useState(false);
+  const [calendarSearch, setCalendarSearch] = useState("");
+  const [calendarType, setCalendarType] = useState("all");
   const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
   const calendarTodayKey = new Date().toISOString().slice(0, 10);
   const sortedAppointments = [...appointments].sort((a, b) => {
@@ -2674,11 +2677,20 @@ function CalendarPanel({
     return aKey.localeCompare(bKey);
   });
   const visibleAppointments = sortedAppointments.filter((appointment) => {
-    if (calendarFilter === "today") return appointment.date === calendarTodayKey;
-    if (calendarFilter === "past") return appointment.date && appointment.date < calendarTodayKey;
-    if (calendarFilter === "upcoming") return !appointment.date || appointment.date >= calendarTodayKey;
+    if (calendarFilter === "today" && appointment.date !== calendarTodayKey) return false;
+    if (calendarFilter === "past" && !(appointment.date && appointment.date < calendarTodayKey)) return false;
+    if (calendarFilter === "upcoming" && appointment.date && appointment.date < calendarTodayKey) return false;
+    if (calendarType !== "all" && String(appointment.status || "Booked") !== calendarType) return false;
+    const query = calendarSearch.trim().toLowerCase();
+    if (query) {
+      const haystack = [appointment.title, appointment.personName, appointment.jobTitle, appointment.notes]
+        .map((value) => String(value || "").toLowerCase())
+        .join(" ");
+      if (!haystack.includes(query)) return false;
+    }
     return true;
   });
+  const appointmentTypes = ["all", "Booked", "Confirmed", "Pending", "Cancelled"];
   const calendarCounts = {
     today: appointments.filter((appointment) => appointment.date === calendarTodayKey).length,
     upcoming: appointments.filter((appointment) => !appointment.date || appointment.date >= calendarTodayKey).length,
@@ -2778,13 +2790,14 @@ function CalendarPanel({
               <h3 style={{ margin: "6px 0 5px", fontSize: 20 }}>See what is coming up.</h3>
               <p style={{ ...copyStyle, margin: 0 }}>Appointments are sorted by date and time so the next work is always easy to find.</p>
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
               {[
                 ["upcoming", "Upcoming", calendarCounts.upcoming],
                 ["today", "Today", calendarCounts.today],
                 ["past", "Past", calendarCounts.past],
                 ["all", "All", appointments.length],
               ].map(([value, label, count]) => (
+
                 <button
                   key={value}
                   type="button"
@@ -2794,8 +2807,26 @@ function CalendarPanel({
                   {label} · {count}
                 </button>
               ))}
+              <button type="button" onClick={() => setShowCalendarSearch((current) => !current)} style={showCalendarSearch ? smallActionButton : secondaryButton}>
+                🔎 Search
+              </button>
             </div>
           </div>
+          {showCalendarSearch && (
+            <div style={{ display: "grid", gridTemplateColumns: "minmax(220px, 1fr) minmax(160px, 220px)", gap: 10, marginTop: 16 }}>
+              <input
+                value={calendarSearch}
+                onChange={(event) => setCalendarSearch(event.target.value)}
+                placeholder="Search appointments, people or jobs"
+                style={inputStyle}
+              />
+              <select value={calendarType} onChange={(event) => setCalendarType(event.target.value)} style={inputStyle}>
+                {appointmentTypes.map((type) => (
+                  <option key={type} value={type}>{type === "all" ? "All statuses" : type}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         {visibleAppointments.length > 0 ? (
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
