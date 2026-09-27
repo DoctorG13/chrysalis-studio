@@ -2,48 +2,23 @@
 
 ## Current Sprint
 
-### Dashboard
+### Production Workflow 2.0
 
-- [ ] Smart Priorities
-- [ ] Recent Activity
-- [ ] Business Health widget
+- [x] Production queue
+- [x] Due-today and overdue views
+- [x] Ready and complete views
+- [x] Job-centric production cards
+- [x] Stage workflow editor
+- [x] Task progress visibility
+- [x] Quick completion action
+- [x] Dashboard / Buddi state synchronisation
 
----
+### Next
 
-### Jobs
-
-- [ ] Automatic timeline events
-- [ ] Production workflow tracker
-- [ ] Due date warnings
-- [ ] Outstanding payment alerts
-- [ ] Job history improvements
-
----
-
-### Clients
-
-- [x] Timeline
-- [ ] Measurement history
-- [ ] Better search
-
----
-
-### Studio
-
-- [ ] Calendar improvements
-- [ ] Appointment management
-- [ ] Notifications
-
----
-
-### Reports
-
-- [ ] Monthly income
-- [ ] Outstanding payments
-- [ ] Jobs completed
-- [ ] Garments due
-
----
+- [ ] Production task templates
+- [ ] Production time tracking
+- [ ] Client/job detail deep links
+- [ ] Production workload balancing
 
 ## Future Ideas
 
