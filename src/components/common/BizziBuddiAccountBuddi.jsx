@@ -61,11 +61,21 @@ function getSuggestedActions(question, context, handlers) {
     actions.push({ key, label, onClick });
   };
 
-  if (value.includes("attention") || value.includes("urgent") || value.includes("today")) {
-    if (items.some((item) => item.type === "overdue-payment")) add("finance", "Review payments →", handlers.onFinance);
-    if (items.some((item) => item.type === "appointment-today")) add("calendar", "Open today's calendar →", handlers.onCalendar);
-    if (items.some((item) => item.type === "waiting-job")) add("jobs", "Review waiting jobs →", handlers.onJobs);
-    if (items.some((item) => item.type === "production-ready")) add("production", "Review ready production →", handlers.onProduction);
+  if (
+    value.includes("attention") ||
+    value.includes("urgent") ||
+    value.includes("today") ||
+    value.includes("focus") ||
+    value.includes("next")
+  ) {
+    const priorityItems = context?.intelligence?.priorityItemsTop || [];
+    for (const item of priorityItems) {
+      if (item.actionKey === "finance") add("finance", "Review payments →", handlers.onFinance);
+      if (item.actionKey === "calendar") add("calendar", "Open today's calendar →", handlers.onCalendar);
+      if (item.actionKey === "jobs") add("jobs", "Review jobs →", handlers.onJobs);
+      if (item.actionKey === "production") add("production", "Open production →", handlers.onProduction);
+      if (actions.length >= 4) break;
+    }
   }
 
   if (value.includes("owe") || value.includes("invoice") || value.includes("payment") || value.includes("money")) add("finance", "Open finance →", handlers.onFinance);
