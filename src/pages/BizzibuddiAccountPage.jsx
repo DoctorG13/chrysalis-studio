@@ -2173,12 +2173,99 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
   const [taskDrafts, setTaskDrafts] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [saving, setSaving] = useState(false);
+  const [quickSavingJobId, setQuickSavingJobId] = useState("");
   const [error, setError] = useState("");
-  const selectedJob = jobs.find((job) => job.id === selectedJobId);
-  const existing = records.find((record) => record.jobId === selectedJobId);
+  const [queueFilter, setQueueFilter] = useState("active");
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const today = new Date(todayKey + "T00:00:00");
+
+  const productionByJob = new Map(records.map((record) => [record.jobId, record]));
+  const productionJobs = jobs.map((job) => {
+    const record = productionByJob.get(job.id);
+    const tasks = record?.tasks || [];
+    const completedTasks = tasks.filter((task) => task.complete).length;
+    const stage = record?.stage || "Not started";
+    const progress = stage === "Complete"
+      ? 100
+      : stage === "Ready"
+        ? 75
+        : stage === "Quality check"
+          ? 50
+          : stage === "In production"
+            ? 25
+            : 0;
+    const dueDate = record?.dueDate || "";
+    const due = dueDate ? new Date(dueDate + "T00:00:00") : null;
+    const overdue = Boolean(due && due < today && stage !== "Complete");
+    const dueToday = Boolean(due && due.getTime() === today.getTime() && stage !== "Complete");
+    const ready = stage === "Ready";
+    const complete = stage === "Complete";
+    const readiness = complete
+      ? "Complete"
+      : overdue
+        ? "Overdue"
+        : ready && tasks.length > 0 && completedTasks < tasks.length
+          ? "Tasks outstanding"
+          : ready
+            ? "Ready"
+            : tasks.length > 0 && completedTasks === tasks.length
+              ? "Stage update needed"
+              : stage === "Not started"
+                ? "Not started"
+                : "In progress";
+
+    return {
+      ...job,
+      productionRecord: record,
+      productionStage: stage,
+      productionProgress: progress,
+      productionDueDate: dueDate,
+      productionTaskCount: tasks.length,
+      productionCompletedTaskCount: completedTasks,
+      productionTaskProgress: tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0,
+      productionReadiness: readiness,
+      overdue,
+      dueToday,
+      ready,
+      complete,
+    };
+  });
+
+  const filteredJobs = productionJobs.filter((job) => {
+    if (queueFilter === "active") return !job.complete;
+    if (queueFilter === "due-today") return job.dueToday;
+    if (queueFilter === "overdue") return job.overdue;
+    if (queueFilter === "ready") return job.ready;
+    if (queueFilter === "complete") return job.complete;
+    return true;
+  });
+
+  filteredJobs.sort((a, b) => {
+    if (a.overdue !== b.overdue) return a.overdue ? -1 : 1;
+    if (a.dueToday !== b.dueToday) return a.dueToday ? -1 : 1;
+    if (a.ready !== b.ready) return a.ready ? -1 : 1;
+    const aDate = a.productionDueDate ? new Date(a.productionDueDate + "T00:00:00").getTime() : Number.POSITIVE_INFINITY;
+    const bDate = b.productionDueDate ? new Date(b.productionDueDate + "T00:00:00").getTime() : Number.POSITIVE_INFINITY;
+    return aDate - bDate;
+  });
+
+  const activeCount = productionJobs.filter((job) => !job.complete).length;
+  const dueTodayCount = productionJobs.filter((job) => job.dueToday).length;
+  const overdueCount = productionJobs.filter((job) => job.overdue).length;
+  const readyCount = productionJobs.filter((job) => job.ready).length;
+  const completeCount = productionJobs.filter((job) => job.complete).length;
+  const totalTasks = productionJobs.reduce((sum, job) => sum + job.productionTaskCount, 0);
+  const completedTasks = productionJobs.reduce((sum, job) => sum + job.productionCompletedTaskCount, 0);
+  const taskProgress = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const selectedJob = productionJobs.find((job) => job.id === selectedJobId);
+  const existing = selectedJob?.productionRecord || null;
 
   useEffect(() => {
-    if (!selectedJobId && jobs[0]?.id) setSelectedJobId(jobs[0].id);
+    if (!jobs.some((job) => job.id === selectedJobId)) {
+      setSelectedJobId(jobs[0]?.id || "");
+    }
   }, [jobs, selectedJobId]);
 
   useEffect(() => {
@@ -2190,6 +2277,7 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
       }))
     );
     setNewTaskTitle("");
+    setError("");
   }, [selectedJobId, existing?.id]);
 
   if (!available) {
@@ -2213,35 +2301,66 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     );
   }
 
-  async function handleSave(event) {
-    event.preventDefault();
+  async function saveRecord(record, jobId = record.jobId) {
     setError("");
     setSaving(true);
 
     try {
-      const form = new FormData(event.currentTarget);
-      const tasks = taskDrafts
-        .map((task) => ({
-          id: String(task.id),
-          title: String(task.title || "").trim(),
-          complete: Boolean(task.complete),
-        }))
-        .filter((task) => task.title);
-
-      await onSave({
-        id: existing?.id || "production-" + Date.now(),
-        jobId: selectedJobId,
-        jobTitle: selectedJob?.title || "Untitled job",
-        stage: String(form.get("stage") || "Not started"),
-        dueDate: String(form.get("dueDate") || ""),
-        notes: String(form.get("notes") || "").trim(),
-        tasks,
-        updatedAt: new Date().toISOString(),
-      });
+      await onSave(record);
+      setSelectedJobId(jobId);
     } catch (requestError) {
       setError(requestError.message || "We could not save production progress.");
+      throw requestError;
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSave(event) {
+    event.preventDefault();
+
+    const form = new FormData(event.currentTarget);
+    const tasks = taskDrafts
+      .map((task) => ({
+        id: String(task.id),
+        title: String(task.title || "").trim(),
+        complete: Boolean(task.complete),
+      }))
+      .filter((task) => task.title);
+
+    await saveRecord({
+      id: existing?.id || "production-" + Date.now(),
+      jobId: selectedJobId,
+      jobTitle: selectedJob?.title || "Untitled job",
+      stage: String(form.get("stage") || "Not started"),
+      dueDate: String(form.get("dueDate") || ""),
+      notes: String(form.get("notes") || "").trim(),
+      tasks,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  async function handleQuickComplete(job) {
+    const record = job.productionRecord;
+    setError("");
+    setQuickSavingJobId(job.id);
+
+    try {
+      await onSave({
+        id: record?.id || "production-" + Date.now(),
+        jobId: job.id,
+        jobTitle: job.title || "Untitled job",
+        stage: "Complete",
+        dueDate: record?.dueDate || "",
+        notes: record?.notes || "",
+        tasks: record?.tasks || [],
+        updatedAt: new Date().toISOString(),
+      });
+      setSelectedJobId(job.id);
+    } catch (requestError) {
+      setError(requestError.message || "We could not mark production complete.");
+    } finally {
+      setQuickSavingJobId("");
     }
   }
 
@@ -2269,165 +2388,413 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     setTaskDrafts((current) => current.filter((task) => task.id !== taskId));
   }
 
-  const completedTasks = taskDrafts.filter((task) => task.complete).length;
-  const taskPercent = taskDrafts.length ? Math.round((completedTasks / taskDrafts.length) * 100) : 0;
+  const completedDraftTasks = taskDrafts.filter((task) => task.complete).length;
+  const draftTaskPercent = taskDrafts.length
+    ? Math.round((completedDraftTasks / taskDrafts.length) * 100)
+    : 0;
+
+  const filterButton = (key, label, count) => (
+    <button
+      key={key}
+      type="button"
+      onClick={() => setQueueFilter(key)}
+      style={{
+        border: "1px solid " + (queueFilter === key ? "rgba(0,180,219,.65)" : BORDER),
+        borderRadius: 999,
+        padding: "8px 11px",
+        background: queueFilter === key ? "rgba(0,180,219,.13)" : "rgba(255,255,255,.035)",
+        color: TEXT,
+        fontSize: 11,
+        fontWeight: 800,
+        cursor: "pointer",
+      }}
+    >
+      {label} <span style={{ color: queueFilter === key ? CYAN : MUTED }}>{count}</span>
+    </button>
+  );
 
   return (
-    <section style={cardStyle(940)}>
+    <section style={cardStyle(1040)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
 
       <div style={{ marginTop: 22 }}>
         <p style={eyebrowStyle}>PRODUCTION</p>
-        <h2 style={sectionHeading}>Production tracking.</h2>
-        <p style={copyStyle}>See where each job is, what needs doing and when the work needs to be ready.</p>
+        <h2 style={sectionHeading}>Production workflow.</h2>
+        <p style={copyStyle}>One place to see what is on the workroom floor, what is due, what is ready and what needs to move next.</p>
       </div>
 
-      {jobs.length === 0 && (
-        <div style={emptyPeople}>
-          <strong>Create a job first.</strong>
-          <p style={copyStyle}>Production tracking works from your BizziBuddi jobs.</p>
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))",
+        gap: 9,
+        marginTop: 24,
+      }}>
+        {[
+          ["Active", activeCount, "rgba(0,180,219,.09)", CYAN],
+          ["Due today", dueTodayCount, "rgba(245,158,11,.09)", "#F6C453"],
+          ["Overdue", overdueCount, "rgba(220,50,50,.09)", "#FF8C8C"],
+          ["Ready", readyCount, "rgba(0,200,140,.09)", "#58E0B1"],
+          ["Complete", completeCount, "rgba(255,255,255,.04)", TEXT],
+          ["Task progress", taskProgress + "%", "rgba(37,99,235,.10)", TEXT],
+        ].map(([label, value, background, color]) => (
+          <button
+            key={label}
+            type="button"
+            onClick={() => {
+              const filterMap = {
+                Active: "active",
+                "Due today": "due-today",
+                Overdue: "overdue",
+                Ready: "ready",
+                Complete: "complete",
+              };
+              if (filterMap[label]) setQueueFilter(filterMap[label]);
+            }}
+            style={{
+              border: "1px solid " + BORDER,
+              borderRadius: 12,
+              padding: 13,
+              background,
+              color: TEXT,
+              textAlign: "left",
+              cursor: filterMapValue(label) ? "pointer" : "default",
+            }}
+          >
+            <small style={smallText}>{label}</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 23, color }}>{value}</strong>
+          </button>
+        ))}
+      </div>
+
+      <div style={{
+        marginTop: 16,
+        padding: 14,
+        borderRadius: 13,
+        border: "1px solid " + BORDER,
+        background: "rgba(255,255,255,.025)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div>
+            <small style={smallText}>PRODUCTION QUEUE</small>
+            <strong style={{ display: "block", marginTop: 4, fontSize: 17 }}>
+              {filteredJobs.length} {filteredJobs.length === 1 ? "job" : "jobs"} showing
+            </strong>
+          </div>
+          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            {filterButton("active", "Active", activeCount)}
+            {filterButton("due-today", "Due today", dueTodayCount)}
+            {filterButton("overdue", "Overdue", overdueCount)}
+            {filterButton("ready", "Ready", readyCount)}
+            {filterButton("complete", "Complete", completeCount)}
+            {filterButton("all", "All", productionJobs.length)}
+          </div>
         </div>
-      )}
 
-      {jobs.length > 0 && (
-        <div>
-          <label style={fieldStyle}>
-            Job
-            <select value={selectedJobId} onChange={(event) => setSelectedJobId(event.target.value)} style={inputStyle}>
-              {jobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}
-            </select>
-          </label>
-
-          <div style={productionProgress}>
-            {stages.map((stage, index) => {
-              const currentStage = existing?.stage || "Not started";
-              const currentIndex = stages.indexOf(currentStage);
+        {filteredJobs.length === 0 ? (
+          <div style={{
+            marginTop: 14,
+            padding: 24,
+            borderRadius: 11,
+            border: "1px dashed " + BORDER,
+            background: "rgba(255,255,255,.02)",
+            textAlign: "center",
+          }}>
+            <strong>No production jobs in this view.</strong>
+            <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 13 }}>
+              {queueFilter === "overdue"
+                ? "Nothing is currently past its ready-by date."
+                : queueFilter === "ready"
+                  ? "No production jobs are currently ready."
+                  : queueFilter === "complete"
+                    ? "No production jobs have been completed yet."
+                    : "Create or update a job to start moving work through production."}
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(285px, 1fr))",
+            gap: 10,
+            marginTop: 14,
+          }}>
+            {filteredJobs.map((job) => {
+              const isSelected = job.id === selectedJobId;
+              const taskLabel = job.productionTaskCount
+                ? `Tasks ${job.productionCompletedTaskCount}/${job.productionTaskCount}`
+                : "No tasks yet";
 
               return (
-                <div key={stage} style={productionStage(stage === currentStage, index <= currentIndex)}>
-                  <span>{index + 1}</span>
-                  <small>{stage}</small>
-                </div>
-              );
-            })}
-          </div>
-
-          <div style={productionTaskPanel}>
-            <div style={productionTaskHeader}>
-              <div>
-                <small style={smallText}>TASK PROGRESS</small>
-                <strong style={{ display: "block", marginTop: 5, fontSize: 21 }}>
-                  {completedTasks}/{taskDrafts.length} complete
-                </strong>
-              </div>
-              <span style={productionTaskPercent}>{taskPercent}%</span>
-            </div>
-
-            <div style={{ ...jobProgressTrack, marginTop: 12 }}>
-              <div style={{ ...jobProgressFill, width: taskPercent + "%" }} />
-            </div>
-
-            {taskDrafts.length > 0 ? (
-              <div style={productionTaskList}>
-                {taskDrafts.map((task) => (
-                  <div key={task.id} style={productionTaskRow(task.complete)}>
-                    <label style={productionTaskLabel}>
-                      <input
-                        type="checkbox"
-                        checked={task.complete}
-                        onChange={() => toggleTask(task.id)}
-                      />
-                      <span style={{ textDecoration: task.complete ? "line-through" : "none", opacity: task.complete ? 0.65 : 1 }}>
-                        {task.title}
-                      </span>
-                    </label>
-                    <button type="button" onClick={() => removeTask(task.id)} style={smallDangerButton} disabled={saving}>
-                      Remove
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ ...smallText, margin: "14px 0 0" }}>No production tasks yet. Add the work that needs to be completed.</p>
-            )}
-
-            <form onSubmit={addTask} style={productionTaskAdd}>
-              <input
-                value={newTaskTitle}
-                onChange={(event) => setNewTaskTitle(event.target.value)}
-                placeholder="Add a production task"
-                maxLength={200}
-                style={inputStyle}
-              />
-              <button type="submit" disabled={!newTaskTitle.trim() || taskDrafts.length >= 100} style={{ ...secondaryButton, width: "auto", marginTop: 0, opacity: !newTaskTitle.trim() || taskDrafts.length >= 100 ? 0.5 : 1 }}>
-                + Add task
-              </button>
-            </form>
-          </div>
-
-          <form onSubmit={handleSave} style={personForm}>
-            <strong style={{ fontSize: 18 }}>Update production</strong>
-
-            <label style={fieldStyle}>
-              Production stage
-              <select required name="stage" defaultValue={existing?.stage || "Not started"} style={inputStyle}>
-                {stages.map((stage) => <option key={stage}>{stage}</option>)}
-              </select>
-            </label>
-
-            <Field name="dueDate" label="Ready by" type="date" defaultValue={existing?.dueDate || ""} />
-
-            <label style={fieldStyle}>
-              Production notes
-              <textarea
-                name="notes"
-                defaultValue={existing?.notes || ""}
-                placeholder="Optional production notes"
-                rows="4"
-                maxLength={2000}
-                style={{ ...inputStyle, padding: 15, resize: "vertical" }}
-              />
-            </label>
-
-            <button type="submit" disabled={saving} style={{ ...primaryButton, maxWidth: 260, opacity: saving ? 0.65 : 1 }}>
-              {saving ? "Saving…" : "Save production progress"}
-            </button>
-            {error && <div role="alert" style={{ ...messageStyle, marginTop: 16 }}>{error}</div>}
-          </form>
-        </div>
-      )}
-
-      {records.length > 0 && (
-        <div style={{ marginTop: 28 }}>
-          <small style={smallText}>TRACKED JOBS</small>
-          <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
-            {records.map((record) => {
-              const completed = (record.tasks || []).filter((task) => task.complete).length;
-              const total = (record.tasks || []).length;
-
-              return (
-                <article key={record.id} style={productionRecordCard}>
-                  <div>
-                    <strong style={{ display: "block", fontSize: 16 }}>{record.jobTitle}</strong>
-                    <span style={smallText}>
-                      {record.stage}
-                      {record.dueDate ? " · Ready " + formatProductionDate(record.dueDate) : ""}
+                <article
+                  key={job.id}
+                  style={{
+                    border: "1px solid " + (
+                      job.overdue
+                        ? "rgba(255,107,138,.55)"
+                        : isSelected
+                          ? "rgba(0,180,219,.55)"
+                          : BORDER
+                    ),
+                    borderRadius: 13,
+                    background: job.overdue
+                      ? "rgba(220,50,50,.075)"
+                      : "rgba(255,255,255,.03)",
+                    padding: 14,
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <small style={{ ...smallText, color: CYAN }}>CLIENT</small>
+                      <strong style={{ display: "block", marginTop: 3, fontSize: 16 }}>{job.clientName || "Unassigned"}</strong>
+                      <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 12 }}>{job.title}</span>
+                    </div>
+                    <span style={jobReadinessBadge(job.productionReadiness)}>
+                      {job.productionReadiness}
                     </span>
-                    {total > 0 && (
-                      <span style={{ ...smallText, display: "block", marginTop: 5 }}>
-                        Tasks {completed}/{total} complete
-                      </span>
+                  </div>
+
+                  <div style={{ marginTop: 13 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 5 }}>
+                      <span style={{ ...smallText, fontSize: 11 }}>{job.productionStage}</span>
+                      <strong style={{ fontSize: 11 }}>{job.productionProgress}%</strong>
+                    </div>
+                    <div style={jobProgressTrack}>
+                      <div style={{ ...jobProgressFill, width: job.productionProgress + "%" }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 10 }}>
+                    <span style={{
+                      padding: "4px 8px",
+                      borderRadius: 999,
+                      border: "1px solid " + (job.overdue ? "rgba(255,107,138,.45)" : BORDER),
+                      background: job.overdue ? "rgba(220,50,50,.09)" : "rgba(255,255,255,.035)",
+                      color: job.overdue ? "#FF8C8C" : MUTED,
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}>
+                      {job.productionDueDate
+                        ? job.overdue
+                          ? "Overdue · " + formatProductionDate(job.productionDueDate)
+                          : job.dueToday
+                            ? "Due today · " + formatProductionDate(job.productionDueDate)
+                            : "Ready by " + formatProductionDate(job.productionDueDate)
+                        : "No ready-by date"}
+                    </span>
+                    <span style={{
+                      padding: "4px 8px",
+                      borderRadius: 999,
+                      background: "rgba(255,255,255,.035)",
+                      color: MUTED,
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}>
+                      {taskLabel}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 7, marginTop: 12, flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedJobId(job.id)}
+                      style={{ ...smallActionButton, borderColor: "rgba(0,180,219,.45)" }}
+                    >
+                      {isSelected ? "Editing" : "Manage"}
+                    </button>
+                    {!job.complete && (
+                      <button
+                        type="button"
+                        onClick={() => handleQuickComplete(job)}
+                        disabled={quickSavingJobId === job.id || saving}
+                        style={{
+                          ...smallActionButton,
+                          borderColor: "rgba(0,200,140,.40)",
+                          color: "#58E0B1",
+                          opacity: quickSavingJobId === job.id ? 0.6 : 1,
+                        }}
+                      >
+                        {quickSavingJobId === job.id ? "Saving…" : "Mark complete"}
+                      </button>
                     )}
                   </div>
-                  <span style={productionBadge}>{record.stage.toUpperCase()}</span>
                 </article>
               );
             })}
           </div>
+        )}
+      </div>
+
+      {jobs.length === 0 ? (
+        <div style={{ ...emptyPeople, marginTop: 18 }}>
+          <strong>Create a job first.</strong>
+          <p style={copyStyle}>Production tracking is connected directly to your BizziBuddi jobs.</p>
+        </div>
+      ) : (
+        <div style={{ marginTop: 20 }}>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            gap: 14,
+            flexWrap: "wrap",
+          }}>
+            <div>
+              <small style={smallText}>WORK ITEM</small>
+              <strong style={{ display: "block", marginTop: 4, fontSize: 19 }}>
+                {selectedJob?.title || "Select a job"}
+              </strong>
+              <span style={{ color: MUTED, fontSize: 12 }}>
+                {selectedJob?.clientName || "No client assigned"} · {selectedJob?.productionStage || "Not started"}
+              </span>
+            </div>
+            {selectedJob && (
+              <span style={jobReadinessBadge(selectedJob.productionReadiness)}>
+                {selectedJob.productionReadiness}
+              </span>
+            )}
+          </div>
+
+          {selectedJob && (
+            <>
+              <div style={productionProgress}>
+                {stages.map((stage, index) => {
+                  const currentStage = existing?.stage || "Not started";
+                  const currentIndex = stages.indexOf(currentStage);
+
+                  return (
+                    <button
+                      key={stage}
+                      type="button"
+                      onClick={() => {
+                        setSelectedJobId(selectedJob.id);
+                        const form = document.getElementById("bizzibuddi-production-editor");
+                        if (form) {
+                          const select = form.elements.namedItem("stage");
+                          if (select) select.value = stage;
+                        }
+                      }}
+                      style={{
+                        border: 0,
+                        background: "transparent",
+                        cursor: "pointer",
+                        padding: 4,
+                        color: stage === currentStage ? TEXT : index <= currentIndex ? CYAN : MUTED,
+                        fontWeight: stage === currentStage ? 800 : 600,
+                        fontSize: 12,
+                      }}
+                    >
+                      <span style={{ display: "grid", placeItems: "center", width: 28, height: 28, margin: "0 auto 6px", borderRadius: "50%", border: "1px solid " + (index <= currentIndex ? "rgba(0,180,219,.55)" : BORDER), background: index <= currentIndex ? "rgba(0,180,219,.10)" : "rgba(255,255,255,.025)" }}>
+                        {index + 1}
+                      </span>
+                      <small>{stage}</small>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={productionTaskPanel}>
+                <div style={productionTaskHeader}>
+                  <div>
+                    <small style={smallText}>TASK PROGRESS</small>
+                    <strong style={{ display: "block", marginTop: 5, fontSize: 21 }}>
+                      {completedDraftTasks}/{taskDrafts.length} complete
+                    </strong>
+                  </div>
+                  <span style={productionTaskPercent}>{draftTaskPercent}%</span>
+                </div>
+
+                <div style={{ ...jobProgressTrack, marginTop: 12 }}>
+                  <div style={{ ...jobProgressFill, width: draftTaskPercent + "%" }} />
+                </div>
+
+                {taskDrafts.length > 0 ? (
+                  <div style={productionTaskList}>
+                    {taskDrafts.map((task) => (
+                      <div key={task.id} style={productionTaskRow(task.complete)}>
+                        <label style={productionTaskLabel}>
+                          <input
+                            type="checkbox"
+                            checked={task.complete}
+                            onChange={() => toggleTask(task.id)}
+                          />
+                          <span style={{ textDecoration: task.complete ? "line-through" : "none", opacity: task.complete ? 0.65 : 1 }}>
+                            {task.title}
+                          </span>
+                        </label>
+                        <button type="button" onClick={() => removeTask(task.id)} style={smallDangerButton} disabled={saving}>
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ ...smallText, margin: "14px 0 0" }}>No production tasks yet. Add the work that needs to be completed.</p>
+                )}
+
+                <form onSubmit={addTask} style={productionTaskAdd}>
+                  <input
+                    value={newTaskTitle}
+                    onChange={(event) => setNewTaskTitle(event.target.value)}
+                    placeholder="Add a production task"
+                    maxLength={200}
+                    style={inputStyle}
+                  />
+                  <button type="submit" disabled={!newTaskTitle.trim() || taskDrafts.length >= 100} style={{ ...secondaryButton, width: "auto", marginTop: 0, opacity: !newTaskTitle.trim() || taskDrafts.length >= 100 ? 0.5 : 1 }}>
+                    + Add task
+                  </button>
+                </form>
+              </div>
+
+              <form id="bizzibuddi-production-editor" onSubmit={handleSave} style={personForm}>
+                <strong style={{ fontSize: 18 }}>Update production</strong>
+
+                <label style={fieldStyle}>
+                  Production stage
+                  <select required name="stage" defaultValue={existing?.stage || "Not started"} style={inputStyle}>
+                    {stages.map((stage) => <option key={stage}>{stage}</option>)}
+                  </select>
+                </label>
+
+                <Field name="dueDate" label="Ready by" type="date" defaultValue={existing?.dueDate || ""} />
+
+                <label style={fieldStyle}>
+                  Production notes
+                  <textarea
+                    name="notes"
+                    defaultValue={existing?.notes || ""}
+                    placeholder="Optional production notes"
+                    rows="4"
+                    maxLength={2000}
+                    style={{ ...inputStyle, padding: 15, resize: "vertical" }}
+                  />
+                </label>
+
+                <div style={{ display: "flex", gap: 9, flexWrap: "wrap", alignItems: "center" }}>
+                  <button type="submit" disabled={saving} style={{ ...primaryButton, maxWidth: 260, marginTop: 20, opacity: saving ? 0.65 : 1 }}>
+                    {saving ? "Saving…" : "Save production progress"}
+                  </button>
+                  {selectedJob.productionReadiness === "Stage update needed" && (
+                    <span style={{ ...smallText, color: "#F6C453" }}>All tasks are complete — move the stage forward when ready.</span>
+                  )}
+                </div>
+                {error && <div role="alert" style={{ ...messageStyle, marginTop: 16 }}>{error}</div>}
+              </form>
+
+              {existing?.notes && (
+                <div style={businessNote}>
+                  <small style={smallText}>CURRENT NOTES</small>
+                  <p style={{ ...copyStyle, margin: "6px 0 0", whiteSpace: "pre-wrap" }}>{existing.notes}</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </section>
   );
+}
+
+function filterMapValue(label) {
+  return ["Active", "Due today", "Overdue", "Ready", "Complete"].includes(label);
 }
 
 function formatProductionDate(date) {
