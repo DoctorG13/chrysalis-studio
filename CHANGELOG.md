@@ -1,3 +1,13 @@
+## BizziBuddi Reports Load Fix
+
+### Fixed
+
+- Fixed the Reports API summary construction so overdue invoice counts use the calculated overdue invoice records.
+- Restored the report summary objects passed into Business Insights for jobs, calendar, finance and production.
+- Fixed the Reports page error caused by undefined report summary variables.
+
+---
+
 ## BizziBuddi UX Simplification
 
 ### Changed
