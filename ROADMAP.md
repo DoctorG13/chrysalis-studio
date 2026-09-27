@@ -93,3 +93,25 @@ If not, it probably belongs in a later release.
 Version `1.0.0` establishes the production application baseline with documented workflows, persistent account-backed business data, production startup, backup/restore support and release verification.
 
 Donna can comfortably run Chrysalis as her primary business application every day.
+
+---
+
+# Post-1.0 — Operational Depth
+
+## ✅ Production Workflow 2.0
+
+- [x] Production queue
+- [x] Due-today and overdue views
+- [x] Ready and complete views
+- [x] Job-centric production cards
+- [x] Production stage workflow
+- [x] Task progress visibility
+- [x] Quick completion action
+- [x] Dashboard / Buddi production state synchronisation
+
+## Next
+
+- [ ] Production task templates
+- [ ] Production time tracking
+- [ ] Client/job detail deep links
+- [ ] Production workload balancing
