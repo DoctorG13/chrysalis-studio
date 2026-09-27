@@ -172,15 +172,55 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           detail: event?.detail || "",
         })),
       },
+      intelligence: {
+        openJobs: jobs.filter((job) => job.status !== "Complete").length,
+        completedJobs: jobs.filter((job) => job.status === "Complete").length,
+        waitingJobs: jobs.filter((job) => job.status === "Waiting").length,
+        upcomingAppointments: upcomingAppointments.length,
+        overdueInvoices: overdueInvoices.length,
+        outstandingAmount: outstandingInvoices.reduce(
+          (sum, invoice) =>
+            sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)),
+          0
+        ),
+        activeProduction: productionRecords.filter((record) => record.stage && record.stage !== "Complete").length,
+        readyProduction: productionRecords.filter((record) => record.stage === "Ready").length,
+        attentionCount: dashboardAttention.length,
+        attentionSummary: dashboardAttention.slice(0, 8).map((item) => ({
+          type: item.type,
+          title: item.title,
+          detail: item.detail,
+        })),
+        workloadSummary: {
+          jobs: jobs.length,
+          openJobs: jobs.filter((job) => job.status !== "Complete").length,
+          waitingJobs: jobs.filter((job) => job.status === "Waiting").length,
+          productionRecords: productionRecords.length,
+          activeProduction: productionRecords.filter((record) => record.stage && record.stage !== "Complete").length,
+          readyProduction: productionRecords.filter((record) => record.stage === "Ready").length,
+          upcomingAppointments: upcomingAppointments.length,
+        },
+        financeSummary: {
+          invoiceCount: invoices.length,
+          outstandingCount: outstandingInvoices.length,
+          overdueCount: overdueInvoices.length,
+          outstandingAmount: outstandingInvoices.reduce(
+            (sum, invoice) =>
+              sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)),
+            0
+          ),
+        },
+      },
     };
   }, [account, people, jobs, appointments, invoices, automationEvents, productionRecords]);
 
   const prompts = [
     "What needs attention today?",
     "How is my business looking?",
-    "What is coming up?",
+    "What should I focus on next?",
     "Who owes me money?",
-    "Which jobs are in progress?",
+    "Which jobs need attention?",
+    "What is coming up?",
   ];
 
   useEffect(() => {
@@ -249,7 +289,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           <div style={welcomeIconStyle}><BizziBuddiLogo size={26} showWordmark={false} /></div>
           <div>
             <strong style={{ display: "block", marginBottom: 4 }}>Ask Buddi about your business.</strong>
-            <span>Buddi can use the information currently stored in this BizziBuddi account preview to help you understand what is happening.</span>
+            <span>Buddi can use the information currently stored in this BizziBuddi account to explain what is happening, highlight what may need attention and point you to the right part of your workspace.</span>
           </div>
         </div>
 
