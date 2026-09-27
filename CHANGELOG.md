@@ -1,3 +1,13 @@
+## BizziBuddi Measurement Form Reset Fix
+
+### Fixed
+
+- Preserved the measurement form element before the asynchronous save request completes.
+- Fixed the `Cannot read properties of null (reading 'reset')` error after a successful measurement snapshot save.
+- Measurement snapshots now save and reset the form cleanly without showing a false error state.
+
+---
+
 ## BizziBuddi People Measurements and Job Automation Fixes
 
 ### Fixed
