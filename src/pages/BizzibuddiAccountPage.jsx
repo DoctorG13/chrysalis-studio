@@ -1261,9 +1261,9 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                               <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 11 }}>{formatTimelineDate(measurement.createdAt)}</span>
                             </div>
                           </div>
-                          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 7, marginTop: 10 }}>
+                          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6, marginTop: 8 }}>
                             {Object.entries(measurement.data || {}).filter(([key]) => key !== "notes").map(([key, value]) => (
-                              <div key={key} style={{ padding: "7px 8px", borderRadius: 7, background: "rgba(255,255,255,.035)" }}>
+                              <div key={key} style={{ padding: "6px 7px", borderRadius: 7, background: "rgba(255,255,255,.035)" }}>
                                 <small style={{ color: MUTED, fontSize: 10, textTransform: "uppercase" }}>{measurementFieldLabel(key)}</small>
                                 <strong style={{ display: "block", marginTop: 2, fontSize: 12 }}>{value}</strong>
                               </div>
