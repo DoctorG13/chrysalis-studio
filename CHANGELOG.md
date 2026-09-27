@@ -1,3 +1,23 @@
+## BizziBuddi Production Workflow 2.0
+
+### Added
+
+- Rebuilt the Production workspace as an operational production queue rather than a single-job editor.
+- Added Active, Due today, Overdue, Ready, Complete and All production queue views.
+- Added production summary metrics for active work, due today, overdue work, ready work, completed work and task progress.
+- Added job-centric production cards showing client, job, stage, progress, readiness, ready-by date and task completion.
+- Added quick production actions to open a work item and mark production complete.
+- Added a clearer stage workflow editor with clickable stage progression.
+- Added contextual empty states for each production queue view.
+- Kept production records persistent and connected to the existing Jobs, Dashboard intelligence, Automation and Buddi workflows.
+- Synced the local job production summary immediately after production saves so Dashboard and Buddi see the updated production state without requiring a reload.
+
+### Workflow
+
+Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard / Buddi
+
+---
+
 ## Buddi Actionable Intelligence
 
 ### Added
