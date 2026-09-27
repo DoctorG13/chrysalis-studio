@@ -1,3 +1,15 @@
+## Buddi Actionable Intelligence
+
+### Added
+
+- Added a shared BizziBuddi Priority Engine used by both Today/Dashboard and Buddi.
+- Unified overdue payments, due-soon payments, production issues, production due dates, today's appointments, waiting jobs and ready production into one prioritised intelligence model.
+- Added contextual Buddi actions that route directly to Finance, Calendar, Jobs or Production based on the current priority picture.
+- Added structured intelligence metrics for workload, completion, finance and production.
+- Kept Buddi read-only: contextual actions navigate to workspace modules without changing business records.
+
+---
+
 ## BizziBuddi Buddi Intelligence Foundation
 
 ### Added
