@@ -1,3 +1,14 @@
+## BizziBuddi People Panel Toggle Fix
+
+### Fixed
+
+- Made Timeline and Measurements mutually exclusive within a person card.
+- Opening Measurements now closes Timeline.
+- Opening Timeline now closes Measurements and clears the hidden measurement view state.
+- Prevented the two expanded panels from competing for the same horizontal layout space.
+
+---
+
 ## BizziBuddi Client Timeline Compactness
 
 ### Changed
