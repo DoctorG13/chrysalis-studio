@@ -2072,31 +2072,59 @@ function getBizziBuddiReports(userId) {
   const jobCompletionRate = jobs.length ? Math.round((completedJobs / jobs.length) * 100) : 0;
   const paymentCollectionRate = totalInvoiced > 0 ? Math.round((Math.min(totalPaid, totalInvoiced) / totalInvoiced) * 100) : 0;
   const productionCompletionRate = productionRecords.length ? Math.round((productionComplete / productionRecords.length) * 100) : 0;
+
+  const jobsReport = {
+    total: jobs.length,
+    open: openJobs,
+    completed: completedJobs,
+    statusGroups: jobStatusGroups,
+  };
+
+  const calendarReport = {
+    total: appointments.length,
+    upcoming: upcomingAppointments,
+    bookedConfirmed: appointments.filter((item) => !item.status || item.status === "Booked" || item.status === "Confirmed").length,
+    cancelled: appointments.filter((item) => item.status === "Cancelled").length,
+  };
+
+  const financeReport = {
+    totalInvoiced: Math.round(totalInvoiced * 100) / 100,
+    totalPaid: Math.round(totalPaid * 100) / 100,
+    outstanding: Math.max(0, Math.round((totalInvoiced - totalPaid) * 100) / 100),
+    overdueInvoices: overdueInvoiceRecords.length,
+    overdueAmount: Math.round(overdueAmount * 100) / 100,
+    outstandingInvoiceCount,
+    paidInvoiceCount,
+    averageInvoice: Math.round(averageInvoice * 100) / 100,
+    collectionRate: totalInvoiced > 0 ? Math.round((Math.min(totalPaid, totalInvoiced) / totalInvoiced) * 100) : 0,
+  };
+
+  const productionReport = {
+    total: productionRecords.length,
+    active: productionActive,
+    complete: productionComplete,
+    stageGroups: productionStageGroups,
+  };
+
+  const monthlyStatistics = getMonthlyBizziBuddiStatistics(userId, now);
+  const businessInsights = buildBizziBuddiBusinessInsights(
+    monthlyStatistics,
+    financeReport,
+    jobsReport,
+    calendarReport,
+    productionReport
+  );
+
   return {
     generatedAt: now.toISOString(),
     people: { total: people.length },
-    jobs: { total: jobs.length, open: openJobs, completed: completedJobs, statusGroups: jobStatusGroups },
-    calendar: {
-      total: appointments.length,
-      upcoming: upcomingAppointments,
-      bookedConfirmed: appointments.filter((item) => !item.status || item.status === "Booked" || item.status === "Confirmed").length,
-      cancelled: appointments.filter((item) => item.status === "Cancelled").length,
-    },
-    finance: {
-      totalInvoiced: Math.round(totalInvoiced * 100) / 100,
-      totalPaid: Math.round(totalPaid * 100) / 100,
-      outstanding: Math.max(0, Math.round((totalInvoiced - totalPaid) * 100) / 100),
-      overdueInvoices,
-      overdueAmount: Math.round(overdueAmount * 100) / 100,
-      outstandingInvoiceCount,
-      paidInvoiceCount,
-      averageInvoice: Math.round(averageInvoice * 100) / 100,
-      collectionRate: totalInvoiced > 0 ? Math.round((Math.min(totalPaid, totalInvoiced) / totalInvoiced) * 100) : 0,
-    },
-    production: { total: productionRecords.length, active: productionActive, complete: productionComplete, stageGroups: productionStageGroups },
+    jobs: jobsReport,
+    calendar: calendarReport,
+    finance: financeReport,
+    production: productionReport,
     insights: { jobCompletionRate, paymentCollectionRate, productionCompletionRate },
-    monthlyStatistics: getMonthlyBizziBuddiStatistics(userId, now),
-    businessInsights: buildBizziBuddiBusinessInsights(monthlyStatistics, finance, jobs, calendar, production),
+    monthlyStatistics,
+    businessInsights,
   };
 }
 
@@ -2800,3 +2828,4 @@ export function closeBizziBuddiAuthDatabase() {
   database.close();
   database = null;
 }
+
