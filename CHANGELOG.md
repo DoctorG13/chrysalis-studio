@@ -1,3 +1,13 @@
+## BizziBuddi Measurement History Compactness
+
+### Changed
+
+- Changed measurement history snapshots to flow into compact responsive columns instead of a single vertical stack.
+- Kept each snapshot internally compact with a consistent three-column measurement grid.
+- Reduced snapshot padding and measurement-cell spacing while preserving all measurement data and notes.
+
+---
+
 ## BizziBuddi Measurement Form Reset Fix
 
 ### Fixed
