@@ -3598,3 +3598,1170 @@ function HelpSupportPanel({
   }, [showFaqs]);
   useEffect(() => {
     if (!showContactSupport || !contactSupportRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      contactSupportRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [showContactSupport]);
+
+  const helpItems = [
+    {
+      icon: "🤖",
+      title: "Ask Buddi",
+      description: "Get help understanding your people, jobs, calendar, money and business activity.",
+      action: "Ask Buddi →",
+      onClick: onBuddi,
+      featured: true,
+    },
+    {
+      icon: "🚀",
+      title: "Getting started",
+      description: "Follow a simple path from business setup to your first people, jobs and appointments.",
+      action: showGettingStarted ? "Hide guide" : "Start the guide →",
+      onClick: () => setShowGettingStarted((current) => !current),
+      featured: false,
+    },
+    {
+      icon: "🧭",
+      title: "Feature guides",
+      description: "Explore People, Jobs, Calendar, Finance, Automation, Production and Reports.",
+      action: showFeatureGuides ? "Hide guides" : "Explore features →",
+      onClick: () => setShowFeatureGuides((current) => !current),
+      featured: false,
+    },
+    {
+      icon: "❓",
+      title: "Frequently asked questions",
+      description: "Find quick answers about accounts, memberships, data and how BizziBuddi works.",
+      action: showFaqs ? "Hide FAQs" : "View FAQs →",
+      onClick: () => setShowFaqs((current) => !current),
+    },
+    {
+      icon: "✉️",
+      title: "Contact support",
+      description: "Need a hand with something specific? Tell us what you need and keep your support request organised.",
+      action: showContactSupport ? "Hide support form" : "Contact support →",
+      onClick: () => {
+        setSupportSubmitted(false);
+        setShowContactSupport((current) => !current);
+      },
+    },
+  ];
+
+  const gettingStartedItems = [
+    {
+      number: "01",
+      title: "Set up your business",
+      description: "Give BizziBuddi your business name so your account is ready to use.",
+      action: "Go to dashboard",
+      onClick: onDashboard,
+    },
+    {
+      number: "02",
+      title: "Add your people",
+      description: "Start building your business records with the people and clients you work with.",
+      action: "Add people",
+      onClick: onPeople,
+    },
+    {
+      number: "03",
+      title: "Create your first job",
+      description: "Turn your work into something you can track from start to completion.",
+      action: "Create a job",
+      onClick: onJobs,
+    },
+    {
+      number: "04",
+      title: "Add your calendar",
+      description: "Keep appointments, bookings and important dates in one place.",
+      action: "Open calendar",
+      onClick: onCalendar,
+    },
+    {
+      number: "05",
+      title: "Ask Buddi",
+      description: "Once your business has some information in it, ask Buddi what needs attention.",
+      action: "Ask Buddi",
+      onClick: onBuddi,
+    },
+  ];
+
+  const featureGuideItems = [
+    {
+      id: "people",
+      number: "01",
+      title: "People",
+      icon: "👥",
+      summary: "Keep the people and clients connected to your business organised in one place.",
+      details: "Store names, contact details and business relationships so you can quickly find the people you work with and connect them to jobs and appointments.",
+      steps: ["Add a person or client.", "Keep their contact information up to date.", "Use their record when creating jobs and appointments."],
+      action: "Open People",
+      onClick: onPeople,
+    },
+    {
+      id: "jobs",
+      number: "02",
+      title: "Jobs",
+      icon: "📋",
+      summary: "Turn your work into trackable jobs from the first conversation through to completion.",
+      details: "Create jobs, assign them to people and keep the current status visible so you always know what work is new, underway, waiting or complete.",
+      steps: ["Create a job and choose the person it belongs to.", "Update the job status as work progresses.", "Use the job record as your central place for the work."],
+      action: "Open Jobs",
+      onClick: onJobs,
+    },
+    {
+      id: "calendar",
+      number: "03",
+      title: "Calendar",
+      icon: "📅",
+      summary: "Keep appointments, bookings and important dates together with your business activity.",
+      details: "Use the calendar to see upcoming appointments and keep your schedule connected to the people and jobs you are working with.",
+      steps: ["Add an appointment with a date and time.", "Link it to a person when useful.", "Use the calendar to see what is coming up."],
+      action: "Open Calendar",
+      onClick: onCalendar,
+    },
+    {
+      id: "finance",
+      number: "04",
+      title: "Finance",
+      icon: "💳",
+      summary: "Keep invoices, payments and outstanding money visible as your business grows.",
+      details: "Finance gives you a simple view of invoices and payment status, helping you see what has been issued, what has been paid and what remains outstanding.",
+      steps: ["Create an invoice for a person or client.", "Track its payment status.", "Use the finance summary to keep an eye on outstanding amounts."],
+      action: "Open Finance",
+      onClick: onFinance,
+    },
+    {
+      id: "automation",
+      number: "05",
+      title: "Automation",
+      icon: "⚡",
+      summary: "Let BizziBuddi prepare useful business follow-ups and surface things that need attention.",
+      details: "Automation helps reduce repetitive checking by preparing appointment reminders and identifying items such as overdue invoices that may need your attention.",
+      steps: ["Create appointments that can generate reminder events.", "Run an automation check when you want to review business activity.", "Review the event history and follow up where needed."],
+      action: "Open Automation",
+      onClick: onAutomation,
+    },
+    {
+      id: "production",
+      number: "06",
+      title: "Production",
+      icon: "🏭",
+      summary: "Track work through production stages so you can see what is being made and what is ready.",
+      details: "Production tracking gives you a clear stage-by-stage view of work, including readiness dates, notes and tasks.",
+      steps: ["Create a production record for a job.", "Move work through the production stages.", "Use tasks, notes and ready-by dates to keep production moving."],
+      action: "Open Production",
+      onClick: onProduction,
+    },
+    {
+      id: "reports",
+      number: "07",
+      title: "Reports",
+      icon: "📊",
+      summary: "Bring your business information together so you can see how things are tracking.",
+      details: "Reports turns your BizziBuddi information into a business-at-a-glance view covering people, jobs, calendar activity, finance and production.",
+      steps: ["Review the business summary.", "Check finance, jobs and calendar activity.", "Use production information to understand work in progress."],
+      action: "Open Reports",
+      onClick: onReports,
+    },
+  ];
+
+  const faqItems = [
+    {
+      question: "What is BizziBuddi?",
+      answer: "BizziBuddi is a business management platform designed to keep the important parts of your business together — people, jobs, calendar, finance, automation, production and reporting.",
+    },
+    {
+      question: "Which membership includes each feature?",
+      answer: "Free includes People & contacts, Basic jobs, Calendar and the Dashboard. Professional adds Advanced scheduling, Payments & invoices and Automation. Business adds Production tracking, Advanced reporting and additional business controls.",
+    },
+    {
+      question: "Can I start with the Free membership?",
+      answer: "Yes. The Free membership is designed as a starting point for independent operators. You can begin with your people, basic jobs, calendar and dashboard before deciding whether you need additional features.",
+    },
+    {
+      question: "What happens when I create a person or client?",
+      answer: "The person is added to your BizziBuddi business records so you can use that information when working with jobs and appointments. Keeping the record current helps the rest of BizziBuddi stay connected.",
+    },
+    {
+      question: "How do Jobs and People work together?",
+      answer: "A job is connected to the person or client it belongs to. This gives you a clearer picture of who the work is for and lets you manage the work and its status from the Jobs area.",
+    },
+    {
+      question: "What can I use the Calendar for?",
+      answer: "Use Calendar for appointments, bookings and important dates. Depending on your membership, additional scheduling information such as duration, buffer and booking status can also be used.",
+    },
+    {
+      question: "What does Buddi know about my business?",
+      answer: "Buddi can use the business information available to the assistant, including people, jobs, calendar activity, finance information, automation events and production records. Buddi is there to help you understand what is happening; you remain in control of your business decisions.",
+    },
+    {
+      question: "Can I change my membership later?",
+      answer: "Yes. BizziBuddi is structured so you can start with the membership that suits your needs and move to a membership with more functionality when you need it.",
+    },
+    {
+      question: "Where should I start if I'm new to BizziBuddi?",
+      answer: "Start with Getting started in this Help Centre. The five-step guide takes you through your business setup, people, first job, calendar and then Buddi.",
+    },
+    {
+      question: "Where can I get help if my question isn't answered here?",
+      answer: "Ask Buddi first for help understanding your business and how BizziBuddi works. If you need assistance with something specific that is not covered here, use the Contact support option in this Help Centre.",
+    },
+  ];
+
+  const activeGuide = featureGuideItems.find((guide) => guide.id === activeFeatureGuide) || featureGuideItems[0];
+
+  return (
+    <section style={cardStyle(940)}>
+      <div style={helpHero}>
+        <div style={helpIcon}>
+          <span>?</span>
+        </div>
+        <div>
+          <p style={eyebrowStyle}>HELP & SUPPORT</p>
+          <h2 style={sectionHeading}>How can we help?</h2>
+          <p style={{ ...copyStyle, maxWidth: 650, margin: "0 auto" }}>
+            Get answers, learn how BizziBuddi works, or ask Buddi about what is happening in your business.
+          </p>
+        </div>
+      </div>
+
+      <div style={helpGrid}>
+        {helpItems.map((item) => (
+          <article key={item.title} style={helpCard(item.featured)}>
+            <div style={helpCardIcon}>{item.icon}</div>
+            <div style={{ flex: 1 }}>
+              <strong style={{ display: "block", fontSize: 18 }}>{item.title}</strong>
+              <p style={{ ...copyStyle, margin: "8px 0 18px" }}>{item.description}</p>
+              <button
+                type="button"
+                onClick={item.onClick}
+                disabled={!item.onClick}
+                style={item.onClick ? helpPrimaryButton : helpSecondaryButton}
+              >
+                {item.action}
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {showGettingStarted && (
+        <div ref={gettingStartedRef} style={gettingStartedPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI QUICK START</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>Your first five steps.</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                You don't need to learn everything at once. Start here, add a little information, and let BizziBuddi grow with your business.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowGettingStarted(false)} style={helpCloseButton} aria-label="Close getting started guide">×</button>
+          </div>
+
+          <div style={gettingStartedStepsStyle}>
+            {gettingStartedItems.map((step, index) => (
+              <article key={step.number} style={gettingStartedStep}>
+                <div style={gettingStartedNumber}>{step.number}</div>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: "block", fontSize: 17 }}>{step.title}</strong>
+                  <p style={{ ...copyStyle, margin: "6px 0 14px" }}>{step.description}</p>
+                  <button type="button" onClick={step.onClick} style={helpSecondaryButton}>
+                    {step.action} →
+                  </button>
+                </div>
+                {index < gettingStartedItems.length - 1 && <div style={gettingStartedConnector} aria-hidden="true" />}
+              </article>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showFeatureGuides && (
+        <div ref={featureGuidesRef} style={featureGuidesPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI FEATURE GUIDES</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>Understand each part of your business.</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                Choose a feature below to see what it does, how to use it and where it fits into your day-to-day business.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowFeatureGuides(false)} style={helpCloseButton} aria-label="Close feature guides">×</button>
+          </div>
+
+          <div style={featureGuideTabs}>
+            {featureGuideItems.map((guide) => (
+              <button
+                key={guide.id}
+                type="button"
+                onClick={() => setActiveFeatureGuide(guide.id)}
+                style={featureGuideTab(activeFeatureGuide === guide.id)}
+              >
+                <span style={featureGuideTabNumber}>{guide.number}</span>
+                <span>{guide.icon} {guide.title}</span>
+              </button>
+            ))}
+          </div>
+
+          <article style={featureGuideDetail}>
+            <div style={featureGuideDetailHeader}>
+              <div style={helpCardIcon}>{activeGuide.icon}</div>
+              <div>
+                <small style={smallText}>FEATURE {activeGuide.number}</small>
+                <h4 style={{ margin: "5px 0 6px", fontSize: 23 }}>{activeGuide.title}</h4>
+                <p style={{ ...copyStyle, margin: 0 }}>{activeGuide.summary}</p>
+              </div>
+            </div>
+
+            <p style={{ ...copyStyle, margin: "20px 0 0" }}>{activeGuide.details}</p>
+
+            <div style={featureGuideSteps}>
+              {activeGuide.steps.map((step, index) => (
+                <div key={step} style={featureGuideStep}>
+                  <span style={featureGuideStepNumber}>{String(index + 1).padStart(2, "0")}</span>
+                  <span>{step}</span>
+                </div>
+              ))}
+            </div>
+
+            <button type="button" onClick={activeGuide.onClick} style={helpPrimaryButton}>
+              {activeGuide.action} →
+            </button>
+          </article>
+        </div>
+      )}
+
+      {showFaqs && (
+        <div ref={faqRef} style={faqPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI FAQ</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>Frequently asked questions.</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                Quick answers to the questions you're most likely to have while getting started with BizziBuddi.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowFaqs(false)} style={helpCloseButton} aria-label="Close frequently asked questions">×</button>
+          </div>
+
+          <div style={faqList}>
+            {faqItems.map((item, index) => {
+              const isOpen = activeFaq === index;
+
+              return (
+                <article key={item.question} style={faqItem}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveFaq(isOpen ? null : index)}
+                    style={faqQuestion}
+                    aria-expanded={isOpen}
+                  >
+                    <span>{item.question}</span>
+                    <span style={faqQuestionIcon}>{isOpen ? "−" : "+"}</span>
+                  </button>
+
+                  {isOpen && (
+                    <div style={faqAnswer}>
+                      <p style={{ ...copyStyle, margin: 0 }}>{item.answer}</p>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {showContactSupport && (
+        <div ref={contactSupportRef} style={supportPanel}>
+          <div style={gettingStartedIntro}>
+            <div>
+              <small style={smallText}>BIZZIBUDDI SUPPORT</small>
+              <h3 style={{ margin: "7px 0 6px", fontSize: 26 }}>How can we help?</h3>
+              <p style={{ ...copyStyle, margin: 0 }}>
+                Tell us what you need help with. In this local preview, your request is saved in this browser so you can test the support experience.
+              </p>
+            </div>
+            <button type="button" onClick={() => setShowContactSupport(false)} style={helpCloseButton} aria-label="Close contact support">×</button>
+          </div>
+
+          {supportSubmitted ? (
+            <div style={supportConfirmation}>
+              <div style={supportConfirmationIcon}>✓</div>
+              <div>
+                <strong style={{ display: "block", fontSize: 18 }}>Support request saved.</strong>
+                <p style={{ ...copyStyle, margin: "6px 0 0" }}>
+                  Your request has been saved locally in this demo environment. When BizziBuddi is connected to its support service, this form can send the request directly to the support team.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSupportSubmitted(false)}
+                style={helpSecondaryButton}
+              >
+                Submit another request
+              </button>
+            </div>
+          ) : (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const form = new FormData(event.currentTarget);
+                const request = {
+                  id: `support-${Date.now()}`,
+                  category: String(form.get("category") || ""),
+                  subject: String(form.get("subject") || "").trim(),
+                  message: String(form.get("message") || "").trim(),
+                  name: String(form.get("name") || "").trim(),
+                  email: String(form.get("email") || "").trim(),
+                  createdAt: new Date().toISOString(),
+                };
+
+                const existing = JSON.parse(localStorage.getItem("bizzibuddiMockSupportRequests") || "[]");
+                localStorage.setItem(
+                  "bizzibuddiMockSupportRequests",
+                  JSON.stringify([...existing, request])
+                );
+                setSupportSubmitted(true);
+              }}
+              style={supportForm}
+            >
+              <label style={fieldStyle}>
+                What do you need help with?
+                <select name="category" defaultValue="General help" style={inputStyle} required>
+                  <option>General help</option>
+                  <option>Account & membership</option>
+                  <option>People & clients</option>
+                  <option>Jobs</option>
+                  <option>Calendar</option>
+                  <option>Finance</option>
+                  <option>Automation</option>
+                  <option>Production</option>
+                  <option>Reports</option>
+                  <option>Buddi</option>
+                </select>
+              </label>
+
+              <label style={fieldStyle}>
+                Subject
+                <input name="subject" type="text" placeholder="Briefly describe the issue" style={inputStyle} required />
+              </label>
+
+              <label style={fieldStyle}>
+                Your message
+                <textarea
+                  name="message"
+                  placeholder="Tell us what is happening and what you need help with..."
+                  style={supportTextarea}
+                  required
+                />
+              </label>
+
+              <div style={supportFormGrid}>
+                <label style={fieldStyle}>
+                  Your name
+                  <input name="name" type="text" placeholder="Your name" style={inputStyle} required />
+                </label>
+                <label style={fieldStyle}>
+                  Email address
+                  <input name="email" type="email" placeholder="you@example.com" style={inputStyle} required />
+                </label>
+              </div>
+
+              <button type="submit" style={helpPrimaryButton}>
+                Save support request →
+              </button>
+            </form>
+          )}
+        </div>
+      )}
+
+      <div style={helpTip}>
+        <BizziBuddiLogo size={30} showWordmark={false} />
+        <div>
+          <strong style={{ display: "block" }}>Buddi is always close by.</strong>
+          <span style={smallText}>Use the floating Ask Buddi button whenever you want help without leaving what you're working on.</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function MembershipAccessPanel({ planName }) {
+  const plan = getBizzibuddiPlan(planName);
+  const featureGroups = [
+    { feature: "people", label: "People & contacts", tier: "Free" },
+    { feature: "jobs", label: "Basic jobs", tier: "Free" },
+    { feature: "calendar", label: "Calendar", tier: "Free" },
+    { feature: "advancedScheduling", label: "Advanced scheduling", tier: "Professional" },
+    { feature: "finance", label: "Payments & invoices", tier: "Professional" },
+    { feature: "automation", label: "Automation", tier: "Professional" },
+    { feature: "production", label: "Production tracking", tier: "Business" },
+    { feature: "reports", label: "Advanced reporting", tier: "Business" },
+  ];
+
+  return <div style={membershipAccess}>
+    <div>
+      <small style={smallText}>MEMBERSHIP ACCESS</small>
+      <strong style={{ display: "block", marginTop: 5, fontSize: 20 }}>{plan.name} features</strong>
+      <p style={{ ...copyStyle, marginBottom: 0 }}>Your membership determines which BizziBuddi capabilities are available as the product expands.</p>
+    </div>
+    <div style={membershipFeatureGrid}>
+      {featureGroups.map(({ feature, label, tier }) => {
+        const available = hasBizzibuddiFeature(plan.name, feature);
+        return <div key={feature} style={membershipFeature(available)}>
+          <span style={{ fontSize: 16 }}>{available ? "✓" : "🔒"}</span>
+          <span>
+            <strong style={{ display: "block", fontSize: 13 }}>{label}</strong>
+            {!available && <small style={{ color: MUTED }}>Available on {tier}</small>}
+          </span>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+
+
+const buddiFloatingButton = {
+  position: "fixed",
+  right: 24,
+  bottom: 24,
+  zIndex: 1200,
+  minWidth: 144,
+  height: 58,
+  padding: "0 18px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 9,
+  border: "2px solid #FFFFFF",
+  borderRadius: 30,
+  background: "linear-gradient(135deg, #0F2D4A 0%, #2563EB 72%, #00B4DB 100%)",
+  color: "#FFFFFF",
+  fontSize: 15,
+  fontWeight: 900,
+  boxShadow: "0 12px 30px rgba(0,0,0,.28)",
+  cursor: "pointer",
+  animation: "bizzibuddiBuddiPulse 3s infinite",
+};
+
+const helpHero = {
+  display: "grid",
+  justifyItems: "center",
+  gap: 16,
+  textAlign: "center",
+};
+
+const helpIcon = {
+  width: 72,
+  height: 72,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: 22,
+  background: "linear-gradient(135deg, rgba(0,180,219,.18), rgba(37,99,235,.18))",
+  border: "1px solid rgba(0,180,219,.45)",
+  color: CYAN,
+  fontSize: 34,
+  fontWeight: 800,
+  boxShadow: "0 14px 32px rgba(0,0,0,.18)",
+};
+
+const helpGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+  gap: 14,
+  marginTop: 34,
+};
+
+const helpCard = (featured) => ({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 14,
+  padding: 20,
+  borderRadius: 16,
+  border: "1px solid " + (featured ? "rgba(0,180,219,.6)" : BORDER),
+  background: featured ? "linear-gradient(135deg, rgba(0,180,219,.12), rgba(37,99,235,.08))" : "rgba(255,255,255,.035)",
+  boxShadow: featured ? "0 14px 30px rgba(0,0,0,.14)" : "none",
+});
+
+const helpCardIcon = {
+  width: 42,
+  height: 42,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  borderRadius: 12,
+  background: "rgba(255,255,255,.06)",
+  fontSize: 21,
+};
+
+const helpPrimaryButton = {
+  minHeight: 42,
+  padding: "0 15px",
+  border: 0,
+  borderRadius: 9,
+  background: RED,
+  color: TEXT,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const helpSecondaryButton = {
+  minHeight: 42,
+  padding: "0 15px",
+  border: "1px solid " + BORDER,
+  borderRadius: 9,
+  background: "transparent",
+  color: MUTED,
+  fontWeight: 700,
+  cursor: "default",
+};
+
+const supportPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(37,99,235,.38)",
+  background: "linear-gradient(135deg, rgba(37,99,235,.08), rgba(0,180,219,.06))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const supportForm = {
+  display: "grid",
+  gap: 2,
+  marginTop: 18,
+};
+const supportTextarea = {
+  display: "block",
+  width: "100%",
+  minHeight: 150,
+  marginTop: 8,
+  padding: "14px 15px",
+  boxSizing: "border-box",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 10,
+  fontSize: 15,
+  color: TEXT,
+  background: SURFACE,
+  resize: "vertical",
+  lineHeight: 1.5,
+  fontFamily: "inherit",
+};
+const supportFormGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 16,
+};
+const supportConfirmation = {
+  display: "grid",
+  gridTemplateColumns: "auto minmax(0, 1fr)",
+  gap: 14,
+  alignItems: "start",
+  marginTop: 22,
+  padding: 18,
+  borderRadius: 13,
+  border: "1px solid rgba(0,180,219,.38)",
+  background: "rgba(0,180,219,.07)",
+};
+const supportConfirmationIcon = {
+  width: 38,
+  height: 38,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: "50%",
+  background: "rgba(0,180,219,.16)",
+  color: CYAN,
+  fontSize: 20,
+  fontWeight: 900,
+};
+const faqPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(37,99,235,.38)",
+  background: "linear-gradient(135deg, rgba(37,99,235,.08), rgba(0,180,219,.06))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const faqList = {
+  display: "grid",
+  gap: 8,
+  marginTop: 24,
+};
+const faqItem = {
+  overflow: "hidden",
+  border: "1px solid " + BORDER,
+  borderRadius: 11,
+  background: "rgba(255,255,255,.035)",
+};
+const faqQuestion = {
+  width: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  padding: "15px 16px",
+  border: "none",
+  background: "transparent",
+  color: TEXT,
+  fontSize: 14,
+  fontWeight: 800,
+  textAlign: "left",
+  cursor: "pointer",
+};
+const faqQuestionIcon = {
+  flex: "0 0 auto",
+  width: 24,
+  height: 24,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: 7,
+  background: "rgba(0,180,219,.10)",
+  color: CYAN,
+  fontSize: 18,
+  lineHeight: 1,
+};
+const faqAnswer = {
+  padding: "0 16px 16px",
+  borderTop: "1px solid rgba(255,255,255,.08)",
+};
+const featureGuidesPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(37,99,235,.38)",
+  background: "linear-gradient(135deg, rgba(37,99,235,.08), rgba(0,180,219,.06))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const featureGuideTabs = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: 8,
+  marginTop: 24,
+};
+const featureGuideTab = (active) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  minHeight: 46,
+  padding: "8px 11px",
+  border: "1px solid " + (active ? "rgba(0,180,219,.65)" : BORDER),
+  borderRadius: 10,
+  background: active ? "rgba(0,180,219,.13)" : "rgba(255,255,255,.035)",
+  color: TEXT,
+  fontSize: 12,
+  fontWeight: active ? 800 : 700,
+  cursor: "pointer",
+  textAlign: "left",
+});
+const featureGuideTabNumber = {
+  color: CYAN,
+  fontSize: 10,
+  fontWeight: 900,
+  letterSpacing: ".06em",
+};
+const featureGuideDetail = {
+  marginTop: 14,
+  padding: 22,
+  borderRadius: 14,
+  border: "1px solid " + BORDER,
+  background: "rgba(255,255,255,.035)",
+};
+const featureGuideDetailHeader = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 14,
+};
+const featureGuideSteps = {
+  display: "grid",
+  gap: 9,
+  marginTop: 20,
+};
+const featureGuideStep = {
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 10,
+  padding: "10px 12px",
+  borderRadius: 9,
+  background: "rgba(0,180,219,.06)",
+  color: TEXT,
+  fontSize: 13,
+  lineHeight: 1.5,
+};
+const featureGuideStepNumber = {
+  color: CYAN,
+  fontSize: 11,
+  fontWeight: 900,
+  letterSpacing: ".06em",
+};
+const gettingStartedPanel = {
+  marginTop: 18,
+  padding: 24,
+  borderRadius: 18,
+  border: "1px solid rgba(0,180,219,.38)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.08), rgba(37,99,235,.07))",
+  boxShadow: "0 14px 34px rgba(0,0,0,.16)",
+};
+const gettingStartedIntro = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 20,
+};
+const gettingStartedStepsStyle = {
+  display: "grid",
+  gap: 0,
+  marginTop: 24,
+};
+const gettingStartedStep = {
+  position: "relative",
+  display: "flex",
+  alignItems: "flex-start",
+  gap: 14,
+  padding: "16px 0",
+  borderTop: "1px solid rgba(255,255,255,.09)",
+};
+const gettingStartedNumber = {
+  width: 42,
+  height: 42,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  borderRadius: 12,
+  background: "rgba(0,180,219,.12)",
+  border: "1px solid rgba(0,180,219,.34)",
+  color: CYAN,
+  fontSize: 12,
+  fontWeight: 900,
+  letterSpacing: ".08em",
+};
+const gettingStartedConnector = {
+  position: "absolute",
+  left: 20,
+  top: 58,
+  bottom: -16,
+  width: 1,
+  background: "rgba(0,180,219,.20)",
+};
+const helpCloseButton = {
+  width: 36,
+  height: 36,
+  flex: "0 0 auto",
+  border: "1px solid " + BORDER,
+  borderRadius: "50%",
+  background: "rgba(255,255,255,.04)",
+  color: MUTED,
+  fontSize: 22,
+  lineHeight: 1,
+  cursor: "pointer",
+};
+const helpTip = {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,
+  marginTop: 20,
+  padding: 16,
+  borderRadius: 14,
+  border: "1px solid rgba(0,180,219,.24)",
+  background: "rgba(0,180,219,.05)",
+};
+
+const membershipAccess = { marginTop: 20, padding: 20, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(37,99,235,.06)" };
+const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 10, marginTop: 16 };
+const membershipFeature = (available) => ({ display: "flex", alignItems: "flex-start", gap: 9, padding: 12, borderRadius: 10, border: "1px solid " + (available ? "rgba(0,180,219,.28)" : BORDER), background: available ? "rgba(0,180,219,.08)" : "rgba(255,255,255,.025)", color: available ? TEXT : MUTED });
+
+const todayViewPanel = {
+  marginTop: 18, padding: 20, borderRadius: 16,
+  border: "1px solid " + BORDER,
+  background: "rgba(255,255,255,.025)",
+};
+const todayViewHeader = {
+  display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+  gap: 16, flexWrap: "wrap",
+};
+const todayViewDate = {
+  display: "inline-flex", alignItems: "center", minHeight: 34,
+  padding: "0 10px", borderRadius: 9, border: "1px solid " + BORDER,
+  color: MUTED, fontSize: 12, fontWeight: 700,
+};
+const todayViewGrid = {
+  display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+  gap: 10, marginTop: 16,
+};
+const todayViewCard = {
+  display: "flex", flexDirection: "column", minWidth: 0, padding: 15,
+  borderRadius: 13, border: "1px solid " + BORDER, background: "rgba(6,26,43,.42)",
+};
+const todayViewMetric = { display: "block", marginTop: 7, fontSize: 30, lineHeight: 1 };
+const todayViewLabel = { display: "block", marginTop: 5, color: MUTED, fontSize: 12 };
+const todayViewItem = {
+  display: "flex", flexDirection: "column", alignItems: "flex-start", width: "100%",
+  marginTop: 10, padding: "9px 10px", border: "1px solid rgba(255,255,255,.10)",
+  borderRadius: 9, background: "rgba(255,255,255,.025)", color: TEXT,
+  textAlign: "left", cursor: "pointer",
+};
+const todayViewEmpty = { display: "block", marginTop: 14, color: MUTED, fontSize: 12 };
+ 
+const attentionPanel = {
+  marginTop: 24, padding: 22, borderRadius: 18,
+  border: "1px solid rgba(0,180,219,.55)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.10), rgba(37,99,235,.10))",
+  boxShadow: "0 16px 34px rgba(0,0,0,.18)",
+};
+const attentionHeader = {
+  display: "flex", alignItems: "flex-start", justifyContent: "space-between",
+  gap: 18, flexWrap: "wrap",
+};
+const attentionBuddiButton = {
+  display: "inline-flex", alignItems: "center", gap: 9, minHeight: 46,
+  padding: "0 15px", border: "1px solid rgba(0,180,219,.55)",
+  borderRadius: 12, background: "rgba(6,26,43,.72)", color: TEXT,
+  fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
+};
+const attentionSummary = {
+  display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+  gap: 8, marginTop: 18,
+};
+const attentionList = { display: "grid", gap: 9, marginTop: 16 };
+const attentionItem = (tone) => ({
+  display: "flex", alignItems: "center", gap: 12, padding: 13,
+  borderRadius: 12,
+  border: "1px solid " + (tone === "urgent" ? "rgba(248,113,113,.42)" : tone === "today" ? "rgba(0,180,219,.42)" : BORDER),
+  background: tone === "urgent" ? "rgba(248,113,113,.07)" : "rgba(255,255,255,.035)",
+  flexWrap: "wrap",
+});
+const attentionItemIcon = {
+  width: 40, height: 40, display: "grid", placeItems: "center",
+  flex: "0 0 auto", borderRadius: 11, background: "rgba(0,180,219,.10)", fontSize: 20,
+};
+const attentionAction = {
+  flex: "0 0 auto", minHeight: 38, padding: "0 12px",
+  border: "1px solid " + BORDER, borderRadius: 9, background: "transparent",
+  color: TEXT, fontWeight: 700, cursor: "pointer",
+};
+const attentionClear = {
+  display: "flex", alignItems: "center", gap: 12, marginTop: 16, padding: 15,
+  borderRadius: 12, border: "1px solid rgba(0,180,219,.30)", background: "rgba(0,180,219,.06)",
+};
+const attentionClearIcon = {
+  width: 38, height: 38, display: "grid", placeItems: "center", borderRadius: "50%",
+  background: "rgba(0,180,219,.14)", color: CYAN, fontSize: 19, fontWeight: 900,
+};
+const attentionFooter = {
+  display: "flex", alignItems: "center", justifyContent: "space-between",
+  gap: 14, marginTop: 15, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.10)",
+  color: MUTED, fontSize: 12, lineHeight: 1.5, flexWrap: "wrap",
+};
+const attentionFooterButton = {
+  flex: "0 0 auto", border: 0, padding: 0, background: "transparent",
+  color: CYAN, fontWeight: 800, cursor: "pointer",
+};
+
+const buddiDashboardCard = {
+  marginTop: 22,
+  padding: 18,
+  borderRadius: 16,
+  border: "1px solid rgba(0,180,219,.55)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.11), rgba(37,99,235,.08))",
+  boxShadow: "0 12px 30px rgba(0,0,0,.16)",
+};
+
+const buddiDashboardIcon = {
+  width: 52,
+  height: 52,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  borderRadius: 14,
+  background: "rgba(0,180,219,.12)",
+};
+
+const businessActions = { marginTop: 28, padding: 24, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
+const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
+const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
+const actionIcon = { fontSize: 22, lineHeight: 1 };
+const productionProgress = { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginTop: 24, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const productionStage = (current, reached) => ({ display: "grid", justifyItems: "center", gap: 7, textAlign: "center", color: current ? TEXT : reached ? CYAN : MUTED, fontWeight: current ? 800 : 600, fontSize: 12 });
+const productionTaskPanel = { marginTop: 18, padding: 18, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const productionTaskHeader = { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 16 };
+const productionTaskPercent = { color: CYAN, fontSize: 22, fontWeight: 800 };
+const productionTaskList = { display: "grid", gap: 8, marginTop: 14 };
+const productionTaskRow = (complete) => ({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "10px 12px", borderRadius: 9, border: "1px solid " + (complete ? "rgba(0,180,219,.28)" : BORDER), background: complete ? "rgba(0,180,219,.07)" : "rgba(255,255,255,.025)" });
+const productionTaskLabel = { display: "flex", alignItems: "center", gap: 10, minWidth: 0, color: TEXT, fontSize: 14, lineHeight: 1.4, cursor: "pointer" };
+const productionTaskAdd = { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 8, marginTop: 12 };
+const productionRecordCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
+const productionBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: "0.06em", whiteSpace: "nowrap" };
+const reportSummaryGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 12, marginTop: 28 };
+const reportSummaryCard = { display: "grid", gap: 5, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.06)" };
+const reportSummaryValue = { fontSize: 26, fontWeight: 800 };
+const reportSectionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, marginTop: 18 };
+const reportCard = { padding: 20, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const reportCardHeading = { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16 };
+const reportMetric = { fontSize: 20, fontWeight: 800, color: CYAN, whiteSpace: "nowrap" };
+const reportRows = { display: "grid", gap: 0 };
+const reportRow = { display: "flex", justifyContent: "space-between", gap: 16, padding: "10px 0", borderBottom: `1px solid ${BORDER}` };
+const automationRuleGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, marginTop: 24 };
+const automationRuleCard = { display: "flex", alignItems: "flex-start", gap: 12, padding: 18, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)" };
+const automationSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", alignItems: "center", gap: 16, marginTop: 24, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const automationEventCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
+const automationEventBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", whiteSpace: "nowrap" };
+const appointmentCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const schedulingSummary = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, marginTop: 20, padding: 16, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)", flexWrap: "wrap" };
+const advancedScheduleFields = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 6 };
+const advancedBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(37,99,235,.16)", color: RED, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", whiteSpace: "nowrap" };
+const financeSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 28 };
+const invoiceCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 18, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", flexWrap: "wrap" };
+const invoiceMeta = { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" };
+const invoiceStatus = (status) => ({ padding: "6px 9px", borderRadius: 999, background: status === "Paid" ? "rgba(0,180,219,.12)" : status === "Overdue" ? "rgba(220,50,50,.10)" : "rgba(37,99,235,.12)", color: status === "Paid" ? CYAN : status === "Overdue" ? "#ff8c8c" : RED, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" });
+const invoiceDueSignal = (invoice, today) => {
+  if (!invoice?.dueDate || invoice.status === "Paid") return { display: "none" };
+  const due = new Date(invoice.dueDate + "T00:00:00");
+  const current = new Date(today + "T00:00:00");
+  const days = Math.ceil((due - current) / 86400000);
+  const overdue = invoice.status === "Overdue" || days < 0;
+  const urgent = days >= 0 && days <= 7;
+
+  return {
+    display: "inline-flex",
+    width: "fit-content",
+    marginTop: 7,
+    padding: "4px 8px",
+    borderRadius: 999,
+    border: "1px solid " + (overdue ? "rgba(220,50,50,.42)" : urgent ? "rgba(245,158,11,.42)" : "rgba(255,255,255,.12)"),
+    background: overdue ? "rgba(220,50,50,.09)" : urgent ? "rgba(245,158,11,.08)" : "rgba(255,255,255,.04)",
+    color: overdue ? "#ff8c8c" : urgent ? "#f6c453" : MUTED,
+    fontSize: 10,
+    fontWeight: 800,
+  };
+};
+const smallActionButton = { border: `1px solid ${RED}`, borderRadius: 8, padding: "7px 10px", background: "transparent", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" };
+const lockedFeatureCard = { display: "flex", alignItems: "flex-start", gap: 14, maxWidth: 520, margin: "24px auto 0", padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", textAlign: "left" };
+const jobTimelinePanel = {
+  gridColumn: "1 / -1",
+  marginTop: 12,
+  padding: 14,
+  borderRadius: 12,
+  border: "1px solid " + BORDER,
+  background: "rgba(0,0,0,.12)",
+};
+
+const jobTimelineItem = {
+  display: "grid",
+  gap: 4,
+  padding: 10,
+  borderRadius: 10,
+  border: "1px solid " + BORDER,
+  background: "rgba(255,255,255,.025)",
+};
+
+const jobProgressTrack = {
+  height: 7,
+  overflow: "hidden",
+  borderRadius: 999,
+  background: "rgba(255,255,255,.08)",
+};
+
+const jobProgressFill = {
+  height: "100%",
+  borderRadius: 999,
+  background: "linear-gradient(90deg, " + CYAN + ", " + RED + ")",
+  transition: "width .2s ease",
+};
+
+const jobReadinessBadge = (status) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "4px 8px",
+  borderRadius: 999,
+  border: "1px solid " + (status === "Complete" || status === "Ready" ? "rgba(0,200,140,.35)" : status === "Overdue" ? "rgba(220,50,50,.4)" : "rgba(255,255,255,.12)"),
+  background: status === "Complete" || status === "Ready" ? "rgba(0,200,140,.08)" : status === "Overdue" ? "rgba(220,50,50,.1)" : "rgba(255,255,255,.04)",
+  color: status === "Complete" || status === "Ready" ? "#58e0b1" : status === "Overdue" ? "#ff8c8c" : TEXT,
+  fontSize: 11,
+  fontWeight: 800,
+});
+
+const jobDueDateBadge = (dueDate, readiness) => {
+  if (!dueDate) return { display: "none" };
+  const today = new Date().toISOString().slice(0, 10);
+  const daysUntilDue = Math.ceil((new Date(dueDate + "T00:00:00") - new Date(today + "T00:00:00")) / 86400000);
+  const overdue = readiness === "Overdue" || daysUntilDue < 0;
+  const urgent = readiness !== "Complete" && daysUntilDue >= 0 && daysUntilDue <= 2;
+
+  return {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "4px 8px",
+    borderRadius: 999,
+    border: "1px solid " + (overdue ? "rgba(220,50,50,.45)" : urgent ? "rgba(245,158,11,.45)" : "rgba(255,255,255,.12)"),
+    background: overdue ? "rgba(220,50,50,.10)" : urgent ? "rgba(245,158,11,.10)" : "rgba(255,255,255,.04)",
+    color: overdue ? "#ff8c8c" : urgent ? "#f6c453" : MUTED,
+    fontSize: 11,
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+  };
+};
+
+const jobDueDateLabel = (dueDate, readiness) => {
+  if (!dueDate) return "";
+  const today = new Date().toISOString().slice(0, 10);
+  const daysUntilDue = Math.ceil((new Date(dueDate + "T00:00:00") - new Date(today + "T00:00:00")) / 86400000);
+  if (readiness === "Complete") return "Ready by " + formatProductionDate(dueDate);
+  if (daysUntilDue < 0) return "Overdue · " + formatProductionDate(dueDate);
+  if (daysUntilDue === 0) return "Due today · " + formatProductionDate(dueDate);
+  if (daysUntilDue === 1) return "Due tomorrow · " + formatProductionDate(dueDate);
+  return "Ready by " + formatProductionDate(dueDate);
+};
+
+const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
+const personCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const smallDangerButton = { ...smallActionButton, borderColor: "rgba(255,23,79,.45)", color: "#FF6B8A" };
+const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px dashed ${BORDER}`, background: "rgba(255,255,255,.025)", textAlign: "center" };
+const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
+const businessNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
+
+function Field({ name, label, type, placeholder, defaultValue }) {
+  return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
+}
+
+const pageStyle = { minHeight: "100vh", position: "relative", overflow: "hidden", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
+const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" };
+const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
+const backLink = { color: RED, textDecoration: "none", fontWeight: 600, fontSize: 14 };
+const heroStyle = { maxWidth: 780, margin: "76px auto 38px", textAlign: "center" };
+const eyebrowStyle = { display: "inline-block", color: RED, fontSize: 12, fontWeight: 700, letterSpacing: "0.16em" };
+const heroHeading = { margin: "24px 0 18px", fontSize: "clamp(42px, 7vw, 76px)", lineHeight: 0.98, letterSpacing: "-0.055em", fontWeight: 600 };
+const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 17, lineHeight: 1.75 };
+const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(0,180,219,.08)", color: RED, fontSize: 12, fontWeight: 600 };
+const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "34px 0 28px" };
+const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
+const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
+const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
+const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
+const centerStyle = { textAlign: "center" };
+const stepBadge = { display: "inline-block", marginBottom: 14, color: RED, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em" };
+const sectionHeading = { margin: "16px 0 10px", fontSize: "clamp(30px, 5vw, 44px)", letterSpacing: "-0.04em" };
+const copyStyle = { color: MUTED, lineHeight: 1.7 };
+const cardStyle = (maxWidth = "none") => ({ width: "100%", maxWidth, margin: "0 auto", boxSizing: "border-box", background: "rgba(255,255,255,.045)", border: `1px solid ${RED}`, borderRadius: 20, padding: "clamp(24px, 5vw, 48px)", boxShadow: "0 20px 48px rgba(0,0,0,.42)" });
+const primaryButton = { width: "100%", minHeight: 52, marginTop: 20, border: 0, borderRadius: 10, background: RED, color: TEXT, fontWeight: 700, cursor: "pointer", padding: "0 20px", fontSize: 15 };
+const secondaryButton = { ...primaryButton, background: "transparent", border: `1px solid ${RED}` };
+const textButton = { border: 0, padding: 0, background: "transparent", color: RED, fontWeight: 700, cursor: "pointer" };
+const switchText = { textAlign: "center", color: MUTED, fontSize: 14, margin: "26px 0 0" };
+const smallText = { color: MUTED, fontSize: 13 };
+const fieldStyle = { display: "block", marginTop: 17, fontSize: 13, fontWeight: 700 };
+const inputStyle = { display: "block", width: "100%", minHeight: 52, marginTop: 8, padding: "0 15px", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 10, fontSize: 15, color: TEXT, background: SURFACE };
+const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(37,99,235,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };
+const plansGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))", gap: 20, alignItems: "stretch" };
+const popularBadge = { display: "inline-block", alignSelf: "flex-start", padding: "7px 10px", borderRadius: 999, background: RED, fontSize: 11, fontWeight: 700 };
+const planTitle = { fontSize: 27, margin: "18px 0 5px" };
+const priceStyle = { fontSize: 42, fontWeight: 700, letterSpacing: "-0.05em" };
+const statsGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16, marginTop: 30 };
+const statCard = { border: `1px solid ${BORDER}`, borderRadius: 12, padding: 18, background: "rgba(255,255,255,.035)" };
+const callout = { marginTop: 28, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(255,23,79,.06)" };
