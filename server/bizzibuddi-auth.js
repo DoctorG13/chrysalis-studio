@@ -689,7 +689,8 @@ function createJob(userId, payload) {
     jobId: job.id,
   });
 
-  return getJobs(userId).find((item) => item.id === job.id) || null;
+  const createdJob = getJobs(userId).find((item) => item.id === job.id) || null;
+  return toJob(createdJob);
 }
 
 function updateJob(userId, jobId, payload) {
@@ -735,7 +736,8 @@ function updateJob(userId, jobId, payload) {
     });
   }
 
-  return getJobs(userId).find((item) => item.id === jobId) || null;
+  const updatedJob = getJobs(userId).find((item) => item.id === jobId) || null;
+  return toJob(updatedJob);
 }
 
 function deleteJob(userId, jobId) {
