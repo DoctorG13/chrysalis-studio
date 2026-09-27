@@ -1,3 +1,15 @@
+## BizziBuddi UX Simplification
+
+### Changed
+
+- Reorganised the signed-in workspace navigation into clear groups: Today, Work, Money, Insights, Assist and Account.
+- Replaced the ambiguous "Account preview" workspace entry with a clear Today home.
+- Added a concise "How BizziBuddi works" workflow guide to the dashboard linking People → Jobs → Production → Calendar → Finance.
+- Kept account/login navigation separate from the signed-in business workspace.
+- Added responsive behaviour for the grouped workspace navigation on smaller screens.
+
+---
+
 ## BizziBuddi Job Assignment Response Fix
 
 ### Fixed
