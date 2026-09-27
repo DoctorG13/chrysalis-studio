@@ -1,3 +1,13 @@
+## BizziBuddi Client Timeline Compactness
+
+### Changed
+
+- Changed client timeline entries to use the same compact card treatment as measurement history.
+- Timeline entries now flow into responsive columns when space allows.
+- Reduced timeline padding, typography and spacing while preserving date, event and detail information.
+
+---
+
 ## BizziBuddi Measurement History Compactness
 
 ### Changed
