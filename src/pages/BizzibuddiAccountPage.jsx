@@ -364,11 +364,59 @@ export default function BizzibuddiAccountPage() {
         </section>
 
         <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={navStyle}>
-          <div className="bizzibuddi-account-nav-main">
-            {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"], ["dashboard", "Account preview"]].map(([key, label]) => (
-              <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
-            ))}
-          </div>
+          {!account ? (
+            <div className="bizzibuddi-account-nav-main">
+              {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
+                <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
+              ))}
+            </div>
+          ) : (
+            <div className="bizzibuddi-workspace-nav">
+              <div className="bizzibuddi-workspace-nav-home">
+                <button type="button" onClick={() => selectView("dashboard")} style={tabStyle(view === "dashboard")}>
+                  <span>⌂</span> Today
+                </button>
+              </div>
+
+              <div className="bizzibuddi-workspace-nav-group">
+                <small>WORK</small>
+                <div>
+                  {[["people", "People"], ["jobs", "Jobs"], ["calendar", "Calendar"], ["production", "Production"]].map(([key, label]) => (
+                    <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bizzibuddi-workspace-nav-group">
+                <small>MONEY</small>
+                <div>
+                  <button type="button" onClick={() => selectView("finance")} style={tabStyle(view === "finance")}>Finance</button>
+                </div>
+              </div>
+
+              <div className="bizzibuddi-workspace-nav-group">
+                <small>INSIGHTS</small>
+                <div>
+                  <button type="button" onClick={() => selectView("reports")} style={tabStyle(view === "reports")}>Reports</button>
+                </div>
+              </div>
+
+              <div className="bizzibuddi-workspace-nav-group">
+                <small>ASSIST</small>
+                <div>
+                  <button type="button" onClick={() => openBuddi()} style={view === "buddi" ? tabStyle(true) : tabStyle(false)}>Buddi</button>
+                  <button type="button" onClick={() => selectView("automation")} style={tabStyle(view === "automation")}>Automation</button>
+                </div>
+              </div>
+
+              <div className="bizzibuddi-workspace-nav-group secondary">
+                <small>ACCOUNT</small>
+                <div>
+                  <button type="button" onClick={() => selectView("plans")} style={tabStyle(view === "plans")}>Plans</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bizzibuddi-help-nav">
             <div className="bizzibuddi-help-nav-heading">
@@ -730,6 +778,12 @@ export default function BizzibuddiAccountPage() {
                 .bizzibuddi-account-page .bizzibuddi-account-nav-main button {
                   flex: 1 1 120px;
                 }
+                .bizzibuddi-account-page .bizzibuddi-workspace-nav {
+                  width: 100%;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-nav-group {
+                  flex: 1 1 180px;
+                }
                 .bizzibuddi-account-page .bizzibuddi-help-nav {
                   min-width: 0;
                 }
@@ -742,6 +796,18 @@ export default function BizzibuddiAccountPage() {
                   display: grid;
                   grid-template-columns: repeat(2, minmax(0, 1fr));
                   width: 100%;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-nav {
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  align-items: stretch;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-nav-home {
+                  grid-column: 1 / -1;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-nav-group {
+                  border-left: 0;
+                  padding: 7px 4px;
                 }
                 .bizzibuddi-account-page .bizzibuddi-account-nav-main button {
                   width: 100%;
@@ -782,6 +848,15 @@ export default function BizzibuddiAccountPage() {
                 }
               }
               .bizzibuddi-account-nav-main { display:flex; justify-content:center; gap:10px; flex-wrap:wrap; }
+              .bizzibuddi-workspace-nav { display:flex; align-items:flex-end; justify-content:center; gap:10px; flex-wrap:wrap; width:100%; }
+              .bizzibuddi-workspace-nav-home { align-self:stretch; display:flex; align-items:flex-end; }
+              .bizzibuddi-workspace-nav-home button { min-width:92px; font-weight:900; }
+              .bizzibuddi-workspace-nav-group { display:grid; gap:4px; padding:0 9px 1px; border-left:1px solid rgba(255,255,255,.12); }
+              .bizzibuddi-workspace-nav-group:first-of-type { border-left:0; }
+              .bizzibuddi-workspace-nav-group > small { color:#7FDFF0; font-size:9px; font-weight:900; letter-spacing:.16em; text-align:center; }
+              .bizzibuddi-workspace-nav-group > div { display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
+              .bizzibuddi-workspace-nav-group button { padding:9px 11px !important; min-height:38px !important; font-size:12px !important; }
+              .bizzibuddi-workspace-nav-group.secondary { opacity:.82; }
               .bizzibuddi-help-nav { display:grid; gap:6px; justify-items:center; min-width:420px; padding:14px 0 0 20px; border-left:1px solid rgba(255,255,255,.18); }
               .bizzibuddi-help-nav-heading { width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; color:#BFD8F0; font-size:11px; font-weight:900; letter-spacing:.18em; }
               .bizzibuddi-help-nav-heading span:first-child,.bizzibuddi-help-nav-heading span:last-child { height:1px; background:rgba(0,180,219,.30); }
@@ -1745,6 +1820,48 @@ function DashboardPanel({
       <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
       <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
       <p style={copyStyle}>Your business is ready. This is your operating view — what needs attention, what is happening today and where to go next.</p>
+
+      <div style={{ marginTop: 20, padding: 16, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(0,180,219,.045)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div>
+            <small style={smallText}>HOW BIZZIBUDDI WORKS</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Run your business through one simple workflow.</strong>
+            <p style={{ ...copyStyle, margin: "4px 0 0", fontSize: 12 }}>People become jobs. Jobs move through production. Calendar keeps time organised. Finance keeps money visible. Today brings it all together.</p>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 7, marginTop: 14 }}>
+          {[
+            ["👥", "People", "Who", onPeople],
+            ["📋", "Jobs", "What", onJobs],
+            ["🏭", "Production", "Work", onProduction],
+            ["📅", "Calendar", "When", onCalendar],
+            ["💳", "Finance", "Money", onFinance],
+          ].map(([icon, label, sublabel, action], index) => (
+            <button
+              key={label}
+              type="button"
+              onClick={action}
+              style={{
+                minWidth: 0,
+                padding: "10px 8px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,.09)",
+                background: "rgba(255,255,255,.025)",
+                color: TEXT,
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <span style={{ display: "block", fontSize: 17 }}>{icon}</span>
+              <strong style={{ display: "block", marginTop: 4, fontSize: 12 }}>{index + 1}. {label}</strong>
+              <small style={{ color: MUTED, fontSize: 10 }}>{sublabel}</small>
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 5, marginTop: 8, color: CYAN, fontSize: 11, fontWeight: 800 }}>
+          <span>1</span><span>→</span><span>2</span><span>→</span><span>3</span><span>→</span><span>4</span><span>→</span><span>5</span>
+        </div>
+      </div>
 
       <div style={attentionPanel}>
         <div style={attentionHeader}>
