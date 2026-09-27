@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
 import BizziBuddiAccountBuddi from "../components/common/BizziBuddiAccountBuddi";
 import { bizzibuddiPlans, getBizzibuddiPlan, hasBizzibuddiFeature } from "../data/bizzibuddiPlans";
+import { buildBizziBuddiIntelligence } from "../utils/bizzibuddiIntelligence";
 
 const RED = "#2563EB";
 const CYAN = "#00B4DB";
@@ -1688,70 +1689,34 @@ function DashboardPanel({
   const readyProduction = jobs.filter((job) => job.productionReadiness === "Ready");
   const recentAutomationFlags = automationEvents.filter((event) => event.type === "invoice-overdue");
 
-  const attentionItems = [
-    ...overdueInvoices.map((invoice) => ({
-      key: `invoice-overdue-${invoice.id}`, icon: "💳", label: "Payment overdue",
-      title: invoice.clientName || invoice.client || "Invoice requires attention",
-      detail: `${formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
-      action: "Open finance", onClick: onFinance, tone: "urgent",
-    })),
-    ...dueSoonInvoices.map((invoice) => ({
-      key: `invoice-soon-${invoice.id}`, icon: "💰", label: invoice.dueDate === todayKey ? "Due today" : "Due soon",
-      title: invoice.clientName || invoice.client || "Invoice due soon",
-      detail: `${formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
-      action: "Open finance", onClick: onFinance, tone: "attention",
-    })),
-    ...productionNeedsAttention.map((job) => ({
-      key: `production-attention-${job.id}`, icon: "🏭", label: job.productionReadiness,
-      title: job.title || "Production job",
-      detail: job.productionReadinessDetail || "Production needs a workflow update.",
-      action: "Open jobs", onClick: onJobs, tone: job.productionReadiness === "Overdue" ? "urgent" : "attention",
-    })),
-    ...productionDueSoon.filter((job) => !productionNeedsAttention.some((item) => item.id === job.id)).map((job) => ({
-      key: `production-due-${job.id}`, icon: "📦", label: "Production due soon",
-      title: job.title || "Production job",
-      detail: `Ready by ${formatProductionDate(job.productionDueDate)}`,
-      action: "Open jobs", onClick: onJobs, tone: "today",
-    })),
-    ...appointmentsToday.map((appointment) => ({
-      key: `appointment-${appointment.id}`, icon: "📅", label: "Today",
-      title: appointment.title || "Appointment",
-      detail: `${appointment.time || "Time not set"}${appointment.personName ? ` · ${appointment.personName}` : ""}`,
-      action: "Open calendar", onClick: onCalendar, tone: "today",
-    })),
-    ...waitingJobs.map((job) => ({
-      key: `waiting-${job.id}`, icon: "⏳", label: "Waiting",
-      title: job.title || "Job waiting",
-      detail: job.clientName || job.client ? `Waiting on ${job.clientName || job.client}` : "This job is waiting for the next step.",
-      action: "Open jobs", onClick: onJobs, tone: "attention",
-    })),
-    ...readyProduction.map((job) => ({
-      key: `production-ready-${job.id}`, icon: "✅", label: "Ready",
-      title: job.title || "Production job",
-      detail: job.productionDueDate ? `Ready by ${formatProductionDate(job.productionDueDate)}` : "Production has reached the Ready stage.",
-      action: "Open jobs", onClick: onJobs, tone: "ready",
-    })),
-  ];
-  const priorityWeight = {
-    urgent: 400,
-    attention: 300,
-    today: 200,
-    ready: 100,
-  };
-  const uniqueAttentionItems = attentionItems
-    .filter((item, index, items) => items.findIndex((candidate) => candidate.key === item.key) === index)
-    .map((item) => ({
-      ...item,
-      priorityScore:
-        (priorityWeight[item.tone] || 0) +
-        (item.label === "Payment overdue" ? 40 : 0) +
-        (item.label === "Overdue" ? 30 : 0) +
-        (item.label === "Due today" ? 20 : 0) +
-        (item.label === "Today" ? 15 : 0),
-    }))
-    .sort((a, b) => b.priorityScore - a.priorityScore);
-  const priorityItems = uniqueAttentionItems.slice(0, 6);
-  const actionCount = uniqueAttentionItems.length;
+  const intelligence = buildBizziBuddiIntelligence({
+    todayKey,
+    invoices,
+    appointments,
+    jobs,
+    productionRecords,
+  });
+
+  const priorityItems = intelligence.priorityItemsTop.map((item) => ({
+    ...item,
+    action: item.actionKey === "finance"
+      ? "Open finance"
+      : item.actionKey === "calendar"
+        ? "Open calendar"
+        : item.actionKey === "production"
+          ? "Open production"
+          : "Open jobs",
+    onClick:
+      item.actionKey === "finance"
+        ? onFinance
+        : item.actionKey === "calendar"
+          ? onCalendar
+          : item.actionKey === "production"
+            ? onProduction
+            : onJobs,
+  }));
+
+  const actionCount = intelligence.priorityCount;
   const recentActivity = [
     ...(automationEvents || []).map((event) => ({ key: "automation-" + event.id, date: event.createdAt || event.updatedAt, icon: "⚙️", label: "Automation", title: event.title || event.type || "Automation event", detail: event.detail || "A business automation event was recorded.", onClick: onAutomation })),
     ...(jobs || []).map((job) => ({ key: "job-" + job.id, date: job.updatedAt || job.createdAt, icon: "📋", label: "Job", title: job.title || "Job updated", detail: "Status: " + (job.status || "New"), onClick: onJobs })),
