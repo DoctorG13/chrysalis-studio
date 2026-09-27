@@ -1741,8 +1741,8 @@ function createAutomationEvent(userId, payload) {
   database
     .prepare(
       `INSERT INTO bizzibuddi_automation_events (
-        id, user_id, type, title, detail, source_key, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+        id, user_id, type, title, detail, source_key, job_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       event.id,
@@ -2629,10 +2629,9 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       return true;
     }
 
-    if (url.pathname.startsWith("/api/bizzibuddi/auth/people/")) {
-      const personId = decodeURIComponent(
-        url.pathname.slice("/api/bizzibuddi/auth/people/".length)
-      ).trim();
+    if (url.pathname.match(/^\/api\/bizzibuddi\/auth\/people\/[^/]+$/)) {
+      const match = url.pathname.match(/^\/api\/bizzibuddi\/auth\/people\/([^/]+)$/);
+      const personId = decodeURIComponent(match[1]).trim();
 
       if (!personId || personId.includes("/")) {
         sendJson(response, 404, { ok: false, error: "Person not found." });
