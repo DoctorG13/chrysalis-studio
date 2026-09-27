@@ -1,3 +1,15 @@
+## BizziBuddi People Measurements and Job Automation Fixes
+
+### Fixed
+
+- Corrected the BizziBuddi People API route so `/people/:id/measurements` is no longer captured by the generic person route.
+- Restored measurement history loading and snapshot creation for individual people.
+- Corrected the BizziBuddi automation-event INSERT so the `job_id` column matches the supplied SQL parameter.
+- Restored job creation so creating a job no longer fails with `column index out of range`.
+- Preserved the existing People, Jobs, Production and Automation workflows.
+
+---
+
 ## BizziBuddi Account Blank Screen Fix
 
 ### Fixed
