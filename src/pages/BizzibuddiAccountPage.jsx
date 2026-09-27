@@ -1114,6 +1114,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
     }
 
     setMeasurementPersonId(person.id);
+    setTimelinePersonId(null);
     setMeasurements([]);
     setError("");
     setMeasurementsLoading(true);
@@ -1213,10 +1214,24 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                 </span>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <button type="button" onClick={() => setTimelinePersonId(isTimelineOpen ? null : person.id)} style={smallActionButton}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTimelinePersonId(isTimelineOpen ? null : person.id);
+                    if (!isTimelineOpen) {
+                      setMeasurementPersonId(null);
+                      setMeasurements([]);
+                    }
+                  }}
+                  style={smallActionButton}
+                >
                   {isTimelineOpen ? "Hide timeline" : "Timeline"}
                 </button>
-                <button type="button" onClick={() => toggleMeasurements(person)} style={smallActionButton}>
+                <button
+                  type="button"
+                  onClick={() => toggleMeasurements(person)}
+                  style={smallActionButton}
+                >
                   {measurementPersonId === person.id ? "Hide measurements" : "Measurements"}
                 </button>
                 <button type="button" onClick={() => startEdit(person)} style={smallActionButton}>Edit</button>
