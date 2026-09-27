@@ -1,3 +1,13 @@
+## BizziBuddi Job Assignment Response Fix
+
+### Fixed
+
+- Normalized job create and update API responses through the shared `toJob` mapper.
+- Ensured `personId` and `clientName` are returned in the same shape expected by the Jobs UI.
+- Fixed job assignment appearing as `Unassigned` immediately after editing a job.
+
+---
+
 ## BizziBuddi People Panel Toggle Fix
 
 ### Fixed
