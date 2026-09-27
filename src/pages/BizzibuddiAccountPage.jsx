@@ -1283,15 +1283,15 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                 <div style={{ width: "100%", marginTop: 14, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
                   <small style={smallText}>CLIENT TIMELINE</small>
                   {timelineItems.length > 0 ? (
-                    <div style={{ display: "grid", gap: 9, marginTop: 10 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 8, marginTop: 9, alignItems: "start" }}>
                       {timelineItems.map((item) => (
-                        <div key={item.id} style={{ display: "grid", gridTemplateColumns: "112px minmax(0,1fr)", gap: 10, padding: "9px 10px", borderRadius: 9, background: "rgba(255,255,255,.025)", border: "1px solid rgba(255,255,255,.08)" }}>
-                          <span style={{ color: MUTED, fontSize: 11, fontWeight: 700 }}>
+                        <div key={item.id} style={{ display: "grid", gridTemplateColumns: "92px minmax(0,1fr)", gap: 8, padding: "8px 9px", minHeight: 0, borderRadius: 9, background: "rgba(255,255,255,.025)", border: "1px solid rgba(255,255,255,.08)" }}>
+                          <span style={{ color: MUTED, fontSize: 10, fontWeight: 700, lineHeight: 1.35 }}>
                             {formatTimelineDate(item.date)}
                           </span>
                           <div>
-                            <strong style={{ display: "block", fontSize: 13 }}>{item.label}</strong>
-                            <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 12 }}>{item.detail}</span>
+                            <strong style={{ display: "block", fontSize: 12, lineHeight: 1.3 }}>{item.label}</strong>
+                            <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 11, lineHeight: 1.35 }}>{item.detail}</span>
                           </div>
                         </div>
                       ))}
