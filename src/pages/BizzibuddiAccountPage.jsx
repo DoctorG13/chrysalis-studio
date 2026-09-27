@@ -1873,7 +1873,7 @@ function DashboardPanel({
         )}
 
         <div style={attentionFooter}>
-          <span>{uniqueAttentionItems.length > priorityItems.length ? `${uniqueAttentionItems.length - priorityItems.length} lower-priority item${uniqueAttentionItems.length - priorityItems.length === 1 ? "" : "s"} also available below.` : recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and turn it into your next action."}</span>
+          <span>{intelligence.priorityCount > priorityItems.length ? `${intelligence.priorityCount - priorityItems.length} lower-priority item${intelligence.priorityCount - priorityItems.length === 1 ? "" : "s"} also available below.` : recentAutomationFlags.length > 0 ? `${recentAutomationFlags.length} overdue item${recentAutomationFlags.length === 1 ? "" : "s"} also flagged by Automation.` : "Buddi can help you review this picture and turn it into your next action."}</span>
           <button type="button" onClick={onAttentionBuddi} style={attentionFooterButton}>Ask Buddi what needs attention →</button>
         </div>
       </div>
