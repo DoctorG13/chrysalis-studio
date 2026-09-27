@@ -1136,7 +1136,8 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
     setMeasurementSaving(true);
 
     try {
-      const form = new FormData(event.currentTarget);
+      const formElement = event.currentTarget;
+      const form = new FormData(formElement);
       const result = await bizzibuddiAuthRequest(
         "/api/bizzibuddi/auth/people/" + encodeURIComponent(person.id) + "/measurements",
         {
@@ -1159,7 +1160,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         }
       );
       setMeasurements((current) => [result.measurement, ...current]);
-      event.currentTarget.reset();
+      formElement.reset();
     } catch (requestError) {
       setError(requestError.message || "We could not save these measurements.");
     } finally {
