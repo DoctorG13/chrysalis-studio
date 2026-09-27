@@ -646,6 +646,66 @@ export default function BizzibuddiAccountPage() {
                 result.record,
                 ...current.filter((item) => item.jobId !== result.record.jobId),
               ]);
+              setJobs((current) =>
+                current.map((job) => {
+                  if (job.id !== result.record.jobId) return job;
+                  const tasks = result.record.tasks || [];
+                  const completedTasks = tasks.filter((task) => task.complete).length;
+                  const stage = result.record.stage || "Not started";
+                  const progress = stage === "Complete"
+                    ? 100
+                    : stage === "Ready"
+                      ? 75
+                      : stage === "Quality check"
+                        ? 50
+                        : stage === "In production"
+                          ? 25
+                          : 0;
+                  const today = new Date().toISOString().slice(0, 10);
+                  const overdue = Boolean(
+                    result.record.dueDate &&
+                    result.record.dueDate < today &&
+                    stage !== "Complete"
+                  );
+                  const readiness = stage === "Complete"
+                    ? "Complete"
+                    : overdue
+                      ? "Overdue"
+                      : stage === "Ready" && tasks.length > 0 && completedTasks < tasks.length
+                        ? "Tasks outstanding"
+                        : stage === "Ready"
+                          ? "Ready"
+                          : tasks.length > 0 && completedTasks === tasks.length
+                            ? "Stage update needed"
+                            : stage === "Not started"
+                              ? "Not started"
+                              : "In progress";
+                  return {
+                    ...job,
+                    productionStage: stage,
+                    productionProgress: progress,
+                    productionDueDate: result.record.dueDate || "",
+                    productionTaskCount: tasks.length,
+                    productionCompletedTaskCount: completedTasks,
+                    productionTaskProgress: tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0,
+                    productionReadiness: readiness,
+                    productionReadinessDetail:
+                      readiness === "Complete"
+                        ? "Production is complete."
+                        : readiness === "Overdue"
+                          ? "Ready-by date has passed."
+                          : readiness === "Tasks outstanding"
+                            ? (tasks.length - completedTasks) + " production task(s) remain."
+                            : readiness === "Stage update needed"
+                              ? "All production tasks are complete."
+                              : readiness === "Ready"
+                                ? "Production is ready for completion."
+                                : readiness === "Not started"
+                                  ? "Production has not started."
+                                  : "Production is moving through its workflow.",
+                  };
+                })
+              );
               return result.record;
             }}
             onBack={() => selectView("dashboard")}
