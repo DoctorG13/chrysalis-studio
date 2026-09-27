@@ -2331,18 +2331,6 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     </section>
   );
 }
-function formatTimelineDate(value) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 function formatProductionDate(date) {
   if (!date) return "";
