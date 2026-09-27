@@ -1,3 +1,12 @@
+## BizziBuddi Reports Production Display Fix
+
+### Fixed
+
+- Removed the duplicate "Complete" production row from the Reports production status panel.
+- Kept the dedicated Active and Complete totals while showing only non-complete production stages underneath.
+
+---
+
 ## BizziBuddi Reports Load Fix
 
 ### Fixed
