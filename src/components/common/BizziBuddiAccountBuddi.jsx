@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import BizziBuddiLogo from "./BizziBuddiLogo";
+import { buildBizziBuddiIntelligence } from "../../utils/bizzibuddiIntelligence";
 
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
@@ -106,28 +107,14 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       stage,
       count: productionRecords.filter((record) => record.stage === stage).length,
     }));
-    const dashboardAttention = [
-      ...overdueInvoices.slice(0, 3).map((invoice) => ({
-        type: "overdue-payment",
-        title: invoice.clientName || invoice.client || "Invoice requires attention",
-        detail: `${formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
-      })),
-      ...appointments.filter((appointment) => appointment.date === today).slice(0, 3).map((appointment) => ({
-        type: "appointment-today",
-        title: appointment.title || "Appointment",
-        detail: `${appointment.time || "Time not set"}${appointment.personName ? ` · ${appointment.personName}` : ""}`,
-      })),
-      ...jobs.filter((job) => job.status === "Waiting").slice(0, 2).map((job) => ({
-        type: "waiting-job",
-        title: job.title || "Job waiting",
-        detail: job.clientName || job.client || "This job is waiting for the next step.",
-      })),
-      ...productionRecords.filter((record) => record.stage === "Ready").slice(0, 2).map((record) => ({
-        type: "production-ready",
-        title: record.jobTitle || "Production job",
-        detail: record.dueDate ? `Ready by ${record.dueDate}` : "Production has reached the Ready stage.",
-      })),
-    ];
+    const intelligence = buildBizziBuddiIntelligence({
+      todayKey: today,
+      invoices,
+      appointments,
+      jobs,
+      productionRecords,
+    });
+    const dashboardAttention = intelligence.priorityItems;
 
     return {
       product: "BizziBuddi",
@@ -173,42 +160,27 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
         })),
       },
       intelligence: {
-        openJobs: jobs.filter((job) => job.status !== "Complete").length,
-        completedJobs: jobs.filter((job) => job.status === "Complete").length,
-        waitingJobs: jobs.filter((job) => job.status === "Waiting").length,
-        upcomingAppointments: upcomingAppointments.length,
-        overdueInvoices: overdueInvoices.length,
-        outstandingAmount: outstandingInvoices.reduce(
-          (sum, invoice) =>
-            sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)),
-          0
-        ),
-        activeProduction: productionRecords.filter((record) => record.stage && record.stage !== "Complete").length,
-        readyProduction: productionRecords.filter((record) => record.stage === "Ready").length,
-        attentionCount: dashboardAttention.length,
-        attentionSummary: dashboardAttention.slice(0, 8).map((item) => ({
+        ...intelligence,
+        attentionCount: intelligence.priorityCount,
+        attentionSummary: intelligence.priorityItemsTop.map((item) => ({
           type: item.type,
           title: item.title,
           detail: item.detail,
         })),
         workloadSummary: {
           jobs: jobs.length,
-          openJobs: jobs.filter((job) => job.status !== "Complete").length,
-          waitingJobs: jobs.filter((job) => job.status === "Waiting").length,
+          openJobs: intelligence.openJobs,
+          waitingJobs: intelligence.waitingJobs,
           productionRecords: productionRecords.length,
-          activeProduction: productionRecords.filter((record) => record.stage && record.stage !== "Complete").length,
-          readyProduction: productionRecords.filter((record) => record.stage === "Ready").length,
-          upcomingAppointments: upcomingAppointments.length,
+          activeProduction: intelligence.activeProduction,
+          readyProduction: intelligence.readyProduction,
+          upcomingAppointments: intelligence.upcomingAppointments,
         },
         financeSummary: {
           invoiceCount: invoices.length,
           outstandingCount: outstandingInvoices.length,
-          overdueCount: overdueInvoices.length,
-          outstandingAmount: outstandingInvoices.reduce(
-            (sum, invoice) =>
-              sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)),
-            0
-          ),
+          overdueCount: intelligence.overdueInvoices,
+          outstandingAmount: intelligence.outstandingAmount,
         },
       },
     };
