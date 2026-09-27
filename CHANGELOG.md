@@ -1,3 +1,14 @@
+## BizziBuddi Buddi Intelligence Foundation
+
+### Added
+
+- Expanded Buddi's business context with explicit workload, production, finance and attention summaries.
+- Added structured intelligence data for open, waiting and completed jobs, upcoming appointments, overdue invoices, outstanding balances and production readiness.
+- Added a focused "What should I focus on next?" prompt and expanded job-attention guidance.
+- Updated Buddi's workspace copy to reflect account-backed business intelligence rather than an account preview.
+
+---
+
 ## BizziBuddi Reports Production Display Fix
 
 ### Fixed
