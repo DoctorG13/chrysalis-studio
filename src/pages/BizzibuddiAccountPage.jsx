@@ -2804,7 +2804,7 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
                 </form>
               </div>
 
-              <form id="bizzibuddi-production-editor" onSubmit={handleSave} style={personForm}>
+              <form key={selectedJobId + "-" + (existing?.updatedAt || "new")} id="bizzibuddi-production-editor" onSubmit={handleSave} style={personForm}>
                 <strong style={{ fontSize: 18 }}>Update production</strong>
 
                 <label style={fieldStyle}>
