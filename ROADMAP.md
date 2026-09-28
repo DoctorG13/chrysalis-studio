@@ -1,3 +1,12 @@
+## Production Time Tracking
+
+- [x] Persistent time entries
+- [x] Start/stop production timer
+- [x] Live elapsed time
+- [x] Per-job logged time totals
+- [x] Recent time history
+- [x] Automation events for timer activity
+
 ## Production Task Templates
 
 - [x] Persistent production task templates
