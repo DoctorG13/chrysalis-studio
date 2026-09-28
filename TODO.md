@@ -1,3 +1,11 @@
+### Production Time Tracking
+
+- [x] Persistent time entries
+- [x] Start/stop timer
+- [x] Live timer display
+- [x] Per-job time totals
+- [x] Recent time history
+
 ### Production Task Templates
 
 - [x] Persistent template storage
