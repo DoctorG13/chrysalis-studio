@@ -26,6 +26,7 @@ export default function BizzibuddiAccountPage() {
   const [invoices, setInvoices] = useState([]);
   const [automationEvents, setAutomationEvents] = useState([]);
   const [productionRecords, setProductionRecords] = useState([]);
+  const [productionTemplates, setProductionTemplates] = useState([]);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -96,13 +97,14 @@ export default function BizzibuddiAccountPage() {
       setProductionRecords,
     });
 
-    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult, productionResult] = await Promise.allSettled([
+    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult, productionResult, productionTemplatesResult] = await Promise.allSettled([
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/production"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/production/templates"),
     ]);
 
     setPeople(
@@ -135,6 +137,11 @@ export default function BizzibuddiAccountPage() {
         ? productionResult.value.records
         : [];
     setProductionRecords(await loadProductionRecords(nextAccount.id, serverProductionRecords));
+    setProductionTemplates(
+      productionTemplatesResult.status === "fulfilled" && Array.isArray(productionTemplatesResult.value.templates)
+        ? productionTemplatesResult.value.templates
+        : []
+    );
   }
 
   function selectView(nextView) {
@@ -313,6 +320,43 @@ export default function BizzibuddiAccountPage() {
     } catch (error) {
       setMessage(error.message || "We could not run the automation checks.");
     }
+  }
+
+  async function createProductionTemplate(template) {
+    const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production/templates", {
+      method: "POST",
+      body: JSON.stringify(template),
+    });
+    setProductionTemplates((current) =>
+      [...current, result.template].sort((a, b) =>
+        String(a.name || "").localeCompare(String(b.name || ""))
+      )
+    );
+    return result.template;
+  }
+
+  async function updateProductionTemplate(templateId, template) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/production/templates/" + encodeURIComponent(templateId),
+      {
+        method: "PUT",
+        body: JSON.stringify(template),
+      }
+    );
+    setProductionTemplates((current) =>
+      current
+        .map((item) => (item.id === templateId ? result.template : item))
+        .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+    );
+    return result.template;
+  }
+
+  async function deleteProductionTemplate(templateId) {
+    await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/production/templates/" + encodeURIComponent(templateId),
+      { method: "DELETE" }
+    );
+    setProductionTemplates((current) => current.filter((item) => item.id !== templateId));
   }
 
   async function resetDemo() {
@@ -636,7 +680,11 @@ export default function BizzibuddiAccountPage() {
             account={account}
             jobs={jobs}
             records={productionRecords}
+            templates={productionTemplates}
             onPlans={() => selectView("plans")}
+            onCreateTemplate={createProductionTemplate}
+            onUpdateTemplate={updateProductionTemplate}
+            onDeleteTemplate={deleteProductionTemplate}
             onSave={async (record) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
                 method: "POST",
