@@ -1,3 +1,22 @@
+## BizziBuddi Client / Job Detail Deep Links
+
+### Added
+
+- Added shareable workspace URLs for People, Jobs, Production and Calendar.
+- Added direct client deep links that open the requested client's timeline.
+- Added direct job deep links that open the requested job timeline.
+- Added one-click navigation from a client timeline to its related job.
+- Added one-click navigation from Jobs to the matching Production work item.
+- Added direct appointment deep links that open the appointment editor.
+- Added browser Back / Forward support for BizziBuddi workspace navigation.
+- Kept deep-link state account-scoped and compatible with the existing single-page workspace model.
+
+### Workflow
+
+People → Client timeline → Job → Production
+
+---
+
 ## Production Time Tracking
 
 ### Added
