@@ -2304,7 +2304,7 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
   </section>;
 }
 
-function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, onBack, onCreateTemplate, onUpdateTemplate, onDeleteTemplate }) {
+function ProductionPanel({ account, jobs, records, templates, timeEntries, onPlans, onSave, onBack, onCreateTemplate, onUpdateTemplate, onDeleteTemplate, onStartTimer, onStopTimer }) {
   const available = hasBizzibuddiFeature(account?.plan, "production");
   const stages = ["Not started", "In production", "Quality check", "Ready", "Complete"];
   const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
@@ -2321,6 +2321,8 @@ function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, o
   const [newTemplateTaskTitle, setNewTemplateTaskTitle] = useState("");
   const [templateSaving, setTemplateSaving] = useState(false);
   const [templateError, setTemplateError] = useState("");
+  const [timerBusy, setTimerBusy] = useState(false);
+  const [timerNow, setTimerNow] = useState(Date.now());
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const today = new Date(todayKey + "T00:00:00");
@@ -2406,6 +2408,16 @@ function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, o
 
   const selectedJob = productionJobs.find((job) => job.id === selectedJobId);
   const existing = selectedJob?.productionRecord || null;
+  const activeTimer = timeEntries.find((entry) => !entry.stoppedAt) || null;
+  const selectedJobTimeSeconds = timeEntries
+    .filter((entry) => entry.jobId === selectedJobId)
+    .reduce((sum, entry) => {
+      const elapsed = entry.stoppedAt
+        ? entry.durationSeconds
+        : Math.max(0, Math.round((timerNow - new Date(entry.startedAt).getTime()) / 1000));
+      return sum + elapsed;
+    }, 0);
+
 
   useEffect(() => {
     if (!jobs.some((job) => job.id === selectedJobId)) {
@@ -2843,6 +2855,69 @@ function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, o
       </div>
 
       <div style={{
+        marginTop: 18,
+        padding: 16,
+        borderRadius: 14,
+        border: "1px solid " + BORDER,
+        background: activeTimer ? "rgba(0,180,219,.07)" : "rgba(255,255,255,.025)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <div>
+            <small style={smallText}>PRODUCTION TIME</small>
+            <strong style={{ display: "block", marginTop: 4, fontSize: 18 }}>
+              {selectedJob ? formatProductionDuration(selectedJobTimeSeconds) : "0m"} logged on this job
+            </strong>
+            <p style={{ ...copyStyle, margin: "4px 0 0", fontSize: 13 }}>
+              Track hands-on work as it happens. Time is saved against the production job.
+            </p>
+          </div>
+          {activeTimer ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <span style={{ ...jobReadinessBadge("In progress"), borderColor: "rgba(0,180,219,.45)" }}>
+                ⏱ {formatProductionDuration(Math.max(0, Math.round((timerNow - new Date(activeTimer.startedAt).getTime()) / 1000)))} · {activeTimer.jobTitle}
+              </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  setTimerBusy(true);
+                  try {
+                    await onStopTimer(activeTimer.id);
+                  } catch (requestError) {
+                    setError(requestError.message || "We could not stop the production timer.");
+                  } finally {
+                    setTimerBusy(false);
+                  }
+                }}
+                disabled={timerBusy}
+                style={{ ...smallDangerButton, opacity: timerBusy ? .65 : 1 }}
+              >
+                {timerBusy ? "Stopping…" : "Stop timer"}
+              </button>
+            </div>
+          ) : selectedJob ? (
+            <button
+              type="button"
+              onClick={async () => {
+                setTimerBusy(true);
+                setError("");
+                try {
+                  await onStartTimer(selectedJob.id);
+                } catch (requestError) {
+                  setError(requestError.message || "We could not start the production timer.");
+                } finally {
+                  setTimerBusy(false);
+                }
+              }}
+              disabled={timerBusy}
+              style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: timerBusy ? .65 : 1 }}
+            >
+              {timerBusy ? "Starting…" : "▶ Start timer"}
+            </button>
+          ) : null}
+        </div>
+      </div>
+
+      <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))",
         gap: 9,
@@ -3198,6 +3273,23 @@ function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, o
                 {error && <div role="alert" style={{ ...messageStyle, marginTop: 16 }}>{error}</div>}
               </form>
 
+              {timeEntries.filter((entry) => entry.jobId === selectedJob.id && entry.stoppedAt).length > 0 && (
+                <div style={businessNote}>
+                  <small style={smallText}>RECENT TIME</small>
+                  <div style={{ display: "grid", gap: 7, marginTop: 8 }}>
+                    {timeEntries
+                      .filter((entry) => entry.jobId === selectedJob.id && entry.stoppedAt)
+                      .slice(0, 5)
+                      .map((entry) => (
+                        <div key={entry.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", fontSize: 12 }}>
+                          <span style={{ color: MUTED }}>{formatProductionDateTime(entry.startedAt)}</span>
+                          <strong>{formatProductionDuration(entry.durationSeconds)}</strong>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
               {existing?.notes && (
                 <div style={businessNote}>
                   <small style={smallText}>CURRENT NOTES</small>
@@ -3214,6 +3306,28 @@ function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, o
 
 function filterMapValue(label) {
   return ["Active", "Due today", "Overdue", "Ready", "Complete"].includes(label);
+}
+
+function formatProductionDuration(totalSeconds) {
+  const seconds = Math.max(0, Number(totalSeconds || 0));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainder = seconds % 60;
+
+  if (hours) return hours + "h " + minutes + "m";
+  if (minutes) return minutes + "m";
+  return remainder + "s";
+}
+
+function formatProductionDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value || "";
+  return date.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function formatProductionDate(date) {
