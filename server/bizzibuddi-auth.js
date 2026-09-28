@@ -1649,6 +1649,167 @@ function deleteProductionRecord(userId, recordId) {
   return Boolean(result.changes);
 }
 
+function toProductionTimeEntry(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    jobId: row.job_id,
+    jobTitle: row.job_title || "",
+    startedAt: row.started_at,
+    stoppedAt: row.stopped_at || null,
+    durationSeconds: Number(row.duration_seconds || 0),
+    notes: row.notes || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getProductionTimeEntries(userId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, job_id, job_title, started_at, stopped_at, duration_seconds,
+              notes, created_at, updated_at
+       FROM bizzibuddi_production_time_entries
+       WHERE user_id = ?
+       ORDER BY started_at DESC`
+    )
+    .all(userId)
+    .map(toProductionTimeEntry);
+}
+
+function startProductionTimeEntry(userId, payload) {
+  const jobId = String(payload?.jobId || "").trim();
+  if (!jobId) throw new Error("A production job is required to start the timer.");
+
+  const database = getDatabase();
+  const job = database
+    .prepare("SELECT id, title FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?")
+    .get(jobId, userId);
+
+  if (!job) throw new Error("The selected production job could not be found.");
+
+  const active = database
+    .prepare(
+      `SELECT id, job_id, job_title, started_at, stopped_at, duration_seconds,
+              notes, created_at, updated_at
+       FROM bizzibuddi_production_time_entries
+       WHERE user_id = ? AND stopped_at IS NULL
+       LIMIT 1`
+    )
+    .get(userId);
+
+  if (active) {
+    throw new Error("Stop the current production timer before starting another one.");
+  }
+
+  const now = new Date().toISOString();
+  const entry = {
+    id: randomUUID(),
+    user_id: userId,
+    job_id: job.id,
+    job_title: job.title || "Untitled job",
+    started_at: now,
+    stopped_at: null,
+    duration_seconds: 0,
+    notes: String(payload?.notes || "").trim().slice(0, 500),
+    created_at: now,
+    updated_at: now,
+  };
+
+  database
+    .prepare(
+      `INSERT INTO bizzibuddi_production_time_entries (
+        id, user_id, job_id, job_title, started_at, stopped_at,
+        duration_seconds, notes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      entry.id,
+      entry.user_id,
+      entry.job_id,
+      entry.job_title,
+      entry.started_at,
+      entry.stopped_at,
+      entry.duration_seconds,
+      entry.notes,
+      entry.created_at,
+      entry.updated_at
+    );
+
+  createAutomationEvent(userId, {
+    type: "job-production-time-started",
+    title: "Production timer started",
+    detail: job.title + ".",
+    sourceKey: "job-production-time-started:" + entry.id,
+    jobId: job.id,
+  });
+
+  return toProductionTimeEntry(entry);
+}
+
+function stopProductionTimeEntry(userId, entryId) {
+  const database = getDatabase();
+  const existing = database
+    .prepare(
+      `SELECT id, job_id, job_title, started_at, stopped_at, duration_seconds,
+              notes, created_at, updated_at
+       FROM bizzibuddi_production_time_entries
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(entryId, userId);
+
+  if (!existing) return null;
+  if (existing.stopped_at) return toProductionTimeEntry(existing);
+
+  const stoppedAt = new Date();
+  const durationSeconds = Math.max(
+    0,
+    Math.round((stoppedAt.getTime() - new Date(existing.started_at).getTime()) / 1000)
+  );
+  const updatedAt = stoppedAt.toISOString();
+
+  database
+    .prepare(
+      `UPDATE bizzibuddi_production_time_entries
+       SET stopped_at = ?, duration_seconds = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(
+      updatedAt,
+      durationSeconds,
+      updatedAt,
+      entryId,
+      userId
+    );
+
+  createAutomationEvent(userId, {
+    type: "job-production-time-stopped",
+    title: "Production timer stopped",
+    detail: existing.job_title + ": " + formatProductionDuration(durationSeconds) + ".",
+    sourceKey: "job-production-time-stopped:" + existing.id + ":" + updatedAt,
+    jobId: existing.job_id,
+  });
+
+  return toProductionTimeEntry(
+    database
+      .prepare(
+        `SELECT id, job_id, job_title, started_at, stopped_at, duration_seconds,
+                notes, created_at, updated_at
+         FROM bizzibuddi_production_time_entries
+         WHERE id = ? AND user_id = ?`
+      )
+      .get(entryId, userId)
+  );
+}
+
+function formatProductionDuration(totalSeconds) {
+  const seconds = Math.max(0, Number(totalSeconds || 0));
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours) return hours + "h " + minutes + "m";
+  return minutes + "m";
+}
+
 function validateProductionTemplatePayload(payload) {
   const name = String(payload?.name || "").trim();
   const description = String(payload?.description || "").trim();
@@ -1805,6 +1966,8 @@ const BIZZIBUDDI_AUTOMATION_TYPES = [
   "job-production-task-completed",
   "job-production-task-reopened",
   "job-production-template-applied",
+  "job-production-time-started",
+  "job-production-time-stopped",
 ];
 
 function validateAutomationEventPayload(payload) {
@@ -2409,6 +2572,61 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       }
       const payload = await readJsonBody(request);
       sendJson(response, 200, { ok: true, authenticated: true, record: saveProductionRecord(user.id, payload) });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/production/time" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        entries: getProductionTimeEntries(user.id),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/production/time/start" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      const payload = await readJsonBody(request);
+      sendJson(response, 201, {
+        ok: true,
+        authenticated: true,
+        entry: startProductionTimeEntry(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/production/time/") && request.method === "POST") {
+      const entryId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/production/time/".length)
+      ).replace(/\/stop$/, "").trim();
+
+      if (!entryId || url.pathname.slice("/api/bizzibuddi/auth/production/time/".length).endsWith("/stop") === false) {
+        sendJson(response, 404, { ok: false, error: "Production time entry not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const entry = stopProductionTimeEntry(user.id, entryId);
+      if (!entry) {
+        sendJson(response, 404, { ok: false, error: "Production time entry not found." });
+        return true;
+      }
+
+      sendJson(response, 200, { ok: true, authenticated: true, entry });
       return true;
     }
 
