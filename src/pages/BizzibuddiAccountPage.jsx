@@ -15,8 +15,17 @@ const BORDER = "rgba(255,255,255,.16)";
 const plans = bizzibuddiPlans;
 
 export default function BizzibuddiAccountPage() {
-  const initialView = new URLSearchParams(window.location.search).get("view");
+  const initialRouteParams = new URLSearchParams(window.location.search);
+  const initialView = initialRouteParams.get("view");
+  const initialDeepLink = {
+    personId: initialRouteParams.get("person") || "",
+    jobId: initialRouteParams.get("job") || "",
+    appointmentId: initialRouteParams.get("appointment") || "",
+  };
+  const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "help"]);
+  const requestedView = requestedViews.has(initialView) ? initialView : "";
   const [view, setView] = useState(initialView === "create" ? "create" : "login");
+  const [deepLink, setDeepLink] = useState(initialDeepLink);
   const [account, setAccount] = useState(null);
   const [message, setMessage] = useState("");
   const [buddiPrompt, setBuddiPrompt] = useState("");
@@ -56,7 +65,7 @@ export default function BizzibuddiAccountPage() {
       if (!nextView || !account) return;
 
       event.preventDefault();
-      setView(nextView);
+      selectView(nextView);
       setMessage("");
       setBuddiPrompt("");
     }
@@ -73,8 +82,14 @@ export default function BizzibuddiAccountPage() {
         const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/me");
         if (!active || !result?.account) return;
 
-        applyAccount(result.account);
-        setView(result.account.business ? "dashboard" : "onboarding");
+        await applyAccount(result.account);
+        if (result.account.business) {
+          setView(requestedView || "dashboard");
+          setDeepLink(initialDeepLink);
+        } else {
+          setView("onboarding");
+          setDeepLink({});
+        }
       } catch {
         // A visitor without a BizziBuddi session remains on the requested public account view.
       }
@@ -151,7 +166,19 @@ export default function BizzibuddiAccountPage() {
     );
   }
 
-  function selectView(nextView) {
+  function writeWorkspaceRoute(nextView, target = {}) {
+    const params = new URLSearchParams();
+    if (nextView) params.set("view", nextView);
+    if (target.personId) params.set("person", target.personId);
+    if (target.jobId) params.set("job", target.jobId);
+    if (target.appointmentId) params.set("appointment", target.appointmentId);
+
+    const query = params.toString();
+    const nextUrl = window.location.pathname + (query ? "?" + query : "");
+    window.history.pushState({}, "", nextUrl);
+  }
+
+  function selectView(nextView, target = {}) {
     const protectedViews = new Set([
       "onboarding",
       "dashboard",
@@ -171,6 +198,14 @@ export default function BizzibuddiAccountPage() {
       return;
     }
 
+    const nextDeepLink = {
+      personId: target.personId || "",
+      jobId: target.jobId || "",
+      appointmentId: target.appointmentId || "",
+    };
+
+    writeWorkspaceRoute(nextView, nextDeepLink);
+    setDeepLink(nextDeepLink);
     setView(nextView);
     setMessage("");
     if (nextView !== "buddi") setBuddiPrompt("");
@@ -183,10 +218,28 @@ export default function BizzibuddiAccountPage() {
       return;
     }
 
+    writeWorkspaceRoute("buddi");
+    setDeepLink({});
     setBuddiPrompt(String(prompt || "").trim());
     setView("buddi");
     setMessage("");
   }
+
+  useEffect(() => {
+    function handleWorkspaceHistory() {
+      const params = new URLSearchParams(window.location.search);
+      const nextView = requestedViews.has(params.get("view")) ? params.get("view") : "dashboard";
+      setDeepLink({
+        personId: params.get("person") || "",
+        jobId: params.get("job") || "",
+        appointmentId: params.get("appointment") || "",
+      });
+      if (account) setView(nextView);
+    }
+
+    window.addEventListener("popstate", handleWorkspaceHistory);
+    return () => window.removeEventListener("popstate", handleWorkspaceHistory);
+  }, [account]);
 
   async function handleCreateAccount(event) {
     event.preventDefault();
@@ -206,6 +259,7 @@ export default function BizzibuddiAccountPage() {
       await applyAccount(result.account);
       setMessage("Your BizziBuddi account has been created securely.");
       setView("onboarding");
+      setDeepLink({});
     } catch (error) {
       setMessage(error.message || "We could not create your account.");
     }
@@ -225,8 +279,14 @@ export default function BizzibuddiAccountPage() {
       });
 
       await applyAccount(result.account);
-      setMessage(`Welcome back, ${result.account.name}.`);
-      setView(result.account.business ? "dashboard" : "onboarding");
+      setMessage("Welcome back, " + result.account.name + ".");
+      if (result.account.business) {
+        setView(requestedView || "dashboard");
+        setDeepLink(initialDeepLink);
+      } else {
+        setView("onboarding");
+        setDeepLink({});
+      }
     } catch (error) {
       setMessage(error.message || "We could not sign you in.");
     }
@@ -246,6 +306,8 @@ export default function BizzibuddiAccountPage() {
     setInvoices([]);
     setAutomationEvents([]);
     setProductionRecords([]);
+    window.history.replaceState({}, "", window.location.pathname + "?view=login");
+    setDeepLink({});
     setMessage("You have been logged out.");
     setView("login");
   }
@@ -565,6 +627,7 @@ export default function BizzibuddiAccountPage() {
             jobs={jobs}
             account={account}
             productionRecords={productionRecords}
+            initialAppointmentId={deepLink.appointmentId}
             onAddAppointment={async (appointment) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar", {
                 method: "POST",
@@ -661,6 +724,8 @@ export default function BizzibuddiAccountPage() {
                 )
               );
             }}
+            initialPersonId={deepLink.personId}
+            onOpenJob={(jobId) => selectView("jobs", { jobId })}
             onBack={() => selectView("dashboard")}
           />
         )}
@@ -698,6 +763,8 @@ export default function BizzibuddiAccountPage() {
               );
               setJobs((current) => current.filter((item) => item.id !== jobId));
             }}
+            initialJobId={deepLink.jobId}
+            onOpenProduction={(jobId) => selectView("production", { jobId })}
             onBack={() => selectView("dashboard")}
           />
         )}
@@ -715,6 +782,7 @@ export default function BizzibuddiAccountPage() {
             timeEntries={productionTimeEntries}
             onStartTimer={startProductionTimer}
             onStopTimer={stopProductionTimer}
+            initialJobId={deepLink.jobId}
             onSave={async (record) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
                 method: "POST",
@@ -1201,7 +1269,7 @@ function OnboardingPanel({ account, onSubmit }) {
   return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your business.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your business a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
 }
 
-function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onBack }) {
+function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -1212,6 +1280,16 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   const [measurementSaving, setMeasurementSaving] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!initialPersonId) return;
+    const person = people.find((item) => String(item.id) === String(initialPersonId));
+    if (!person) return;
+
+    setTimelinePersonId(person.id);
+    setMeasurementPersonId(null);
+    setMeasurements([]);
+  }, [initialPersonId, people]);
 
   function personTimeline(person) {
     const items = [
@@ -1591,7 +1669,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   </section>;
 }
 
-function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack }) {
+function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJobId, onOpenProduction, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [error, setError] = useState("");
@@ -1599,6 +1677,23 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
   const [timelineJobId, setTimelineJobId] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
+
+  useEffect(() => {
+    if (!initialJobId) return;
+    const job = jobs.find((item) => String(item.id) === String(initialJobId));
+    if (!job) return;
+
+    setTimelineJobId(job.id);
+    setTimeline([]);
+    setTimelineLoading(true);
+
+    bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/jobs/" + encodeURIComponent(job.id)
+    )
+      .then((result) => setTimeline(result.timeline || []))
+      .catch((requestError) => setError(requestError.message || "We could not load the job timeline."))
+      .finally(() => setTimelineLoading(false));
+  }, [initialJobId, jobs]);
 
   async function toggleTimeline(job) {
     if (timelineJobId === job.id) {
@@ -1736,8 +1831,34 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, onBack })
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
               <span style={jobStatus}>{job.status}</span>
+              <button type="button" onClick={() => toggleTimeline(job)} style={smallActionButton}>
+                {timelineJobId === job.id ? "Hide timeline" : "Timeline"}
+              </button>
+              <button type="button" onClick={() => onOpenProduction(job.id)} style={smallActionButton}>Production</button>
               <button type="button" onClick={() => startEdit(job)} style={smallActionButton}>Edit</button>
               <button type="button" onClick={() => handleDelete(job)} style={smallDangerButton}>Delete</button>
+              {timelineJobId === job.id && (
+                <div style={{ width: "100%", marginTop: 14, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
+                  <small style={smallText}>JOB TIMELINE</small>
+                  {timelineLoading ? (
+                    <span style={{ display: "block", marginTop: 10, color: MUTED, fontSize: 12 }}>Loading job history…</span>
+                  ) : timeline.length > 0 ? (
+                    <div style={{ display: "grid", gap: 8, marginTop: 9 }}>
+                      {timeline.map((item) => (
+                        <div key={item.id} style={{ display: "grid", gridTemplateColumns: "92px minmax(0,1fr)", gap: 8, padding: "8px 9px", borderRadius: 9, background: "rgba(255,255,255,.025)", border: "1px solid rgba(255,255,255,.08)" }}>
+                          <span style={{ color: MUTED, fontSize: 10, fontWeight: 700 }}>{formatTimelineDate(item.date)}</span>
+                          <div>
+                            <strong style={{ display: "block", fontSize: 12 }}>{item.label}</strong>
+                            <span style={{ color: MUTED, fontSize: 11 }}>{item.detail}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ display: "block", marginTop: 10, color: MUTED, fontSize: 12 }}>No timeline events recorded yet.</span>
+                  )}
+                </div>
+              )}
             </div>
           </article>
         ))}
@@ -2304,7 +2425,7 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
   </section>;
 }
 
-function ProductionPanel({ account, jobs, records, templates, timeEntries, onPlans, onSave, onBack, onCreateTemplate, onUpdateTemplate, onDeleteTemplate, onStartTimer, onStopTimer }) {
+function ProductionPanel({ account, jobs, records, templates, timeEntries, initialJobId, onPlans, onSave, onBack, onCreateTemplate, onUpdateTemplate, onDeleteTemplate, onStartTimer, onStopTimer }) {
   const available = hasBizzibuddiFeature(account?.plan, "production");
   const stages = ["Not started", "In production", "Quality check", "Ready", "Complete"];
   const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
@@ -2420,10 +2541,15 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, onPla
 
 
   useEffect(() => {
+    if (initialJobId && jobs.some((job) => String(job.id) === String(initialJobId))) {
+      setSelectedJobId(initialJobId);
+      return;
+    }
+
     if (!jobs.some((job) => job.id === selectedJobId)) {
       setSelectedJobId(jobs[0]?.id || "");
     }
-  }, [jobs, selectedJobId]);
+  }, [jobs, selectedJobId, initialJobId]);
 
   useEffect(() => {
     setTaskDrafts(
@@ -4086,6 +4212,7 @@ function CalendarPanel({
   jobs,
   account,
   productionRecords,
+  initialAppointmentId,
   onAddAppointment,
   onUpdateAppointment,
   onDeleteAppointment,
@@ -4100,6 +4227,17 @@ function CalendarPanel({
   const [calendarSearch, setCalendarSearch] = useState("");
   const [calendarType, setCalendarType] = useState("all");
   const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
+
+  useEffect(() => {
+    if (!initialAppointmentId) return;
+    const appointment = appointments.find((item) => String(item.id) === String(initialAppointmentId));
+    if (!appointment) return;
+
+    setCalendarFilter("all");
+    setCalendarSearch("");
+    setEditingAppointment(appointment);
+    setShowForm(true);
+  }, [initialAppointmentId, appointments]);
   const calendarTodayKey = new Date().toISOString().slice(0, 10);
   const sortedAppointments = [...appointments].sort((a, b) => {
     const aKey = String(a.date || "") + "T" + String(a.time || "00:00");
