@@ -1648,6 +1648,151 @@ function deleteProductionRecord(userId, recordId) {
   const result = getDatabase().prepare(`DELETE FROM bizzibuddi_production WHERE id = ? AND user_id = ?`).run(recordId, userId);
   return Boolean(result.changes);
 }
+
+function validateProductionTemplatePayload(payload) {
+  const name = String(payload?.name || "").trim();
+  const description = String(payload?.description || "").trim();
+  const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
+
+  if (!name || name.length > 120) {
+    throw new Error("Template name is required and must be 120 characters or fewer.");
+  }
+
+  if (description.length > 500) {
+    throw new Error("Template description must be 500 characters or fewer.");
+  }
+
+  if (tasks.length > 100) {
+    throw new Error("A production template cannot contain more than 100 tasks.");
+  }
+
+  const normalizedTasks = tasks.map((task, index) => {
+    const title = String(task?.title || "").trim();
+    if (!title || title.length > 200) {
+      throw new Error("Template task " + (index + 1) + " must contain a title of 200 characters or fewer.");
+    }
+    return {
+      id: String(task?.id || randomUUID()),
+      title,
+    };
+  });
+
+  return { name, description, tasks: normalizedTasks };
+}
+
+function toProductionTaskTemplate(row) {
+  if (!row) return null;
+
+  let tasks = [];
+  try {
+    const parsed = JSON.parse(String(row.tasks_json || "[]"));
+    tasks = Array.isArray(parsed)
+      ? parsed.map((task) => ({
+          id: String(task?.id || randomUUID()),
+          title: String(task?.title || "").trim(),
+        })).filter((task) => task.title)
+      : [];
+  } catch {
+    tasks = [];
+  }
+
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description || "",
+    tasks,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getProductionTaskTemplates(userId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, name, description, tasks_json, created_at, updated_at
+       FROM bizzibuddi_production_task_templates
+       WHERE user_id = ?
+       ORDER BY name COLLATE NOCASE ASC`
+    )
+    .all(userId)
+    .map(toProductionTaskTemplate);
+}
+
+function createProductionTaskTemplate(userId, payload) {
+  const values = validateProductionTemplatePayload(payload);
+  const now = new Date().toISOString();
+  const template = {
+    id: randomUUID(),
+    user_id: userId,
+    name: values.name,
+    description: values.description,
+    tasks_json: JSON.stringify(values.tasks),
+    created_at: now,
+    updated_at: now,
+  };
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO bizzibuddi_production_task_templates (
+        id, user_id, name, description, tasks_json, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      template.id,
+      template.user_id,
+      template.name,
+      template.description,
+      template.tasks_json,
+      template.created_at,
+      template.updated_at
+    );
+
+  return toProductionTaskTemplate(template);
+}
+
+function updateProductionTaskTemplate(userId, templateId, payload) {
+  const values = validateProductionTemplatePayload(payload);
+  const now = new Date().toISOString();
+
+  const result = getDatabase()
+    .prepare(
+      `UPDATE bizzibuddi_production_task_templates
+       SET name = ?, description = ?, tasks_json = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(
+      values.name,
+      values.description,
+      JSON.stringify(values.tasks),
+      now,
+      templateId,
+      userId
+    );
+
+  if (!result.changes) return null;
+
+  return toProductionTaskTemplate(
+    getDatabase()
+      .prepare(
+        `SELECT id, name, description, tasks_json, created_at, updated_at
+         FROM bizzibuddi_production_task_templates
+         WHERE id = ? AND user_id = ?`
+      )
+      .get(templateId, userId)
+  );
+}
+
+function deleteProductionTaskTemplate(userId, templateId) {
+  const result = getDatabase()
+    .prepare(
+      `DELETE FROM bizzibuddi_production_task_templates
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(templateId, userId);
+
+  return Boolean(result.changes);
+}
+
 const BIZZIBUDDI_AUTOMATION_TYPES = [
   "appointment-created",
   "invoice-overdue",
@@ -1659,6 +1804,7 @@ const BIZZIBUDDI_AUTOMATION_TYPES = [
   "job-production-stage-changed",
   "job-production-task-completed",
   "job-production-task-reopened",
+  "job-production-template-applied",
 ];
 
 function validateAutomationEventPayload(payload) {
@@ -2294,6 +2440,78 @@ export async function handleBizziBuddiAuthRequest(request, response) {
           return true;
         }
         sendJson(response, 200, { ok: true, authenticated: true, deleted: true, productionId: recordId });
+        return true;
+      }
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/production/templates" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        templates: getProductionTaskTemplates(user.id),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/production/templates" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      const payload = await readJsonBody(request);
+      sendJson(response, 201, {
+        ok: true,
+        authenticated: true,
+        template: createProductionTaskTemplate(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/production/templates/")) {
+      const templateId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/production/templates/".length)
+      ).trim();
+
+      if (!templateId || templateId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Production task template not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const template = updateProductionTaskTemplate(user.id, templateId, payload);
+        if (!template) {
+          sendJson(response, 404, { ok: false, error: "Production task template not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, template });
+        return true;
+      }
+
+      if (request.method === "DELETE") {
+        const deleted = deleteProductionTaskTemplate(user.id, templateId);
+        if (!deleted) {
+          sendJson(response, 404, { ok: false, error: "Production task template not found." });
+          return true;
+        }
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          deleted: true,
+          templateId,
+        });
         return true;
       }
     }
