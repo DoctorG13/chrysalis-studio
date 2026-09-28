@@ -586,6 +586,7 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_templates_updated_at
         ON bizzibuddi_production_task_templates(updated_at);
     `,
+  },
   {
     version: 16,
     name: "bizzibuddi-production-time-tracking",
