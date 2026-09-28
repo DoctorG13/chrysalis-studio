@@ -620,7 +620,6 @@ const MIGRATIONS = [
         WHERE stopped_at IS NULL;
     `,
   },
-  }
 ];
 
 function assertSupportedNode() {
