@@ -27,6 +27,7 @@ export default function BizzibuddiAccountPage() {
   const [automationEvents, setAutomationEvents] = useState([]);
   const [productionRecords, setProductionRecords] = useState([]);
   const [productionTemplates, setProductionTemplates] = useState([]);
+  const [productionTimeEntries, setProductionTimeEntries] = useState([]);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export default function BizzibuddiAccountPage() {
       setProductionRecords,
     });
 
-    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult, productionResult, productionTemplatesResult] = await Promise.allSettled([
+    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult, productionResult, productionTemplatesResult, productionTimeResult] = await Promise.allSettled([
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
@@ -105,6 +106,7 @@ export default function BizzibuddiAccountPage() {
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/production"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/production/templates"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/production/time"),
     ]);
 
     setPeople(
@@ -140,6 +142,11 @@ export default function BizzibuddiAccountPage() {
     setProductionTemplates(
       productionTemplatesResult.status === "fulfilled" && Array.isArray(productionTemplatesResult.value.templates)
         ? productionTemplatesResult.value.templates
+        : []
+    );
+    setProductionTimeEntries(
+      productionTimeResult.status === "fulfilled" && Array.isArray(productionTimeResult.value.entries)
+        ? productionTimeResult.value.entries
         : []
     );
   }
@@ -357,6 +364,26 @@ export default function BizzibuddiAccountPage() {
       { method: "DELETE" }
     );
     setProductionTemplates((current) => current.filter((item) => item.id !== templateId));
+  }
+
+  async function startProductionTimer(jobId) {
+    const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production/time/start", {
+      method: "POST",
+      body: JSON.stringify({ jobId }),
+    });
+    setProductionTimeEntries((current) => [result.entry, ...current]);
+    return result.entry;
+  }
+
+  async function stopProductionTimer(entryId) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/production/time/" + encodeURIComponent(entryId) + "/stop",
+      { method: "POST" }
+    );
+    setProductionTimeEntries((current) =>
+      current.map((entry) => entry.id === entryId ? result.entry : entry)
+    );
+    return result.entry;
   }
 
   async function resetDemo() {
@@ -685,6 +712,9 @@ export default function BizzibuddiAccountPage() {
             onCreateTemplate={createProductionTemplate}
             onUpdateTemplate={updateProductionTemplate}
             onDeleteTemplate={deleteProductionTemplate}
+            timeEntries={productionTimeEntries}
+            onStartTimer={startProductionTimer}
+            onStopTimer={stopProductionTimer}
             onSave={async (record) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
                 method: "POST",
