@@ -1600,6 +1600,15 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                           <div>
                             <strong style={{ display: "block", fontSize: 12, lineHeight: 1.3 }}>{item.label}</strong>
                             <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 11, lineHeight: 1.35 }}>{item.detail}</span>
+                            {item.jobId && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenJob(item.jobId)}
+                                style={{ ...smallActionButton, marginTop: 6, width: "auto" }}
+                              >
+                                Open job
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
