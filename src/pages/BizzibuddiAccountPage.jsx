@@ -2714,7 +2714,7 @@ function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, o
 
         <div style={{
           display: "grid",
-          gridTemplateColumns: "minmax(190px, .7fr) minmax(280px, 1.3fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           gap: 14,
           marginTop: 14,
         }}>
