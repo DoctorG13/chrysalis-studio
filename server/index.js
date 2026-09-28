@@ -565,7 +565,29 @@ const MIGRATIONS = [
         ON bizzibuddi_measurements(created_at);
     `,
   },
+,
+  {
+    version: 15,
+    name: "bizzibuddi-production-task-templates",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_production_task_templates (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        tasks_json TEXT NOT NULL DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
 
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_templates_user_id
+        ON bizzibuddi_production_task_templates(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_templates_updated_at
+        ON bizzibuddi_production_task_templates(updated_at);
+    `,
+  }
 ];
 
 function assertSupportedNode() {
