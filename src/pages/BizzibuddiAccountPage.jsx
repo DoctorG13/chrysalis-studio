@@ -2274,7 +2274,7 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
   </section>;
 }
 
-function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
+function ProductionPanel({ account, jobs, records, templates, onPlans, onSave, onBack, onCreateTemplate, onUpdateTemplate, onDeleteTemplate }) {
   const available = hasBizzibuddiFeature(account?.plan, "production");
   const stages = ["Not started", "In production", "Quality check", "Ready", "Complete"];
   const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
@@ -2284,6 +2284,13 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
   const [quickSavingJobId, setQuickSavingJobId] = useState("");
   const [error, setError] = useState("");
   const [queueFilter, setQueueFilter] = useState("active");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [templateName, setTemplateName] = useState("");
+  const [templateDescription, setTemplateDescription] = useState("");
+  const [templateTaskDrafts, setTemplateTaskDrafts] = useState([]);
+  const [newTemplateTaskTitle, setNewTemplateTaskTitle] = useState("");
+  const [templateSaving, setTemplateSaving] = useState(false);
+  const [templateError, setTemplateError] = useState("");
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const today = new Date(todayKey + "T00:00:00");
@@ -2472,6 +2479,162 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
     }
   }
 
+  function startNewTemplate() {
+    setSelectedTemplateId("");
+    setTemplateName("");
+    setTemplateDescription("");
+    setTemplateTaskDrafts([]);
+    setNewTemplateTaskTitle("");
+    setTemplateError("");
+  }
+
+  function addTemplateTask(event) {
+    event.preventDefault();
+    const title = newTemplateTaskTitle.trim();
+    if (!title || templateTaskDrafts.length >= 100) return;
+
+    setTemplateTaskDrafts((current) => [
+      ...current,
+      { id: "template-task-" + Date.now() + "-" + current.length, title },
+    ]);
+    setNewTemplateTaskTitle("");
+  }
+
+  function updateTemplateTask(taskId, title) {
+    setTemplateTaskDrafts((current) =>
+      current.map((task) => task.id === taskId ? { ...task, title } : task)
+    );
+  }
+
+  function removeTemplateTask(taskId) {
+    setTemplateTaskDrafts((current) => current.filter((task) => task.id !== taskId));
+  }
+
+  async function saveTemplate() {
+    const name = templateName.trim();
+    const tasks = templateTaskDrafts
+      .map((task) => ({ id: String(task.id), title: String(task.title || "").trim() }))
+      .filter((task) => task.title);
+
+    if (!name) {
+      setTemplateError("Give the template a name.");
+      return;
+    }
+
+    if (!tasks.length) {
+      setTemplateError("Add at least one task to the template.");
+      return;
+    }
+
+    setTemplateSaving(true);
+    setTemplateError("");
+
+    try {
+      const payload = {
+        name,
+        description: templateDescription.trim(),
+        tasks,
+      };
+
+      const saved = selectedTemplateId
+        ? await onUpdateTemplate(selectedTemplateId, payload)
+        : await onCreateTemplate(payload);
+
+      setSelectedTemplateId(saved.id);
+      setTemplateName(saved.name || "");
+      setTemplateDescription(saved.description || "");
+      setTemplateTaskDrafts(saved.tasks || []);
+    } catch (requestError) {
+      setTemplateError(requestError.message || "We could not save the production template.");
+    } finally {
+      setTemplateSaving(false);
+    }
+  }
+
+  async function deleteTemplate() {
+    if (!selectedTemplateId) return;
+    const selectedTemplate = templates.find((template) => template.id === selectedTemplateId);
+    if (!selectedTemplate) return;
+
+    setTemplateSaving(true);
+    setTemplateError("");
+
+    try {
+      await onDeleteTemplate(selectedTemplateId);
+      startNewTemplate();
+    } catch (requestError) {
+      setTemplateError(requestError.message || "We could not delete the production template.");
+    } finally {
+      setTemplateSaving(false);
+    }
+  }
+
+  async function applySelectedTemplate() {
+    const selectedTemplate = templates.find((template) => template.id === selectedTemplateId);
+
+    if (!selectedTemplate || !selectedJob) {
+      setTemplateError("Select a template and a production job first.");
+      return;
+    }
+
+    const templateTasks = (selectedTemplate.tasks || [])
+      .map((task) => String(task.title || "").trim())
+      .filter(Boolean);
+
+    if (!templateTasks.length) {
+      setTemplateError("This template has no tasks to apply.");
+      return;
+    }
+
+    const existingTitles = new Set(
+      taskDrafts.map((task) => String(task.title || "").trim().toLowerCase())
+    );
+
+    const appendedTasks = templateTasks
+      .filter((title) => !existingTitles.has(title.toLowerCase()))
+      .map((title, index) => ({
+        id: "task-template-" + Date.now() + "-" + index,
+        title,
+        complete: false,
+      }));
+
+    if (!appendedTasks.length) {
+      setTemplateError("All tasks from this template are already on this job.");
+      return;
+    }
+
+    const nextTasks = [...taskDrafts, ...appendedTasks];
+
+    setTaskDrafts(nextTasks);
+    setTemplateError("");
+
+    await saveRecord({
+      id: existing?.id || "production-" + Date.now(),
+      jobId: selectedJob.id,
+      jobTitle: selectedJob.title || "Untitled job",
+      stage: existing?.stage || "Not started",
+      dueDate: existing?.dueDate || "",
+      notes: existing?.notes || "",
+      tasks: nextTasks,
+      updatedAt: new Date().toISOString(),
+    });
+
+    try {
+      await bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation/events", {
+        method: "POST",
+        body: JSON.stringify({
+          type: "job-production-template-applied",
+          title: "Production template applied",
+          detail: selectedTemplate.name + " was applied to " + (selectedJob.title || "job") + ".",
+          sourceKey: "job-production-template-applied:" + selectedJob.id + ":" + selectedTemplate.id + ":" + Date.now(),
+          jobId: selectedJob.id,
+        }),
+      });
+    } catch {
+      // Production is already saved; automation logging can fail without affecting the task application.
+    }
+  }
+
   function addTask(event) {
     event.preventDefault();
     const title = newTaskTitle.trim();
@@ -2529,6 +2692,124 @@ function ProductionPanel({ account, jobs, records, onPlans, onSave, onBack }) {
         <p style={eyebrowStyle}>PRODUCTION</p>
         <h2 style={sectionHeading}>Production workflow.</h2>
         <p style={copyStyle}>One place to see what is on the workroom floor, what is due, what is ready and what needs to move next.</p>
+      </div>
+
+      <div style={{
+        marginTop: 22,
+        padding: 16,
+        borderRadius: 14,
+        border: "1px solid " + BORDER,
+        background: "rgba(255,255,255,.025)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div>
+            <small style={smallText}>PRODUCTION TASK TEMPLATES</small>
+            <strong style={{ display: "block", marginTop: 4, fontSize: 18 }}>Build once. Reuse every time.</strong>
+            <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 13 }}>
+              Save recurring workroom checklists and apply them without overwriting tasks already on a job.
+            </p>
+          </div>
+          <button type="button" onClick={startNewTemplate} style={smallActionButton}>+ New template</button>
+        </div>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(190px, .7fr) minmax(280px, 1.3fr)",
+          gap: 14,
+          marginTop: 14,
+        }}>
+          <div>
+            <label style={fieldStyle}>
+              Template
+              <select
+                value={selectedTemplateId}
+                onChange={(event) => setSelectedTemplateId(event.target.value)}
+                style={inputStyle}
+              >
+                <option value="">New template</option>
+                {templates.map((template) => (
+                  <option key={template.id} value={template.id}>{template.name}</option>
+                ))}
+              </select>
+            </label>
+
+            <label style={fieldStyle}>
+              Template name
+              <input value={templateName} onChange={(event) => setTemplateName(event.target.value)} maxLength={120} style={inputStyle} placeholder="e.g. Standard dressmaking job" />
+            </label>
+
+            <label style={fieldStyle}>
+              Description
+              <input value={templateDescription} onChange={(event) => setTemplateDescription(event.target.value)} maxLength={500} style={inputStyle} placeholder="Optional workflow description" />
+            </label>
+
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+              <button type="button" onClick={saveTemplate} disabled={templateSaving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: templateSaving ? .65 : 1 }}>
+                {templateSaving ? "Saving…" : selectedTemplateId ? "Save template" : "Create template"}
+              </button>
+              {selectedTemplateId && (
+                <button type="button" onClick={deleteTemplate} disabled={templateSaving} style={smallDangerButton}>
+                  Delete
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div style={{
+            border: "1px solid " + BORDER,
+            borderRadius: 11,
+            padding: 13,
+            background: "rgba(255,255,255,.02)",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center" }}>
+              <div>
+                <small style={smallText}>TEMPLATE TASKS</small>
+                <strong style={{ display: "block", marginTop: 4, fontSize: 15 }}>
+                  {templateTaskDrafts.length} task{templateTaskDrafts.length === 1 ? "" : "s"}
+                </strong>
+              </div>
+              {selectedTemplateId && selectedJob && (
+                <button type="button" onClick={applySelectedTemplate} disabled={saving} style={{ ...smallActionButton, borderColor: "rgba(0,180,219,.45)", color: CYAN }}>
+                  Apply to {selectedJob.title}
+                </button>
+              )}
+            </div>
+
+            {templateTaskDrafts.length > 0 ? (
+              <div style={{ display: "grid", gap: 7, marginTop: 10 }}>
+                {templateTaskDrafts.map((task, index) => (
+                  <div key={task.id} style={{ display: "grid", gridTemplateColumns: "28px minmax(0,1fr) auto", gap: 7, alignItems: "center" }}>
+                    <span style={{ color: MUTED, fontSize: 11, textAlign: "center" }}>{index + 1}</span>
+                    <input
+                      value={task.title}
+                      onChange={(event) => updateTemplateTask(task.id, event.target.value)}
+                      maxLength={200}
+                      style={{ ...inputStyle, minHeight: 40, marginTop: 0 }}
+                    />
+                    <button type="button" onClick={() => removeTemplateTask(task.id)} disabled={templateSaving} style={smallDangerButton}>Remove</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ ...smallText, margin: "12px 0" }}>No tasks yet. Add the standard steps for this workflow.</p>
+            )}
+
+            <form onSubmit={addTemplateTask} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 7, marginTop: 10 }}>
+              <input
+                value={newTemplateTaskTitle}
+                onChange={(event) => setNewTemplateTaskTitle(event.target.value)}
+                placeholder="Add template task"
+                maxLength={200}
+                style={{ ...inputStyle, minHeight: 42, marginTop: 0 }}
+              />
+              <button type="submit" disabled={!newTemplateTaskTitle.trim() || templateTaskDrafts.length >= 100} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
+                + Add
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {templateError && <div role="alert" style={{ ...messageStyle, maxWidth: "none", margin: "12px 0 0", textAlign: "left" }}>{templateError}</div>}
       </div>
 
       <div style={{
