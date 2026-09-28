@@ -30,9 +30,9 @@
 
 ### Next
 
-- [ ] Production task templates
-- [ ] Production time tracking
-- [ ] Client/job detail deep links
+- [x] Production task templates
+- [x] Production time tracking
+- [x] Client/job detail deep links
 - [ ] Production workload balancing
 
 ## Future Ideas
