@@ -565,7 +565,6 @@ const MIGRATIONS = [
         ON bizzibuddi_measurements(created_at);
     `,
   },
-,
   {
     version: 15,
     name: "bizzibuddi-production-task-templates",
