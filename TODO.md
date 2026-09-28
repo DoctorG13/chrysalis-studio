@@ -1,3 +1,10 @@
+### Production Task Templates
+
+- [x] Persistent template storage
+- [x] Template editor
+- [x] Apply templates to production jobs
+- [x] Preserve existing job tasks when applying templates
+
 # 🦋 Chrysalis TODO
 
 ## Current Sprint
