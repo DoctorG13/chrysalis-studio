@@ -1,3 +1,15 @@
+## Production Task Templates
+
+### Added
+
+- Added persistent BizziBuddi production task templates with user-scoped database storage.
+- Added template names, descriptions and reusable production task lists.
+- Added template creation, editing and deletion from the Production workspace.
+- Added one-click template application to the selected production job.
+- Template application appends missing tasks without overwriting existing job tasks.
+- Added automation logging when a production template is applied.
+- Kept existing Production Workflow 2.0 task tracking, readiness and Dashboard/Buddi intelligence intact.
+
 ## BizziBuddi Production Workflow 2.0
 
 ### Added
