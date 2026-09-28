@@ -1,3 +1,11 @@
+## Production Task Templates
+
+- [x] Persistent production task templates
+- [x] Create and edit reusable task lists
+- [x] Delete templates
+- [x] Apply templates to production jobs without overwriting existing tasks
+- [x] Automation event when a template is applied
+
 # 🦋 Chrysalis Roadmap
 
 > Chrysalis is a production-quality operating system for Donna's dressmaking business.
