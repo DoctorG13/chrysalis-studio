@@ -2412,38 +2412,6 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       return true;
     }
 
-    if (url.pathname.startsWith("/api/bizzibuddi/auth/production/")) {
-      const recordId = decodeURIComponent(url.pathname.slice("/api/bizzibuddi/auth/production/".length)).trim();
-      if (!recordId || recordId.includes("/")) {
-        sendJson(response, 404, { ok: false, error: "Production record not found." });
-        return true;
-      }
-      const user = getSessionUser(request);
-      if (!user) {
-        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
-        return true;
-      }
-      if (request.method === "PUT") {
-        const payload = await readJsonBody(request);
-        const record = updateProductionRecord(user.id, recordId, payload);
-        if (!record) {
-          sendJson(response, 404, { ok: false, error: "Production record not found." });
-          return true;
-        }
-        sendJson(response, 200, { ok: true, authenticated: true, record });
-        return true;
-      }
-      if (request.method === "DELETE") {
-        const deleted = deleteProductionRecord(user.id, recordId);
-        if (!deleted) {
-          sendJson(response, 404, { ok: false, error: "Production record not found." });
-          return true;
-        }
-        sendJson(response, 200, { ok: true, authenticated: true, deleted: true, productionId: recordId });
-        return true;
-      }
-    }
-
     if (url.pathname === "/api/bizzibuddi/auth/production/templates" && request.method === "GET") {
       const user = getSessionUser(request);
       if (!user) {
@@ -2512,6 +2480,38 @@ export async function handleBizziBuddiAuthRequest(request, response) {
           deleted: true,
           templateId,
         });
+        return true;
+      }
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/production/")) {
+      const recordId = decodeURIComponent(url.pathname.slice("/api/bizzibuddi/auth/production/".length)).trim();
+      if (!recordId || recordId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Production record not found." });
+        return true;
+      }
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const record = updateProductionRecord(user.id, recordId, payload);
+        if (!record) {
+          sendJson(response, 404, { ok: false, error: "Production record not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, record });
+        return true;
+      }
+      if (request.method === "DELETE") {
+        const deleted = deleteProductionRecord(user.id, recordId);
+        if (!deleted) {
+          sendJson(response, 404, { ok: false, error: "Production record not found." });
+          return true;
+        }
+        sendJson(response, 200, { ok: true, authenticated: true, deleted: true, productionId: recordId });
         return true;
       }
     }
@@ -3027,7 +3027,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   } catch (error) {
     console.error("BizziBuddi authentication request failed:", error);
 
-    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|invoice|payment|Payment/.test(
+    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|invoice|payment|Payment|Template|template task|production template/.test(
       error instanceof Error ? error.message : ""
     )
       ? 400
