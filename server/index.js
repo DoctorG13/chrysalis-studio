@@ -586,6 +586,39 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_templates_updated_at
         ON bizzibuddi_production_task_templates(updated_at);
     `,
+  {
+    version: 16,
+    name: "bizzibuddi-production-time-tracking",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_production_time_entries (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        job_id TEXT NOT NULL,
+        job_title TEXT NOT NULL DEFAULT '',
+        started_at TEXT NOT NULL,
+        stopped_at TEXT,
+        duration_seconds INTEGER NOT NULL DEFAULT 0,
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (job_id) REFERENCES bizzibuddi_jobs(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_time_user_id
+        ON bizzibuddi_production_time_entries(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_time_job_id
+        ON bizzibuddi_production_time_entries(job_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_production_time_started_at
+        ON bizzibuddi_production_time_entries(started_at);
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_bizzibuddi_production_time_one_active
+        ON bizzibuddi_production_time_entries(user_id)
+        WHERE stopped_at IS NULL;
+    `,
+  },
   }
 ];
 
