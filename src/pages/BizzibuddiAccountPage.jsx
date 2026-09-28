@@ -1301,6 +1301,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       }] : []),
       ...(jobs || []).filter((job) => job.personId === person.id).map((job) => ({
         id: `person-job-${job.id}`,
+        jobId: job.id,
         date: job.createdAt || job.updatedAt,
         label: `Job · ${job.status || "New"}`,
         detail: job.title || "Untitled job",
@@ -1850,6 +1851,15 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
                           <div>
                             <strong style={{ display: "block", fontSize: 12 }}>{item.label}</strong>
                             <span style={{ color: MUTED, fontSize: 11 }}>{item.detail}</span>
+                            {item.jobId && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenJob(item.jobId)}
+                                style={{ ...smallActionButton, marginTop: 6, width: "auto" }}
+                              >
+                                Open job
+                              </button>
+                            )}
                           </div>
                         </div>
                       ))}
