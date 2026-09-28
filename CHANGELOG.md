@@ -1,3 +1,14 @@
+## Production Time Tracking
+
+### Added
+
+- Added persistent production time entries tied to BizziBuddi jobs.
+- Added start/stop production timer controls.
+- Added live elapsed-time display for the active timer.
+- Added per-job logged-time totals and recent time history.
+- Prevented more than one active production timer per account.
+- Added automation events when production timers start and stop.
+
 ## Production Task Templates
 
 ### Added
