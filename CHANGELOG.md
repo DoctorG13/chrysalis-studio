@@ -1,3 +1,13 @@
+## Buddi Action Urgency Styling
+
+### Added
+
+- Proposed Buddi actions now use distinct visual urgency states.
+- Overdue actions use the strongest alert treatment.
+- Due-today actions use a warning treatment.
+- High-pressure actions use a softer warning treatment.
+- Normal actions retain the standard Buddi styling.
+
 ## Buddi Confirmed Production Task Actions
 
 ### Added
