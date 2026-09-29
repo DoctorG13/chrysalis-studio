@@ -68,6 +68,7 @@ function getProposedProductionActions(context) {
         title: "Start production",
         detail: job.title + " is not started. Buddi can move it to In production.",
         nextStage: "In production",
+        urgency: job.dueDays !== null && job.dueDays < 0 ? "overdue" : job.dueDays === 0 ? "due-today" : job.pressure === "Overloaded" || job.pressure === "Heavy" ? "high" : "normal",
       });
     }
 
@@ -82,6 +83,7 @@ function getProposedProductionActions(context) {
         taskTitle: String(incompleteTask.title).trim(),
         title: "Mark task complete",
         detail: job.title + " has an outstanding task: " + String(incompleteTask.title).trim() + ".",
+        urgency: job.dueDays !== null && job.dueDays < 0 ? "overdue" : job.dueDays === 0 ? "due-today" : job.pressure === "Overloaded" || job.pressure === "Heavy" ? "high" : "normal",
       });
     }
 
@@ -93,6 +95,7 @@ function getProposedProductionActions(context) {
         title: "Mark production complete",
         detail: job.title + " is Ready with all production tasks complete.",
         nextStage: "Complete",
+        urgency: "normal",
       });
     }
 
@@ -405,22 +408,40 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
             </div>
 
             <div style={proposalListStyle}>
-              {proposedProductionActions.map((action) => (
-                <div key={action.key} style={proposalItemStyle}>
-                  <div style={{ minWidth: 0 }}>
-                    <strong style={{ display: "block", fontSize: 13 }}>{action.title}</strong>
-                    <span style={{ display: "block", marginTop: 4, color: "#B8C6D6", fontSize: 12, lineHeight: 1.45 }}>{action.detail}</span>
+              {proposedProductionActions.map((action) => {
+                const urgency = action.urgency || "normal";
+                const urgencyStyles = urgency === "overdue"
+                  ? { border: "1px solid rgba(255,107,138,.55)", background: "rgba(220,50,50,.10)", accent: "#FF8C8C", label: "OVERDUE" }
+                  : urgency === "due-today"
+                    ? { border: "1px solid rgba(246,196,83,.50)", background: "rgba(245,158,11,.09)", accent: "#F6C453", label: "DUE TODAY" }
+                    : urgency === "high"
+                      ? { border: "1px solid rgba(255,180,80,.38)", background: "rgba(245,158,11,.055)", accent: "#F6C453", label: "HIGH PRESSURE" }
+                      : { border: "1px solid rgba(255,255,255,.10)", background: "rgba(255,255,255,.025)", accent: "#B8C6D6", label: "" };
+
+                return (
+                  <div key={action.key} style={{ ...proposalItemStyle, border: urgencyStyles.border, background: urgencyStyles.background }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <strong style={{ display: "block", fontSize: 13 }}>{action.title}</strong>
+                        {urgencyStyles.label && (
+                          <span style={{ ...urgencyBadgeStyle, color: urgencyStyles.accent, borderColor: urgencyStyles.accent }}>
+                            {urgencyStyles.label}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ display: "block", marginTop: 4, color: "#B8C6D6", fontSize: 12, lineHeight: 1.45 }}>{action.detail}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => confirmProductionAction(action)}
+                      disabled={Boolean(actionBusy)}
+                      style={{ ...actionButtonStyle, borderColor: urgencyStyles.accent, opacity: actionBusy && actionBusy !== action.key ? .5 : 1, whiteSpace: "nowrap" }}
+                    >
+                      {actionBusy === action.key ? "Doing…" : "Confirm →"}
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => confirmProductionAction(action)}
-                    disabled={Boolean(actionBusy)}
-                    style={{ ...actionButtonStyle, opacity: actionBusy && actionBusy !== action.key ? .5 : 1, whiteSpace: "nowrap" }}
-                  >
-                    {actionBusy === action.key ? "Doing…" : "Confirm →"}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {actionMessage && (
@@ -756,6 +777,16 @@ const proposalListStyle = {
   display: "grid",
   gap: 9,
   marginTop: 12,
+};
+
+const urgencyBadgeStyle = {
+  padding: "3px 7px",
+  border: "1px solid",
+  borderRadius: 999,
+  background: "rgba(255,255,255,.025)",
+  fontSize: 9,
+  fontWeight: 800,
+  letterSpacing: ".06em",
 };
 
 const proposalItemStyle = {
