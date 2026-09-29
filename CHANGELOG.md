@@ -1,3 +1,17 @@
+## Buddi Confirmation-Based Actions
+
+### Added
+
+- Added explicit proposed production actions to Buddi.
+- Buddi can propose starting production for jobs that have not started.
+- Buddi can propose completing production when a job is Ready and all production tasks are complete.
+- Actions require an explicit user confirmation before any production record is changed.
+- Successful actions persist through the existing production API and refresh the workspace state.
+
+### Workflow
+
+Buddi identifies an opportunity → proposes the action → user confirms → production record is updated.
+
 ## Buddi Production Workload Awareness
 
 ### Added
