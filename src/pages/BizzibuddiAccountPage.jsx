@@ -2546,6 +2546,51 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   const completedTasks = productionJobs.reduce((sum, job) => sum + job.productionCompletedTaskCount, 0);
   const taskProgress = totalTasks ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
+  const workloadJobs = productionJobs
+    .filter((job) => !job.complete)
+    .map((job) => {
+      const remainingTasks = Math.max(0, job.productionTaskCount - job.productionCompletedTaskCount);
+      const dueDays = job.productionDueDate
+        ? Math.ceil((new Date(job.productionDueDate + "T00:00:00") - today) / 86400000)
+        : null;
+      const pressureScore =
+        (job.overdue ? 100 : 0) +
+        (job.dueToday ? 70 : 0) +
+        (dueDays !== null && dueDays > 0 && dueDays <= 3 ? 40 : 0) +
+        (dueDays !== null && dueDays > 3 && dueDays <= 7 ? 20 : 0) +
+        (remainingTasks * 5) +
+        (job.productionStage === "Not started" ? 10 : 0);
+
+      const pressure = pressureScore >= 100
+        ? "Overloaded"
+        : pressureScore >= 70
+          ? "Heavy"
+          : pressureScore >= 35
+            ? "Normal"
+            : "Light";
+
+      const loggedSeconds = timeEntries
+        .filter((entry) => entry.jobId === job.id)
+        .reduce((sum, entry) => sum + Number(entry.durationSeconds || 0), 0);
+
+      return { ...job, remainingTasks, dueDays, pressureScore, pressure, loggedSeconds };
+    })
+    .sort((a, b) => b.pressureScore - a.pressureScore);
+
+  const workloadActive = workloadJobs.length;
+  const workloadTasksRemaining = workloadJobs.reduce((sum, job) => sum + job.remainingTasks, 0);
+  const workloadLoggedSeconds = workloadJobs.reduce((sum, job) => sum + job.loggedSeconds, 0);
+  const workloadPressure = workloadJobs.length
+    ? workloadJobs.reduce((sum, job) => sum + job.pressureScore, 0) / workloadJobs.length
+    : 0;
+  const workloadLevel = workloadPressure >= 100
+    ? "Overloaded"
+    : workloadPressure >= 60
+      ? "Heavy"
+      : workloadPressure >= 30
+        ? "Normal"
+        : "Light";
+
   const selectedJob = productionJobs.find((job) => job.id === selectedJobId);
   const existing = selectedJob?.productionRecord || null;
   const activeTimer = timeEntries.find((entry) => !entry.stoppedAt) || null;
@@ -3103,6 +3148,86 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
             <strong style={{ display: "block", marginTop: 5, fontSize: 23, color }}>{value}</strong>
           </button>
         ))}
+      </div>
+
+      <div style={{
+        marginTop: 16,
+        padding: 16,
+        borderRadius: 14,
+        border: "1px solid " + BORDER,
+        background: "rgba(255,255,255,.025)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div>
+            <small style={smallText}>WORKLOAD BALANCING</small>
+            <strong style={{ display: "block", marginTop: 4, fontSize: 17 }}>
+              Production pressure: {workloadLevel}
+            </strong>
+            <p style={{ ...copyStyle, margin: "4px 0 0", fontSize: 12 }}>
+              {workloadActive
+                ? "Prioritised from active jobs, remaining tasks and ready-by dates."
+                : "No active production workload right now."}
+            </p>
+          </div>
+          <span style={jobReadinessBadge(workloadLevel === "Overloaded" ? "Overdue" : workloadLevel === "Heavy" ? "Tasks outstanding" : workloadLevel === "Normal" ? "In progress" : "Ready")}>
+            {workloadActive} active
+          </span>
+        </div>
+
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))",
+          gap: 9,
+          marginTop: 13,
+        }}>
+          {[
+            ["Active jobs", workloadActive],
+            ["Tasks remaining", workloadTasksRemaining],
+            ["Logged time", formatProductionDuration(workloadLoggedSeconds)],
+          ].map(([label, value]) => (
+            <div key={label} style={{ padding: 11, borderRadius: 10, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
+              <small style={smallText}>{label}</small>
+              <strong style={{ display: "block", marginTop: 4, fontSize: 19 }}>{value}</strong>
+            </div>
+          ))}
+        </div>
+
+        {workloadJobs.length > 0 && (
+          <div style={{ display: "grid", gap: 7, marginTop: 12 }}>
+            {workloadJobs.slice(0, 4).map((job) => (
+              <button
+                key={job.id}
+                type="button"
+                onClick={() => setSelectedJobId(job.id)}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0,1fr) auto",
+                  gap: 10,
+                  alignItems: "center",
+                  width: "100%",
+                  padding: "9px 11px",
+                  borderRadius: 10,
+                  border: "1px solid " + BORDER,
+                  background: "rgba(255,255,255,.02)",
+                  color: TEXT,
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ minWidth: 0 }}>
+                  <strong style={{ display: "block", fontSize: 12 }}>{job.title}</strong>
+                  <small style={{ color: MUTED }}>
+                    {job.remainingTasks} task{job.remainingTasks === 1 ? "" : "s"} remaining
+                    {job.productionDueDate ? " · " + (job.overdue ? "Overdue" : job.dueToday ? "Due today" : "Ready by " + formatProductionDate(job.productionDueDate)) : ""}
+                  </small>
+                </span>
+                <span style={jobReadinessBadge(job.pressure === "Overloaded" || job.pressure === "Heavy" ? "Overdue" : job.pressure === "Normal" ? "In progress" : "Ready")}>
+                  {job.pressure}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{
