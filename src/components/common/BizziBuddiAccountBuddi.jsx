@@ -277,6 +277,9 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
   }, [account, people, jobs, appointments, invoices, automationEvents, productionRecords]);
 
   const proposedProductionActions = getProposedProductionActions(businessContext);
+  const productionAttentionJobs = (businessContext.intelligence?.workload?.jobs || [])
+    .filter((job) => (job.dueDays !== null && job.dueDays <= 0) || job.pressure === "Overloaded" || job.pressure === "Heavy")
+    .slice(0, 4);
 
   const prompts = [
     "What needs attention today?",
@@ -396,6 +399,43 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
             <span>Buddi can use the information currently stored in this BizziBuddi account to explain what is happening, highlight what may need attention and point you to the right part of your workspace.</span>
           </div>
         </div>
+
+        {productionAttentionJobs.length > 0 && (
+          <div style={attentionCardStyle}>
+            <small style={quickLabelStyle}>PRODUCTION ATTENTION</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 16 }}>Work that needs attention.</strong>
+            <p style={{ ...subheadingStyle, margin: "5px 0 0", fontSize: 12 }}>
+              Buddi has highlighted overdue or high-pressure production work.
+            </p>
+            <div style={proposalListStyle}>
+              {productionAttentionJobs.map((job) => {
+                const overdue = job.dueDays !== null && job.dueDays < 0;
+                const dueToday = job.dueDays === 0;
+                const urgency = overdue
+                  ? { border: "1px solid rgba(255,107,138,.55)", background: "rgba(220,50,50,.10)", accent: "#FF8C8C", label: "OVERDUE" }
+                  : dueToday
+                    ? { border: "1px solid rgba(246,196,83,.50)", background: "rgba(245,158,11,.09)", accent: "#F6C453", label: "DUE TODAY" }
+                    : { border: "1px solid rgba(246,196,83,.38)", background: "rgba(245,158,11,.055)", accent: "#F6C453", label: "HIGH PRESSURE" };
+                return (
+                  <div key={job.jobId} style={{ ...proposalItemStyle, border: urgency.border, background: urgency.background }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <strong style={{ fontSize: 13 }}>{job.title}</strong>
+                        <span style={{ ...urgencyBadgeStyle, color: urgency.accent, borderColor: urgency.accent }}>{urgency.label}</span>
+                      </div>
+                      <span style={{ display: "block", marginTop: 4, color: "#B8C6D6", fontSize: 12 }}>
+                        {job.remainingTasks} task{job.remainingTasks === 1 ? "" : "s"} remaining{job.stage ? " · " + job.stage : ""}
+                      </span>
+                    </div>
+                    <button type="button" onClick={onProduction} style={{ ...actionButtonStyle, borderColor: urgency.accent, whiteSpace: "nowrap" }}>
+                      Open production →
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {proposedProductionActions.length > 0 && (
           <div style={proposalCardStyle}>
@@ -763,6 +803,14 @@ const actionButtonStyle = {
   fontSize: 11,
   fontWeight: 700,
   cursor: "pointer",
+};
+
+const attentionCardStyle = {
+  marginTop: 20,
+  padding: 16,
+  borderRadius: 14,
+  border: "1px solid rgba(246,196,83,.34)",
+  background: "rgba(245,158,11,.045)",
 };
 
 const proposalCardStyle = {
