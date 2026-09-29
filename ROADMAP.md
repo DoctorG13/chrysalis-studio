@@ -131,4 +131,4 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Production task templates
 - [x] Production time tracking
 - [x] Client/job detail deep links
-- [ ] Production workload balancing
+- [x] Production workload balancing
