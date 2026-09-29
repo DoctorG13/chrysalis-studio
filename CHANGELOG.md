@@ -1,3 +1,11 @@
+## Production Job Focus Navigation
+
+### Improved
+
+- Buddi's production attention links now preserve the relevant job when opening Production.
+- Production automatically scrolls to the selected job's work item editor after navigation or job selection.
+- The existing production queue and workload selection behaviour remains unchanged.
+
 ## Buddi Production Attention Visibility
 
 - Added a dedicated Production Attention panel for overdue, due-today and high-pressure production work.
