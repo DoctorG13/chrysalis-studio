@@ -81,7 +81,14 @@ function getSuggestedActions(question, context, handlers) {
   if (value.includes("owe") || value.includes("invoice") || value.includes("payment") || value.includes("money")) add("finance", "Open finance →", handlers.onFinance);
   if (value.includes("coming up") || value.includes("calendar") || value.includes("appointment") || value.includes("booking")) add("calendar", "Open calendar →", handlers.onCalendar);
   if (value.includes("job") || value.includes("work") || value.includes("in progress") || value.includes("waiting")) add("jobs", "Open jobs →", handlers.onJobs);
-  if (value.includes("production") || value.includes("ready")) add("production", "Open production →", handlers.onProduction);
+  if (
+    value.includes("production") ||
+    value.includes("ready") ||
+    value.includes("workload") ||
+    value.includes("pressure") ||
+    value.includes("capacity") ||
+    value.includes("tasks remaining")
+  ) add("production", "Open production →", handlers.onProduction);
 
   return actions.slice(0, 4);
 }
@@ -185,6 +192,22 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           activeProduction: intelligence.activeProduction,
           readyProduction: intelligence.readyProduction,
           upcomingAppointments: intelligence.upcomingAppointments,
+          pressure: intelligence.workload.level,
+          activeJobs: intelligence.workload.activeJobs,
+          tasksRemaining: intelligence.workload.tasksRemaining,
+          loggedSeconds: intelligence.workload.loggedSeconds,
+          overloadedJobs: intelligence.workload.overloadedJobs,
+          heavyJobs: intelligence.workload.heavyJobs,
+          topJobs: intelligence.workload.jobs.slice(0, 5).map((job) => ({
+            title: job.title,
+            clientName: job.clientName,
+            stage: job.stage,
+            dueDate: job.dueDate,
+            dueDays: job.dueDays,
+            remainingTasks: job.remainingTasks,
+            loggedSeconds: job.loggedSeconds,
+            pressure: job.pressure,
+          })),
         },
         financeSummary: {
           invoiceCount: invoices.length,
@@ -202,6 +225,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     "What should I focus on next?",
     "Who owes me money?",
     "Which jobs need attention?",
+    "How is my production workload looking?",
     "What is coming up?",
   ];
 
