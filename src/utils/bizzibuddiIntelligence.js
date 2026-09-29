@@ -144,6 +144,90 @@ export function buildBizziBuddiPriorityItems({
     .sort((a, b) => b.priorityScore - a.priorityScore);
 }
 
+
+export function buildBizziBuddiWorkload({
+  todayKey = new Date().toISOString().slice(0, 10),
+  jobs = [],
+  productionRecords = [],
+  timeEntries = [],
+} = {}) {
+  const today = new Date(todayKey + "T00:00:00");
+  const productionByJob = new Map(productionRecords.map((record) => [record.jobId, record]));
+
+  const activeJobs = jobs
+    .filter((job) => job.status !== "Complete")
+    .map((job) => {
+      const record = productionByJob.get(job.id);
+      const tasks = record?.tasks || [];
+      const completedTasks = tasks.filter((task) => task.complete).length;
+      const stage = record?.stage || job.productionStage || "Not started";
+      const dueDate = record?.dueDate || job.productionDueDate || "";
+      const dueDays = dueDate
+        ? Math.ceil((new Date(dueDate + "T00:00:00") - today) / 86400000)
+        : null;
+      const remainingTasks = Math.max(0, tasks.length - completedTasks);
+      const overdue = Boolean(dueDays !== null && dueDays < 0);
+      const dueToday = dueDays === 0;
+
+      const pressureScore =
+        (overdue ? 100 : 0) +
+        (dueToday ? 70 : 0) +
+        (dueDays !== null && dueDays > 0 && dueDays <= 3 ? 40 : 0) +
+        (dueDays !== null && dueDays > 3 && dueDays <= 7 ? 20 : 0) +
+        remainingTasks * 5 +
+        (stage === "Not started" ? 10 : 0);
+
+      const pressure = pressureScore >= 100
+        ? "Overloaded"
+        : pressureScore >= 70
+          ? "Heavy"
+          : pressureScore >= 35
+            ? "Normal"
+            : "Light";
+
+      const loggedSeconds = timeEntries
+        .filter((entry) => entry.jobId === job.id)
+        .reduce((sum, entry) => sum + Number(entry.durationSeconds || 0), 0);
+
+      return {
+        jobId: job.id,
+        title: job.title || "Untitled job",
+        clientName: job.clientName || job.client || "Unassigned",
+        stage,
+        dueDate,
+        dueDays,
+        overdue,
+        dueToday,
+        remainingTasks,
+        loggedSeconds,
+        pressure,
+        pressureScore,
+      };
+    })
+    .sort((a, b) => b.pressureScore - a.pressureScore);
+
+  const averagePressure = activeJobs.length
+    ? activeJobs.reduce((sum, job) => sum + job.pressureScore, 0) / activeJobs.length
+    : 0;
+
+  return {
+    jobs: activeJobs,
+    activeJobs: activeJobs.length,
+    tasksRemaining: activeJobs.reduce((sum, job) => sum + job.remainingTasks, 0),
+    loggedSeconds: activeJobs.reduce((sum, job) => sum + job.loggedSeconds, 0),
+    overloadedJobs: activeJobs.filter((job) => job.pressure === "Overloaded").length,
+    heavyJobs: activeJobs.filter((job) => job.pressure === "Heavy").length,
+    averagePressure: Math.round(averagePressure),
+    level: averagePressure >= 100
+      ? "Overloaded"
+      : averagePressure >= 60
+        ? "Heavy"
+        : averagePressure >= 30
+          ? "Normal"
+          : "Light",
+  };
+}
+
 export function buildBizziBuddiIntelligence(data = {}) {
   const {
     todayKey = new Date().toISOString().slice(0, 10),
@@ -151,14 +235,17 @@ export function buildBizziBuddiIntelligence(data = {}) {
     appointments = [],
     jobs = [],
     productionRecords = [],
+    timeEntries = [],
   } = data;
   const priorityItems = buildBizziBuddiPriorityItems(data);
+  const workload = buildBizziBuddiWorkload({ todayKey, jobs, productionRecords, timeEntries });
   const outstandingInvoices = invoices.filter((invoice) => invoice.status !== "Paid");
   const completedJobs = jobs.filter((job) => job.status === "Complete");
   const activeProduction = productionRecords.filter((record) => record.stage && record.stage !== "Complete");
 
   return {
     todayKey,
+    workload,
     priorityItems,
     priorityCount: priorityItems.length,
     priorityItemsTop: priorityItems.slice(0, 6),
