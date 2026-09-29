@@ -1,3 +1,11 @@
+## Production Queue Job Selection Fix
+
+### Fixed
+
+- Prevented the production deep-link target from overriding a user's manual job selection.
+- Clicking **Manage** on a production queue job now keeps that job selected, even when the Production page was originally opened with another job deep link.
+- Preserved automatic selection of the requested deep-link job and fallback selection when the current job is removed.
+
 ## Buddi Confirmation-Based Actions
 
 ### Added
