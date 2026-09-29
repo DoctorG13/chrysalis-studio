@@ -1,3 +1,16 @@
+## Buddi Production Workload Awareness
+
+### Added
+
+- Added production workload pressure, task remaining, logged time and workload-level context to Buddi.
+- Added the most pressured production jobs to Buddi's business context so workload questions can be answered with job-level detail.
+- Added a dedicated quick prompt for production workload questions.
+- Added production navigation actions when users ask Buddi about workload, pressure, capacity or remaining tasks.
+
+### Workflow
+
+Production workload → Buddi → production workspace
+
 ## BizziBuddi Production Workload Balancing
 
 ### Added
