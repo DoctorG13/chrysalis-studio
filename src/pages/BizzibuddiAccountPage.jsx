@@ -585,7 +585,7 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} />}
         {view === "finance" && (
           <FinancePanel
             account={account}
@@ -1940,7 +1940,7 @@ function PlansPanel({ onSelectPlan }) {
 function DashboardPanel({
   account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation,
   onProduction, onReports, onBuddi, onAttentionBuddi, onReset, onLogout, people, jobs,
-  appointments, invoices, automationEvents, productionRecords,
+  appointments, invoices, automationEvents, productionRecords, productionTimeEntries = [],
 }) {
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -1973,6 +1973,7 @@ function DashboardPanel({
     appointments,
     jobs,
     productionRecords,
+    timeEntries: productionTimeEntries,
   });
 
   const priorityItems = intelligence.priorityItemsTop.map((item) => ({
@@ -2015,6 +2016,7 @@ function DashboardPanel({
     { label: "Work completion", value: jobs.length ? completionRate + "%" : "—", detail: jobs.length ? completedJobs + " of " + jobs.length + " jobs complete" : "No jobs recorded yet", tone: completionRate >= 75 ? "good" : completionRate >= 40 ? "watch" : "neutral" },
     { label: "Payment collection", value: invoices.length ? collectionRate + "%" : "—", detail: invoices.length ? formatCurrency(overdueAmount) + " currently overdue" : "No invoices recorded yet", tone: overdueAmount > 0 ? "watch" : "good" },
     { label: "Production flow", value: productionRecords.length ? productionActive + " active" : "—", detail: productionRecords.length ? productionComplete + " completed" : "No production records yet", tone: productionActive > 0 ? "good" : "neutral" },
+    { label: "Workload", value: intelligence.workload.level, detail: intelligence.workload.activeJobs + " active · " + intelligence.workload.tasksRemaining + " tasks remaining", tone: intelligence.workload.level === "Overloaded" || intelligence.workload.level === "Heavy" ? "watch" : intelligence.workload.level === "Normal" ? "good" : "neutral" },
     { label: "Today's schedule", value: appointmentsToday.length, detail: appointmentsToday.length === 1 ? "appointment booked" : "appointments booked", tone: appointmentsToday.length > 0 ? "good" : "neutral" },
   ];
   const notificationItems = [
