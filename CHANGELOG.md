@@ -1,3 +1,15 @@
+## Buddi Finance Attention
+
+### Added
+
+- Added a dedicated Finance Attention panel to Buddi for overdue, due-today and upcoming unpaid invoices.
+- Added urgency styling consistent with production attention states.
+- Added direct **Open finance →** navigation from each highlighted invoice.
+
+### Improved
+
+- Production Attention now passes the selected job id when opening Production, preserving the clicked job focus and scroll target.
+
 ## Production Job Focus Navigation
 
 ### Improved
