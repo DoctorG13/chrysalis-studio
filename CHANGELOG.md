@@ -1,3 +1,20 @@
+## BizziBuddi Production Workload Balancing
+
+### Added
+
+- Added production workload pressure analysis using active jobs, remaining tasks and ready-by dates.
+- Added Light, Normal, Heavy and Overloaded workload levels.
+- Added workload-focused production job ordering.
+- Added active job, remaining task and logged time workload metrics.
+- Added workload visibility to the main business dashboard.
+- Added shared workload intelligence for future Buddi and dashboard actions.
+
+### Workflow
+
+Production now answers both **what is happening** and **where the workload pressure is building**.
+
+---
+
 ## BizziBuddi Client / Job Detail Deep Links
 
 ### Added
