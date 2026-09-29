@@ -865,7 +865,7 @@ export default function BizzibuddiAccountPage() {
           />
         )}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={() => selectView("production")} onSaveProduction={saveProductionRecord} onBack={() => selectView("dashboard")} />}
+        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={(jobId) => selectView("production", { jobId })} onSaveProduction={saveProductionRecord} onBack={() => selectView("dashboard")} />}
         {view === "help" && (
           <HelpSupportPanel
             onBuddi={() => selectView("buddi")}
@@ -2472,6 +2472,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   const [templateError, setTemplateError] = useState("");
   const [timerBusy, setTimerBusy] = useState(false);
   const [timerNow, setTimerNow] = useState(Date.now());
+  const selectedWorkItemRef = useRef(null);
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const today = new Date(todayKey + "T00:00:00");
@@ -2618,6 +2619,19 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
       setSelectedJobId(initialJobId);
     }
   }, [jobs, initialJobId]);
+
+  useEffect(() => {
+    if (!selectedJobId || !selectedWorkItemRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      selectedWorkItemRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedJobId]);
 
   useEffect(() => {
     if (!jobs.some((job) => job.id === selectedJobId)) {
@@ -3403,7 +3417,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
           <p style={copyStyle}>Production tracking is connected directly to your BizziBuddi jobs.</p>
         </div>
       ) : (
-        <div style={{ marginTop: 20 }}>
+        <div ref={selectedWorkItemRef} style={{ marginTop: 20, scrollMarginTop: 24 }}>
           <div style={{
             display: "flex",
             justifyContent: "space-between",
