@@ -1,3 +1,11 @@
+## Buddi Confirmed Production Task Actions
+
+### Added
+
+- Buddi can propose completing an outstanding production task when workload pressure or due-date pressure indicates the job needs attention.
+- Completing a task requires explicit confirmation.
+- Confirmed task completion uses the existing persistent production workflow and refreshes the job state.
+
 ## Production Queue Job Selection Fix
 
 ### Fixed
