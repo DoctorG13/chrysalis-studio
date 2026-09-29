@@ -51,6 +51,43 @@ function renderAnswer(text) {
   });
 }
 
+function getProposedProductionActions(context) {
+  const jobs = context?.intelligence?.workload?.jobs || [];
+  const records = context?.productionRecords || [];
+  const proposals = [];
+
+  for (const job of jobs) {
+    const record = records.find((item) => String(item.jobId) === String(job.jobId));
+    if (!record) continue;
+
+    if (job.stage === "Not started") {
+      proposals.push({
+        key: "start-production-" + job.jobId,
+        type: "production-stage",
+        jobId: job.jobId,
+        title: "Start production",
+        detail: job.title + " is not started. Buddi can move it to In production.",
+        nextStage: "In production",
+      });
+    }
+
+    if (job.stage === "Ready" && job.remainingTasks === 0) {
+      proposals.push({
+        key: "complete-production-" + job.jobId,
+        type: "production-stage",
+        jobId: job.jobId,
+        title: "Mark production complete",
+        detail: job.title + " is Ready with all production tasks complete.",
+        nextStage: "Complete",
+      });
+    }
+
+    if (proposals.length >= 2) break;
+  }
+
+  return proposals;
+}
+
 function getSuggestedActions(question, context, handlers) {
   const value = String(question || "").trim().toLowerCase();
   const items = context?.dashboardAttention?.items || [];
@@ -106,10 +143,12 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [actionBusy, setActionBusy] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
 
   const businessContext = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -176,6 +215,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           detail: event?.detail || "",
         })),
       },
+      productionRecords,
       intelligence: {
         ...intelligence,
         attentionCount: intelligence.priorityCount,
@@ -219,6 +259,8 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     };
   }, [account, people, jobs, appointments, invoices, automationEvents, productionRecords]);
 
+  const proposedProductionActions = getProposedProductionActions(businessContext);
+
   const prompts = [
     "What needs attention today?",
     "How is my business looking?",
@@ -234,6 +276,31 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     if (!prompt) return;
     askBuddi(prompt);
   }, [initialPrompt]);
+
+  async function confirmProductionAction(action) {
+    if (!action || !onSaveProduction || actionBusy) return;
+
+    const record = productionRecords.find((item) => String(item.jobId) === String(action.jobId));
+    if (!record) {
+      setActionMessage("The production record is no longer available. Please open Production and refresh the job.");
+      return;
+    }
+
+    setActionBusy(action.key);
+    setActionMessage("");
+
+    try {
+      await onSaveProduction({
+        ...record,
+        stage: action.nextStage,
+      });
+      setActionMessage(action.title + " completed for " + (record.jobTitle || "the production job") + ".");
+    } catch (error) {
+      setActionMessage(error.message || "Buddi could not complete that action.");
+    } finally {
+      setActionBusy("");
+    }
+  }
 
   async function askBuddi(rawQuestion) {
     const value = String(rawQuestion || "").trim();
@@ -298,6 +365,41 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
             <span>Buddi can use the information currently stored in this BizziBuddi account to explain what is happening, highlight what may need attention and point you to the right part of your workspace.</span>
           </div>
         </div>
+
+        {proposedProductionActions.length > 0 && (
+          <div style={proposalCardStyle}>
+            <div>
+              <small style={quickLabelStyle}>PROPOSED ACTIONS</small>
+              <strong style={{ display: "block", marginTop: 5, fontSize: 16 }}>Buddi found something it can help move forward.</strong>
+              <p style={{ ...subheadingStyle, margin: "5px 0 0", fontSize: 12 }}>
+                Nothing changes until you confirm the action.
+              </p>
+            </div>
+
+            <div style={proposalListStyle}>
+              {proposedProductionActions.map((action) => (
+                <div key={action.key} style={proposalItemStyle}>
+                  <div style={{ minWidth: 0 }}>
+                    <strong style={{ display: "block", fontSize: 13 }}>{action.title}</strong>
+                    <span style={{ display: "block", marginTop: 4, color: "#B8C6D6", fontSize: 12, lineHeight: 1.45 }}>{action.detail}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => confirmProductionAction(action)}
+                    disabled={Boolean(actionBusy)}
+                    style={{ ...actionButtonStyle, opacity: actionBusy && actionBusy !== action.key ? .5 : 1, whiteSpace: "nowrap" }}
+                  >
+                    {actionBusy === action.key ? "Doing…" : "Confirm →"}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {actionMessage && (
+              <div role="status" aria-live="polite" style={actionMessageStyle}>{actionMessage}</div>
+            )}
+          </div>
+        )}
 
         <div style={quickSectionStyle}>
           <small style={quickLabelStyle}>TRY ASKING</small>
@@ -612,6 +714,41 @@ const actionButtonStyle = {
   fontSize: 11,
   fontWeight: 700,
   cursor: "pointer",
+};
+
+const proposalCardStyle = {
+  marginTop: 20,
+  padding: 16,
+  borderRadius: 14,
+  border: "1px solid rgba(37,99,235,.38)",
+  background: "rgba(37,99,235,.07)",
+};
+
+const proposalListStyle = {
+  display: "grid",
+  gap: 9,
+  marginTop: 12,
+};
+
+const proposalItemStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 14,
+  alignItems: "center",
+  padding: 12,
+  borderRadius: 11,
+  border: "1px solid rgba(255,255,255,.10)",
+  background: "rgba(255,255,255,.025)",
+};
+
+const actionMessageStyle = {
+  marginTop: 10,
+  padding: "9px 11px",
+  borderRadius: 9,
+  background: "rgba(0,180,219,.08)",
+  border: "1px solid rgba(0,180,219,.24)",
+  color: "#B8C6D6",
+  fontSize: 11,
 };
 
 const privacyNoteStyle = {
