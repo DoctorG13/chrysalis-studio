@@ -1,3 +1,8 @@
+## Buddi Production Attention Visibility
+
+- Added a dedicated Production Attention panel for overdue, due-today and high-pressure production work.
+- Added urgency styling and direct Open production actions.
+
 ## Buddi Action Urgency Styling
 
 ### Added
