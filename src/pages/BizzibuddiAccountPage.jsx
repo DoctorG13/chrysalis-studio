@@ -2616,13 +2616,14 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   useEffect(() => {
     if (initialJobId && jobs.some((job) => String(job.id) === String(initialJobId))) {
       setSelectedJobId(initialJobId);
-      return;
     }
+  }, [jobs, initialJobId]);
 
+  useEffect(() => {
     if (!jobs.some((job) => job.id === selectedJobId)) {
       setSelectedJobId(jobs[0]?.id || "");
     }
-  }, [jobs, selectedJobId, initialJobId]);
+  }, [jobs, selectedJobId]);
 
   useEffect(() => {
     setTaskDrafts(
