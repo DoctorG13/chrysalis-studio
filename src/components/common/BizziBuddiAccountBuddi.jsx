@@ -71,6 +71,20 @@ function getProposedProductionActions(context) {
       });
     }
 
+    const incompleteTask = (record.tasks || []).find((task) => !task.complete && String(task.title || "").trim());
+
+    if (incompleteTask && (job.pressure === "Overloaded" || job.pressure === "Heavy" || job.dueDays !== null && job.dueDays <= 0)) {
+      proposals.push({
+        key: "complete-task-" + job.jobId + "-" + String(incompleteTask.id),
+        type: "production-task",
+        jobId: job.jobId,
+        taskId: String(incompleteTask.id),
+        taskTitle: String(incompleteTask.title).trim(),
+        title: "Mark task complete",
+        detail: job.title + " has an outstanding task: " + String(incompleteTask.title).trim() + ".",
+      });
+    }
+
     if (job.stage === "Ready" && job.remainingTasks === 0) {
       proposals.push({
         key: "complete-production-" + job.jobId,
@@ -290,10 +304,24 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     setActionMessage("");
 
     try {
-      await onSaveProduction({
-        ...record,
-        stage: action.nextStage,
-      });
+      if (action.type === "production-task") {
+        const tasks = (record.tasks || []).map((task) =>
+          String(task.id) === String(action.taskId)
+            ? { ...task, complete: true }
+            : task
+        );
+
+        await onSaveProduction({
+          ...record,
+          tasks,
+        });
+      } else {
+        await onSaveProduction({
+          ...record,
+          stage: action.nextStage,
+        });
+      }
+
       setActionMessage(action.title + " completed for " + (record.jobTitle || "the production job") + ".");
     } catch (error) {
       setActionMessage(error.message || "Buddi could not complete that action.");
