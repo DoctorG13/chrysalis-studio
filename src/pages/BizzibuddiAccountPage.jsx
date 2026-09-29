@@ -2003,6 +2003,17 @@ function DashboardPanel({
   }));
 
   const actionCount = intelligence.priorityCount;
+  const nextAction = priorityItems[0] || null;
+  const nextActionLabel = nextAction?.actionKey === "finance"
+    ? "Open finance"
+    : nextAction?.actionKey === "calendar"
+      ? "Open calendar"
+      : nextAction?.actionKey === "production"
+        ? "Open production"
+        : nextAction?.actionKey === "jobs"
+          ? "Open jobs"
+          : "Open workspace";
+  const nextActionHandler = nextAction?.onClick || null;
   const recentActivity = [
     ...(automationEvents || []).map((event) => ({ key: "automation-" + event.id, date: event.createdAt || event.updatedAt, icon: "⚙️", label: "Automation", title: event.title || event.type || "Automation event", detail: event.detail || "A business automation event was recorded.", onClick: onAutomation })),
     ...(jobs || []).map((job) => ({ key: "job-" + job.id, date: job.updatedAt || job.createdAt, icon: "📋", label: "Job", title: job.title || "Job updated", detail: "Status: " + (job.status || "New"), onClick: onJobs })),
@@ -2114,6 +2125,22 @@ function DashboardPanel({
           <span>1</span><span>→</span><span>2</span><span>→</span><span>3</span><span>→</span><span>4</span><span>→</span><span>5</span>
         </div>
       </div>
+
+      {nextAction && (
+        <div style={nextActionPanel}>
+          <div style={nextActionIcon}>{nextAction.icon}</div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".12em" }}>NEXT ACTION</small>
+            <strong style={{ display: "block", marginTop: 4, fontSize: 21 }}>{nextAction.title}</strong>
+            <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 13 }}>{nextAction.detail}</span>
+          </div>
+          {nextActionHandler && (
+            <button type="button" onClick={nextActionHandler} style={nextActionButton}>
+              {nextActionLabel} →
+            </button>
+          )}
+        </div>
+      )}
 
       <div style={attentionPanel}>
         <div style={attentionHeader}>
@@ -5678,6 +5705,43 @@ const todayViewItem = {
 };
 const todayViewEmpty = { display: "block", marginTop: 14, color: MUTED, fontSize: 12 };
  
+const nextActionPanel = {
+  display: "flex",
+  alignItems: "center",
+  gap: 14,
+  marginTop: 18,
+  padding: 17,
+  borderRadius: 16,
+  border: "1px solid rgba(0,180,219,.58)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.12), rgba(37,99,235,.12))",
+  boxShadow: "0 12px 28px rgba(0,0,0,.14)",
+  flexWrap: "wrap",
+};
+
+const nextActionIcon = {
+  width: 48,
+  height: 48,
+  display: "grid",
+  placeItems: "center",
+  flex: "0 0 auto",
+  borderRadius: 13,
+  background: "rgba(0,180,219,.15)",
+  border: "1px solid rgba(0,180,219,.34)",
+  fontSize: 23,
+};
+
+const nextActionButton = {
+  flex: "0 0 auto",
+  minHeight: 42,
+  padding: "0 14px",
+  border: "1px solid rgba(0,180,219,.55)",
+  borderRadius: 10,
+  background: "rgba(6,26,43,.62)",
+  color: TEXT,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
 const attentionPanel = {
   marginTop: 24, padding: 22, borderRadius: 18,
   border: "1px solid rgba(0,180,219,.55)",
