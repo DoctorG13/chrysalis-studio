@@ -35,6 +35,7 @@
 - [x] Client/job detail deep links
 - [x] Production workload balancing
 - [x] Buddi production workload awareness
+- [x] Confirmation-based Buddi production actions
 
 ## Future Ideas
 
