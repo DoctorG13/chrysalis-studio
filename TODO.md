@@ -34,6 +34,7 @@
 - [x] Production time tracking
 - [x] Client/job detail deep links
 - [x] Production workload balancing
+- [x] Buddi production workload awareness
 
 ## Future Ideas
 
