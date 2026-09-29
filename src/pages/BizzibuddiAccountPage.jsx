@@ -458,6 +458,83 @@ export default function BizzibuddiAccountPage() {
     setView("dashboard");
   }
 
+  async function saveProductionRecord(record) {
+    const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
+      method: "POST",
+      body: JSON.stringify(record),
+    });
+
+    setProductionRecords((current) => [
+      result.record,
+      ...current.filter((item) => item.jobId !== result.record.jobId),
+    ]);
+
+    setJobs((current) =>
+      current.map((job) => {
+        if (job.id !== result.record.jobId) return job;
+
+        const tasks = result.record.tasks || [];
+        const completedTasks = tasks.filter((task) => task.complete).length;
+        const stage = result.record.stage || "Not started";
+        const progress = stage === "Complete"
+          ? 100
+          : stage === "Ready"
+            ? 75
+            : stage === "Quality check"
+              ? 50
+              : stage === "In production"
+                ? 25
+                : 0;
+        const today = new Date().toISOString().slice(0, 10);
+        const overdue = Boolean(
+          result.record.dueDate &&
+          result.record.dueDate < today &&
+          stage !== "Complete"
+        );
+        const readiness = stage === "Complete"
+          ? "Complete"
+          : overdue
+            ? "Overdue"
+            : stage === "Ready" && tasks.length > 0 && completedTasks < tasks.length
+              ? "Tasks outstanding"
+              : stage === "Ready"
+                ? "Ready"
+                : tasks.length > 0 && completedTasks === tasks.length
+                  ? "Stage update needed"
+                  : stage === "Not started"
+                    ? "Not started"
+                    : "In progress";
+
+        return {
+          ...job,
+          productionStage: stage,
+          productionProgress: progress,
+          productionDueDate: result.record.dueDate || "",
+          productionTaskCount: tasks.length,
+          productionCompletedTaskCount: completedTasks,
+          productionTaskProgress: tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0,
+          productionReadiness: readiness,
+          productionReadinessDetail:
+            readiness === "Complete"
+              ? "Production is complete."
+              : readiness === "Overdue"
+                ? "Ready-by date has passed."
+                : readiness === "Tasks outstanding"
+                  ? (tasks.length - completedTasks) + " production task(s) remain."
+                  : readiness === "Stage update needed"
+                    ? "All production tasks are complete."
+                    : readiness === "Ready"
+                      ? "Production is ready for completion."
+                      : readiness === "Not started"
+                        ? "Production has not started."
+                        : "Production is moving through its workflow.",
+        };
+      })
+    );
+
+    return result.record;
+  }
+
   return (
     <>
       {account && shortcutHelpOpen && (
@@ -783,82 +860,12 @@ export default function BizzibuddiAccountPage() {
             onStartTimer={startProductionTimer}
             onStopTimer={stopProductionTimer}
             initialJobId={deepLink.jobId}
-            onSave={async (record) => {
-              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/production", {
-                method: "POST",
-                body: JSON.stringify(record),
-              });
-              setProductionRecords((current) => [
-                result.record,
-                ...current.filter((item) => item.jobId !== result.record.jobId),
-              ]);
-              setJobs((current) =>
-                current.map((job) => {
-                  if (job.id !== result.record.jobId) return job;
-                  const tasks = result.record.tasks || [];
-                  const completedTasks = tasks.filter((task) => task.complete).length;
-                  const stage = result.record.stage || "Not started";
-                  const progress = stage === "Complete"
-                    ? 100
-                    : stage === "Ready"
-                      ? 75
-                      : stage === "Quality check"
-                        ? 50
-                        : stage === "In production"
-                          ? 25
-                          : 0;
-                  const today = new Date().toISOString().slice(0, 10);
-                  const overdue = Boolean(
-                    result.record.dueDate &&
-                    result.record.dueDate < today &&
-                    stage !== "Complete"
-                  );
-                  const readiness = stage === "Complete"
-                    ? "Complete"
-                    : overdue
-                      ? "Overdue"
-                      : stage === "Ready" && tasks.length > 0 && completedTasks < tasks.length
-                        ? "Tasks outstanding"
-                        : stage === "Ready"
-                          ? "Ready"
-                          : tasks.length > 0 && completedTasks === tasks.length
-                            ? "Stage update needed"
-                            : stage === "Not started"
-                              ? "Not started"
-                              : "In progress";
-                  return {
-                    ...job,
-                    productionStage: stage,
-                    productionProgress: progress,
-                    productionDueDate: result.record.dueDate || "",
-                    productionTaskCount: tasks.length,
-                    productionCompletedTaskCount: completedTasks,
-                    productionTaskProgress: tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0,
-                    productionReadiness: readiness,
-                    productionReadinessDetail:
-                      readiness === "Complete"
-                        ? "Production is complete."
-                        : readiness === "Overdue"
-                          ? "Ready-by date has passed."
-                          : readiness === "Tasks outstanding"
-                            ? (tasks.length - completedTasks) + " production task(s) remain."
-                            : readiness === "Stage update needed"
-                              ? "All production tasks are complete."
-                              : readiness === "Ready"
-                                ? "Production is ready for completion."
-                                : readiness === "Not started"
-                                  ? "Production has not started."
-                                  : "Production is moving through its workflow.",
-                  };
-                })
-              );
-              return result.record;
-            }}
+            onSave={saveProductionRecord}
             onBack={() => selectView("dashboard")}
           />
         )}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={() => selectView("production")} onBack={() => selectView("dashboard")} />}
+        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={() => selectView("production")} onSaveProduction={saveProductionRecord} onBack={() => selectView("dashboard")} />}
         {view === "help" && (
           <HelpSupportPanel
             onBuddi={() => selectView("buddi")}
