@@ -1,3 +1,12 @@
+## Today Command Centre
+
+### Added
+
+- Added a prominent **Next Action** card to the Today workspace.
+- The card uses the highest-priority item from the shared BizziBuddi intelligence engine.
+- Added direct navigation into the relevant workspace area from the Next Action card.
+- Kept the existing Today attention queue, daily operating view, notifications, activity and health sections intact.
+
 ## Buddi Finance Attention
 
 ### Added
