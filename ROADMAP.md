@@ -132,6 +132,7 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Production time tracking
 - [x] Client/job detail deep links
 - [x] Production workload balancing
+- [x] Today record-level action links
 
 
 ## Post-1.0 — Assistant Intelligence
