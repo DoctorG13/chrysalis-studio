@@ -147,10 +147,6 @@ function getSuggestedActions(question, context, handlers) {
   return actions.slice(0, 4);
 }
 
-function normalise(value) {
-  return String(value || "").trim().toLowerCase();
-}
-
 function getPersonName(person) {
   return person?.name || [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "Unnamed person";
 }
