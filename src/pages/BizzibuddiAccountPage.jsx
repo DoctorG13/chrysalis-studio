@@ -2518,15 +2518,15 @@ function DashboardPanel({
           <div style={{ color: MUTED, fontSize: 13, lineHeight: 1.5 }}>{getBizzibuddiPlan(account?.plan).features.join(" · ")}</div>
         </div>
         <div style={actionGrid}>
-          <button type="button" onClick={onPeople} style={actionCard}><span style={actionIcon}>👥</span><span><strong>Add your people</strong><small>Keep clients and contacts organised.</small></span></button>
-          <button type="button" onClick={onJobs} style={actionCard}><span style={actionIcon}>📋</span><span><strong>Create a job</strong><small>Start tracking work from enquiry to completion.</small></span></button>
-          <button type="button" onClick={onCalendar} style={actionCard}><span style={actionIcon}>📅</span><span><strong>Open your calendar</strong><small>Keep appointments and business dates organised.</small></span></button>
-          <button type="button" onClick={onFinance} style={actionCard}><span style={actionIcon}>💳</span><span><strong>Open finance</strong><small>Manage invoices and payment status.</small></span></button>
-          <button type="button" onClick={onAutomation} style={actionCard}><span style={actionIcon}>⚙️</span><span><strong>Open automation</strong><small>Turn routine business events into useful follow-up.</small></span></button>
-          <button type="button" onClick={onProduction} style={actionCard}><span style={actionIcon}>🏭</span><span><strong>Open production</strong><small>Track work stages, tasks and production progress.</small></span></button>
-          <button type="button" onClick={onReports} style={actionCard}><span style={actionIcon}>📊</span><span><strong>Open reports</strong><small>See the numbers and activity behind your business.</small></span></button>
-          <button type="button" onClick={onBuddi} style={{ ...actionCard, borderColor: "rgba(0,180,219,.55)", background: "rgba(0,180,219,.08)" }}><span style={actionIcon}>🤖</span><span><strong>Ask Buddi</strong><small>Get help understanding your people, jobs, calendar and money.</small></span></button>
-          <button type="button" onClick={onPlans} style={actionCard}><span style={actionIcon}>⚡</span><span><strong>Explore plans</strong><small>See what is available as BizziBuddi grows.</small></span></button>
+          <button type="button" onClick={onPeople} style={actionCard}><span style={actionIcon}>👥</span><span style={actionCardContent}><strong style={actionCardTitle}>Add your people</strong><small style={actionCardDescription}>Keep clients and contacts organised.</small></span></button>
+          <button type="button" onClick={onJobs} style={actionCard}><span style={actionIcon}>📋</span><span style={actionCardContent}><strong style={actionCardTitle}>Create a job</strong><small style={actionCardDescription}>Start tracking work from enquiry to completion.</small></span></button>
+          <button type="button" onClick={onCalendar} style={actionCard}><span style={actionIcon}>📅</span><span style={actionCardContent}><strong style={actionCardTitle}>Open your calendar</strong><small style={actionCardDescription}>Keep appointments and business dates organised.</small></span></button>
+          <button type="button" onClick={onFinance} style={actionCard}><span style={actionIcon}>💳</span><span style={actionCardContent}><strong style={actionCardTitle}>Open finance</strong><small style={actionCardDescription}>Manage invoices and payment status.</small></span></button>
+          <button type="button" onClick={onAutomation} style={actionCard}><span style={actionIcon}>⚙️</span><span style={actionCardContent}><strong style={actionCardTitle}>Open automation</strong><small style={actionCardDescription}>Turn routine business events into useful follow-up.</small></span></button>
+          <button type="button" onClick={onProduction} style={actionCard}><span style={actionIcon}>🏭</span><span style={actionCardContent}><strong style={actionCardTitle}>Open production</strong><small style={actionCardDescription}>Track work stages, tasks and production progress.</small></span></button>
+          <button type="button" onClick={onReports} style={actionCard}><span style={actionIcon}>📊</span><span style={actionCardContent}><strong style={actionCardTitle}>Open reports</strong><small style={actionCardDescription}>See the numbers and activity behind your business.</small></span></button>
+          <button type="button" onClick={onBuddi} style={{ ...actionCard, borderColor: "rgba(0,180,219,.55)", background: "rgba(0,180,219,.08)" }}><span style={actionIcon}>🤖</span><span style={actionCardContent}><strong style={actionCardTitle}>Ask Buddi</strong><small style={actionCardDescription}>Get help understanding your people, jobs, calendar and money.</small></span></button>
+          <button type="button" onClick={onPlans} style={actionCard}><span style={actionIcon}>⚡</span><span style={actionCardContent}><strong style={actionCardTitle}>Explore plans</strong><small style={actionCardDescription}>See what is available as BizziBuddi grows.</small></span></button>
         </div>
       </div>
 
@@ -4726,9 +4726,9 @@ function CalendarPanel({
       <p style={copyStyle}>Keep appointments, fittings, meetings and important business dates organised.</p>
       {advancedScheduling && (
         <div style={schedulingSummary}>
-          <span>
-            <strong>Advanced scheduling</strong>
-            <small>Duration, buffer time and appointment status are enabled.</small>
+          <span style={schedulingSummaryContent}>
+            <strong style={{ fontSize: 16, lineHeight: 1.25 }}>Advanced scheduling</strong>
+            <small style={{ color: MUTED, fontSize: 13, lineHeight: 1.4 }}>Duration, buffer time and appointment status are enabled.</small>
           </span>
           <span style={advancedBadge}>PROFESSIONAL</span>
         </div>
@@ -6039,7 +6039,10 @@ const businessActions = { marginTop: 28, padding: 24, borderRadius: 14, border: 
 const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
-const actionIcon = { fontSize: 22, lineHeight: 1 };
+const actionIcon = { fontSize: 22, lineHeight: 1, flex: "0 0 auto", marginTop: 2 };
+const actionCardContent = { display: "grid", gap: 6, minWidth: 0, flex: "1 1 auto", lineHeight: 1.35 };
+const actionCardTitle = { display: "block", fontSize: 16, lineHeight: 1.25 };
+const actionCardDescription = { display: "block", color: MUTED, fontSize: 13, lineHeight: 1.45 };
 const productionProgress = { display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginTop: 24, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const productionStage = (current, reached) => ({ display: "grid", justifyItems: "center", gap: 7, textAlign: "center", color: current ? TEXT : reached ? CYAN : MUTED, fontWeight: current ? 800 : 600, fontSize: 12 });
 const productionTaskPanel = { marginTop: 18, padding: 18, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
@@ -6067,6 +6070,7 @@ const automationEventCard = { display: "flex", justifyContent: "space-between", 
 const automationEventBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", whiteSpace: "nowrap" };
 const appointmentCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const schedulingSummary = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, marginTop: 20, padding: 16, borderRadius: 12, border: `1px solid rgba(0,180,219,.28)`, background: "rgba(0,180,219,.07)", flexWrap: "wrap" };
+const schedulingSummaryContent = { display: "grid", gap: 5, minWidth: 0, flex: "1 1 260px" };
 const advancedScheduleFields = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 6 };
 const advancedBadge = { padding: "6px 9px", borderRadius: 999, background: "rgba(37,99,235,.16)", color: RED, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", whiteSpace: "nowrap" };
 const financeSummary = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginTop: 28 };
