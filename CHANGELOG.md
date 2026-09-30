@@ -1,3 +1,12 @@
+## Buddi Unmatched Client Creation
+
+### Added
+
+- When Buddi cannot match a client name from a natural-language job request, the review form now offers **Create new client**.
+- The new-client flow pre-fills the requested name and allows optional email and phone details.
+- Confirming the job can create the new client first and then create the job against that newly created client.
+- Existing-client selection remains available, and the confirmation gate still applies before any records are created.
+
 ## Unmatched Buddi Job Client Parsing
 
 ### Fixed
