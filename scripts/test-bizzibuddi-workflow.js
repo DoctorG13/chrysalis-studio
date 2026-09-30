@@ -89,5 +89,9 @@ assertContains(read("src/components/common/BuddiFocusCard.jsx"), "What deserves 
 assertContains(read("src/components/common/DonnaAssistant.jsx"), "createJob", "Buddi job creation persistence");
 assertContains(read("src/components/common/DonnaAssistant.jsx"), "Create a job", "Buddi job creation form");
 assertContains(read("src/components/common/DonnaAssistant.jsx"), "Create a job", "Buddi job creation quick action");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "parseJobRequest", "Buddi natural-language job parsing");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "isJobRequest", "Buddi job command routing");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "prefilledJob", "Buddi job review prefill");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "Nothing is saved until you confirm.", "Buddi job confirmation guard");
 
-console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 13 UI workflow contracts.`);
+console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 17 UI workflow contracts.`);
