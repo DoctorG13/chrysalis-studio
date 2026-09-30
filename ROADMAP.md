@@ -1,3 +1,10 @@
+## Account Buddi Job Creation
+
+- [x] Route direct job-creation requests inside the account-backed Buddi assistant
+- [x] Pre-fill an unambiguous person and job title from natural language
+- [x] Require explicit review and confirmation before saving
+- [x] Persist confirmed jobs through the authenticated Jobs API
+
 ## Buddi Natural-Language Job Creation
 
 - [x] Recognise direct job-creation commands reliably
