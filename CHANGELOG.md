@@ -1,3 +1,13 @@
+## Buddi Proactive Focus
+
+### Added
+
+- Added a **Buddi Focus** card to the live assistant so Buddi proactively surfaces the current business pressure before a question is asked.
+- Added focus detection for overdue jobs, outstanding job balances, jobs due within seven days and today's appointments.
+- Added compact summary counts for overdue jobs, due-this-week jobs, unpaid jobs and today's appointments.
+- Added direct navigation from the focus card into Jobs, Finance, Garments or Calendar when action is relevant.
+- Kept all existing Buddi questions, confirmations, client creation and appointment creation workflows unchanged.
+
 ## Calendar Record Focus + Production Links
 
 ### Changed
@@ -1998,13 +2008,3 @@ All notable changes to Chrysalis are recorded here.
 
 - Added a dedicated local Authentication API on port 4183 using the existing secure authentication module.
 - Added local authentication health checking to the development backend launcher.
-- Routed `/api/auth/*` requests from the Vite development server to the Authentication API while leaving business APIs on the Database API.
-- Added local login, session verification and logout endpoints backed by the existing `server/auth.js` implementation.
-
-### Changed
-
-- The development environment now mirrors the production separation between authentication and business APIs instead of sending authentication requests to the database API.
-
----
-
-## Client Timeline
