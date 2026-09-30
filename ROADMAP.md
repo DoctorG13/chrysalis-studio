@@ -140,6 +140,7 @@ Donna can comfortably run Chrysalis as her primary business application every da
 ## Post-1.0 — Assistant Intelligence
 
 - [x] Buddi production workload awareness
+- [x] Buddi proactive business focus
 
 
 ## Post-1.0 — Actionable Assistant
