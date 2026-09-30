@@ -99,6 +99,16 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "isJobR
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "confirmCreateJob", "account Buddi job confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Nothing changes until you confirm.", "account Buddi confirmation guard");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onAddJob", "account Buddi Jobs API integration");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "parseNaturalDate", "account Buddi natural-language due dates");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "parseNaturalPrice", "account Buddi natural-language pricing");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Due date", "account Buddi due-date review field");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Price (AUD)", "account Buddi price review field");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "dueDate: jobDraft.dueDate", "account Buddi due-date persistence payload");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "price: Number(jobDraft.price)", "account Buddi price persistence payload");
+assertContains(read("server/index.js"), "bizzibuddi-job-dates-and-pricing", "BizziBuddi job date/price migration");
+assertContains(read("server/bizzibuddi-auth.js"), "due_date", "BizziBuddi job due-date persistence");
+assertContains(read("server/bizzibuddi-auth.js"), "price", "BizziBuddi job price persistence");
+
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddJob={async (job)", "account Buddi job persistence callback");
 
-console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 23 UI workflow contracts.`);
+console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 33 UI workflow contracts.`);
