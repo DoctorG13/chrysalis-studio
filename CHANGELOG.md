@@ -1,3 +1,12 @@
+## Account Buddi Job Creation
+
+### Added
+
+- Wired the account-backed Buddi assistant to the authenticated Jobs API.
+- Direct requests such as **create a job** now open a review form instead of being sent to the general chat service.
+- Added person, job title and status prefill from natural-language requests.
+- Added an explicit confirmation step before any job record is created.
+
 ## Buddi Natural-Language Job Prefill
 
 ### Added
