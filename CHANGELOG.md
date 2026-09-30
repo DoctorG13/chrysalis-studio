@@ -1,3 +1,25 @@
+## Today Summary Spacing + Job Detail Next Actions
+
+### Changed
+
+- Fixed the Today business-picture summary metrics so values and labels have deliberate vertical spacing instead of running together.
+- Kept the summary responsive so the four metrics collapse cleanly on narrower screens.
+- Added a focused **Next Action** area to the selected Job.
+- Job next actions now reflect the current production state:
+  - overdue production → Open production
+  - outstanding production tasks → Open production
+  - ready / stage update needed → Open production
+  - not started → Start production
+  - waiting job → Review job
+  - complete job → Review timeline
+- Selected Jobs are highlighted and smoothly scrolled into view when opened from a deep link or timeline selection.
+- Preserved the existing Timeline, Production, Edit and Delete actions.
+
+### Fixed
+
+- Wired Job timeline "Open job" actions back into the Jobs workspace so related job links resolve correctly.
+
+## Today Secondary Record Links
 ## Today Secondary Record Links
 
 ### Changed
