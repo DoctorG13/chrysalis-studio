@@ -86,5 +86,8 @@ assertContains(page, "days <= 7;", "Today View production due-soon seven-day win
 assertContains(read("src/components/common/DonnaAssistant.jsx"), "BuddiFocusCard", "Buddi Focus assistant integration");
 assertContains(read("src/components/common/BuddiFocusCard.jsx"), "BUDDI FOCUS", "Buddi Focus card");
 assertContains(read("src/components/common/BuddiFocusCard.jsx"), "What deserves your attention?", "Buddi Focus heading");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "createJob", "Buddi job creation persistence");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "Create a job", "Buddi job creation form");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "Create a job", "Buddi job creation quick action");
 
 console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 13 UI workflow contracts.`);
