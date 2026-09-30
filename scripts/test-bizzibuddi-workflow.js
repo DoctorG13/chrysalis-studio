@@ -108,7 +108,8 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "price:
 assertContains(read("server/index.js"), "bizzibuddi-job-dates-and-pricing", "BizziBuddi job date/price migration");
 assertContains(read("server/bizzibuddi-auth.js"), "due_date", "BizziBuddi job due-date persistence");
 assertContains(read("server/bizzibuddi-auth.js"), "price", "BizziBuddi job price persistence");
+assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_production", "BizziBuddi job due-date production sync");
 
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddJob={async (job)", "account Buddi job persistence callback");
 
-console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 33 UI workflow contracts.`);
+console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 34 UI workflow contracts.`);
