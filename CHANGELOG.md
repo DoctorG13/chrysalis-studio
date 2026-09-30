@@ -1,3 +1,13 @@
+## Calendar Record Focus + Production Links
+
+### Changed
+
+- Calendar deep links now highlight and smoothly scroll to the exact appointment record.
+- The selected appointment remains visually identifiable while its editor is open.
+- Upcoming garment production entries in Calendar now provide a direct **Open production →** action.
+- Production links preserve the exact job focus when opening the Production workspace.
+
+## Today Summary Spacing + Job Detail Next Actions
 ## Today Summary Spacing + Job Detail Next Actions
 
 ### Changed
