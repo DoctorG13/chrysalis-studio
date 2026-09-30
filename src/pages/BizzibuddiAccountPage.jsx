@@ -5927,7 +5927,7 @@ const attentionBuddiButton = {
 };
 const attentionSummary = {
   display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
   gap: 8,
   marginTop: 18,
 };
