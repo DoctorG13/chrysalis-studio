@@ -1,3 +1,12 @@
+## Buddi Natural-Language Job Prefill
+
+### Added
+
+- Hardened Buddi job-command routing so direct requests such as **create a job** open the job review form instead of falling through to the general chat service.
+- Added natural-language prefill for common job details including an unambiguous client, job name, garment type, due date and price.
+- Added support for common date phrases such as today, tomorrow, weekdays and Australian-style day/month dates.
+- Kept the existing confirmation gate: parsed details only populate the review form and are not persisted until **Save job** is explicitly confirmed.
+
 ## Buddi Job Creation
 
 ### Added
