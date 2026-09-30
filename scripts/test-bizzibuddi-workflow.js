@@ -83,5 +83,8 @@ assertContains(page, "const filteredPeople = normalizedQuery", "people search fi
 assertContains(page, "{filteredPeople.map((person) => {", "filtered people render");
 if (page.includes("{(() => {")) throw new Error("Legacy People filter IIFE must not return.");
 assertContains(page, "days <= 7;", "Today View production due-soon seven-day window");
+assertContains(read("src/components/common/DonnaAssistant.jsx"), "BuddiFocusCard", "Buddi Focus assistant integration");
+assertContains(read("src/components/common/BuddiFocusCard.jsx"), "BUDDI FOCUS", "Buddi Focus card");
+assertContains(read("src/components/common/BuddiFocusCard.jsx"), "What deserves your attention?", "Buddi Focus heading");
 
 console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 13 UI workflow contracts.`);
