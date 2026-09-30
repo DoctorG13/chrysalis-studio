@@ -147,6 +147,83 @@ function getSuggestedActions(question, context, handlers) {
   return actions.slice(0, 4);
 }
 
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+function parseNaturalDate(value) {
+  const text = normalise(value);
+  if (!text) return "";
+
+  const today = new Date();
+
+  if (text === "today") return getLocalDateKey(today);
+
+  if (text === "tomorrow") {
+    const date = new Date(today);
+    date.setDate(date.getDate() + 1);
+    return getLocalDateKey(date);
+  }
+
+  const weekdayMatch = text.match(/^(?:next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i);
+  if (weekdayMatch) {
+    const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const target = weekdays.indexOf(weekdayMatch[1].toLowerCase());
+    const current = today.getDay();
+    let offset = (target - current + 7) % 7;
+    if (offset === 0 || /^next\s+/i.test(text)) offset += 7;
+    const date = new Date(today);
+    date.setDate(date.getDate() + offset);
+    return getLocalDateKey(date);
+  }
+
+  const numericMatch = text.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
+  if (numericMatch) {
+    const day = Number(numericMatch[1]);
+    const month = Number(numericMatch[2]) - 1;
+    let year = numericMatch[3] ? Number(numericMatch[3]) : today.getFullYear();
+    if (year < 100) year += 2000;
+    const date = new Date(year, month, day);
+    if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+      return getLocalDateKey(date);
+    }
+  }
+
+  const monthMatch = text.match(/^(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+(\d{4}))?$/i);
+  if (monthMatch) {
+    const months = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+    const day = Number(monthMatch[1]);
+    const month = months.indexOf(monthMatch[2].toLowerCase());
+    let year = monthMatch[3] ? Number(monthMatch[3]) : today.getFullYear();
+    let date = new Date(year, month, day);
+
+    if (!monthMatch[3] && date < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+      year += 1;
+      date = new Date(year, month, day);
+    }
+
+    if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+      return getLocalDateKey(date);
+    }
+  }
+
+  return "";
+}
+
+function parseNaturalPrice(value) {
+  const match = String(value || "").match(/(?:\$\s*|(?:price|priced|cost)(?:\s+(?:is|of|at))?\s*\$?\s*)(\d[\d,]*(?:\.\d+)?)\s*(k)?/i);
+  if (!match) return "";
+
+  let amount = Number(match[1].replace(/,/g, ""));
+  if (!Number.isFinite(amount)) return "";
+  if (match[2]) amount *= 1000;
+
+  return String(Math.round(amount * 100) / 100);
+}
+
 function getPersonName(person) {
   return person?.name || [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "Unnamed person";
 }
@@ -165,10 +242,22 @@ function findPersonMatch(people, requestedName) {
 
 function parseNaturalJobRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
-  const draft = { title: "", personId: "", status: "New" };
+  const draft = { title: "", personId: "", status: "New", dueDate: "", price: "" };
   let remainder = value
     .replace(/^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?job\b[,:]?\s*/i, "")
     .trim();
+
+  const dateMatch = remainder.match(/\b(?:due|by|on)\s+(today|tomorrow|(?:next\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?)/i);
+  if (dateMatch) {
+    draft.dueDate = parseNaturalDate(dateMatch[1]);
+    remainder = remainder.replace(dateMatch[0], " ");
+  }
+
+  const priceMatch = remainder.match(/(?:\$\s*\d[\d,]*(?:\.\d+)?\s*k?|\b(?:price|priced|cost)(?:\s+(?:is|of|at))?\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*k?)/i);
+  if (priceMatch) {
+    draft.price = parseNaturalPrice(priceMatch[0]);
+    remainder = remainder.replace(priceMatch[0], " ");
+  }
 
   const personMatch = remainder.match(/\bfor\s+([A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){0,4})(?=\s+(?:for|with|as|status|$)|[,;])/i);
   if (personMatch) {
@@ -187,7 +276,7 @@ function parseNaturalJobRequest(rawQuestion, people) {
   }
 
   draft.title = remainder
-    .replace(/\b(?:for|with|as)\s*$/i, "")
+    .replace(/\b(?:due|by|on|for|with|as)\s*$/i, "")
     .replace(/^[,;:.-]+|[,;:.-]+$/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -417,6 +506,8 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
         title: jobDraft.title.trim(),
         personId: jobDraft.personId,
         status: jobDraft.status || "New",
+        dueDate: jobDraft.dueDate || "",
+        price: Number(jobDraft.price) || 0,
       });
       const person = people.find((item) => String(item.id) === String(jobDraft.personId));
 
@@ -674,6 +765,16 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
               <label style={jobFieldStyle}>
                 <span>Job title</span>
                 <input style={jobInputStyle} value={jobDraft.title} onChange={(event) => setJobDraft((draft) => ({ ...draft, title: event.target.value }))} placeholder="e.g. Wedding dress" disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Due date</span>
+                <input style={jobInputStyle} type="date" value={jobDraft.dueDate || ""} onChange={(event) => setJobDraft((draft) => ({ ...draft, dueDate: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Price (AUD)</span>
+                <input style={jobInputStyle} type="number" min="0" step="0.01" value={jobDraft.price || ""} onChange={(event) => setJobDraft((draft) => ({ ...draft, price: event.target.value }))} placeholder="0.00" disabled={jobSaving} />
               </label>
 
               <label style={jobFieldStyle}>
