@@ -710,6 +710,7 @@ export default function BizzibuddiAccountPage() {
             account={account}
             productionRecords={productionRecords}
             initialAppointmentId={deepLink.appointmentId}
+            onOpenProduction={(jobId) => selectView("production", { jobId })}
             onAddAppointment={async (appointment) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar", {
                 method: "POST",
@@ -4578,6 +4579,7 @@ function CalendarPanel({
   onAddAppointment,
   onUpdateAppointment,
   onDeleteAppointment,
+  onOpenProduction,
   onBack,
 }) {
   const [showForm, setShowForm] = useState(false);
@@ -4589,6 +4591,7 @@ function CalendarPanel({
   const [calendarSearch, setCalendarSearch] = useState("");
   const [calendarType, setCalendarType] = useState("all");
   const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
+  const selectedAppointmentRef = useRef(null);
 
   useEffect(() => {
     if (!initialAppointmentId) return;
@@ -4620,6 +4623,19 @@ function CalendarPanel({
     }
     return true;
   });
+
+  useEffect(() => {
+    if (!initialAppointmentId || !selectedAppointmentRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      selectedAppointmentRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialAppointmentId, visibleAppointments]);
   const appointmentTypes = ["all", "Booked", "Confirmed", "Pending", "Cancelled"];
   const calendarCounts = {
     today: appointments.filter((appointment) => appointment.date === calendarTodayKey).length,
@@ -4732,10 +4748,21 @@ function CalendarPanel({
         <div style={{ display: "grid", gap: 9, marginTop: 14 }}>
           {productionSchedule.map((record) => (
             <article key={record.id} style={todayViewItem}>
-              <strong>{record.jobTitle || "Production job"}</strong>
-              <span style={{ ...smallText, marginTop: 3 }}>
-                Ready by {formatProductionDate(record.dueDateValue)} · {record.stage || "Not started"}
-              </span>
+              <div style={{ minWidth: 0 }}>
+                <strong>{record.jobTitle || "Production job"}</strong>
+                <span style={{ ...smallText, display: "block", marginTop: 3 }}>
+                  Ready by {formatProductionDate(record.dueDateValue)} · {record.stage || "Not started"}
+                </span>
+              </div>
+              {record.jobId && (
+                <button
+                  type="button"
+                  onClick={() => onOpenProduction?.(record.jobId)}
+                  style={smallActionButton}
+                >
+                  Open production →
+                </button>
+              )}
             </article>
           ))}
         </div>
@@ -4792,7 +4819,20 @@ function CalendarPanel({
         {visibleAppointments.length > 0 ? (
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
             {visibleAppointments.map((appointment) => (
-          <article key={appointment.id} style={appointmentCard}>
+          <article
+            key={appointment.id}
+            ref={String(initialAppointmentId) === String(appointment.id) ? selectedAppointmentRef : null}
+            style={{
+              ...appointmentCard,
+              ...(String(initialAppointmentId) === String(appointment.id)
+                ? {
+                    border: "1px solid rgba(0,180,219,.62)",
+                    boxShadow: "0 14px 30px rgba(0,180,219,.10)",
+                  }
+                : {}),
+              scrollMarginTop: 24,
+            }}
+          >
             <div style={{ minWidth: 0 }}>
               <strong style={{ display: "block", fontSize: 17 }}>{appointment.title}</strong>
               <span style={smallText}>
