@@ -1,3 +1,12 @@
+## Unmatched Buddi Job Client Parsing
+
+### Fixed
+
+- Fixed natural-language job requests such as “create a job for Sarah, wedding dress” so the client phrase is removed cleanly from the job title.
+- Buddi now remembers the requested person name when it cannot match that name to an account person.
+- Unmatched client names now require an explicit person selection before the job can be saved, preventing accidental assignment to the wrong client.
+- Cleaned residual punctuation from job titles after natural-language date, price, and client parsing.
+
 ## Buddi Natural-Language Job Details
 
 ### Added
