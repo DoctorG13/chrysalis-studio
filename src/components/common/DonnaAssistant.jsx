@@ -34,6 +34,161 @@ function isOverdue(job) {
   return date < today;
 }
 
+function getLocalDateKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseNaturalDate(value) {
+  const text = normalise(value);
+  if (!text) return "";
+
+  const today = new Date();
+
+  if (text === "today") return getLocalDateKey(today);
+
+  if (text === "tomorrow") {
+    const date = new Date(today);
+    date.setDate(date.getDate() + 1);
+    return getLocalDateKey(date);
+  }
+
+  const weekdayMatch = text.match(/^(?:next\\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i);
+  if (weekdayMatch) {
+    const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+    const target = weekdays.indexOf(weekdayMatch[1].toLowerCase());
+    const current = today.getDay();
+    let offset = (target - current + 7) % 7;
+    if (offset === 0 || /^next\\s+/i.test(text)) offset += 7;
+    const date = new Date(today);
+    date.setDate(date.getDate() + offset);
+    return getLocalDateKey(date);
+  }
+
+  const numericMatch = text.match(/^(\\d{1,2})[\\/.-](\\d{1,2})(?:[\\/.-](\\d{2,4}))?$/);
+  if (numericMatch) {
+    const day = Number(numericMatch[1]);
+    const month = Number(numericMatch[2]) - 1;
+    let year = numericMatch[3] ? Number(numericMatch[3]) : today.getFullYear();
+    if (year < 100) year += 2000;
+    const date = new Date(year, month, day);
+    if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+      return getLocalDateKey(date);
+    }
+  }
+
+  const monthMatch = text.match(/^(\\d{1,2})\\s+(january|february|march|april|may|june|july|august|september|october|november|december)(?:\\s+(\\d{4}))?$/i);
+  if (monthMatch) {
+    const months = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+    const day = Number(monthMatch[1]);
+    const month = months.indexOf(monthMatch[2].toLowerCase());
+    let year = monthMatch[3] ? Number(monthMatch[3]) : today.getFullYear();
+    let date = new Date(year, month, day);
+
+    if (!monthMatch[3] && date < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+      year += 1;
+      date = new Date(year, month, day);
+    }
+
+    if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+      return getLocalDateKey(date);
+    }
+  }
+
+  return "";
+}
+
+function parseNaturalPrice(value) {
+  const match = String(value || "").match(/(?:\\$|(?:price|priced|cost)(?:\\s+(?:is|of|at))?\\s*)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(k)?/i);
+  if (!match) return "";
+
+  let amount = Number(match[1].replace(/,/g, ""));
+  if (!Number.isFinite(amount)) return "";
+
+  if (match[2]) amount *= 1000;
+  return String(amount);
+}
+
+function findClientMatch(clients, requestedName) {
+  const target = normalise(requestedName);
+  if (!target) return null;
+
+  const exact = clients.filter((client) => normalise(getClientName(client)) === target);
+  if (exact.length === 1) return exact[0];
+
+  const partial = clients.filter((client) => {
+    const name = normalise(getClientName(client));
+    return name.startsWith(`${target} `) || target.startsWith(`${name} `);
+  });
+
+  return partial.length === 1 ? partial[0] : null;
+}
+
+function parseJobRequest(raw, clients) {
+  const value = String(raw || "").trim();
+  const draft = {
+    clientId: "",
+    name: "",
+    garmentType: "",
+    dueDate: "",
+    price: "",
+    notes: "",
+    status: "Quote",
+  };
+
+  let remainder = value
+    .replace(/^(?:please\\s+)?(?:create|add|new)\\s+(?:a\\s+|an\\s+)?(?:new\\s+)?(?:job|garment)\\b[,:]?\\s*/i, "")
+    .trim();
+
+  const dateMatch = remainder.match(/\\b(?:due|by|on)\\s+(today|tomorrow|(?:next\\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\\d{1,2}[\\/.-]\\d{1,2}(?:[\\/.-]\\d{2,4})?|\\d{1,2}\\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\\s+\\d{4})?)/i);
+  if (dateMatch) {
+    draft.dueDate = parseNaturalDate(dateMatch[1]);
+    remainder = remainder.replace(dateMatch[0], " ");
+  }
+
+  const priceMatch = remainder.match(/(?:\\$\\s*\\d[\\d,]*(?:\\.\\d+)?\\s*k?|\\b(?:price|priced|cost)(?:\\s+(?:is|of|at))?\\s*\\$?\\s*\\d[\\d,]*(?:\\.\\d+)?\\s*k?)/i);
+  if (priceMatch) {
+    draft.price = parseNaturalPrice(priceMatch[0]);
+    remainder = remainder.replace(priceMatch[0], " ");
+  }
+
+  const clientMatch = remainder.match(/\\bfor\\s+([A-Za-z][A-Za-z.'-]*(?:\\s+[A-Za-z][A-Za-z.'-]*){0,5})(?=\\s+(?:for|with|due|by|on|$)|[,;])/i);
+  if (clientMatch) {
+    const client = findClientMatch(clients, clientMatch[1].trim());
+    if (client) {
+      draft.clientId = client.id;
+      remainder = remainder.replace(clientMatch[0], " ");
+    } else {
+      const firstWord = clientMatch[1].trim().split(/\\s+/)[0];
+      const firstWordClient = findClientMatch(clients, firstWord);
+      if (firstWordClient) {
+        draft.clientId = firstWordClient.id;
+        remainder = remainder.replace(/\\bfor\\s+[^,;]+/i, " ");
+      }
+    }
+  }
+
+  remainder = remainder
+    .replace(/\\b(?:due|by|on)\\s*$/i, "")
+    .replace(/\\b(?:for|with)\\s*$/i, "")
+    .replace(/^[,;:.-]+|[,;:.-]+$/g, "")
+    .replace(/\\s{2,}/g, " ")
+    .trim();
+
+  if (remainder) {
+    const garmentMatch = remainder.match(/^(?:a|an|the)\\s+(.+)$/i);
+    draft.name = (garmentMatch ? garmentMatch[1] : remainder).trim();
+    draft.garmentType = draft.name
+      .replace(/^(?:custom|bespoke)\\s+/i, "")
+      .split(/\\s+/)
+      .slice(-1)[0] || "";
+  }
+
+  return draft;
+}
+
 function getNavigationAction(question) {
   const text = normalise(question);
   if (text.includes("overdue") || text.includes("garment") || text.includes("production")) {
@@ -124,8 +279,16 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
 
   const prompts = ["What needs attention today?", "Show overdue garments", "Who owes money?", "What’s happening this week?", "Create a job", "Create an appointment"];
 
-  function openCreateJobForm() {
-    setJobDraft({ clientId: clients[0]?.id || "", name: "", garmentType: "", dueDate: "", price: "", notes: "", status: "Quote" });
+  function openCreateJobForm(prefill = null) {
+    setJobDraft(prefill || {
+      clientId: clients[0]?.id || "",
+      name: "",
+      garmentType: "",
+      dueDate: "",
+      price: "",
+      notes: "",
+      status: "Quote",
+    });
     setJobMessage("");
     setClientDraft(null);
     setAppointmentDraft(null);
@@ -219,8 +382,25 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
     const value = String(raw || "").trim();
     if (!value || isLoading) return;
     setQuestion("");
-    if (/(?:create|add|new)\s+(?:a\s+)?job|create\s+(?:a\s+)?garment|add\s+(?:a\s+)?job/i.test(value)) {
-      openCreateJobForm();
+
+    const compactValue = value
+      .replace(/[’‘]/g, "'")
+      .replace(/[“”]/g, '"')
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const isJobRequest = /^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:job|garment)\\b/i.test(compactValue);
+
+    if (isJobRequest) {
+      const prefilledJob = parseJobRequest(compactValue, clients);
+      openCreateJobForm(prefilledJob);
+      setConversation((items) => [{
+        question: compactValue,
+        answer: prefilledJob.name
+          ? "I’ve filled in the job details I could understand. Review them below and confirm when you’re ready to save."
+          : "I’ve opened the job review form. Add the details you want, then confirm when you’re ready to save.",
+        action: null,
+      }, ...items]);
       return;
     }
     if (/(?:create|add|new)\s+(?:an?\s+)?appointment|book\s+(?:an?\s+)?appointment/i.test(value)) {
@@ -266,7 +446,7 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
 
         <BuddiFocusCard clients={clients} jobs={jobs} currentPage={currentPage} onNavigate={onNavigate} />
 
-        {jobDraft && <section style={actionCardStyle}><div style={cardHeadingStyle}><span style={cardIconStyle}>✂</span><div><div style={cardKickerStyle}>New record</div><h3 style={cardTitleStyle}>Create a job</h3></div></div><p style={cardIntroStyle}>Review the job details before adding it to the studio.</p><div style={formGridStyle}><Field label="Client"><select style={inputStyle} value={jobDraft.clientId} onChange={(event) => setJobDraft((draft) => ({ ...draft, clientId: event.target.value }))} disabled={jobSaving}><option value="">Select client</option>{clients.map((client) => <option key={client.id} value={client.id}>{getClientName(client)}</option>)}</select></Field><Field label="Job name"><input style={inputStyle} value={jobDraft.name} onChange={(event) => setJobDraft((draft) => ({ ...draft, name: event.target.value }))} disabled={jobSaving} placeholder="e.g. Evening gown" /></Field><Field label="Garment type"><input style={inputStyle} value={jobDraft.garmentType} onChange={(event) => setJobDraft((draft) => ({ ...draft, garmentType: event.target.value }))} disabled={jobSaving} placeholder="e.g. Dress" /></Field><Field label="Due date"><input style={inputStyle} type="date" value={jobDraft.dueDate} onChange={(event) => setJobDraft((draft) => ({ ...draft, dueDate: event.target.value }))} disabled={jobSaving} /></Field><Field label="Starting price"><input style={inputStyle} type="number" min="0" step="0.01" value={jobDraft.price} onChange={(event) => setJobDraft((draft) => ({ ...draft, price: event.target.value }))} disabled={jobSaving} placeholder="0.00" /></Field><Field label="Starting stage"><select style={inputStyle} value={jobDraft.status} onChange={(event) => setJobDraft((draft) => ({ ...draft, status: event.target.value }))} disabled={jobSaving}>{["Quote", "Booked", "Measuring"].map((status) => <option key={status}>{status}</option>)}</select></Field></div><Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={jobDraft.notes} onChange={(event) => setJobDraft((draft) => ({ ...draft, notes: event.target.value }))} disabled={jobSaving} /></Field>{jobMessage && <div style={errorStyle}>{jobMessage}</div>}<div style={formActionsStyle}><button type="button" style={buttonStyle} onClick={() => setJobDraft(null)}>Cancel</button><button type="button" style={primaryButtonStyle} onClick={confirmCreateJob} disabled={jobSaving}>{jobSaving ? "Saving…" : "Save job"}</button></div></section>}
+        {jobDraft && <section style={actionCardStyle}><div style={cardHeadingStyle}><span style={cardIconStyle}>✂</span><div><div style={cardKickerStyle}>New record</div><h3 style={cardTitleStyle}>Create a job</h3></div></div><p style={cardIntroStyle}>Review the job details before adding it to the studio. Nothing is saved until you confirm.</p><div style={formGridStyle}><Field label="Client"><select style={inputStyle} value={jobDraft.clientId} onChange={(event) => setJobDraft((draft) => ({ ...draft, clientId: event.target.value }))} disabled={jobSaving}><option value="">Select client</option>{clients.map((client) => <option key={client.id} value={client.id}>{getClientName(client)}</option>)}</select></Field><Field label="Job name"><input style={inputStyle} value={jobDraft.name} onChange={(event) => setJobDraft((draft) => ({ ...draft, name: event.target.value }))} disabled={jobSaving} placeholder="e.g. Evening gown" /></Field><Field label="Garment type"><input style={inputStyle} value={jobDraft.garmentType} onChange={(event) => setJobDraft((draft) => ({ ...draft, garmentType: event.target.value }))} disabled={jobSaving} placeholder="e.g. Dress" /></Field><Field label="Due date"><input style={inputStyle} type="date" value={jobDraft.dueDate} onChange={(event) => setJobDraft((draft) => ({ ...draft, dueDate: event.target.value }))} disabled={jobSaving} /></Field><Field label="Starting price"><input style={inputStyle} type="number" min="0" step="0.01" value={jobDraft.price} onChange={(event) => setJobDraft((draft) => ({ ...draft, price: event.target.value }))} disabled={jobSaving} placeholder="0.00" /></Field><Field label="Starting stage"><select style={inputStyle} value={jobDraft.status} onChange={(event) => setJobDraft((draft) => ({ ...draft, status: event.target.value }))} disabled={jobSaving}>{["Quote", "Booked", "Measuring"].map((status) => <option key={status}>{status}</option>)}</select></Field></div><Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={jobDraft.notes} onChange={(event) => setJobDraft((draft) => ({ ...draft, notes: event.target.value }))} disabled={jobSaving} /></Field>{jobMessage && <div style={errorStyle}>{jobMessage}</div>}<div style={formActionsStyle}><button type="button" style={buttonStyle} onClick={() => setJobDraft(null)}>Cancel</button><button type="button" style={primaryButtonStyle} onClick={confirmCreateJob} disabled={jobSaving}>{jobSaving ? "Saving…" : "Save job"}</button></div></section>}
 
         {clientDraft && <section style={actionCardStyle}><div style={cardHeadingStyle}><span style={cardIconStyle}>＋</span><div><div style={cardKickerStyle}>New record</div><h3 style={cardTitleStyle}>Create a client</h3></div></div><div style={formGridStyle}><Field label="First name"><input style={inputStyle} value={clientDraft.firstName} onChange={(event) => setClientDraft((draft) => ({ ...draft, firstName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Last name"><input style={inputStyle} value={clientDraft.lastName} onChange={(event) => setClientDraft((draft) => ({ ...draft, lastName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Phone"><input style={inputStyle} value={clientDraft.phone} onChange={(event) => setClientDraft((draft) => ({ ...draft, phone: event.target.value }))} disabled={clientSaving} /></Field><Field label="Email"><input style={inputStyle} value={clientDraft.email} onChange={(event) => setClientDraft((draft) => ({ ...draft, email: event.target.value }))} disabled={clientSaving} /></Field></div><Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={clientDraft.notes} onChange={(event) => setClientDraft((draft) => ({ ...draft, notes: event.target.value }))} disabled={clientSaving} /></Field>{clientMessage && <div style={errorStyle}>{clientMessage}</div>}<div style={formActionsStyle}><button type="button" style={buttonStyle} onClick={() => setClientDraft(null)}>Cancel</button><button type="button" style={primaryButtonStyle} onClick={confirmCreateClient} disabled={clientSaving}>{clientSaving ? "Saving…" : "Save client"}</button></div></section>}
 
