@@ -1,3 +1,10 @@
+### Account Buddi Job Creation
+
+- [x] Wire account Buddi's job command to the account Jobs API
+- [x] Add review/confirmation form
+- [x] Preserve normal Buddi question handling
+- [x] Support natural-language person and title prefill
+
 ### Buddi Natural-Language Job Creation
 
 - [x] Route direct job commands before the general Buddi chat service
