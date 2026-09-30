@@ -1,3 +1,13 @@
+## Buddi Job Creation
+
+### Added
+
+- Added a **Create a job** quick action to Buddi.
+- Added a review form for client, job name, garment type, due date, starting price, starting stage and notes.
+- Job creation uses the existing persistent Chrysalis job service and live workspace state.
+- Successful creation navigates directly to Jobs and records the result in the Buddi conversation.
+- Existing client creation, appointment creation, production actions and Buddi Focus behaviour remain intact.
+
 ## Buddi Proactive Focus
 
 ### Added
@@ -1998,13 +2008,3 @@ All notable changes to Chrysalis are recorded here.
 ### Changed
 
 - Invoice financial state no longer depends solely on manually entered `amountPaid`, `balance` or status values when the invoice is linked to a Job.
-- Existing unlinked invoices retain their stored payment information and document status.
-
----
-
-## Local Authentication Wiring
-
-### Added
-
-- Added a dedicated local Authentication API on port 4183 using the existing secure authentication module.
-- Added local authentication health checking to the development backend launcher.
