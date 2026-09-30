@@ -281,10 +281,11 @@ function parseNaturalJobRequest(rawQuestion, people) {
 
   draft.title = remainder
     .replace(/\b(?:due|by|on|for|with|as)\s*$/i, "")
-    .replace(/^[,;:.-]+|[,;:.-]+$/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[,;:.-]+\s*/g, "")
+    .replace(/\s*[,;:.-]+$/g, "")
     .replace(/\s*[,;]\s*[,;]+/g, ", ")
-    .replace(/\s*,\s*$/g, "")
-    .replace(/\s{2,}/g, " ")
     .trim();
 
   return draft;
