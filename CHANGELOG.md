@@ -1,3 +1,13 @@
+## Buddi Natural-Language Job Details
+
+### Added
+
+- Buddi can now extract common job due dates and prices from natural-language requests.
+- Account job confirmation now includes editable **Due date** and **Price (AUD)** fields.
+- Due dates and prices are persisted on account jobs.
+- A confirmed job's due date is also applied to its production tracking record so existing workload intelligence can use it immediately.
+- The Jobs workspace now displays stored due dates and prices.
+
 ## Account Buddi Job Creation
 
 ### Added
