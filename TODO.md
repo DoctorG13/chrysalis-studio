@@ -6,6 +6,12 @@
 - [x] Per-job time totals
 - [x] Recent time history
 
+### Buddi Focus
+
+- [x] Proactive business attention summary inside Buddi
+- [x] Reuse live client/job workspace data
+- [x] Direct navigation from Buddi Focus to the relevant workspace
+
 ### Production Task Templates
 
 - [x] Persistent template storage
