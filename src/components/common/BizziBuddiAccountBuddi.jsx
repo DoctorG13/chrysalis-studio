@@ -242,7 +242,7 @@ function findPersonMatch(people, requestedName) {
 
 function parseNaturalJobRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
-  const draft = { title: "", personId: "", status: "New", dueDate: "", price: "" };
+  const draft = { title: "", personId: "", requestedPersonName: "", status: "New", dueDate: "", price: "" };
   let remainder = value
     .replace(/^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?job\b[,:]?\s*/i, "")
     .trim();
@@ -259,13 +259,17 @@ function parseNaturalJobRequest(rawQuestion, people) {
     remainder = remainder.replace(priceMatch[0], " ");
   }
 
-  const personMatch = remainder.match(/\bfor\s+([A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){0,4})(?=\s+(?:for|with|as|status|$)|[,;])/i);
+  const personMatch = remainder.match(/\bfor\s+([^,;]+?)(?=\s+(?:for|with|as|status)\b|[,;]|$)/i);
   if (personMatch) {
-    const person = findPersonMatch(people, personMatch[1].trim());
+    const requestedPersonName = personMatch[1].trim();
+    const person = findPersonMatch(people, requestedPersonName);
+    draft.requestedPersonName = requestedPersonName;
+
     if (person) {
       draft.personId = person.id;
-      remainder = remainder.replace(personMatch[0], " ");
     }
+
+    remainder = remainder.replace(personMatch[0], " ");
   }
 
   const statusMatch = remainder.match(/\b(?:status|stage)\s+(new|in\s+progress|waiting|complete)\b/i);
@@ -278,6 +282,8 @@ function parseNaturalJobRequest(rawQuestion, people) {
   draft.title = remainder
     .replace(/\b(?:due|by|on|for|with|as)\s*$/i, "")
     .replace(/^[,;:.-]+|[,;:.-]+$/g, "")
+    .replace(/\s*[,;]\s*[,;]+/g, ", ")
+    .replace(/\s*,\s*$/g, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 
@@ -494,7 +500,13 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
 
   async function confirmCreateJob() {
     if (!jobDraft?.title?.trim() || !jobDraft?.personId || !onAddJob) {
-      setJobMessage(!onAddJob ? "Job creation is not available in this workspace yet." : "Please select a person and enter a job title.");
+      if (!onAddJob) {
+        setJobMessage("Job creation is not available in this workspace yet.");
+      } else if (!jobDraft?.personId && jobDraft?.requestedPersonName) {
+        setJobMessage("I could not match “" + jobDraft.requestedPersonName + "” to a person in this account. Please select the correct person before saving.");
+      } else {
+        setJobMessage("Please select a person and enter a job title.");
+      }
       return;
     }
 
@@ -543,9 +555,11 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       setConversation((current) => [
         {
           question: value,
-          answer: prefilledJob.title
-            ? "I’ve filled in the job details I could understand. Review them below and confirm when you’re ready to save."
-            : "I’ve opened the job review form. Add the details you want, then confirm when you’re ready to save.",
+          answer: prefilledJob.requestedPersonName && !prefilledJob.personId
+            ? "I found “" + prefilledJob.requestedPersonName + "” in your request, but I couldn’t match that name to a person in this account. The job title and other details are filled in below; please select the correct person before saving."
+            : prefilledJob.title
+              ? "I’ve filled in the job details I could understand. Review them below and confirm when you’re ready to save."
+              : "I’ve opened the job review form. Add the details you want, then confirm when you’re ready to save.",
           actions: [],
         },
         ...current,
@@ -760,6 +774,11 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
                   <option value="">Select person</option>
                   {people.map((person) => <option key={person.id} value={person.id}>{getPersonName(person)}</option>)}
                 </select>
+                {jobDraft.requestedPersonName && !jobDraft.personId && (
+                  <span style={unmatchedPersonStyle}>
+                    Requested: {jobDraft.requestedPersonName} — select the matching person before saving.
+                  </span>
+                )}
               </label>
 
               <label style={jobFieldStyle}>
@@ -877,6 +896,13 @@ const jobFieldStyle = {
   color: "#B8C6D6",
   fontSize: 12,
   fontWeight: 700,
+};
+
+const unmatchedPersonStyle = {
+  color: "#F6C453",
+  fontSize: 11,
+  lineHeight: 1.4,
+  fontWeight: 600,
 };
 const jobInputStyle = {
   width: "100%",
