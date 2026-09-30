@@ -51,6 +51,7 @@ export function buildBizziBuddiPriorityItems({
       title: invoice.clientName || invoice.client || "Invoice requires attention",
       detail: `${formatBizziBuddiCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
       actionKey: "finance",
+      invoiceId: invoice.id,
       tone: "urgent",
     })),
     ...dueSoonInvoices.map((invoice) => ({
@@ -61,6 +62,7 @@ export function buildBizziBuddiPriorityItems({
       title: invoice.clientName || invoice.client || "Invoice due soon",
       detail: `${formatBizziBuddiCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)))} outstanding · Due ${invoice.dueDate}`,
       actionKey: "finance",
+      invoiceId: invoice.id,
       tone: "attention",
     })),
     ...productionNeedsAttention.map((job) => ({
@@ -71,6 +73,7 @@ export function buildBizziBuddiPriorityItems({
       title: job.title || "Production job",
       detail: job.productionReadinessDetail || "Production needs a workflow update.",
       actionKey: "jobs",
+      jobId: job.id,
       tone: job.productionReadiness === "Overdue" ? "urgent" : "attention",
     })),
     ...productionDueSoon
@@ -83,6 +86,7 @@ export function buildBizziBuddiPriorityItems({
         title: job.title || "Production job",
         detail: `Ready by ${job.productionDueDate}`,
         actionKey: "jobs",
+        jobId: job.id,
         tone: "today",
       })),
     ...appointmentsToday.map((appointment) => ({
@@ -93,6 +97,7 @@ export function buildBizziBuddiPriorityItems({
       title: appointment.title || "Appointment",
       detail: `${appointment.time || "Time not set"}${appointment.personName ? ` · ${appointment.personName}` : ""}`,
       actionKey: "calendar",
+      appointmentId: appointment.id,
       tone: "today",
     })),
     ...waitingJobs.map((job) => ({
@@ -103,6 +108,7 @@ export function buildBizziBuddiPriorityItems({
       title: job.title || "Job waiting",
       detail: job.clientName || job.client || "This job is waiting for the next step.",
       actionKey: "jobs",
+      jobId: job.id,
       tone: "attention",
     })),
     ...readyProduction.map((job) => ({
@@ -113,6 +119,7 @@ export function buildBizziBuddiPriorityItems({
       title: job.title || "Production job",
       detail: job.productionDueDate ? `Ready by ${job.productionDueDate}` : "Production has reached the Ready stage.",
       actionKey: "jobs",
+      jobId: job.id,
       tone: "ready",
     })),
     ...productionRecordReady
@@ -125,6 +132,7 @@ export function buildBizziBuddiPriorityItems({
         title: record.jobTitle || "Production job",
         detail: record.dueDate ? `Ready by ${record.dueDate}` : "Production has reached the Ready stage.",
         actionKey: "production",
+        jobId: record.jobId,
         tone: "ready",
       })),
   ];
