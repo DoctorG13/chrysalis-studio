@@ -1,3 +1,16 @@
+## Today Record-Level Action Links
+
+### Added
+
+- Today priority actions now carry the underlying invoice, appointment or job identifier.
+- Dashboard actions now open the exact relevant record instead of only opening the parent module.
+- Finance deep links scroll directly to and highlight the selected invoice.
+- Existing Jobs, Calendar and Production deep-link behaviour is now used by the Today command centre.
+
+### Fixed
+
+- Preserved module-level navigation when no specific record identifier is available.
+
 ## Today Command Centre
 
 ### Added
