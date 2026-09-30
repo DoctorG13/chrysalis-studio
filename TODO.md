@@ -1,3 +1,11 @@
+### Buddi Natural-Language Job Details
+
+- [x] Recognise due dates such as today, tomorrow, weekdays and day/month dates
+- [x] Recognise common price formats including $1,800 and 1.8k
+- [x] Add due date and price to the account job confirmation form
+- [x] Persist the values through the authenticated Jobs API
+- [x] Surface the values in the Jobs workspace
+
 ### Account Buddi Job Creation
 
 - [x] Wire account Buddi's job command to the account Jobs API
