@@ -21,6 +21,7 @@ export default function BizzibuddiAccountPage() {
     personId: initialRouteParams.get("person") || "",
     jobId: initialRouteParams.get("job") || "",
     appointmentId: initialRouteParams.get("appointment") || "",
+    invoiceId: initialRouteParams.get("invoice") || "",
   };
   const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "help"]);
   const requestedView = requestedViews.has(initialView) ? initialView : "";
@@ -172,6 +173,7 @@ export default function BizzibuddiAccountPage() {
     if (target.personId) params.set("person", target.personId);
     if (target.jobId) params.set("job", target.jobId);
     if (target.appointmentId) params.set("appointment", target.appointmentId);
+    if (target.invoiceId) params.set("invoice", target.invoiceId);
 
     const query = params.toString();
     const nextUrl = window.location.pathname + (query ? "?" + query : "");
@@ -202,6 +204,7 @@ export default function BizzibuddiAccountPage() {
       personId: target.personId || "",
       jobId: target.jobId || "",
       appointmentId: target.appointmentId || "",
+      invoiceId: target.invoiceId || "",
     };
 
     writeWorkspaceRoute(nextView, nextDeepLink);
@@ -233,6 +236,7 @@ export default function BizzibuddiAccountPage() {
         personId: params.get("person") || "",
         jobId: params.get("job") || "",
         appointmentId: params.get("appointment") || "",
+        invoiceId: params.get("invoice") || "",
       });
       if (account) setView(nextView);
     }
@@ -662,12 +666,13 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={() => selectView("jobs")} onCalendar={() => selectView("calendar")} onFinance={() => selectView("finance")} onAutomation={() => selectView("automation")} onProduction={() => selectView("production")} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} />}
         {view === "finance" && (
           <FinancePanel
             account={account}
             invoices={invoices}
             people={people}
+            initialInvoiceId={deepLink.invoiceId}
             onPlans={() => selectView("plans")}
             onAddInvoice={async (invoice) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices", {
@@ -1994,12 +1999,12 @@ function DashboardPanel({
           : "Open jobs",
     onClick:
       item.actionKey === "finance"
-        ? onFinance
+        ? () => onFinance?.(item.invoiceId)
         : item.actionKey === "calendar"
-          ? onCalendar
+          ? () => onCalendar?.(item.appointmentId)
           : item.actionKey === "production"
-            ? onProduction
-            : onJobs,
+            ? () => onProduction?.(item.jobId)
+            : () => onJobs?.(item.jobId),
   }));
 
   const actionCount = intelligence.priorityCount;
@@ -4176,11 +4181,25 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const available = hasBizzibuddiFeature(account?.plan, "finance");
+
+  useEffect(() => {
+    if (!initialInvoiceId || !selectedInvoiceRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      selectedInvoiceRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialInvoiceId, invoices]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -4297,7 +4316,17 @@ function FinancePanel({ account, invoices, people, onPlans, onAddInvoice, onMark
             Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
           );
 
-          return <article key={invoice.id} style={invoiceCard}>
+          const selected = String(invoice.id) === String(initialInvoiceId);
+          return <article
+            key={invoice.id}
+            ref={selected ? selectedInvoiceRef : null}
+            style={{
+              ...invoiceCard,
+              scrollMarginTop: 24,
+              border: selected ? "1px solid rgba(0,180,219,.75)" : invoiceCard.border,
+              boxShadow: selected ? "0 0 0 2px rgba(0,180,219,.12), 0 14px 30px rgba(0,0,0,.18)" : invoiceCard.boxShadow,
+            }}
+          >
             <div>
               <strong style={{ display: "block", fontSize: 17 }}>{invoice.number}</strong>
               <span style={smallText}>
