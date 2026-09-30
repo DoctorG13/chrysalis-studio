@@ -38,6 +38,7 @@
 - [x] Confirmation-based Buddi production actions
 - [x] Buddi confirmed production task actions
 - [x] Today record-level action links
+- [x] Job detail next-action workflow
 
 ## Future Ideas
 
