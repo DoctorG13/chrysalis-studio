@@ -2021,10 +2021,10 @@ function DashboardPanel({
   const nextActionHandler = nextAction?.onClick || null;
   const recentActivity = [
     ...(automationEvents || []).map((event) => ({ key: "automation-" + event.id, date: event.createdAt || event.updatedAt, icon: "⚙️", label: "Automation", title: event.title || event.type || "Automation event", detail: event.detail || "A business automation event was recorded.", onClick: onAutomation })),
-    ...(jobs || []).map((job) => ({ key: "job-" + job.id, date: job.updatedAt || job.createdAt, icon: "📋", label: "Job", title: job.title || "Job updated", detail: "Status: " + (job.status || "New"), onClick: onJobs })),
-    ...(appointments || []).map((appointment) => ({ key: "appointment-" + appointment.id, date: appointment.updatedAt || appointment.createdAt || appointment.date, icon: "📅", label: "Calendar", title: appointment.title || "Appointment", detail: (appointment.date || "Date not set") + (appointment.time ? " · " + appointment.time : ""), onClick: onCalendar })),
-    ...(invoices || []).map((invoice) => ({ key: "invoice-" + invoice.id, date: invoice.updatedAt || invoice.createdAt || invoice.issueDate, icon: "💳", label: "Finance", title: invoice.number || "Invoice", detail: (invoice.status || "Issued") + " · " + formatCurrency(Number(invoice.amount) || 0), onClick: onFinance })),
-    ...(productionRecords || []).map((record) => ({ key: "production-" + record.id, date: record.updatedAt || record.createdAt, icon: "🏭", label: "Production", title: record.jobTitle || "Production job", detail: "Stage: " + (record.stage || "Not started"), onClick: onProduction })),
+    ...(jobs || []).map((job) => ({ key: "job-" + job.id, date: job.updatedAt || job.createdAt, icon: "📋", label: "Job", title: job.title || "Job updated", detail: "Status: " + (job.status || "New"), onClick: () => onJobs?.(job.id) })),
+    ...(appointments || []).map((appointment) => ({ key: "appointment-" + appointment.id, date: appointment.updatedAt || appointment.createdAt || appointment.date, icon: "📅", label: "Calendar", title: appointment.title || "Appointment", detail: (appointment.date || "Date not set") + (appointment.time ? " · " + appointment.time : ""), onClick: () => onCalendar?.(appointment.id) })),
+    ...(invoices || []).map((invoice) => ({ key: "invoice-" + invoice.id, date: invoice.updatedAt || invoice.createdAt || invoice.issueDate, icon: "💳", label: "Finance", title: invoice.number || "Invoice", detail: (invoice.status || "Issued") + " · " + formatCurrency(Number(invoice.amount) || 0), onClick: () => onFinance?.(invoice.id) })),
+    ...(productionRecords || []).map((record) => ({ key: "production-" + record.id, date: record.updatedAt || record.createdAt, icon: "🏭", label: "Production", title: record.jobTitle || "Production job", detail: "Stage: " + (record.stage || "Not started"), onClick: () => onProduction?.(record.jobId) })),
   ].filter((item) => item.date).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
   const completedJobs = jobs.filter((job) => job.status === "Complete").length;
   const completionRate = jobs.length ? Math.round((completedJobs / jobs.length) * 100) : 0;
@@ -2048,7 +2048,7 @@ function DashboardPanel({
       icon: "💳",
       title: "Payment overdue",
       detail: (invoice.number || "Invoice") + " has an outstanding balance of " + formatCurrency(Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0))) + ".",
-      onClick: onFinance,
+      onClick: () => onFinance?.(invoice.id),
       tone: "urgent",
     })),
     ...productionNeedsAttention.map((job) => ({
@@ -2056,7 +2056,7 @@ function DashboardPanel({
       icon: "🏭",
       title: job.productionReadiness || "Production needs attention",
       detail: (job.title || "Production job") + (job.productionReadinessDetail ? " · " + job.productionReadinessDetail : "."),
-      onClick: onProduction,
+      onClick: () => onProduction?.(job.id),
       tone: "attention",
     })),
     ...appointmentsToday.map((appointment) => ({
@@ -2064,7 +2064,7 @@ function DashboardPanel({
       icon: "📅",
       title: "Appointment today",
       detail: (appointment.title || "Appointment") + " · " + (appointment.time || "Time not set"),
-      onClick: onCalendar,
+      onClick: () => onCalendar?.(appointment.id),
       tone: "today",
     })),
     ...(automationEvents || []).slice(0, 8).map((event) => ({
@@ -2213,7 +2213,7 @@ function DashboardPanel({
             <strong style={todayViewMetric}>{appointmentsToday.length}</strong>
             <span style={todayViewLabel}>{appointmentsToday.length === 1 ? "appointment" : "appointments"}</span>
             {appointmentsToday.slice(0, 3).map((appointment) => (
-              <button key={appointment.id} type="button" onClick={onCalendar} style={todayViewItem}>
+              <button key={appointment.id} type="button" onClick={() => onCalendar?.(appointment.id)} style={todayViewItem}>
                 <span>{appointment.time || "Time not set"}</span>
                 <strong>{appointment.title || "Appointment"}</strong>
               </button>
@@ -2226,13 +2226,13 @@ function DashboardPanel({
             <strong style={todayViewMetric}>{dueSoonInvoices.length + productionDueSoon.length}</strong>
             <span style={todayViewLabel}>items in the next 7 days</span>
             {dueSoonInvoices.slice(0, 2).map((invoice) => (
-              <button key={`today-invoice-${invoice.id}`} type="button" onClick={onFinance} style={todayViewItem}>
+              <button key={`today-invoice-${invoice.id}`} type="button" onClick={() => onFinance?.(invoice.id)} style={todayViewItem}>
                 <span>{invoice.dueDate === todayKey ? "Today" : `Due ${invoice.dueDate}`}</span>
                 <strong>{invoice.clientName || invoice.client || "Invoice"}</strong>
               </button>
             ))}
             {productionDueSoon.slice(0, 2).map((job) => (
-              <button key={`today-production-${job.id}`} type="button" onClick={onJobs} style={todayViewItem}>
+              <button key={`today-production-${job.id}`} type="button" onClick={() => onJobs?.(job.id)} style={todayViewItem}>
                 <span>Production · {formatProductionDate(job.productionDueDate)}</span>
                 <strong>{job.title || "Production job"}</strong>
               </button>
