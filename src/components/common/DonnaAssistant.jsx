@@ -98,7 +98,7 @@ const buttonStyle = { border: "1px solid #E2D8D8", borderRadius: 999, padding: "
 const primaryButtonStyle = { ...buttonStyle, borderColor: "#2563EB", background: "#2563EB", color: "#FFFFFF" };
 
 export default function BuddiAssistant({ open, onClose, currentPage, clients = [], jobs = [], onNavigate }) {
-  const { createAppointment } = useChrysalis();
+  const { createAppointment, createJob } = useChrysalis();
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,6 +108,9 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
   const [appointmentDraft, setAppointmentDraft] = useState(null);
   const [appointmentSaving, setAppointmentSaving] = useState(false);
   const [appointmentMessage, setAppointmentMessage] = useState("");
+  const [jobDraft, setJobDraft] = useState(null);
+  const [jobSaving, setJobSaving] = useState(false);
+  const [jobMessage, setJobMessage] = useState("");
 
   const insights = useMemo(() => {
     const overdueJobs = jobs.filter(isOverdue);
@@ -119,7 +122,45 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
     return { overdueJobs, activeJobs, outstanding };
   }, [jobs]);
 
-  const prompts = ["What needs attention today?", "Show overdue garments", "Who owes money?", "What’s happening this week?", "Create an appointment"];
+  const prompts = ["What needs attention today?", "Show overdue garments", "Who owes money?", "What’s happening this week?", "Create a job", "Create an appointment"];
+
+  function openCreateJobForm() {
+    setJobDraft({ clientId: clients[0]?.id || "", name: "", garmentType: "", dueDate: "", price: "", notes: "", status: "Quote" });
+    setJobMessage("");
+    setClientDraft(null);
+    setAppointmentDraft(null);
+  }
+
+  async function confirmCreateJob() {
+    if (!jobDraft?.clientId || !jobDraft?.name?.trim()) {
+      setJobMessage("Please select a client and enter a job name.");
+      return;
+    }
+    setJobSaving(true);
+    setJobMessage("");
+    try {
+      const savedJob = await createJob({
+        ...jobDraft,
+        name: jobDraft.name.trim(),
+        garmentType: jobDraft.garmentType.trim(),
+        price: Number(jobDraft.price) || 0,
+        notes: jobDraft.notes.trim(),
+      });
+      const client = clients.find((item) => String(item.id) === String(jobDraft.clientId));
+      const clientName = getClientName(client);
+      setJobDraft(null);
+      setConversation((items) => [{
+        question: "Create a new job",
+        answer: `Created ${savedJob?.name || jobDraft.name} for ${clientName} successfully.`,
+        action: { page: "jobs", label: "All Jobs", labelText: "Open jobs" },
+      }, ...items]);
+      onNavigate?.("jobs", "All Jobs");
+    } catch (error) {
+      setJobMessage(error.message || "The job could not be saved.");
+    } finally {
+      setJobSaving(false);
+    }
+  }
 
   function openCreateClientForm() {
     setClientDraft({ firstName: "", lastName: "", phone: "", email: "", notes: "" });
@@ -220,6 +261,8 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
         <div style={welcomeCardStyle}><div style={welcomeIconStyle}><BizziBuddiLogo size={24} showWordmark={false} /></div><div><strong style={{ display: "block", marginBottom: 3 }}>What can I help with?</strong><span>Ask about your workload, clients, garments, payments or calendar.</span></div></div>
 
         <BuddiFocusCard clients={clients} jobs={jobs} currentPage={currentPage} onNavigate={onNavigate} />
+
+        {jobDraft && <section style={actionCardStyle}><div style={cardHeadingStyle}><span style={cardIconStyle}>✂</span><div><div style={cardKickerStyle}>New record</div><h3 style={cardTitleStyle}>Create a job</h3></div></div><p style={cardIntroStyle}>Review the job details before adding it to the studio.</p><div style={formGridStyle}><Field label="Client"><select style={inputStyle} value={jobDraft.clientId} onChange={(event) => setJobDraft((draft) => ({ ...draft, clientId: event.target.value }))} disabled={jobSaving}><option value="">Select client</option>{clients.map((client) => <option key={client.id} value={client.id}>{getClientName(client)}</option>)}</select></Field><Field label="Job name"><input style={inputStyle} value={jobDraft.name} onChange={(event) => setJobDraft((draft) => ({ ...draft, name: event.target.value }))} disabled={jobSaving} placeholder="e.g. Evening gown" /></Field><Field label="Garment type"><input style={inputStyle} value={jobDraft.garmentType} onChange={(event) => setJobDraft((draft) => ({ ...draft, garmentType: event.target.value }))} disabled={jobSaving} placeholder="e.g. Dress" /></Field><Field label="Due date"><input style={inputStyle} type="date" value={jobDraft.dueDate} onChange={(event) => setJobDraft((draft) => ({ ...draft, dueDate: event.target.value }))} disabled={jobSaving} /></Field><Field label="Starting price"><input style={inputStyle} type="number" min="0" step="0.01" value={jobDraft.price} onChange={(event) => setJobDraft((draft) => ({ ...draft, price: event.target.value }))} disabled={jobSaving} placeholder="0.00" /></Field><Field label="Starting stage"><select style={inputStyle} value={jobDraft.status} onChange={(event) => setJobDraft((draft) => ({ ...draft, status: event.target.value }))} disabled={jobSaving}>{["Quote", "Booked", "Measuring"].map((status) => <option key={status}>{status}</option>)}</select></Field></div><Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={jobDraft.notes} onChange={(event) => setJobDraft((draft) => ({ ...draft, notes: event.target.value }))} disabled={jobSaving} /></Field>{jobMessage && <div style={errorStyle}>{jobMessage}</div>}<div style={formActionsStyle}><button type="button" style={buttonStyle} onClick={() => setJobDraft(null)}>Cancel</button><button type="button" style={primaryButtonStyle} onClick={confirmCreateJob} disabled={jobSaving}>{jobSaving ? "Saving…" : "Save job"}</button></div></section>}
 
         {clientDraft && <section style={actionCardStyle}><div style={cardHeadingStyle}><span style={cardIconStyle}>＋</span><div><div style={cardKickerStyle}>New record</div><h3 style={cardTitleStyle}>Create a client</h3></div></div><div style={formGridStyle}><Field label="First name"><input style={inputStyle} value={clientDraft.firstName} onChange={(event) => setClientDraft((draft) => ({ ...draft, firstName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Last name"><input style={inputStyle} value={clientDraft.lastName} onChange={(event) => setClientDraft((draft) => ({ ...draft, lastName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Phone"><input style={inputStyle} value={clientDraft.phone} onChange={(event) => setClientDraft((draft) => ({ ...draft, phone: event.target.value }))} disabled={clientSaving} /></Field><Field label="Email"><input style={inputStyle} value={clientDraft.email} onChange={(event) => setClientDraft((draft) => ({ ...draft, email: event.target.value }))} disabled={clientSaving} /></Field></div><Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={clientDraft.notes} onChange={(event) => setClientDraft((draft) => ({ ...draft, notes: event.target.value }))} disabled={clientSaving} /></Field>{clientMessage && <div style={errorStyle}>{clientMessage}</div>}<div style={formActionsStyle}><button type="button" style={buttonStyle} onClick={() => setClientDraft(null)}>Cancel</button><button type="button" style={primaryButtonStyle} onClick={confirmCreateClient} disabled={clientSaving}>{clientSaving ? "Saving…" : "Save client"}</button></div></section>}
 
