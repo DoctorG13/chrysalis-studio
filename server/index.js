@@ -588,6 +588,14 @@ const MIGRATIONS = [
     `,
   },
   {
+    version: 17,
+    name: "bizzibuddi-job-dates-and-pricing",
+    sql: `
+      ALTER TABLE bizzibuddi_jobs ADD COLUMN due_date TEXT NOT NULL DEFAULT '';
+      ALTER TABLE bizzibuddi_jobs ADD COLUMN price REAL NOT NULL DEFAULT 0;
+    `,
+  },
+  {
     version: 16,
     name: "bizzibuddi-production-time-tracking",
     sql: `
