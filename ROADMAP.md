@@ -1,3 +1,11 @@
+## Buddi Natural-Language Job Details
+
+- [x] Parse natural-language due dates
+- [x] Parse natural-language job pricing
+- [x] Persist due date and price on account jobs
+- [x] Sync job due dates into production tracking
+- [x] Show parsed details during confirmation and in Jobs
+
 ## Account Buddi Job Creation
 
 - [x] Route direct job-creation requests inside the account-backed Buddi assistant
