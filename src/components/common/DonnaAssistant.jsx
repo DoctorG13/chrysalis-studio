@@ -55,19 +55,19 @@ function parseNaturalDate(value) {
     return getLocalDateKey(date);
   }
 
-  const weekdayMatch = text.match(/^(?:next\\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i);
+  const weekdayMatch = text.match(/^(?:next\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i);
   if (weekdayMatch) {
     const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
     const target = weekdays.indexOf(weekdayMatch[1].toLowerCase());
     const current = today.getDay();
     let offset = (target - current + 7) % 7;
-    if (offset === 0 || /^next\\s+/i.test(text)) offset += 7;
+    if (offset === 0 || /^next\s+/i.test(text)) offset += 7;
     const date = new Date(today);
     date.setDate(date.getDate() + offset);
     return getLocalDateKey(date);
   }
 
-  const numericMatch = text.match(/^(\\d{1,2})[\\/.-](\\d{1,2})(?:[\\/.-](\\d{2,4}))?$/);
+  const numericMatch = text.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
   if (numericMatch) {
     const day = Number(numericMatch[1]);
     const month = Number(numericMatch[2]) - 1;
@@ -79,7 +79,7 @@ function parseNaturalDate(value) {
     }
   }
 
-  const monthMatch = text.match(/^(\\d{1,2})\\s+(january|february|march|april|may|june|july|august|september|october|november|december)(?:\\s+(\\d{4}))?$/i);
+  const monthMatch = text.match(/^(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+(\d{4}))?$/i);
   if (monthMatch) {
     const months = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
     const day = Number(monthMatch[1]);
@@ -101,7 +101,7 @@ function parseNaturalDate(value) {
 }
 
 function parseNaturalPrice(value) {
-  const match = String(value || "").match(/(?:\\$|(?:price|priced|cost)(?:\\s+(?:is|of|at))?\\s*)\\s*(\\d[\\d,]*(?:\\.\\d+)?)\\s*(k)?/i);
+  const match = String(value || "").match(/(?:\$|(?:price|priced|cost)(?:\s+(?:is|of|at))?\s*)\s*(\d[\d,]*(?:\.\d+)?)\s*(k)?/i);
   if (!match) return "";
 
   let amount = Number(match[1].replace(/,/g, ""));
@@ -139,50 +139,50 @@ function parseJobRequest(raw, clients) {
   };
 
   let remainder = value
-    .replace(/^(?:please\\s+)?(?:create|add|new)\\s+(?:a\\s+|an\\s+)?(?:new\\s+)?(?:job|garment)\\b[,:]?\\s*/i, "")
+    .replace(/^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:job|garment)\b[,:]?\s*/i, "")
     .trim();
 
-  const dateMatch = remainder.match(/\\b(?:due|by|on)\\s+(today|tomorrow|(?:next\\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\\d{1,2}[\\/.-]\\d{1,2}(?:[\\/.-]\\d{2,4})?|\\d{1,2}\\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\\s+\\d{4})?)/i);
+  const dateMatch = remainder.match(/\b(?:due|by|on)\s+(today|tomorrow|(?:next\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?)/i);
   if (dateMatch) {
     draft.dueDate = parseNaturalDate(dateMatch[1]);
     remainder = remainder.replace(dateMatch[0], " ");
   }
 
-  const priceMatch = remainder.match(/(?:\\$\\s*\\d[\\d,]*(?:\\.\\d+)?\\s*k?|\\b(?:price|priced|cost)(?:\\s+(?:is|of|at))?\\s*\\$?\\s*\\d[\\d,]*(?:\\.\\d+)?\\s*k?)/i);
+  const priceMatch = remainder.match(/(?:\$\s*\d[\d,]*(?:\.\d+)?\s*k?|\b(?:price|priced|cost)(?:\s+(?:is|of|at))?\s*\$?\s*\d[\d,]*(?:\.\d+)?\s*k?)/i);
   if (priceMatch) {
     draft.price = parseNaturalPrice(priceMatch[0]);
     remainder = remainder.replace(priceMatch[0], " ");
   }
 
-  const clientMatch = remainder.match(/\\bfor\\s+([A-Za-z][A-Za-z.'-]*(?:\\s+[A-Za-z][A-Za-z.'-]*){0,5})(?=\\s+(?:for|with|due|by|on|$)|[,;])/i);
+  const clientMatch = remainder.match(/\bfor\s+([A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){0,5})(?=\s+(?:for|with|due|by|on|$)|[,;])/i);
   if (clientMatch) {
     const client = findClientMatch(clients, clientMatch[1].trim());
     if (client) {
       draft.clientId = client.id;
       remainder = remainder.replace(clientMatch[0], " ");
     } else {
-      const firstWord = clientMatch[1].trim().split(/\\s+/)[0];
+      const firstWord = clientMatch[1].trim().split(/\s+/)[0];
       const firstWordClient = findClientMatch(clients, firstWord);
       if (firstWordClient) {
         draft.clientId = firstWordClient.id;
-        remainder = remainder.replace(/\\bfor\\s+[^,;]+/i, " ");
+        remainder = remainder.replace(/\bfor\s+[^,;]+/i, " ");
       }
     }
   }
 
   remainder = remainder
-    .replace(/\\b(?:due|by|on)\\s*$/i, "")
-    .replace(/\\b(?:for|with)\\s*$/i, "")
+    .replace(/\b(?:due|by|on)\s*$/i, "")
+    .replace(/\b(?:for|with)\s*$/i, "")
     .replace(/^[,;:.-]+|[,;:.-]+$/g, "")
-    .replace(/\\s{2,}/g, " ")
+    .replace(/\s{2,}/g, " ")
     .trim();
 
   if (remainder) {
-    const garmentMatch = remainder.match(/^(?:a|an|the)\\s+(.+)$/i);
+    const garmentMatch = remainder.match(/^(?:a|an|the)\s+(.+)$/i);
     draft.name = (garmentMatch ? garmentMatch[1] : remainder).trim();
     draft.garmentType = draft.name
-      .replace(/^(?:custom|bespoke)\\s+/i, "")
-      .split(/\\s+/)
+      .replace(/^(?:custom|bespoke)\s+/i, "")
+      .split(/\s+/)
       .slice(-1)[0] || "";
   }
 
@@ -389,7 +389,7 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
       .replace(/\s+/g, " ")
       .trim();
 
-    const isJobRequest = /^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:job|garment)\\b/i.test(compactValue);
+    const isJobRequest = /^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?(?:job|garment)\b/i.test(compactValue);
 
     if (isJobRequest) {
       const prefilledJob = parseJobRequest(compactValue, clients);
