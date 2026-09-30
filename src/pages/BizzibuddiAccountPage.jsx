@@ -847,6 +847,7 @@ export default function BizzibuddiAccountPage() {
             }}
             initialJobId={deepLink.jobId}
             onOpenProduction={(jobId) => selectView("production", { jobId })}
+            onOpenJob={(jobId) => selectView("jobs", { jobId })}
             onBack={() => selectView("dashboard")}
           />
         )}
@@ -1691,7 +1692,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   </section>;
 }
 
-function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJobId, onOpenProduction, onBack }) {
+function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJobId, onOpenProduction, onOpenJob, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [error, setError] = useState("");
@@ -1699,6 +1700,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
   const [timelineJobId, setTimelineJobId] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
+  const focusedJobRef = useRef(null);
 
   useEffect(() => {
     if (!initialJobId) return;
@@ -1805,6 +1807,80 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
     }
   }
 
+  const focusedJobId = timelineJobId || initialJobId || "";
+
+  useEffect(() => {
+    if (!focusedJobId || !focusedJobRef.current) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      focusedJobRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [focusedJobId]);
+
+  function getJobNextAction(job) {
+    if (job.status === "Complete" || job.productionReadiness === "Complete") {
+      return {
+        label: "Review timeline",
+        detail: "This job is complete. Review its history for the final record.",
+        action: () => toggleTimeline(job),
+      };
+    }
+
+    if (job.productionReadiness === "Overdue") {
+      return {
+        label: "Open production",
+        detail: "The production ready-by date has passed and needs attention.",
+        action: () => onOpenProduction?.(job.id),
+        urgent: true,
+      };
+    }
+
+    if (job.productionReadiness === "Tasks outstanding") {
+      return {
+        label: "Open production",
+        detail: `${job.productionTaskCount - (job.productionCompletedTaskCount || 0)} production task(s) remain.`,
+        action: () => onOpenProduction?.(job.id),
+      };
+    }
+
+    if (job.productionReadiness === "Stage update needed" || job.productionReadiness === "Ready") {
+      return {
+        label: "Open production",
+        detail: job.productionReadiness === "Ready"
+          ? "Production is ready for the next workflow step."
+          : "All production tasks are complete. Update the production stage.",
+        action: () => onOpenProduction?.(job.id),
+      };
+    }
+
+    if (job.productionReadiness === "Not started") {
+      return {
+        label: "Start production",
+        detail: "Production has not started yet. Open the production workflow to begin.",
+        action: () => onOpenProduction?.(job.id),
+      };
+    }
+
+    if (job.status === "Waiting") {
+      return {
+        label: "Review job",
+        detail: "This job is waiting. Review the job details before moving it forward.",
+        action: () => startEdit(job),
+      };
+    }
+
+    return {
+      label: "Continue production",
+      detail: "Open the production workflow to keep this job moving.",
+      action: () => onOpenProduction?.(job.id),
+    };
+  }
+
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
@@ -1815,8 +1891,25 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
 
     {jobs.length > 0 ? (
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
-        {jobs.map((job) => (
-          <article key={job.id} style={jobCard}>
+        {jobs.map((job) => {
+          const isFocused = String(focusedJobId) === String(job.id);
+          const nextAction = isFocused ? getJobNextAction(job) : null;
+
+          return (
+          <article
+            key={job.id}
+            ref={isFocused ? focusedJobRef : null}
+            style={{
+              ...jobCard,
+              ...(isFocused
+                ? {
+                    border: "1px solid rgba(0,180,219,.62)",
+                    boxShadow: "0 14px 30px rgba(0,180,219,.10)",
+                  }
+                : {}),
+              scrollMarginTop: 24,
+            }}
+          >
             <div style={{ minWidth: 0, flex: "1 1 240px" }}>
               <strong style={{ display: "block", fontSize: 17 }}>{job.title}</strong>
               <span style={smallText}>{job.clientName || "Unassigned"}</span>
@@ -1850,6 +1943,38 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
                   </span>
                 )}
               </div>
+              {nextAction && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    marginTop: 12,
+                    padding: "11px 12px",
+                    borderRadius: 10,
+                    border: "1px solid " + (nextAction.urgent ? "rgba(248,113,113,.42)" : "rgba(0,180,219,.30)"),
+                    background: nextAction.urgent ? "rgba(248,113,113,.07)" : "rgba(0,180,219,.055)",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: "1 1 220px" }}>
+                    <small style={{ ...smallText, color: nextAction.urgent ? "#FCA5A5" : CYAN, fontWeight: 900, letterSpacing: ".08em" }}>NEXT ACTION</small>
+                    <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 12, lineHeight: 1.45 }}>{nextAction.detail}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={nextAction.action}
+                    style={{
+                      ...smallActionButton,
+                      width: "auto",
+                      borderColor: nextAction.urgent ? "rgba(248,113,113,.45)" : "rgba(0,180,219,.45)",
+                    }}
+                  >
+                    {nextAction.label} →
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
               <span style={jobStatus}>{job.status}</span>
@@ -1892,7 +2017,8 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
               )}
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
     ) : (
       <div style={emptyPeople}>
@@ -2161,10 +2287,22 @@ function DashboardPanel({
         </div>
 
         <div style={attentionSummary}>
-          <div><strong>{actionCount}</strong><span>{actionCount === 1 ? "action item" : "action items"}</span></div>
-          <div><strong>{appointmentsToday.length}</strong><span>{appointmentsToday.length === 1 ? "appointment today" : "appointments today"}</span></div>
-          <div><strong>{openJobs}</strong><span>{openJobs === 1 ? "open job" : "open jobs"}</span></div>
-          <div><strong>{formatCurrency(outstanding)}</strong><span>outstanding</span></div>
+          <div style={attentionSummaryItem}>
+            <strong style={{ fontSize: 18, lineHeight: 1.1 }}>{actionCount}</strong>
+            <span style={{ color: MUTED, fontSize: 11, lineHeight: 1.25 }}>{actionCount === 1 ? "action item" : "action items"}</span>
+          </div>
+          <div style={attentionSummaryItem}>
+            <strong style={{ fontSize: 18, lineHeight: 1.1 }}>{appointmentsToday.length}</strong>
+            <span style={{ color: MUTED, fontSize: 11, lineHeight: 1.25 }}>{appointmentsToday.length === 1 ? "appointment today" : "appointments today"}</span>
+          </div>
+          <div style={attentionSummaryItem}>
+            <strong style={{ fontSize: 18, lineHeight: 1.1 }}>{openJobs}</strong>
+            <span style={{ color: MUTED, fontSize: 11, lineHeight: 1.25 }}>{openJobs === 1 ? "open job" : "open jobs"}</span>
+          </div>
+          <div style={attentionSummaryItem}>
+            <strong style={{ fontSize: 18, lineHeight: 1.1 }}>{formatCurrency(outstanding)}</strong>
+            <span style={{ color: MUTED, fontSize: 11, lineHeight: 1.25 }}>outstanding</span>
+          </div>
         </div>
 
         {priorityItems.length > 0 ? (
@@ -5788,8 +5926,20 @@ const attentionBuddiButton = {
   fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap",
 };
 const attentionSummary = {
-  display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-  gap: 8, marginTop: 18,
+  display: "grid",
+  gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+  gap: 8,
+  marginTop: 18,
+};
+const attentionSummaryItem = {
+  minWidth: 0,
+  display: "grid",
+  gap: 3,
+  padding: "9px 10px",
+  borderRadius: 10,
+  border: "1px solid rgba(255,255,255,.08)",
+  background: "rgba(255,255,255,.025)",
+  textAlign: "center",
 };
 const attentionList = { display: "grid", gap: 9, marginTop: 16 };
 const attentionItem = (tone) => ({
