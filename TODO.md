@@ -39,6 +39,7 @@
 - [x] Buddi confirmed production task actions
 - [x] Today record-level action links
 - [x] Job detail next-action workflow
+- [x] Calendar record focus and production links
 
 ## Future Ideas
 
