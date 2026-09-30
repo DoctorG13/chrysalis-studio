@@ -1,3 +1,10 @@
+### Buddi Natural-Language Job Creation
+
+- [x] Route direct job commands before the general Buddi chat service
+- [x] Pre-fill client, job name, garment type, due date and price when understood
+- [x] Require review before saving
+- [x] Preserve existing manual job creation
+
 ### Production Time Tracking
 
 - [x] Persistent time entries
