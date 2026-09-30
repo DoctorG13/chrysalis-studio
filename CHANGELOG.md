@@ -1,3 +1,16 @@
+## Today Secondary Record Links
+
+### Changed
+
+- Daily Operating View items now open their exact appointment, invoice or job.
+- Recent Activity items now deep-link to the underlying job, appointment, invoice or production job.
+- Today Notifications now preserve the exact record behind finance, production and calendar alerts.
+- Automation notifications continue to open the Automation workspace because they represent activity rather than a single business record.
+
+### Result
+
+- The Today command centre now consistently follows the same pattern: identify the item, open the exact record, then act.
+
 ## Today Record-Level Action Links
 
 ### Added
