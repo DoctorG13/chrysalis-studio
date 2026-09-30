@@ -95,6 +95,8 @@ assertContains(read("src/components/common/DonnaAssistant.jsx"), "prefilledJob",
 assertContains(read("src/components/common/DonnaAssistant.jsx"), "Nothing is saved until you confirm.", "Buddi job confirmation guard");
 
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "parseNaturalJobRequest", "account Buddi natural-language job parsing");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "requestedPersonName", "account Buddi requested-person parsing");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "could not match", "account Buddi unresolved-person save guard");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "isJobRequest", "account Buddi job command routing");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "confirmCreateJob", "account Buddi job confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Nothing changes until you confirm.", "account Buddi confirmation guard");
@@ -112,4 +114,4 @@ assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_production"
 
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddJob={async (job)", "account Buddi job persistence callback");
 
-console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 34 UI workflow contracts.`);
+console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 36 UI workflow contracts.`);
