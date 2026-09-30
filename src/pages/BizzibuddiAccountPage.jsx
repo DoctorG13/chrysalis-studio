@@ -1781,6 +1781,8 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
         title: String(form.get("title") || "").trim(),
         personId: String(form.get("personId") || ""),
         status: String(form.get("status") || "New"),
+        dueDate: String(form.get("dueDate") || ""),
+        price: Number(form.get("price") || 0),
       };
 
       if (editingJob) {
@@ -1921,6 +1923,20 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
             <div style={{ minWidth: 0, flex: "1 1 240px" }}>
               <strong style={{ display: "block", fontSize: 17 }}>{job.title}</strong>
               <span style={smallText}>{job.clientName || "Unassigned"}</span>
+              {(job.dueDate || Number(job.price || 0) > 0) && (
+                <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 8 }}>
+                  {job.dueDate && (
+                    <span style={jobMetaBadge}>
+                      {"Due " + new Date(job.dueDate + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  )}
+                  {Number(job.price || 0) > 0 && (
+                    <span style={jobMetaBadge}>
+                      {"$" + Number(job.price).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  )}
+                </div>
+              )}
               <div style={{ marginTop: 10, maxWidth: 360 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 5 }}>
                   <span style={{ ...smallText, fontSize: 11 }}>Production: {job.productionStage || "Not started"}</span>
@@ -2056,6 +2072,12 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
               <option key={person.id} value={person.id}>{person.name}</option>
             ))}
           </select>
+        </label>
+        <label style={fieldStyle}>Due date
+          <input name="dueDate" type="date" defaultValue={editingJob?.dueDate || ""} style={inputStyle} />
+        </label>
+        <label style={fieldStyle}>Price (AUD)
+          <input name="price" type="number" min="0" step="0.01" defaultValue={editingJob?.price || ""} placeholder="0.00" style={inputStyle} />
         </label>
         <label style={fieldStyle}>Status
           <select name="status" defaultValue={editingJob?.status || "New"} style={inputStyle}>
@@ -6183,6 +6205,18 @@ const jobDueDateLabel = (dueDate, readiness) => {
   return "Ready by " + formatProductionDate(dueDate);
 };
 
+const jobMetaBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  minHeight: 24,
+  padding: "0 8px",
+  borderRadius: 999,
+  border: "1px solid rgba(0,180,219,.24)",
+  background: "rgba(0,180,219,.07)",
+  color: MUTED,
+  fontSize: 11,
+  fontWeight: 700,
+};
 const jobCard = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,180,219,.12)", color: CYAN, fontSize: 11, fontWeight: 700, whiteSpace: "nowrap" };
 const personCard = { display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
