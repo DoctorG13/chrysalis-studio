@@ -147,6 +147,58 @@ function getSuggestedActions(question, context, handlers) {
   return actions.slice(0, 4);
 }
 
+function normalise(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getPersonName(person) {
+  return person?.name || [person?.firstName, person?.lastName].filter(Boolean).join(" ") || "Unnamed person";
+}
+
+function findPersonMatch(people, requestedName) {
+  const target = normalise(requestedName);
+  if (!target) return null;
+  const exact = people.filter((person) => normalise(getPersonName(person)) === target);
+  if (exact.length === 1) return exact[0];
+  const partial = people.filter((person) => {
+    const name = normalise(getPersonName(person));
+    return name.startsWith(target + " ") || target.startsWith(name + " ");
+  });
+  return partial.length === 1 ? partial[0] : null;
+}
+
+function parseNaturalJobRequest(rawQuestion, people) {
+  const value = String(rawQuestion || "").trim();
+  const draft = { title: "", personId: "", status: "New" };
+  let remainder = value
+    .replace(/^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?job\b[,:]?\s*/i, "")
+    .trim();
+
+  const personMatch = remainder.match(/\bfor\s+([A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){0,4})(?=\s+(?:for|with|as|status|$)|[,;])/i);
+  if (personMatch) {
+    const person = findPersonMatch(people, personMatch[1].trim());
+    if (person) {
+      draft.personId = person.id;
+      remainder = remainder.replace(personMatch[0], " ");
+    }
+  }
+
+  const statusMatch = remainder.match(/\b(?:status|stage)\s+(new|in\s+progress|waiting|complete)\b/i);
+  if (statusMatch) {
+    const statusMap = { new: "New", "in progress": "In progress", waiting: "Waiting", complete: "Complete" };
+    draft.status = statusMap[statusMatch[1].toLowerCase()] || "New";
+    remainder = remainder.replace(statusMatch[0], " ");
+  }
+
+  draft.title = remainder
+    .replace(/\b(?:for|with|as)\s*$/i, "")
+    .replace(/^[,;:.-]+|[,;:.-]+$/g, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return draft;
+}
+
 function ThinkingIndicator() {
   return (
     <div style={thinkingStyle} role="status" aria-live="polite">
@@ -160,12 +212,15 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
   const [actionMessage, setActionMessage] = useState("");
+  const [jobDraft, setJobDraft] = useState(null);
+  const [jobSaving, setJobSaving] = useState(false);
+  const [jobMessage, setJobMessage] = useState("");
 
   const businessContext = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -352,13 +407,66 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     }
   }
 
+  async function confirmCreateJob() {
+    if (!jobDraft?.title?.trim() || !jobDraft?.personId || !onAddJob) {
+      setJobMessage(!onAddJob ? "Job creation is not available in this workspace yet." : "Please select a person and enter a job title.");
+      return;
+    }
+
+    setJobSaving(true);
+    setJobMessage("");
+
+    try {
+      const savedJob = await onAddJob({
+        title: jobDraft.title.trim(),
+        personId: jobDraft.personId,
+        status: jobDraft.status || "New",
+      });
+      const person = people.find((item) => String(item.id) === String(jobDraft.personId));
+
+      setJobDraft(null);
+      setConversation((current) => [
+        {
+          question: "Create a new job",
+          answer: "Created " + (savedJob?.title || jobDraft.title) + " for " + getPersonName(person) + " successfully.",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      onJobs?.();
+    } catch (error) {
+      setJobMessage(error.message || "The job could not be saved.");
+    } finally {
+      setJobSaving(false);
+    }
+  }
+
   async function askBuddi(rawQuestion) {
     const value = String(rawQuestion || "").trim();
     if (!value || isLoading) return;
 
     setQuestion("");
-    setIsLoading(true);
 
+    const isJobRequest = /^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?job\b/i.test(value);
+
+    if (isJobRequest) {
+      const prefilledJob = parseNaturalJobRequest(value, people);
+      setJobDraft(prefilledJob);
+      setJobMessage("");
+      setConversation((current) => [
+        {
+          question: value,
+          answer: prefilledJob.title
+            ? "I’ve filled in the job details I could understand. Review them below and confirm when you’re ready to save."
+            : "I’ve opened the job review form. Add the details you want, then confirm when you’re ready to save.",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
+    setIsLoading(true);
     const wait = new Promise((resolve) => setTimeout(resolve, 450));
 
     try {
@@ -548,6 +656,52 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           </div>
         )}
 
+        {jobDraft && (
+          <section style={jobDraftCardStyle}>
+            <div>
+              <small style={quickLabelStyle}>CONFIRM NEW JOB</small>
+              <strong style={{ display: "block", marginTop: 5, fontSize: 16 }}>Review before saving.</strong>
+              <p style={{ ...subheadingStyle, margin: "5px 0 0", fontSize: 12 }}>
+                Buddi has filled in what it could understand. Nothing changes until you confirm.
+              </p>
+            </div>
+
+            <div style={jobFormGridStyle}>
+              <label style={jobFieldStyle}>
+                <span>Person</span>
+                <select style={jobInputStyle} value={jobDraft.personId} onChange={(event) => setJobDraft((draft) => ({ ...draft, personId: event.target.value }))} disabled={jobSaving}>
+                  <option value="">Select person</option>
+                  {people.map((person) => <option key={person.id} value={person.id}>{getPersonName(person)}</option>)}
+                </select>
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Job title</span>
+                <input style={jobInputStyle} value={jobDraft.title} onChange={(event) => setJobDraft((draft) => ({ ...draft, title: event.target.value }))} placeholder="e.g. Wedding dress" disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Status</span>
+                <select style={jobInputStyle} value={jobDraft.status} onChange={(event) => setJobDraft((draft) => ({ ...draft, status: event.target.value }))} disabled={jobSaving}>
+                  <option value="New">New</option>
+                  <option value="In progress">In progress</option>
+                  <option value="Waiting">Waiting</option>
+                  <option value="Complete">Complete</option>
+                </select>
+              </label>
+            </div>
+
+            {jobMessage && <div role="alert" style={jobMessageStyle}>{jobMessage}</div>}
+
+            <div style={jobFormActionsStyle}>
+              <button type="button" onClick={() => { setJobDraft(null); setJobMessage(""); }} disabled={jobSaving} style={secondaryJobButtonStyle}>Cancel</button>
+              <button type="button" onClick={confirmCreateJob} disabled={jobSaving || !onAddJob} style={primaryJobButtonStyle}>
+                {jobSaving ? "Saving…" : "Confirm & save job →"}
+              </button>
+            </div>
+          </section>
+        )}
+
         <div style={quickSectionStyle}>
           <small style={quickLabelStyle}>TRY ASKING</small>
           <div style={quickGridStyle}>
@@ -606,6 +760,73 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     </section>
   );
 }
+
+const jobDraftCardStyle = {
+  marginTop: 20,
+  padding: 18,
+  borderRadius: 14,
+  border: "1px solid rgba(0,180,219,.55)",
+  background: "linear-gradient(135deg, rgba(0,180,219,.10), rgba(37,99,235,.08))",
+};
+const jobFormGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: 12,
+  marginTop: 16,
+};
+const jobFieldStyle = {
+  display: "grid",
+  gap: 6,
+  color: "#B8C6D6",
+  fontSize: 12,
+  fontWeight: 700,
+};
+const jobInputStyle = {
+  width: "100%",
+  minHeight: 42,
+  boxSizing: "border-box",
+  padding: "0 11px",
+  borderRadius: 9,
+  border: "1px solid rgba(255,255,255,.16)",
+  background: "rgba(6,26,43,.58)",
+  color: "#FFFFFF",
+};
+const jobMessageStyle = {
+  marginTop: 12,
+  padding: 10,
+  borderRadius: 9,
+  border: "1px solid rgba(255,107,138,.42)",
+  background: "rgba(220,50,50,.08)",
+  color: "#FFB0BF",
+  fontSize: 12,
+};
+const jobFormActionsStyle = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 10,
+  flexWrap: "wrap",
+  marginTop: 16,
+};
+const primaryJobButtonStyle = {
+  minHeight: 42,
+  padding: "0 14px",
+  border: "1px solid rgba(0,180,219,.65)",
+  borderRadius: 9,
+  background: "rgba(0,180,219,.16)",
+  color: "#FFFFFF",
+  fontWeight: 800,
+  cursor: "pointer",
+};
+const secondaryJobButtonStyle = {
+  minHeight: 42,
+  padding: "0 14px",
+  border: "1px solid rgba(255,255,255,.16)",
+  borderRadius: 9,
+  background: "transparent",
+  color: "#B8C6D6",
+  fontWeight: 700,
+  cursor: "pointer",
+};
 
 const panelStyle = {
   width: "100%",
