@@ -304,13 +304,14 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [jobDraft, setJobDraft] = useState(null);
+  const [newClientDraft, setNewClientDraft] = useState(null);
   const [jobSaving, setJobSaving] = useState(false);
   const [jobMessage, setJobMessage] = useState("");
 
@@ -500,11 +501,11 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
   }
 
   async function confirmCreateJob() {
-    if (!jobDraft?.title?.trim() || !jobDraft?.personId || !onAddJob) {
+    if (!jobDraft?.title?.trim() || (!jobDraft?.personId && !newClientDraft?.name?.trim()) || !onAddJob) {
       if (!onAddJob) {
         setJobMessage("Job creation is not available in this workspace yet.");
-      } else if (!jobDraft?.personId && jobDraft?.requestedPersonName) {
-        setJobMessage("I could not match “" + jobDraft.requestedPersonName + "” to a person in this account. Please select the correct person before saving.");
+      } else if (!jobDraft?.personId && jobDraft?.requestedPersonName && !newClientDraft?.name?.trim()) {
+        setJobMessage("Please select an existing person or create a new client before saving.");
       } else {
         setJobMessage("Please select a person and enter a job title.");
       }
@@ -515,20 +516,36 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     setJobMessage("");
 
     try {
+      let personId = jobDraft.personId;
+      let personName = "";
+
+      if (!personId && newClientDraft?.name?.trim() && onAddPerson) {
+        const createdPerson = await onAddPerson({
+          name: newClientDraft.name.trim(),
+          email: newClientDraft.email.trim(),
+          phone: newClientDraft.phone.trim(),
+        });
+        personId = createdPerson.id;
+        personName = getPersonName(createdPerson);
+      } else {
+        const person = people.find((item) => String(item.id) === String(personId));
+        personName = getPersonName(person);
+      }
+
       const savedJob = await onAddJob({
         title: jobDraft.title.trim(),
-        personId: jobDraft.personId,
+        personId,
         status: jobDraft.status || "New",
         dueDate: jobDraft.dueDate || "",
         price: Number(jobDraft.price) || 0,
       });
-      const person = people.find((item) => String(item.id) === String(jobDraft.personId));
 
       setJobDraft(null);
+      setNewClientDraft(null);
       setConversation((current) => [
         {
           question: "Create a new job",
-          answer: "Created " + (savedJob?.title || jobDraft.title) + " for " + getPersonName(person) + " successfully.",
+          answer: "Created " + (savedJob?.title || jobDraft.title) + " for " + (personName || "the selected person") + " successfully.",
           actions: [],
         },
         ...current,
@@ -557,7 +574,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
         {
           question: value,
           answer: prefilledJob.requestedPersonName && !prefilledJob.personId
-            ? "I found “" + prefilledJob.requestedPersonName + "” in your request, but I couldn’t match that name to a person in this account. The job title and other details are filled in below; please select the correct person before saving."
+            ? "I found “" + prefilledJob.requestedPersonName + "” in your request, but I couldn’t match that name to a person in this account. You can select an existing person or create a new client below before saving."
             : prefilledJob.title
               ? "I’ve filled in the job details I could understand. Review them below and confirm when you’re ready to save."
               : "I’ve opened the job review form. Add the details you want, then confirm when you’re ready to save.",
@@ -776,9 +793,23 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
                   {people.map((person) => <option key={person.id} value={person.id}>{getPersonName(person)}</option>)}
                 </select>
                 {jobDraft.requestedPersonName && !jobDraft.personId && (
-                  <span style={unmatchedPersonStyle}>
-                    Requested: {jobDraft.requestedPersonName} — select the matching person before saving.
-                  </span>
+                  <div style={newClientBoxStyle}>
+                    <span style={unmatchedPersonStyle}>
+                      No existing match for “{jobDraft.requestedPersonName}”.
+                    </span>
+                    {!newClientDraft ? (
+                      <button type="button" onClick={() => setNewClientDraft({ name: jobDraft.requestedPersonName, email: "", phone: "" })} disabled={jobSaving} style={createClientButtonStyle}>
+                        + Create new client
+                      </button>
+                    ) : (
+                      <div style={newClientFieldsStyle}>
+                        <input style={jobInputStyle} value={newClientDraft.name} onChange={(event) => setNewClientDraft((draft) => ({ ...draft, name: event.target.value }))} placeholder="Client name" disabled={jobSaving} />
+                        <input style={jobInputStyle} type="email" value={newClientDraft.email} onChange={(event) => setNewClientDraft((draft) => ({ ...draft, email: event.target.value }))} placeholder="Email (optional)" disabled={jobSaving} />
+                        <input style={jobInputStyle} value={newClientDraft.phone} onChange={(event) => setNewClientDraft((draft) => ({ ...draft, phone: event.target.value }))} placeholder="Phone (optional)" disabled={jobSaving} />
+                        <button type="button" onClick={() => setNewClientDraft(null)} disabled={jobSaving} style={cancelClientButtonStyle}>Use existing client instead</button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </label>
 
@@ -904,6 +935,45 @@ const unmatchedPersonStyle = {
   fontSize: 11,
   lineHeight: 1.4,
   fontWeight: 600,
+};
+
+const newClientBoxStyle = {
+  display: "grid",
+  gap: 8,
+  marginTop: 8,
+  padding: 9,
+  borderRadius: 9,
+  border: "1px solid rgba(246,196,83,.28)",
+  background: "rgba(245,158,11,.045)",
+};
+
+const createClientButtonStyle = {
+  justifySelf: "start",
+  minHeight: 34,
+  padding: "0 10px",
+  borderRadius: 8,
+  border: "1px solid rgba(0,180,219,.42)",
+  background: "rgba(0,180,219,.08)",
+  color: "#FFFFFF",
+  fontSize: 11,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const newClientFieldsStyle = {
+  display: "grid",
+  gap: 7,
+};
+
+const cancelClientButtonStyle = {
+  justifySelf: "start",
+  border: 0,
+  padding: 0,
+  background: "transparent",
+  color: "#B8C6D6",
+  fontSize: 11,
+  fontWeight: 700,
+  cursor: "pointer",
 };
 const jobInputStyle = {
   width: "100%",
