@@ -145,6 +145,7 @@ Donna can comfortably run Chrysalis as her primary business application every da
 
 ## Post-1.0 — Actionable Assistant
 
+- [x] Create jobs from Buddi
 - [x] Confirmation-based Buddi production actions
 
 
