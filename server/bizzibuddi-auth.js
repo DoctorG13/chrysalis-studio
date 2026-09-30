@@ -742,6 +742,14 @@ function updateJob(userId, jobId, payload) {
 
   if (!result.changes) return null;
 
+  getDatabase()
+    .prepare(
+      `UPDATE bizzibuddi_production
+       SET due_date = ?, updated_at = ?
+       WHERE job_id = ? AND user_id = ?`
+    )
+    .run(dueDate, now, jobId, userId);
+
   if (existing.status !== status) {
     createAutomationEvent(userId, {
       type: "job-status-changed",
