@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useChrysalis } from "../../context/ChrysalisProvider";
 import BizziBuddiLogo from "./BizziBuddiLogo";
+import BuddiFocusCard from "./BuddiFocusCard";
 
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
@@ -217,6 +218,8 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
 
       <div style={contentStyle}>
         <div style={welcomeCardStyle}><div style={welcomeIconStyle}><BizziBuddiLogo size={24} showWordmark={false} /></div><div><strong style={{ display: "block", marginBottom: 3 }}>What can I help with?</strong><span>Ask about your workload, clients, garments, payments or calendar.</span></div></div>
+
+        <BuddiFocusCard clients={clients} jobs={jobs} currentPage={currentPage} onNavigate={onNavigate} />
 
         {clientDraft && <section style={actionCardStyle}><div style={cardHeadingStyle}><span style={cardIconStyle}>＋</span><div><div style={cardKickerStyle}>New record</div><h3 style={cardTitleStyle}>Create a client</h3></div></div><div style={formGridStyle}><Field label="First name"><input style={inputStyle} value={clientDraft.firstName} onChange={(event) => setClientDraft((draft) => ({ ...draft, firstName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Last name"><input style={inputStyle} value={clientDraft.lastName} onChange={(event) => setClientDraft((draft) => ({ ...draft, lastName: event.target.value }))} disabled={clientSaving} /></Field><Field label="Phone"><input style={inputStyle} value={clientDraft.phone} onChange={(event) => setClientDraft((draft) => ({ ...draft, phone: event.target.value }))} disabled={clientSaving} /></Field><Field label="Email"><input style={inputStyle} value={clientDraft.email} onChange={(event) => setClientDraft((draft) => ({ ...draft, email: event.target.value }))} disabled={clientSaving} /></Field></div><Field label="Notes"><textarea style={{ ...inputStyle, minHeight: 70, resize: "vertical" }} value={clientDraft.notes} onChange={(event) => setClientDraft((draft) => ({ ...draft, notes: event.target.value }))} disabled={clientSaving} /></Field>{clientMessage && <div style={errorStyle}>{clientMessage}</div>}<div style={formActionsStyle}><button type="button" style={buttonStyle} onClick={() => setClientDraft(null)}>Cancel</button><button type="button" style={primaryButtonStyle} onClick={confirmCreateClient} disabled={clientSaving}>{clientSaving ? "Saving…" : "Save client"}</button></div></section>}
 
