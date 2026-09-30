@@ -117,7 +117,6 @@ function getNextFocus({ overdueJobs, dueSoonJobs, unpaidJobs, todaysAppointments
 export default function BuddiFocusCard({
   clients = [],
   jobs = [],
-  appointments = [],
   currentPage = "",
   onNavigate,
 }) {
@@ -127,7 +126,7 @@ export default function BuddiFocusCard({
     const dueSoonJobs = activeJobs.filter(isDueSoon);
     const unpaidJobs = activeJobs.filter((job) => getOutstanding(job) > 0);
     const todayKey = new Date().toDateString();
-    const todaysAppointments = appointments.filter(
+    const todaysAppointments = clients.flatMap((client) => client?.appointments || []).filter(
       (appointment) => appointment?.date && new Date(appointment.date).toDateString() === todayKey
     );
 
@@ -138,13 +137,6 @@ export default function BuddiFocusCard({
       todaysAppointments,
     });
 
-    const clientMap = new Map(clients.map((client) => [String(client.id), client]));
-    const nextJob = dueSoonJobs[0] || overdueJobs[0];
-
-    if (nextJob && !nextJob.client && nextJob.clientId) {
-      nextJob.client = clientMap.get(String(nextJob.clientId));
-    }
-
     return {
       next,
       counts: {
@@ -154,7 +146,7 @@ export default function BuddiFocusCard({
         appointments: todaysAppointments.length,
       },
     };
-  }, [appointments, clients, jobs]);
+  }, [clients, jobs]);
 
   return (
     <section aria-label="Buddi focus" style={cardStyle}>
@@ -320,8 +312,3 @@ const summaryItemStyle = {
   minWidth: 0,
 };
 
-const summaryValueStyle = {
-  color: "#0F2D4A",
-};
-
-void summaryValueStyle;
