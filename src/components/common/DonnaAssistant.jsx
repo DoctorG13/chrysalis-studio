@@ -219,6 +219,10 @@ export default function BuddiAssistant({ open, onClose, currentPage, clients = [
     const value = String(raw || "").trim();
     if (!value || isLoading) return;
     setQuestion("");
+    if (/(?:create|add|new)\s+(?:a\s+)?job|create\s+(?:a\s+)?garment|add\s+(?:a\s+)?job/i.test(value)) {
+      openCreateJobForm();
+      return;
+    }
     if (/(?:create|add|new)\s+(?:an?\s+)?appointment|book\s+(?:an?\s+)?appointment/i.test(value)) {
       openCreateAppointmentForm();
       return;
