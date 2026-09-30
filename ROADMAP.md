@@ -1,3 +1,11 @@
+## Buddi Natural-Language Job Creation
+
+- [x] Recognise direct job-creation commands reliably
+- [x] Pre-fill job details from natural-language requests
+- [x] Match an unambiguous existing client when named
+- [x] Parse common due-date and price formats
+- [x] Keep explicit review and confirmation before persistence
+
 ## Production Time Tracking
 
 - [x] Persistent time entries
