@@ -6,6 +6,12 @@
 - [x] Per-job time totals
 - [x] Recent time history
 
+### Buddi Job Actions
+
+- [x] Create a job from Buddi
+- [x] Persist the job through the existing job service
+- [x] Navigate to Jobs after successful creation
+
 ### Buddi Focus
 
 - [x] Proactive business attention summary inside Buddi
