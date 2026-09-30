@@ -37,6 +37,7 @@
 - [x] Buddi production workload awareness
 - [x] Confirmation-based Buddi production actions
 - [x] Buddi confirmed production task actions
+- [x] Today record-level action links
 
 ## Future Ideas
 
