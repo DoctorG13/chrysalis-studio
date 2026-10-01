@@ -284,7 +284,7 @@ function parseNaturalPaymentRequest(rawQuestion, people) {
   };
 
   let remainder = value
-    .replace(/^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:payment|deposit)\b[,:]?\s*/i, "")
+    .replace(/^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:\$?\s*[\d,.]+(?:k)?\s+)?(?:payment|deposit)\b[,:]?\s*/i, "")
     .trim();
 
   const amountMatch = remainder.match(/(?:\$\s*)?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?|\d+(?:\.\d+)?k)\b/i);
@@ -869,7 +869,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       /^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b/i.test(value) ||
       /^(?:please\s+)?(?:book|schedule|arrange)\s+.+\s+in\s+for\b/i.test(value);
     const isPaymentRequest =
-      /^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:payment|deposit)\b/i.test(value);
+      /^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:\$?\s*[\d,.]+(?:k)?\s+)?(?:payment|deposit)\b/i.test(value);
 
     if (isJobRequest) {
       const prefilledJob = parseNaturalJobRequest(value, people);
