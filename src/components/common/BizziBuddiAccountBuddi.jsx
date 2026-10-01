@@ -397,6 +397,94 @@ function parseNaturalPaymentRequest(rawQuestion, people) {
   return draft;
 }
 
+function formatFinanceCurrency(value) {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+function getFinanceIntelligence(rawQuestion, invoices, people) {
+  const value = String(rawQuestion || "").trim().toLowerCase();
+  const today = getLocalDateKey();
+  const outstanding = invoices.filter((invoice) => Number(invoice.balance || 0) > 0);
+  const overdue = outstanding.filter((invoice) => invoice.dueDate && invoice.dueDate < today);
+
+  const namedPerson = people.find((person) => {
+    const name = getPersonName(person).trim().toLowerCase();
+    return name && value.includes(name);
+  });
+
+  if (/\b(?:who|which clients?|customers?)\b.*\b(?:owe|owing)\b|\b(?:who|which clients?)\b.*\b(?:money|outstanding)\b/.test(value)) {
+    if (!outstanding.length) {
+      return "No invoices currently have an outstanding balance.";
+    }
+
+    const grouped = new Map();
+    outstanding.forEach((invoice) => {
+      const name = invoice.personName || "Unassigned";
+      grouped.set(name, (grouped.get(name) || 0) + Number(invoice.balance || 0));
+    });
+
+    const rows = [...grouped.entries()].sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((sum, [, amount]) => sum + amount, 0);
+    return [
+      "There is " + formatFinanceCurrency(total) + " currently outstanding across " + rows.length + " client" + (rows.length === 1 ? "" : "s") + ".",
+      "",
+      ...rows.map(([name, amount]) => "• " + name + " — " + formatFinanceCurrency(amount)),
+    ].join("\n");
+  }
+
+  if (namedPerson && /\b(?:owe|owing|outstanding|balance|due)\b/.test(value)) {
+    const personInvoices = outstanding.filter(
+      (invoice) => String(invoice.personId) === String(namedPerson.id)
+    );
+    const total = personInvoices.reduce((sum, invoice) => sum + Number(invoice.balance || 0), 0);
+
+    if (!personInvoices.length) {
+      return namedPerson.name + " has no outstanding invoice balance.";
+    }
+
+    return [
+      namedPerson.name + " currently owes " + formatFinanceCurrency(total) + ".",
+      "",
+      ...personInvoices.map((invoice) =>
+        "• " + invoice.number +
+        (invoice.description ? " — " + invoice.description : "") +
+        " — " + formatFinanceCurrency(invoice.balance) +
+        " due " + invoice.dueDate
+      ),
+    ].join("\n");
+  }
+
+  if (/\b(?:overdue|late)\b/.test(value)) {
+    if (!overdue.length) return "There are no overdue invoices with an outstanding balance.";
+
+    const total = overdue.reduce((sum, invoice) => sum + Number(invoice.balance || 0), 0);
+    return [
+      overdue.length + " overdue invoice" + (overdue.length === 1 ? "" : "s") +
+        " totalling " + formatFinanceCurrency(total) + ":",
+      "",
+      ...overdue.map((invoice) =>
+        "• " + invoice.personName +
+        (invoice.description ? " — " + invoice.description : "") +
+        " — " + formatFinanceCurrency(invoice.balance) +
+        " (due " + invoice.dueDate + ")"
+      ),
+    ].join("\n");
+  }
+
+  if (/\b(?:outstanding|unpaid|unpaid invoices?|balances?)\b/.test(value)) {
+    const total = outstanding.reduce((sum, invoice) => sum + Number(invoice.balance || 0), 0);
+    return outstanding.length
+      ? "There is " + formatFinanceCurrency(total) + " outstanding across " + outstanding.length + " invoice" + (outstanding.length === 1 ? "" : "s") + "."
+      : "There are no outstanding invoice balances.";
+  }
+
+  return null;
+}
+
 function autoMatchPaymentInvoice(draft, invoices) {
   if (!draft?.personId || !Array.isArray(invoices)) return draft;
 
@@ -1066,6 +1154,25 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
             ? "I found “" + prefilledInvoice.requestedPersonName + "” in your request, but I couldn’t match that person in this account. Select an existing person before creating the invoice."
             : "I’ve filled in the invoice details I could understand. Review them below and confirm when you’re ready to create it.",
           actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
+    const financeAnswer = getFinanceIntelligence(value, invoices, people);
+    if (financeAnswer) {
+      setInvoiceDraft(null);
+      setPaymentDraft(null);
+      setAppointmentDraft(null);
+      setJobDraft(null);
+      setNewClientDraft(null);
+      setJobMessage("");
+      setConversation((current) => [
+        {
+          question: value,
+          answer: financeAnswer,
+          actions: [{ key: "open-finance", label: "Open finance →", onClick: onFinance }],
         },
         ...current,
       ].slice(0, 8));
