@@ -248,6 +248,103 @@ function titleCaseJobTitle(value) {
     .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])([A-ZÀ-ÖØ-öø-ÿ]+)/g, (_, first, rest) => first + rest.toLowerCase());
 }
 
+function parseNaturalTime(value) {
+  const raw = String(value || "").trim().toLowerCase().replace(/\s+/g, "");
+  const match = raw.match(/^(\d{1,2})(?::(\d{2}))?(am|pm)$/);
+  if (match) {
+    let hour = Number(match[1]);
+    const minute = Number(match[2] || 0);
+    if (hour < 1 || hour > 12 || minute > 59) return "";
+    if (match[3] === "am" && hour === 12) hour = 0;
+    if (match[3] === "pm" && hour !== 12) hour += 12;
+    return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+  }
+
+  const twentyFour = raw.match(/^(\d{1,2}):(\d{2})$/);
+  if (twentyFour) {
+    const hour = Number(twentyFour[1]);
+    const minute = Number(twentyFour[2]);
+    if (hour > 23 || minute > 59) return "";
+    return String(hour).padStart(2, "0") + ":" + String(minute).padStart(2, "0");
+  }
+
+  return "";
+}
+
+function parseNaturalAppointmentRequest(rawQuestion, people) {
+  const value = String(rawQuestion || "").trim();
+  const draft = {
+    title: "",
+    date: "",
+    time: "",
+    personId: "",
+    requestedPersonName: "",
+    duration: "60",
+    status: "Booked",
+    notes: "",
+  };
+
+  let remainder = value
+    .replace(/^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b[,:]?\s*/i, "")
+    .trim();
+
+  const timeMatch = remainder.match(/\bat\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{1,2}:\d{2})\b/i);
+  if (timeMatch) {
+    draft.time = parseNaturalTime(timeMatch[1]);
+    remainder = remainder.replace(timeMatch[0], " ");
+  }
+
+  const dateMatch = remainder.match(/\b(?:on|for)\s+(today|tomorrow|(?:next\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?)\b/i);
+  if (dateMatch) {
+    draft.date = parseNaturalDate(dateMatch[1]);
+    remainder = remainder.replace(dateMatch[0], " ");
+  }
+
+  const durationMatch = remainder.match(/\b(?:for|lasting)\s+(\d{1,3})\s*(minutes?|mins?|hours?|hrs?)\b/i);
+  if (durationMatch) {
+    const amount = Number(durationMatch[1]);
+    draft.duration = /hour/i.test(durationMatch[2]) ? String(amount * 60) : String(amount);
+    remainder = remainder.replace(durationMatch[0], " ");
+  }
+
+  const statusMatch = remainder.match(/\bstatus\s+(booked|confirmed|pending|cancelled)\b/i);
+  if (statusMatch) {
+    draft.status = statusMatch[1].replace(/^./, (letter) => letter.toUpperCase());
+    remainder = remainder.replace(statusMatch[0], " ");
+  }
+
+  let personMatch = remainder.match(/^(?:for\s+)?([A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){0,4})\s+in\s+for\s+/i);
+  if (personMatch) {
+    const requestedPersonName = personMatch[1].trim();
+    draft.requestedPersonName = requestedPersonName;
+    const person = findPersonMatch(people, requestedPersonName);
+    if (person) draft.personId = person.id;
+    remainder = remainder.replace(personMatch[0], "");
+  } else {
+    personMatch = remainder.match(/\b(?:for|with)\s+([^,;]+?)(?=\s+(?:for|on|at|in)\b|[,;]|$)/i);
+    if (personMatch) {
+      const requestedPersonName = personMatch[1].trim();
+      draft.requestedPersonName = requestedPersonName;
+      const person = findPersonMatch(people, requestedPersonName);
+      if (person) draft.personId = person.id;
+      remainder = remainder.replace(personMatch[0], " ");
+    }
+  }
+
+  draft.title = remainder
+    .replace(/\b(?:appointment|in|for|on|at|with)\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[,;:.-]+\s*/g, "")
+    .replace(/\s*[,;:.-]+$/g, "")
+    .replace(/[,;:\s]+$/g, "")
+    .trim();
+
+  draft.title = titleCaseJobTitle(draft.title);
+  return draft;
+}
+
+
 function parseNaturalJobRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
   const draft = { title: "", personId: "", requestedPersonName: "", status: "New", dueDate: "", price: "" };
@@ -315,13 +412,14 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [jobDraft, setJobDraft] = useState(null);
+  const [appointmentDraft, setAppointmentDraft] = useState(null);
   const [newClientDraft, setNewClientDraft] = useState(null);
   const [jobSaving, setJobSaving] = useState(false);
   const [jobMessage, setJobMessage] = useState("");
@@ -569,6 +667,70 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     }
   }
 
+  async function confirmCreateAppointment() {
+    if (!appointmentDraft?.title?.trim() || !appointmentDraft?.date || !appointmentDraft?.time || (!appointmentDraft?.personId && !newClientDraft?.name?.trim()) || !onAddAppointment) {
+      if (!onAddAppointment) {
+        setJobMessage("Appointment creation is not available in this workspace yet.");
+      } else if (!appointmentDraft?.personId && appointmentDraft?.requestedPersonName && !newClientDraft?.name?.trim()) {
+        setJobMessage("Please select an existing person or create a new client before saving.");
+      } else if (!appointmentDraft?.date || !appointmentDraft?.time) {
+        setJobMessage("Please enter an appointment date and time before saving.");
+      } else {
+        setJobMessage("Please select a person and enter an appointment title.");
+      }
+      return;
+    }
+
+    setJobSaving(true);
+    setJobMessage("");
+
+    try {
+      let personId = appointmentDraft.personId;
+      let personName = "";
+
+      if (!personId && newClientDraft?.name?.trim() && onAddPerson) {
+        const createdPerson = await onAddPerson({
+          name: newClientDraft.name.trim(),
+          email: newClientDraft.email.trim(),
+          phone: newClientDraft.phone.trim(),
+        });
+        personId = createdPerson.id;
+        personName = getPersonName(createdPerson);
+      } else {
+        const person = people.find((item) => String(item.id) === String(personId));
+        personName = getPersonName(person);
+      }
+
+      const savedAppointment = await onAddAppointment({
+        title: appointmentDraft.title.trim(),
+        date: appointmentDraft.date,
+        time: appointmentDraft.time,
+        personId,
+        jobId: appointmentDraft.jobId || "",
+        duration: Number(appointmentDraft.duration) || 60,
+        buffer: 0,
+        status: appointmentDraft.status || "Booked",
+        notes: appointmentDraft.notes || "",
+      });
+
+      setAppointmentDraft(null);
+      setNewClientDraft(null);
+      setConversation((current) => [
+        {
+          question: "Create a new appointment",
+          answer: "Booked " + (savedAppointment?.title || appointmentDraft.title) + " for " + (personName || "the selected person") + " on " + savedAppointment.date + " at " + savedAppointment.time + ".",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      onCalendar?.();
+    } catch (error) {
+      setJobMessage(error.message || "The appointment could not be saved.");
+    } finally {
+      setJobSaving(false);
+    }
+  }
+
   async function askBuddi(rawQuestion) {
     const value = String(rawQuestion || "").trim();
     if (!value || isLoading) return;
@@ -576,6 +738,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     setQuestion("");
 
     const isJobRequest = /^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?job\b/i.test(value);
+    const isAppointmentRequest = /^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b/i.test(value);
 
     if (isJobRequest) {
       const prefilledJob = parseNaturalJobRequest(value, people);
@@ -589,6 +752,25 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
             : prefilledJob.title
               ? "I’ve filled in the job details I could understand. Review them below and confirm when you’re ready to save."
               : "I’ve opened the job review form. Add the details you want, then confirm when you’re ready to save.",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
+    if (isAppointmentRequest) {
+      const prefilledAppointment = parseNaturalAppointmentRequest(value, people);
+      setAppointmentDraft(prefilledAppointment);
+      setJobDraft(null);
+      setNewClientDraft(null);
+      setJobMessage("");
+      setConversation((current) => [
+        {
+          question: value,
+          answer: prefilledAppointment.requestedPersonName && !prefilledAppointment.personId
+            ? "I found “" + prefilledAppointment.requestedPersonName + "” in your request, but I couldn’t match that person in this account. Select an existing person or create a new client below before saving."
+            : "I’ve filled in the appointment details I could understand. Review them below and confirm when you’re ready to save.",
           actions: [],
         },
         ...current,
@@ -784,6 +966,91 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
               <div role="status" aria-live="polite" style={actionMessageStyle}>{actionMessage}</div>
             )}
           </div>
+        )}
+
+        {appointmentDraft && (
+          <section style={jobDraftCardStyle}>
+            <div>
+              <small style={quickLabelStyle}>CONFIRM NEW APPOINTMENT</small>
+              <strong style={{ display: "block", marginTop: 5, fontSize: 16 }}>Review before saving.</strong>
+              <p style={{ ...subheadingStyle, margin: "5px 0 0", fontSize: 12 }}>
+                Buddi has filled in what it could understand. Nothing changes until you confirm.
+              </p>
+            </div>
+
+            <div style={jobFormGridStyle}>
+              <label style={jobFieldStyle}>
+                <span>Person</span>
+                <select style={jobInputStyle} value={appointmentDraft.personId} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, personId: event.target.value }))} disabled={jobSaving}>
+                  <option value="">Select person</option>
+                  {people.map((person) => <option key={person.id} value={person.id}>{getPersonName(person)}</option>)}
+                </select>
+                {appointmentDraft.requestedPersonName && !appointmentDraft.personId && (
+                  <div style={newClientBoxStyle}>
+                    <span style={unmatchedPersonStyle}>
+                      No existing match for “{appointmentDraft.requestedPersonName}”.
+                    </span>
+                    {!newClientDraft ? (
+                      <button type="button" onClick={() => setNewClientDraft({ name: appointmentDraft.requestedPersonName, email: "", phone: "" })} disabled={jobSaving} style={createClientButtonStyle}>
+                        + Create new client
+                      </button>
+                    ) : (
+                      <div style={newClientFieldsStyle}>
+                        <input style={jobInputStyle} value={newClientDraft.name} onChange={(event) => setNewClientDraft((draft) => ({ ...draft, name: event.target.value }))} placeholder="Client name" disabled={jobSaving} />
+                        <input style={jobInputStyle} type="email" value={newClientDraft.email} onChange={(event) => setNewClientDraft((draft) => ({ ...draft, email: event.target.value }))} placeholder="Email (optional)" disabled={jobSaving} />
+                        <input style={jobInputStyle} value={newClientDraft.phone} onChange={(event) => setNewClientDraft((draft) => ({ ...draft, phone: event.target.value }))} placeholder="Phone (optional)" disabled={jobSaving} />
+                        <button type="button" onClick={() => setNewClientDraft(null)} disabled={jobSaving} style={cancelClientButtonStyle}>Use existing client instead</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Appointment title</span>
+                <input style={jobInputStyle} value={appointmentDraft.title} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, title: event.target.value }))} placeholder="e.g. Fitting" disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Date</span>
+                <input style={jobInputStyle} type="date" value={appointmentDraft.date || ""} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, date: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Time</span>
+                <input style={jobInputStyle} type="time" value={appointmentDraft.time || ""} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, time: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Duration (minutes)</span>
+                <input style={jobInputStyle} type="number" min="5" max="1440" step="5" value={appointmentDraft.duration || "60"} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, duration: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Status</span>
+                <select style={jobInputStyle} value={appointmentDraft.status || "Booked"} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, status: event.target.value }))} disabled={jobSaving}>
+                  <option value="Booked">Booked</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+              </label>
+
+              <label style={{ ...jobFieldStyle, gridColumn: "1 / -1" }}>
+                <span>Notes</span>
+                <textarea style={{ ...jobInputStyle, minHeight: 76, resize: "vertical" }} value={appointmentDraft.notes || ""} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, notes: event.target.value }))} placeholder="Optional notes" disabled={jobSaving} />
+              </label>
+            </div>
+
+            {jobMessage && <div role="alert" style={jobMessageStyle}>{jobMessage}</div>}
+
+            <div style={jobFormActionsStyle}>
+              <button type="button" onClick={() => { setAppointmentDraft(null); setJobMessage(""); }} disabled={jobSaving} style={secondaryJobButtonStyle}>Cancel</button>
+              <button type="button" onClick={confirmCreateAppointment} disabled={jobSaving || !onAddAppointment} style={primaryJobButtonStyle}>
+                {jobSaving ? "Saving…" : "Confirm & save appointment →"}
+              </button>
+            </div>
+          </section>
         )}
 
         {jobDraft && (
