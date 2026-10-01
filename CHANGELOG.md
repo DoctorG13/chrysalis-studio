@@ -1,3 +1,13 @@
+## Buddi Natural-Language Appointment Creation
+
+### Added
+
+- Buddi can now recognise natural-language appointment requests such as “Book Jessica Williams in for a fitting next Tuesday at 2pm.”
+- Appointment dates, times, duration, status and client details are pre-filled into a review form.
+- Existing client matching and the existing new-client creation flow are supported.
+- Appointment creation remains confirmation-gated; nothing is saved until the user confirms.
+- Confirmed appointments use the existing account-backed Calendar API and reminder automation.
+
 ## People and Jobs Open Job Navigation
 
 ### Fixed
