@@ -1,3 +1,13 @@
+## Buddi Natural-Language Finance Actions
+
+### Added
+
+- Buddi can now recognise payment requests such as “Record a $500 payment from Jessica Williams.”
+- Payment details are pre-filled into a confirmation form, including client, amount, date, method, description and outstanding invoice.
+- When a client has multiple outstanding invoices, Buddi requires an explicit invoice selection before recording the payment.
+- Payments are validated against the selected invoice balance before saving.
+- Financial mutations remain confirmation-gated and use the existing account-backed invoice payment API.
+
 ## Follow-up: Natural Booking Phrases
 
 ### Fixed
