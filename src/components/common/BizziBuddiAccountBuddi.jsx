@@ -271,6 +271,74 @@ function parseNaturalTime(value) {
   return "";
 }
 
+function parseNaturalInvoiceRequest(rawQuestion, people) {
+  const value = String(rawQuestion || "").trim();
+  const issueDate = getLocalDateKey();
+  const defaultDue = new Date();
+  defaultDue.setDate(defaultDue.getDate() + 7);
+
+  const draft = {
+    personId: "",
+    requestedPersonName: "",
+    description: "",
+    amount: "",
+    issueDate,
+    dueDate: getLocalDateKey(defaultDue),
+  };
+
+  let remainder = value
+    .replace(/^(?:please\s+)?(?:create|make|raise|add|generate)\s+(?:an?\s+)?invoice\b[,:]?\s*/i, "")
+    .trim();
+
+  const amountMatch = remainder.match(/(?:\$\s*)?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?|\d+(?:\.\d+)?k)\b/i);
+  if (amountMatch) {
+    draft.amount = parseNaturalPrice(amountMatch[0]);
+    remainder = remainder.replace(amountMatch[0], " ");
+  }
+
+  const dueMatch = remainder.match(/\b(?:due|payable|by)\s+(today|tomorrow|(?:next\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?)\b/i);
+  if (dueMatch) {
+    draft.dueDate = parseNaturalDate(dueMatch[1]) || draft.dueDate;
+    remainder = remainder.replace(dueMatch[0], " ");
+  }
+
+  const lowerRemainder = remainder.toLowerCase();
+  const person = people.find((item) => {
+    const name = getPersonName(item).trim().toLowerCase();
+    return name && lowerRemainder.includes(name);
+  });
+
+  if (person) {
+    draft.personId = person.id;
+    draft.requestedPersonName = getPersonName(person);
+    const nameLower = draft.requestedPersonName.trim().toLowerCase();
+    const personIndex = lowerRemainder.indexOf(nameLower);
+    remainder = remainder.slice(0, personIndex) + " " + remainder.slice(personIndex + nameLower.length);
+  } else {
+    const personMatch = remainder.match(/\b(?:for|from|to)\s+([^,;]+?)(?=\s+for\s+|\s+(?:due|by|payable)\b|[,;]|$)/i);
+    if (personMatch) {
+      draft.requestedPersonName = personMatch[1].trim();
+      const matched = findPersonMatch(people, draft.requestedPersonName);
+      if (matched) draft.personId = matched.id;
+      remainder = remainder.replace(personMatch[0], " ");
+    }
+  }
+
+  draft.description = remainder
+    .replace(/^\s*(?:for|from|to)\s+/i, "")
+    .replace(/\b(?:invoice|please|create|make|raise|generate)\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[,;:.-]+\s*/g, "")
+    .replace(/\s*[,;:.-]+$/g, "")
+    .replace(/[,;:\s]+$/g, "")
+    .trim();
+
+  if (!draft.description) draft.description = "Invoice";
+
+  return draft;
+}
+
 function parseNaturalPaymentRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
   const draft = {
@@ -474,7 +542,7 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onRecordPayment, onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onRecordPayment, onCreateInvoice, onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -483,6 +551,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
   const [jobDraft, setJobDraft] = useState(null);
   const [appointmentDraft, setAppointmentDraft] = useState(null);
   const [paymentDraft, setPaymentDraft] = useState(null);
+  const [invoiceDraft, setInvoiceDraft] = useState(null);
   const [newClientDraft, setNewClientDraft] = useState(null);
   const [jobSaving, setJobSaving] = useState(false);
   const [jobMessage, setJobMessage] = useState("");
@@ -794,6 +863,49 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     }
   }
 
+  async function confirmCreateInvoice() {
+    if (!invoiceDraft?.personId || !invoiceDraft?.amount || !invoiceDraft?.issueDate || !invoiceDraft?.dueDate || !onCreateInvoice) {
+      setJobMessage(!onCreateInvoice
+        ? "Invoice creation is not available in this workspace yet."
+        : "Please select a client, enter an invoice amount, and set the invoice dates.");
+      return;
+    }
+
+    const amount = Number(invoiceDraft.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setJobMessage("Invoice amount must be greater than zero.");
+      return;
+    }
+
+    setJobSaving(true);
+    setJobMessage("");
+
+    try {
+      const savedInvoice = await onCreateInvoice({
+        personId: invoiceDraft.personId,
+        amount,
+        issueDate: invoiceDraft.issueDate,
+        dueDate: invoiceDraft.dueDate,
+        description: invoiceDraft.description || "Invoice",
+      });
+
+      setInvoiceDraft(null);
+      setConversation((current) => [
+        {
+          question: "Create an invoice",
+          answer: "Created " + (savedInvoice?.number || "invoice") + " for " + (savedInvoice?.personName || getPersonName(people.find((item) => String(item.id) === String(invoiceDraft.personId)))) + " for $" + Number(savedInvoice?.amount || amount).toFixed(2) + ".",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      onFinance?.(savedInvoice?.id);
+    } catch (error) {
+      setJobMessage(error.message || "The invoice could not be created.");
+    } finally {
+      setJobSaving(false);
+    }
+  }
+
   async function confirmRecordPayment() {
     if (!paymentDraft?.personId || !paymentDraft?.amount || !onRecordPayment) {
       setJobMessage(!onRecordPayment
@@ -870,6 +982,8 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       /^(?:please\s+)?(?:book|schedule|arrange)\s+.+\s+in\s+for\b/i.test(value);
     const isPaymentRequest =
       /^(?:please\s+)?(?:record|take|add|log)\b.*\b(?:payment|deposit)\b/i.test(value);
+    const isInvoiceRequest =
+      /^(?:please\s+)?(?:create|make|raise|add|generate)\s+(?:an?\s+)?invoice\b/i.test(value);
 
     if (isJobRequest) {
       const prefilledJob = parseNaturalJobRequest(value, people);
@@ -902,6 +1016,27 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           answer: prefilledAppointment.requestedPersonName && !prefilledAppointment.personId
             ? "I found “" + prefilledAppointment.requestedPersonName + "” in your request, but I couldn’t match that person in this account. Select an existing person or create a new client below before saving."
             : "I’ve filled in the appointment details I could understand. Review them below and confirm when you’re ready to save.",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
+    if (isInvoiceRequest) {
+      const prefilledInvoice = parseNaturalInvoiceRequest(value, people);
+      setInvoiceDraft(prefilledInvoice);
+      setPaymentDraft(null);
+      setAppointmentDraft(null);
+      setJobDraft(null);
+      setNewClientDraft(null);
+      setJobMessage("");
+      setConversation((current) => [
+        {
+          question: value,
+          answer: prefilledInvoice.requestedPersonName && !prefilledInvoice.personId
+            ? "I found “" + prefilledInvoice.requestedPersonName + "” in your request, but I couldn’t match that person in this account. Select an existing person before creating the invoice."
+            : "I’ve filled in the invoice details I could understand. Review them below and confirm when you’re ready to create it.",
           actions: [],
         },
         ...current,
@@ -1117,6 +1252,58 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
               <div role="status" aria-live="polite" style={actionMessageStyle}>{actionMessage}</div>
             )}
           </div>
+        )}
+
+        {invoiceDraft && (
+          <section style={jobDraftCardStyle}>
+            <div>
+              <small style={quickLabelStyle}>CONFIRM NEW INVOICE</small>
+              <strong style={{ display: "block", marginTop: 5, fontSize: 16 }}>Review before creating.</strong>
+              <p style={{ ...subheadingStyle, margin: "5px 0 0", fontSize: 12 }}>Nothing changes until you confirm.</p>
+            </div>
+
+            <div style={jobFormGridStyle}>
+              <label style={jobFieldStyle}>
+                <span>Client</span>
+                <select style={jobInputStyle} value={invoiceDraft.personId} onChange={(event) => setInvoiceDraft((draft) => ({ ...draft, personId: event.target.value }))} disabled={jobSaving}>
+                  <option value="">Select client</option>
+                  {people.map((person) => <option key={person.id} value={person.id}>{getPersonName(person)}</option>)}
+                </select>
+                {invoiceDraft.requestedPersonName && !invoiceDraft.personId && (
+                  <span style={unmatchedPersonStyle}>Requested: {invoiceDraft.requestedPersonName} — select an existing client before creating the invoice.</span>
+                )}
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Description</span>
+                <input style={jobInputStyle} value={invoiceDraft.description || ""} onChange={(event) => setInvoiceDraft((draft) => ({ ...draft, description: event.target.value }))} disabled={jobSaving} placeholder="e.g. Wedding Dress" />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Amount (AUD)</span>
+                <input style={jobInputStyle} type="number" min="0.01" step="0.01" value={invoiceDraft.amount || ""} onChange={(event) => setInvoiceDraft((draft) => ({ ...draft, amount: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Issue date</span>
+                <input style={jobInputStyle} type="date" value={invoiceDraft.issueDate || ""} onChange={(event) => setInvoiceDraft((draft) => ({ ...draft, issueDate: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Due date</span>
+                <input style={jobInputStyle} type="date" value={invoiceDraft.dueDate || ""} onChange={(event) => setInvoiceDraft((draft) => ({ ...draft, dueDate: event.target.value }))} disabled={jobSaving} />
+              </label>
+            </div>
+
+            {jobMessage && <div role="alert" style={jobMessageStyle}>{jobMessage}</div>}
+
+            <div style={jobFormActionsStyle}>
+              <button type="button" onClick={() => { setInvoiceDraft(null); setJobMessage(""); }} disabled={jobSaving} style={secondaryJobButtonStyle}>Cancel</button>
+              <button type="button" onClick={confirmCreateInvoice} disabled={jobSaving || !onCreateInvoice || !invoiceDraft.personId || !invoiceDraft.amount} style={primaryJobButtonStyle}>
+                {jobSaving ? "Saving…" : "Confirm & create invoice →"}
+              </button>
+            </div>
+          </section>
         )}
 
         {paymentDraft && (
