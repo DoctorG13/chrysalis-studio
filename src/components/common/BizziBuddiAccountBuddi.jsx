@@ -285,7 +285,7 @@ function parseNaturalAppointmentRequest(rawQuestion, people) {
   };
 
   let remainder = value
-    .replace(/^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b[,:]?\s*/i, "")
+    .replace(/^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?(?:appointment\b)?[,:]?\s*/i, "")
     .trim();
 
   const timeMatch = remainder.match(/\bat\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm)|\d{1,2}:\d{2})\b/i);
@@ -333,6 +333,9 @@ function parseNaturalAppointmentRequest(rawQuestion, people) {
 
   draft.title = remainder
     .replace(/^for\s+/i, "")
+    .replace(/^a\s+/i, "")
+    .replace(/^an\s+/i, "")
+    .replace(/^the\s+/i, "")
     .replace(/\b(?:appointment|in|for|on|at|with)\s*$/i, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -739,7 +742,9 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     setQuestion("");
 
     const isJobRequest = /^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?job\b/i.test(value);
-    const isAppointmentRequest = /^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b/i.test(value);
+    const isAppointmentRequest =
+      /^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b/i.test(value) ||
+      /^(?:please\s+)?(?:book|schedule|arrange)\s+.+\s+in\s+for\b/i.test(value);
 
     if (isJobRequest) {
       const prefilledJob = parseNaturalJobRequest(value, people);
