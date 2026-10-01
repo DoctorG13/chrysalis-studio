@@ -352,7 +352,8 @@ function parseNaturalPaymentRequest(rawQuestion, people) {
   };
 
   let remainder = value
-    .replace(/^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)((?:\$\s*)?[\d,.]+(?:k)?)\s+(?:payment|deposit)\b[,:]?\s*/i, "$1 ")\n    .replace(/^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:payment|deposit)\b[,:]?\s*/i, "")
+    .replace(/^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)((?:\$\s*)?[\d,.]+(?:k)?)\s+(?:payment|deposit)\b[,:]?\s*/i, "$1 ")
+    .replace(/^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:payment|deposit)\b[,:]?\s*/i, "")
     .trim();
 
   const amountMatch = remainder.match(/(?:\$\s*)?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?|\d+(?:\.\d+)?k)\b/i);
