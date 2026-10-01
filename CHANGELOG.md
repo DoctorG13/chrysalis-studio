@@ -1,3 +1,11 @@
+## Jobs Open Job Behaviour
+
+### Fixed
+
+- Changed the Jobs timeline **Open job** action so it opens the selected job in the existing job editor rather than attempting to navigate to an already-open Jobs view.
+- Opening a job now closes its timeline and focuses the selected job.
+- Jobs deep-linked from the URL are focused without automatically opening their timeline.
+
 ## Jobs Timeline Open Job Fix
 
 ### Fixed
