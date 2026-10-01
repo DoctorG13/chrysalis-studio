@@ -131,6 +131,7 @@ assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddAppointment={a
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "book|schedule|arrange", "natural booking phrase routing");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "replace(/^a\\s+/i, "")", "natural appointment article cleanup");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "parseNaturalPaymentRequest", "account Buddi natural-language payment parsing");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), '(?:\\$\\s*)?[\\d,.]+(?:k)?', "natural-language payment amount preservation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "CONFIRM PAYMENT", "account Buddi payment confirmation UI");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Confirm & record payment", "account Buddi payment save confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onRecordPayment", "account Buddi payment persistence integration");
