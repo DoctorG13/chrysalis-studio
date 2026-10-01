@@ -271,6 +271,64 @@ function parseNaturalTime(value) {
   return "";
 }
 
+function parseNaturalPaymentRequest(rawQuestion, people) {
+  const value = String(rawQuestion || "").trim();
+  const draft = {
+    amount: "",
+    date: getLocalDateKey(),
+    method: "Other",
+    personId: "",
+    requestedPersonName: "",
+    description: "Payment",
+    invoiceId: "",
+  };
+
+  let remainder = value
+    .replace(/^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:payment|deposit)\b[,:]?\s*/i, "")
+    .trim();
+
+  const amountMatch = remainder.match(/(?:\$\s*)?(\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?|\d+(?:\.\d+)?k)\b/i);
+  if (amountMatch) {
+    draft.amount = parseNaturalPrice(amountMatch[0]);
+    remainder = remainder.replace(amountMatch[0], " ");
+  }
+
+  const dateMatch = remainder.match(/\b(?:on\s+|for\s+)?(today|yesterday|tomorrow|(?:next\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?)\b/i);
+  if (dateMatch) {
+    const parsed = dateMatch[1].toLowerCase() === "yesterday"
+      ? getLocalDateKey(new Date(Date.now() - 86400000))
+      : parseNaturalDate(dateMatch[1]);
+    draft.date = parsed || draft.date;
+    remainder = remainder.replace(dateMatch[0], " ");
+  }
+
+  const methodMatch = remainder.match(/\b(?:via|by|method)\s+(cash|card|eftpos|bank\s+transfer|transfer|direct\s+debit|other)\b/i);
+  if (methodMatch) {
+    draft.method = methodMatch[1].replace(/\b\w/g, (letter) => letter.toUpperCase());
+    remainder = remainder.replace(methodMatch[0], " ");
+  }
+
+  const personMatch = remainder.match(/\b(?:from|for|by)\s+([^,;]+?)(?=\s+(?:for|on|via|by|method)\b|[,;]|$)/i);
+  if (personMatch) {
+    const requestedPersonName = personMatch[1].trim();
+    draft.requestedPersonName = requestedPersonName;
+    const person = findPersonMatch(people, requestedPersonName);
+    if (person) draft.personId = person.id;
+    remainder = remainder.replace(personMatch[0], " ");
+  }
+
+  draft.description = remainder
+    .replace(/\b(?:payment|deposit)\b/gi, "")
+    .replace(/^\s*(?:for|from|by|on|via)\s+/i, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[,;:.-]+\s*/g, "")
+    .replace(/\s*[,;:.-]+$/g, "")
+    .trim() || "Payment";
+
+  return draft;
+}
+
 function parseNaturalAppointmentRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
   const draft = {
@@ -416,7 +474,7 @@ function ThinkingIndicator() {
   );
 }
 
-export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onBack }) {
+export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onRecordPayment, onBack }) {
   const [question, setQuestion] = useState("");
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -424,6 +482,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
   const [actionMessage, setActionMessage] = useState("");
   const [jobDraft, setJobDraft] = useState(null);
   const [appointmentDraft, setAppointmentDraft] = useState(null);
+  const [paymentDraft, setPaymentDraft] = useState(null);
   const [newClientDraft, setNewClientDraft] = useState(null);
   const [jobSaving, setJobSaving] = useState(false);
   const [jobMessage, setJobMessage] = useState("");
@@ -735,6 +794,70 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     }
   }
 
+  async function confirmRecordPayment() {
+    if (!paymentDraft?.personId || !paymentDraft?.amount || !onRecordPayment) {
+      setJobMessage(!onRecordPayment
+        ? "Payment recording is not available in this workspace yet."
+        : "Please select a client and enter a payment amount.");
+      return;
+    }
+
+    const matchingInvoices = invoices
+      .filter((invoice) => String(invoice.personId) === String(paymentDraft.personId) && Number(invoice.balance || 0) > 0);
+
+    if (!paymentDraft.invoiceId) {
+      if (matchingInvoices.length === 1) {
+        setPaymentDraft((draft) => ({ ...draft, invoiceId: matchingInvoices[0].id }));
+      } else {
+        setJobMessage(
+          matchingInvoices.length
+            ? "Please select the invoice to apply this payment to."
+            : "No outstanding invoice was found for this client. Create an invoice first, then record the payment."
+        );
+        return;
+      }
+    }
+
+    const invoice = matchingInvoices.find((item) => String(item.id) === String(paymentDraft.invoiceId));
+    if (!invoice) {
+      setJobMessage("Please select a valid outstanding invoice.");
+      return;
+    }
+
+    const amount = Number(paymentDraft.amount);
+    if (!Number.isFinite(amount) || amount <= 0 || amount > Number(invoice.balance || 0)) {
+      setJobMessage("Payment amount must be greater than zero and no more than the selected invoice balance.");
+      return;
+    }
+
+    setJobSaving(true);
+    setJobMessage("");
+
+    try {
+      const savedInvoice = await onRecordPayment(invoice.id, {
+        amount,
+        date: paymentDraft.date || getLocalDateKey(),
+        method: paymentDraft.method || "Other",
+        description: paymentDraft.description || "Payment",
+      });
+
+      setPaymentDraft(null);
+      setConversation((current) => [
+        {
+          question: "Record payment",
+          answer: "Recorded $" + amount.toFixed(2) + " from " + (savedInvoice?.personName || getPersonName(people.find((item) => String(item.id) === String(paymentDraft.personId)))) + ".",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      onFinance?.(savedInvoice?.id);
+    } catch (error) {
+      setJobMessage(error.message || "The payment could not be recorded.");
+    } finally {
+      setJobSaving(false);
+    }
+  }
+
   async function askBuddi(rawQuestion) {
     const value = String(rawQuestion || "").trim();
     if (!value || isLoading) return;
@@ -745,6 +868,8 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     const isAppointmentRequest =
       /^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b/i.test(value) ||
       /^(?:please\s+)?(?:book|schedule|arrange)\s+.+\s+in\s+for\b/i.test(value);
+    const isPaymentRequest =
+      /^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:payment|deposit)\b/i.test(value);
 
     if (isJobRequest) {
       const prefilledJob = parseNaturalJobRequest(value, people);
@@ -777,6 +902,26 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           answer: prefilledAppointment.requestedPersonName && !prefilledAppointment.personId
             ? "I found “" + prefilledAppointment.requestedPersonName + "” in your request, but I couldn’t match that person in this account. Select an existing person or create a new client below before saving."
             : "I’ve filled in the appointment details I could understand. Review them below and confirm when you’re ready to save.",
+          actions: [],
+        },
+        ...current,
+      ].slice(0, 8));
+      return;
+    }
+
+    if (isPaymentRequest) {
+      const prefilledPayment = parseNaturalPaymentRequest(value, people);
+      setPaymentDraft(prefilledPayment);
+      setAppointmentDraft(null);
+      setJobDraft(null);
+      setNewClientDraft(null);
+      setJobMessage("");
+      setConversation((current) => [
+        {
+          question: value,
+          answer: prefilledPayment.requestedPersonName && !prefilledPayment.personId
+            ? "I found “" + prefilledPayment.requestedPersonName + "” in your request, but I couldn’t match that person in this account. Please select the correct person before recording the payment."
+            : "I’ve filled in the payment details I could understand. Review them below and confirm when you’re ready to record it.",
           actions: [],
         },
         ...current,
@@ -972,6 +1117,75 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
               <div role="status" aria-live="polite" style={actionMessageStyle}>{actionMessage}</div>
             )}
           </div>
+        )}
+
+        {paymentDraft && (
+          <section style={jobDraftCardStyle}>
+            <div>
+              <small style={quickLabelStyle}>CONFIRM PAYMENT</small>
+              <strong style={{ display: "block", marginTop: 5, fontSize: 16 }}>Review before recording.</strong>
+              <p style={{ ...subheadingStyle, margin: "5px 0 0", fontSize: 12 }}>Nothing changes until you confirm.</p>
+            </div>
+
+            <div style={jobFormGridStyle}>
+              <label style={jobFieldStyle}>
+                <span>Client</span>
+                <select style={jobInputStyle} value={paymentDraft.personId} onChange={(event) => setPaymentDraft((draft) => ({ ...draft, personId: event.target.value, invoiceId: "" }))} disabled={jobSaving}>
+                  <option value="">Select client</option>
+                  {people.map((person) => <option key={person.id} value={person.id}>{getPersonName(person)}</option>)}
+                </select>
+                {paymentDraft.requestedPersonName && !paymentDraft.personId && (
+                  <span style={unmatchedPersonStyle}>Requested: {paymentDraft.requestedPersonName} — select the matching client before recording.</span>
+                )}
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Invoice</span>
+                <select style={jobInputStyle} value={paymentDraft.invoiceId || ""} onChange={(event) => setPaymentDraft((draft) => ({ ...draft, invoiceId: event.target.value }))} disabled={jobSaving || !paymentDraft.personId}>
+                  <option value="">Select invoice</option>
+                  {invoices.filter((invoice) => String(invoice.personId) === String(paymentDraft.personId) && Number(invoice.balance || 0) > 0).map((invoice) => (
+                    <option key={invoice.id} value={invoice.id}>
+                      {invoice.number} — ${Number(invoice.balance || 0).toFixed(2)} outstanding
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Amount (AUD)</span>
+                <input style={jobInputStyle} type="number" min="0.01" step="0.01" value={paymentDraft.amount || ""} onChange={(event) => setPaymentDraft((draft) => ({ ...draft, amount: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Date</span>
+                <input style={jobInputStyle} type="date" value={paymentDraft.date || ""} onChange={(event) => setPaymentDraft((draft) => ({ ...draft, date: event.target.value }))} disabled={jobSaving} />
+              </label>
+
+              <label style={jobFieldStyle}>
+                <span>Method</span>
+                <select style={jobInputStyle} value={paymentDraft.method || "Other"} onChange={(event) => setPaymentDraft((draft) => ({ ...draft, method: event.target.value }))} disabled={jobSaving}>
+                  <option value="Other">Other</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Eftpos">Eftpos</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Direct Debit">Direct Debit</option>
+                </select>
+              </label>
+
+              <label style={{ ...jobFieldStyle, gridColumn: "1 / -1" }}>
+                <span>Description</span>
+                <input style={jobInputStyle} value={paymentDraft.description || ""} onChange={(event) => setPaymentDraft((draft) => ({ ...draft, description: event.target.value }))} disabled={jobSaving} />
+              </label>
+            </div>
+
+            {jobMessage && <div role="alert" style={jobMessageStyle}>{jobMessage}</div>}
+
+            <div style={jobFormActionsStyle}>
+              <button type="button" onClick={() => { setPaymentDraft(null); setJobMessage(""); }} disabled={jobSaving} style={secondaryJobButtonStyle}>Cancel</button>
+              <button type="button" onClick={confirmRecordPayment} disabled={jobSaving || !onRecordPayment} style={primaryJobButtonStyle}>{jobSaving ? "Saving…" : "Confirm & record payment →"}</button>
+            </div>
+          </section>
         )}
 
         {appointmentDraft && (
