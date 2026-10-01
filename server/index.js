@@ -596,6 +596,13 @@ const MIGRATIONS = [
     `,
   },
   {
+    version: 18,
+    name: "bizzibuddi-invoice-descriptions",
+    sql: `
+      ALTER TABLE bizzibuddi_invoices ADD COLUMN description TEXT NOT NULL DEFAULT '';
+    `,
+  },
+  {
     version: 16,
     name: "bizzibuddi-production-time-tracking",
     sql: `
