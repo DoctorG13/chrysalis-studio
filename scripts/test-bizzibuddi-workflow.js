@@ -120,3 +120,5 @@ console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length
 assertContains(page, "setTimelineJobId(null);", "jobs open-job closes timeline");
 assertContains(page, "startEdit(job);", "jobs open-job opens job details");
 assertContains(page, "setSelectedJobId(String(job.id));", "jobs open-job focuses selected job");
+assertContains(page, "function handleOpenJob(jobId)", "people timeline open-job handler");
+assertContains(page, "startEdit(job);", "jobs deep-link opens job details");
