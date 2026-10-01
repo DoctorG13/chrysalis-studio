@@ -1,3 +1,11 @@
+## Post-1.0 — Finance Intelligence
+
+- [x] Buddi answers who currently owes money
+- [x] Buddi reports client-specific outstanding balances
+- [x] Buddi identifies overdue invoices
+- [x] Buddi provides total outstanding invoice balances
+- [x] Buddi links finance answers directly to Finance
+
 ## Buddi Natural-Language Job Details
 
 - [x] Parse natural-language due dates
