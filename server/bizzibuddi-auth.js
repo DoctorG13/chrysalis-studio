@@ -827,6 +827,7 @@ function validateInvoicePayload(payload) {
   const amount = Number(payload?.amount ?? 0);
   const issueDate = String(payload?.issueDate || todayDate()).trim();
   const dueDate = String(payload?.dueDate || "").trim();
+  const description = String(payload?.description || "").trim().slice(0, 200);
 
   if (!personId) throw new Error("Please select a person for this invoice.");
   if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
@@ -844,6 +845,7 @@ function validateInvoicePayload(payload) {
     amount: Math.round(amount * 100) / 100,
     issueDate,
     dueDate,
+    description,
   };
 }
 
@@ -896,6 +898,7 @@ function toInvoice(row) {
     balance,
     issueDate: row.issue_date,
     dueDate: row.due_date,
+    description: row.description || "",
     status: getInvoiceStatus(amount, amountPaid, row.status, row.due_date),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -913,6 +916,7 @@ function getInvoices(userId) {
          invoices.status,
          invoices.issue_date,
          invoices.due_date,
+         invoices.description,
          invoices.created_at,
          invoices.updated_at,
          people.name AS person_name,
@@ -964,6 +968,7 @@ function createInvoice(userId, payload) {
     status: "Issued",
     issue_date: values.issueDate,
     due_date: values.dueDate,
+    description: values.description,
     created_at: now,
     updated_at: now,
   };
@@ -972,8 +977,8 @@ function createInvoice(userId, payload) {
     .prepare(
       `INSERT INTO bizzibuddi_invoices (
         id, user_id, person_id, number, amount, status,
-        issue_date, due_date, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        issue_date, due_date, description, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       invoice.id,
@@ -984,6 +989,7 @@ function createInvoice(userId, payload) {
       invoice.status,
       invoice.issue_date,
       invoice.due_date,
+      invoice.description,
       invoice.created_at,
       invoice.updated_at
     );
