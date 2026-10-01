@@ -116,4 +116,4 @@ assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_production"
 
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddJob={async (job)", "account Buddi job persistence callback");
 
-console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 38 UI workflow contracts.`);
+console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 38 UI workflow contracts.`);\nassertContains(page, "function handleOpenJob(jobId)", "jobs timeline open-job handler");\nassertContains(page, "onClick={() => handleOpenJob(item.jobId)}", "jobs timeline open-job action");\n
