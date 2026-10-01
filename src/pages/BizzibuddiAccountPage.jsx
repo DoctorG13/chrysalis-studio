@@ -872,7 +872,14 @@ export default function BizzibuddiAccountPage() {
           />
         )}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={(jobId) => selectView("production", { jobId })} onSaveProduction={saveProductionRecord} onRecordPayment={async (invoiceId, payment) => {
+        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={(jobId) => selectView("production", { jobId })} onSaveProduction={saveProductionRecord} onCreateInvoice={async (invoice) => {
+          const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices", {
+            method: "POST",
+            body: JSON.stringify(invoice),
+          });
+          setInvoices((current) => [result.invoice, ...current]);
+          return result.invoice;
+        }} onRecordPayment={async (invoiceId, payment) => {
           const result = await bizzibuddiAuthRequest(
             "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/payments",
             {
