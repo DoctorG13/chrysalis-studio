@@ -240,6 +240,14 @@ function findPersonMatch(people, requestedName) {
   return partial.length === 1 ? partial[0] : null;
 }
 
+function titleCaseJobTitle(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/(^|[\s-])([A-Za-zÀ-ÖØ-öø-ÿ])/g, (_, prefix, letter) => prefix + letter.toUpperCase())
+    .replace(/([A-Za-zÀ-ÖØ-öø-ÿ])([A-ZÀ-ÖØ-öø-ÿ]+)/g, (_, first, rest) => first + rest.toLowerCase());
+}
+
 function parseNaturalJobRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
   const draft = { title: "", personId: "", requestedPersonName: "", status: "New", dueDate: "", price: "" };
@@ -288,6 +296,8 @@ function parseNaturalJobRequest(rawQuestion, people) {
     .replace(/\s*[,;]\s*[,;]+/g, ", ")
     .replace(/[,;:\s]+$/g, "")
     .trim();
+
+  draft.title = titleCaseJobTitle(draft.title);
 
   return draft;
 }
