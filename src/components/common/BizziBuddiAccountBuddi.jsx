@@ -1183,7 +1183,14 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
 
             <div style={jobFormActionsStyle}>
               <button type="button" onClick={() => { setPaymentDraft(null); setJobMessage(""); }} disabled={jobSaving} style={secondaryJobButtonStyle}>Cancel</button>
-              <button type="button" onClick={confirmRecordPayment} disabled={jobSaving || !onRecordPayment} style={primaryJobButtonStyle}>{jobSaving ? "Saving…" : "Confirm & record payment →"}</button>
+              <button
+                type="button"
+                onClick={confirmRecordPayment}
+                disabled={jobSaving || !onRecordPayment || !paymentDraft.invoiceId}
+                style={primaryJobButtonStyle}
+              >
+                {jobSaving ? "Saving…" : "Confirm & record payment →"}
+              </button>
             </div>
           </section>
         )}
