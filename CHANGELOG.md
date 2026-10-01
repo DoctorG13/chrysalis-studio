@@ -1,3 +1,15 @@
+## Buddi Finance Intelligence
+
+### Added
+
+- Buddi now answers read-only finance questions directly from the current account invoice data.
+- “Who owes me money?” returns outstanding balances grouped by client.
+- Client-specific questions return the client's outstanding invoices and balances.
+- Overdue questions identify invoices past their due date with remaining balances.
+- Outstanding/unpaid questions return the current aggregate balance.
+- Finance answers include a direct link to the Finance view.
+- These read-only finance answers do not create or modify records.
+
 ## Buddi Payment Invoice Matching
 
 ### Added
