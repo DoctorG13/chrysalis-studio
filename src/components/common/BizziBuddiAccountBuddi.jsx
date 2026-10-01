@@ -397,6 +397,34 @@ function parseNaturalPaymentRequest(rawQuestion, people) {
   return draft;
 }
 
+function autoMatchPaymentInvoice(draft, invoices) {
+  if (!draft?.personId || !Array.isArray(invoices)) return draft;
+
+  const outstanding = invoices.filter(
+    (invoice) =>
+      String(invoice.personId) === String(draft.personId) &&
+      Number(invoice.balance || 0) > 0
+  );
+
+  if (outstanding.length === 0) return draft;
+  if (outstanding.length === 1) return { ...draft, invoiceId: outstanding[0].id };
+
+  const description = String(draft.description || "").trim().toLowerCase();
+  if (!description || description === "payment") return draft;
+
+  const matching = outstanding.filter((invoice) => {
+    const invoiceDescription = String(invoice.description || "").trim().toLowerCase();
+    return invoiceDescription && (
+      invoiceDescription.includes(description) ||
+      description.includes(invoiceDescription)
+    );
+  });
+
+  return matching.length === 1
+    ? { ...draft, invoiceId: matching[0].id }
+    : draft;
+}
+
 function parseNaturalAppointmentRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
   const draft = {
@@ -1045,7 +1073,10 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     }
 
     if (isPaymentRequest) {
-      const prefilledPayment = parseNaturalPaymentRequest(value, people);
+      const prefilledPayment = autoMatchPaymentInvoice(
+        parseNaturalPaymentRequest(value, people),
+        invoices
+      );
       setPaymentDraft(prefilledPayment);
       setAppointmentDraft(null);
       setJobDraft(null);
