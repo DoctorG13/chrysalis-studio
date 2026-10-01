@@ -1,3 +1,11 @@
+## People and Jobs Open Job Navigation
+
+### Fixed
+
+- Fixed the People timeline **Open job** action, which referenced a missing handler.
+- People timeline job links now close the person timeline and navigate to the selected job.
+- Jobs opened from a job deep link now open the existing job editor instead of only highlighting the job card.
+
 ## Jobs Open Job Behaviour
 
 ### Fixed
