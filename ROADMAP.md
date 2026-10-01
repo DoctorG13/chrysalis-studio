@@ -1,5 +1,7 @@
 ## Post-1.0 — Finance Intelligence
 
+- [x] Preserve natural-language payment amounts during parsing
+
 - [x] Buddi answers who currently owes money
 - [x] Buddi reports client-specific outstanding balances
 - [x] Buddi identifies overdue invoices
