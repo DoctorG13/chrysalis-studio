@@ -1319,6 +1319,12 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
     setMeasurements([]);
   }, [initialPersonId, people]);
 
+  function handleOpenJob(jobId) {
+    if (!jobId) return;
+    setTimelinePersonId(null);
+    onOpenJob?.(jobId);
+  }
+
   function personTimeline(person) {
     const items = [
       ...(person?.createdAt ? [{
@@ -1727,6 +1733,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
     setSelectedJobId(String(job.id));
     setTimelineJobId(null);
     setTimeline([]);
+    startEdit(job);
   }, [initialJobId, jobs]);
 
   async function toggleTimeline(job) {
