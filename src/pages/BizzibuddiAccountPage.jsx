@@ -1631,7 +1631,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                             {item.jobId && (
                               <button
                                 type="button"
-                                onClick={() => onOpenJob(item.jobId)}
+                                onClick={() => handleOpenJob(item.jobId)}
                                 style={{ ...smallActionButton, marginTop: 6, width: "auto" }}
                               >
                                 Open job
@@ -1715,6 +1715,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
   const [timelineJobId, setTimelineJobId] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
+  const [selectedJobId, setSelectedJobId] = useState("");
   const focusedJobRef = useRef(null);
 
   useEffect(() => {
@@ -1824,7 +1825,20 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
     }
   }
 
-  const focusedJobId = timelineJobId || initialJobId || "";
+  const focusedJobId = selectedJobId || timelineJobId || initialJobId || "";
+
+  function handleOpenJob(jobId) {
+    setSelectedJobId(String(jobId || ""));
+    setTimelineJobId(null);
+    onOpenJob?.(jobId);
+
+    window.requestAnimationFrame(() => {
+      focusedJobRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
 
   useEffect(() => {
     if (!focusedJobId || !focusedJobRef.current) return undefined;
