@@ -145,3 +145,7 @@ assertContains(read("server/index.js"), "bizzibuddi-invoice-descriptions", "invo
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "autoMatchPaymentInvoice", "account Buddi payment-to-invoice matching");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "invoiceDescription.includes(description)", "account Buddi payment description matching");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "outstanding.length === 1", "account Buddi single-outstanding-invoice matching");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "getFinanceIntelligence", "account Buddi finance intelligence");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "currently outstanding", "account Buddi outstanding balance answer");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "overdue invoice", "account Buddi overdue invoice answer");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Open finance →", "account Buddi finance navigation action");
