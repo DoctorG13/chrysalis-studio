@@ -128,3 +128,5 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "CONFIR
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Confirm & save appointment", "account Buddi appointment save confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onAddAppointment", "account Buddi appointment persistence integration");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddAppointment={async (appointment)", "account page Buddi appointment integration");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "book|schedule|arrange", "natural booking phrase routing");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "replace(/^a\\s+/i, "")", "natural appointment article cleanup");
