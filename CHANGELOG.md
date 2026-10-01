@@ -1,3 +1,10 @@
+## Follow-up: Natural Booking Phrases
+
+### Fixed
+
+- Buddi now recognises conversational booking requests such as “Book Jessica Williams in for a fitting next Tuesday at 2pm.”
+- The appointment parser now handles the person-first “book [person] in for [appointment]” phrasing and removes leading articles from the appointment title.
+
 ## Buddi Natural-Language Appointment Creation
 
 ### Added
