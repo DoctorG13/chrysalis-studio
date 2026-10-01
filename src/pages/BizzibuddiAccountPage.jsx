@@ -1720,19 +1720,13 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
 
   useEffect(() => {
     if (!initialJobId) return;
+
     const job = jobs.find((item) => String(item.id) === String(initialJobId));
     if (!job) return;
 
-    setTimelineJobId(job.id);
+    setSelectedJobId(String(job.id));
+    setTimelineJobId(null);
     setTimeline([]);
-    setTimelineLoading(true);
-
-    bizzibuddiAuthRequest(
-      "/api/bizzibuddi/auth/jobs/" + encodeURIComponent(job.id)
-    )
-      .then((result) => setTimeline(result.timeline || []))
-      .catch((requestError) => setError(requestError.message || "We could not load the job timeline."))
-      .finally(() => setTimelineLoading(false));
   }, [initialJobId, jobs]);
 
   async function toggleTimeline(job) {
@@ -1828,9 +1822,14 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
   const focusedJobId = selectedJobId || timelineJobId || initialJobId || "";
 
   function handleOpenJob(jobId) {
-    setSelectedJobId(String(jobId || ""));
+    const job = jobs.find((item) => String(item.id) === String(jobId));
+    if (!job) return;
+
+    setSelectedJobId(String(job.id));
     setTimelineJobId(null);
-    onOpenJob?.(jobId);
+    setTimeline([]);
+
+    startEdit(job);
 
     window.requestAnimationFrame(() => {
       focusedJobRef.current?.scrollIntoView({
