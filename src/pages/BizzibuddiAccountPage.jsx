@@ -872,7 +872,28 @@ export default function BizzibuddiAccountPage() {
           />
         )}
         {view === "reports" && <ReportsPanel account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} productionRecords={productionRecords} onPlans={() => selectView("plans")} onBack={() => selectView("dashboard")} />}
-        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={(jobId) => selectView("production", { jobId })} onSaveProduction={saveProductionRecord} onAddPerson={async (person) => {
+        {view === "buddi" && <BizziBuddiAccountBuddi account={account} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} initialPrompt={buddiPrompt} onFinance={() => selectView("finance")} onCalendar={() => selectView("calendar")} onJobs={() => selectView("jobs")} onProduction={(jobId) => selectView("production", { jobId })} onSaveProduction={saveProductionRecord} onAddAppointment={async (appointment) => {
+          const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar", {
+            method: "POST",
+            body: JSON.stringify(appointment),
+          });
+          setAppointments((current) =>
+            [...current, result.appointment].sort((a, b) =>
+              (a.date + "T" + a.time).localeCompare(b.date + "T" + b.time)
+            )
+          );
+          try {
+            await addAutomationEvent({
+              type: "appointment-created",
+              title: "Appointment reminder prepared",
+              detail: "Reminder prepared for " + (result.appointment.title || "appointment") + " on " + result.appointment.date + ".",
+              sourceKey: "appointment:" + result.appointment.id,
+            });
+          } catch {
+            // The appointment itself is already saved; automation can be retried from the Automation screen.
+          }
+          return result.appointment;
+        }} onAddPerson={async (person) => {
           const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people", {
             method: "POST",
             body: JSON.stringify(person),
