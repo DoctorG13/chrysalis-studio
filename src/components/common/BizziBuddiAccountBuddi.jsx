@@ -294,7 +294,7 @@ function parseNaturalAppointmentRequest(rawQuestion, people) {
     remainder = remainder.replace(timeMatch[0], " ");
   }
 
-  const dateMatch = remainder.match(/\b(?:on|for)\s+(today|tomorrow|(?:next\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?)\b/i);
+  const dateMatch = remainder.match(/\b(?:on\s+|for\s+)?(today|tomorrow|(?:next\s+)?(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)|\d{1,2}[\/.-]\d{1,2}(?:[\/.-]\d{2,4})?|\d{1,2}\s+(?:january|february|march|april|may|june|july|august|september|october|november|december)(?:\s+\d{4})?)\b/i);
   if (dateMatch) {
     draft.date = parseNaturalDate(dateMatch[1]);
     remainder = remainder.replace(dateMatch[0], " ");
@@ -332,6 +332,7 @@ function parseNaturalAppointmentRequest(rawQuestion, people) {
   }
 
   draft.title = remainder
+    .replace(/^for\s+/i, "")
     .replace(/\b(?:appointment|in|for|on|at|with)\s*$/i, "")
     .replace(/\s+/g, " ")
     .trim()
