@@ -135,3 +135,10 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "CONFIR
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Confirm & record payment", "account Buddi payment save confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onRecordPayment", "account Buddi payment persistence integration");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onRecordPayment={async (invoiceId, payment)", "account page Buddi payment integration");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "parseNaturalInvoiceRequest", "account Buddi natural-language invoice parsing");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "CONFIRM NEW INVOICE", "account Buddi invoice confirmation UI");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Confirm & create invoice", "account Buddi invoice save confirmation");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onCreateInvoice", "account Buddi invoice persistence integration");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onCreateInvoice={async (invoice)", "account page Buddi invoice integration");
+assertContains(read("server/bizzibuddi-auth.js"), "description", "invoice description persistence");
+assertContains(read("server/index.js"), "bizzibuddi-invoice-descriptions", "invoice description migration");
