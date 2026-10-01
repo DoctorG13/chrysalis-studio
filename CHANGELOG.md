@@ -1,3 +1,11 @@
+## Jobs Timeline Open Job Fix
+
+### Fixed
+
+- Fixed **Open job** buttons inside the Jobs timeline so they now actively focus the associated job.
+- The timeline closes when opening the job, making the action visibly take effect even when the user is already on the Jobs screen.
+- The selected job is scrolled into view and remains visually highlighted.
+
 ## Buddi Unmatched Client Creation
 
 ### Added
