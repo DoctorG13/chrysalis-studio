@@ -1,3 +1,11 @@
+## Buddi Payment Amount Parsing Fix
+
+### Fixed
+
+- Preserved the amount when Buddi parses natural-language payment requests such as `Record a $500 payment from Jessica Williams...`.
+- Prevented the payment command prefix from consuming the amount before the payment amount parser runs.
+- Kept the existing confirmation gate and invoice-matching behaviour unchanged.
+
 ## Buddi Finance Intelligence
 
 ### Added
