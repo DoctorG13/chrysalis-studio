@@ -1,3 +1,13 @@
+## Buddi Natural-Language Invoice Creation
+
+### Added
+
+- Buddi can now recognise invoice requests such as “Create an invoice for Jessica Williams for Wedding Dress, $2,400.”
+- Invoice details are pre-filled into a review form with client, description, amount, issue date and due date.
+- The default due date is seven days from creation when no due date is specified.
+- Invoice descriptions are now persisted in the account-backed finance database.
+- Invoice creation remains confirmation-gated and uses the existing account-backed invoice API.
+
 ## Buddi Natural-Language Finance Actions
 
 ### Added
