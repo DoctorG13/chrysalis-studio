@@ -869,7 +869,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       /^(?:please\s+)?(?:book|schedule|arrange|create|add)\s+(?:an?\s+)?appointment\b/i.test(value) ||
       /^(?:please\s+)?(?:book|schedule|arrange)\s+.+\s+in\s+for\b/i.test(value);
     const isPaymentRequest =
-      /^(?:please\s+)?(?:record|take|add|log)\s+(?:a\s+)?(?:\$?\s*[\d,.]+(?:k)?\s+)?(?:payment|deposit)\b/i.test(value);
+      /^(?:please\s+)?(?:record|take|add|log)\b.*\b(?:payment|deposit)\b/i.test(value);
 
     if (isJobRequest) {
       const prefilledJob = parseNaturalJobRequest(value, people);
