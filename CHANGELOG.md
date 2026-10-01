@@ -1,3 +1,11 @@
+## Buddi Payment Invoice Matching
+
+### Added
+
+- Buddi now automatically selects the only outstanding invoice when recording a natural-language payment for a matched client.
+- When a client has multiple outstanding invoices, Buddi can match the payment description against the persisted invoice description when there is one clear match.
+- Ambiguous payments remain unselected and still require the user to choose the invoice during confirmation.
+
 ## Buddi Natural-Language Invoice Creation
 
 ### Added
