@@ -1,3 +1,12 @@
+## Payment Audit Event Retrieval Fix
+
+### Fixed
+
+- Corrected Payment Activity retrieval so persisted `Payment updated` and `Payment removed` events are included even when their historical source keys contain a payment ID rather than the invoice ID.
+- Preserved compatibility with existing recorded, updated and removed payment audit events.
+
+---
+
 ## Deterministic Payment Audit Reconciliation
 
 ### Fixed
