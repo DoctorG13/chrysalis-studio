@@ -1,3 +1,11 @@
+## Finance Payment Activity Actions
+
+### Added
+
+- Added direct **Edit** and **Delete** actions to Finance payment activity.
+- Reused the authenticated payment APIs so activity changes remain persistent and account-scoped.
+- Added the same confirmation flow for deleting a payment from the activity list.
+
 ## Finance Payment Corrections
 
 ### Fixed
