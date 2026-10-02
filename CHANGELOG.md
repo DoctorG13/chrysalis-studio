@@ -1,3 +1,12 @@
+## Payment Activity Presentation
+
+### Added
+
+- Made **Payment Activity** a clearly visible expandable section in job payments.
+- Added an activity count and whole-row click target while keeping the section collapsed by default.
+- Persisted payment activity events for **Payment Recorded**, **Payment Edited**, and **Payment Removed**.
+- Added timestamps and payment details to each activity event.
+
 ## Finance Payment Activity Actions
 
 ### Added
