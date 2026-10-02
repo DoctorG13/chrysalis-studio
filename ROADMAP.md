@@ -26,6 +26,7 @@
 - [x] Preserve persisted Payment Activity through invoice API serialization
 - [x] Add Finance Revenue Overview with persisted payment metrics and six-month revenue view
 - [x] Add Finance Cashflow Outlook using recorded payments and outstanding invoices
+- [x] Add persistent Finance Expenses & Outgoings with net cashflow calculations
 
 
 
