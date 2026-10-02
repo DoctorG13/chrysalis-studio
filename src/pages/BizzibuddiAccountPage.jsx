@@ -183,6 +183,25 @@ export default function BizzibuddiAccountPage() {
     return result.invoice;
   }
 
+  async function updateAccountPayment(invoiceId, paymentId, payment) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/invoices/" +
+        encodeURIComponent(invoiceId) +
+        "/payments/" +
+        encodeURIComponent(paymentId),
+      {
+        method: "PUT",
+        body: JSON.stringify(payment),
+      }
+    );
+
+    setInvoices((current) =>
+      current.map((invoice) => invoice.id === invoiceId ? result.invoice : invoice)
+    );
+
+    return result.invoice;
+  }
+
   function writeWorkspaceRoute(nextView, target = {}) {
     const params = new URLSearchParams();
     if (nextView) params.set("view", nextView);
@@ -691,6 +710,7 @@ export default function BizzibuddiAccountPage() {
             initialInvoiceId={deepLink.invoiceId}
             onPlans={() => selectView("plans")}
             onRecordPayment={recordAccountPayment}
+            onUpdatePayment={updateAccountPayment}
             onAddInvoice={async (invoice) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices", {
                 method: "POST",
@@ -4421,16 +4441,23 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onRecordPayment, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onRecordPayment, onUpdatePayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [paymentsByInvoice, setPaymentsByInvoice] = useState({});
   const [paymentInvoiceId, setPaymentInvoiceId] = useState("");
+  const [editingPaymentId, setEditingPaymentId] = useState("");
+  const [editingPaymentForm, setEditingPaymentForm] = useState({
+    amount: "",
+    date: "",
+    method: "Other",
+    description: "",
+  });
   const [paymentForm, setPaymentForm] = useState({
     amount: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: getAccountLocalDateKey(),
     method: "Other",
     description: "",
   });
@@ -4492,7 +4519,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     setPaymentInvoiceId(invoice.id);
     setPaymentForm({
       amount: "",
-      date: new Date().toISOString().slice(0, 10),
+      date: getAccountLocalDateKey(),
       method: "Other",
       description: "",
     });
@@ -4502,6 +4529,76 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     if (saving) return;
     setPaymentInvoiceId("");
     setError("");
+  }
+
+  function startEditPayment(payment) {
+    setError("");
+    setEditingPaymentId(payment.id);
+    setEditingPaymentForm({
+      amount: String(payment.amount ?? ""),
+      date: payment.date || getAccountLocalDateKey(),
+      method: payment.method || "Other",
+      description: payment.description || "",
+    });
+  }
+
+  function cancelEditPayment() {
+    if (saving) return;
+    setEditingPaymentId("");
+    setEditingPaymentForm({
+      amount: "",
+      date: "",
+      method: "Other",
+      description: "",
+    });
+    setError("");
+  }
+
+  async function handleUpdatePayment(event, invoice, payment) {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+
+    try {
+      const amount = Number(editingPaymentForm.amount);
+      const currentPaid = Number(invoice.amountPaid || 0);
+      const currentPaymentAmount = Number(payment.amount || 0);
+      const maximumAmount = Math.max(
+        currentPaymentAmount,
+        Number(invoice.amount || 0) - (currentPaid - currentPaymentAmount)
+      );
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error("Enter a payment amount greater than zero.");
+      }
+
+      if (amount > maximumAmount) {
+        throw new Error(
+          "Payment cannot be greater than the available invoice balance of " +
+          formatCurrency(maximumAmount) +
+          "."
+        );
+      }
+
+      await onUpdatePayment(invoice.id, payment.id, {
+        amount,
+        date: editingPaymentForm.date,
+        method: editingPaymentForm.method || "Other",
+        description: editingPaymentForm.description || "Payment",
+      });
+
+      setEditingPaymentId("");
+      setEditingPaymentForm({
+        amount: "",
+        date: "",
+        method: "Other",
+        description: "",
+      });
+    } catch (requestError) {
+      setError(requestError.message || "We could not update this payment.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleRecordPayment(event, invoice) {
@@ -4534,7 +4631,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       setPaymentInvoiceId("");
       setPaymentForm({
         amount: "",
-        date: new Date().toISOString().slice(0, 10),
+        date: getAccountLocalDateKey(),
         method: "Other",
         description: "",
       });
@@ -4809,26 +4906,122 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 {payments.length > 0 ? (
                   <div style={{ display: "grid", gap: 2, marginTop: 7 }}>
                     {payments.map((payment) => (
-                      <div
-                        key={payment.id}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "minmax(78px, auto) minmax(150px, auto) 1fr",
-                          alignItems: "baseline",
-                          gap: 10,
-                          padding: "4px 0",
-                        }}
-                      >
-                        <strong style={{ fontSize: 14 }}>{formatCurrency(payment.amount)}</strong>
-                        <span style={smallText}>
-                          {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
-                        </span>
-                        {payment.description ? (
-                          <span style={{ ...smallText, minWidth: 0 }}>
-                            {payment.description}
+                      <div key={payment.id} style={{ display: "grid", gap: 5 }}>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "minmax(78px, auto) minmax(150px, auto) 1fr auto",
+                            alignItems: "center",
+                            gap: 10,
+                            padding: "4px 0",
+                          }}
+                        >
+                          <strong style={{ fontSize: 14 }}>{formatCurrency(payment.amount)}</strong>
+                          <span style={smallText}>
+                            {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
                           </span>
-                        ) : (
-                          <span />
+                          {payment.description ? (
+                            <span style={{ ...smallText, minWidth: 0 }}>
+                              {payment.description}
+                            </span>
+                          ) : (
+                            <span />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => startEditPayment(payment)}
+                            disabled={saving}
+                            style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                          >
+                            Edit
+                          </button>
+                        </div>
+
+                        {editingPaymentId === payment.id && (
+                          <form
+                            onSubmit={(event) => handleUpdatePayment(event, invoice, payment)}
+                            style={{
+                              marginLeft: 10,
+                              padding: "10px 0 8px 12px",
+                              borderLeft: "1px solid rgba(0,180,219,.22)",
+                            }}
+                          >
+                            <small style={smallText}>EDIT PAYMENT</small>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginTop: 8 }}>
+                              <label style={fieldStyle}>
+                                Amount
+                                <input
+                                  type="number"
+                                  min="0.01"
+                                  max={Math.max(
+                                    Number(payment.amount || 0),
+                                    Number(invoice.amount || 0) -
+                                      (Number(invoice.amountPaid || 0) - Number(payment.amount || 0))
+                                  )}
+                                  step="0.01"
+                                  value={editingPaymentForm.amount}
+                                  onChange={(event) => setEditingPaymentForm((current) => ({ ...current, amount: event.target.value }))}
+                                  required
+                                  disabled={saving}
+                                  style={inputStyle}
+                                />
+                              </label>
+                              <label style={fieldStyle}>
+                                Date
+                                <input
+                                  type="date"
+                                  value={editingPaymentForm.date}
+                                  onChange={(event) => setEditingPaymentForm((current) => ({ ...current, date: event.target.value }))}
+                                  required
+                                  disabled={saving}
+                                  style={inputStyle}
+                                />
+                              </label>
+                              <label style={fieldStyle}>
+                                Method
+                                <select
+                                  value={editingPaymentForm.method}
+                                  onChange={(event) => setEditingPaymentForm((current) => ({ ...current, method: event.target.value }))}
+                                  disabled={saving}
+                                  style={inputStyle}
+                                >
+                                  <option>Other</option>
+                                  <option>Bank Transfer</option>
+                                  <option>Cash</option>
+                                  <option>Card</option>
+                                  <option>EFTPOS</option>
+                                  <option>Direct Debit</option>
+                                </select>
+                              </label>
+                              <label style={fieldStyle}>
+                                Description
+                                <input
+                                  value={editingPaymentForm.description}
+                                  onChange={(event) => setEditingPaymentForm((current) => ({ ...current, description: event.target.value }))}
+                                  placeholder="Optional"
+                                  disabled={saving}
+                                  style={inputStyle}
+                                />
+                              </label>
+                            </div>
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+                              <button
+                                type="submit"
+                                disabled={saving}
+                                style={{ ...primaryButton, width: "auto", minHeight: 38, marginTop: 0, opacity: saving ? 0.65 : 1 }}
+                              >
+                                {saving ? "Saving…" : "Save changes"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEditPayment}
+                                disabled={saving}
+                                style={{ ...secondaryButton, width: "auto", minHeight: 38, marginTop: 0 }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
                         )}
                       </div>
                     ))}
@@ -4897,6 +5090,14 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </form>
     )}
   </section>;
+}
+
+function getAccountLocalDateKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
 }
 
 function formatCurrency(amount) {
