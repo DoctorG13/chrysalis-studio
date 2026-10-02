@@ -899,7 +899,29 @@ function getInvoicePayments(userId, invoiceId) {
 }
 
 function getInvoicePaymentActivity(userId, invoiceId) {
-  return getDatabase()
+  const database = getDatabase();
+  const payments = getInvoicePayments(userId, invoiceId);
+
+  // Backfill the persistent "Payment recorded" event for payments that
+  // existed before payment activity tracking was introduced. The source key
+  // makes this idempotent, so an existing event is never duplicated.
+  for (const payment of payments) {
+    createAutomationEvent(userId, {
+      type: "finance-payment-recorded",
+      title: "Payment recorded",
+      detail:
+        Number(payment.amount || 0).toFixed(2) +
+        " payment recorded on " +
+        invoiceId +
+        " via " +
+        (payment.method || "Other") +
+        (payment.description ? " — " + payment.description : "") +
+        ".",
+      sourceKey: "finance-payment:recorded:" + payment.id + ":" + invoiceId,
+    });
+  }
+
+  return database
     .prepare(
       `SELECT id, type, title, detail, created_at
        FROM bizzibuddi_automation_events
