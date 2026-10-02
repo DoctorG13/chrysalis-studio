@@ -2,6 +2,7 @@
 
 ### Fixed
 
+- Added persistent Finance payment activity for recorded, edited and removed payments.
 - Added account-scoped payment removal from Finance with confirmation and automatic invoice balance/status recalculation.
 - Routed Finance payment corrections through a payment-specific API endpoint so editing no longer depends on the invoice card's route identity.
 - Finance payment corrections now use the persisted payment invoice ID when sending an edit request.
