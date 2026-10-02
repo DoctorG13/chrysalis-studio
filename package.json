@@ -21,7 +21,7 @@
     "db:audit": "node scripts/audit-database.js",
     "test:workflow": "node scripts/test-bizzibuddi-workflow.js",
     "release:check": "node scripts/check-production-release.js",
-    "db:repair-payment-audit": "node scripts/repair-payment-audit.js"
+    "db:repair-payment-audit": "node --env-file=.env scripts/repair-payment-audit.js"
   },
   "dependencies": {
     "react": "^19.2.7",
