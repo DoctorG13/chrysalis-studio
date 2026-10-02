@@ -4013,6 +4013,75 @@ function exportBizziBuddiReportCsv(reportData) {
   URL.revokeObjectURL(url);
 }
 
+function exportFinanceMonthlyCsv({ monthKey, monthLabel, payments, expenses, received, spent, net }) {
+  const rows = [
+    ["BizziBuddi Finance Report", ""],
+    ["Period", monthLabel],
+    ["Month", monthKey],
+    ["" , ""],
+    ["Summary", "Received", received],
+    ["Summary", "Expenses", spent],
+    ["Summary", "Net cashflow", net],
+    ["" , ""],
+    ["Transactions", "Date", "Type", "Amount", "Category", "Method", "Description", "Invoice", "Client"],
+    ...[
+      ...payments.map((payment) => ({
+        date: payment.date || "",
+        type: "Payment",
+        amount: Number(payment.amount) || 0,
+        category: "Customer payment",
+        method: payment.method || "Other",
+        description: payment.description || "",
+        invoice: payment.invoiceNumber || "",
+        client: payment.invoicePerson || "",
+      })),
+      ...expenses.map((expense) => ({
+        date: expense.date || "",
+        type: "Expense",
+        amount: Number(expense.amount) || 0,
+        category: expense.category || "Other",
+        method: expense.method || "Other",
+        description: expense.description || "",
+        invoice: "",
+        client: "",
+      })),
+    ]
+      .sort((left, right) => String(right.date).localeCompare(String(left.date)))
+      .map((item) => [
+        "Transactions",
+        item.date,
+        item.type,
+        item.amount,
+        item.category,
+        item.method,
+        item.description,
+        item.invoice,
+        item.client,
+      ]),
+  ];
+
+  const csv = rows
+    .map((row) =>
+      row
+        .map((value) => {
+          const text = String(value ?? "");
+          return "\"" + text.replaceAll("\"", "\"\"") + "\"";
+        })
+        .join(",")
+    )
+    .join("\n");
+
+  const blob = new Blob(["\\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "bizzibuddi-finance-" + monthKey + ".csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function ReportsPanel({ account, onPlans, onBack }) {
   const [reportData, setReportData] = useState(null);
   const [reportError, setReportError] = useState("");
@@ -4489,6 +4558,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     method: "Other",
     description: "",
   });
+  const [financeReportMonth, setFinanceReportMonth] = useState(
+    getAccountLocalDateKey().slice(0, 7)
+  );
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
   useEffect(() => {
@@ -5033,6 +5105,26 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const outstandingCoverage = outstanding > 0
     ? Math.min(100, (upcomingAmount / outstanding) * 100)
     : 0;
+  const selectedFinanceReport = monthlyCashflow.find(
+    (month) => month.key === financeReportMonth
+  ) || monthlyCashflow[monthlyCashflow.length - 1];
+  const selectedFinanceReportMonth = selectedFinanceReport?.key || currentMonthKey;
+  const selectedFinanceReportPayments = financePayments.filter(
+    (payment) => String(payment.date || "").slice(0, 7) === selectedFinanceReportMonth
+  );
+  const selectedFinanceReportExpenses = expenses.filter(
+    (expense) => String(expense.date || "").slice(0, 7) === selectedFinanceReportMonth
+  );
+  const selectedFinanceReportReceived = selectedFinanceReportPayments.reduce(
+    (sum, payment) => sum + (Number(payment.amount) || 0),
+    0
+  );
+  const selectedFinanceReportSpent = selectedFinanceReportExpenses.reduce(
+    (sum, expense) => sum + (Number(expense.amount) || 0),
+    0
+  );
+  const selectedFinanceReportNet =
+    selectedFinanceReportReceived - selectedFinanceReportSpent;
 
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -5569,6 +5661,175 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           </p>
         )}
       </div>
+    </section>
+
+    <section
+      style={{
+        marginTop: 18,
+        padding: 18,
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        background: "rgba(255,255,255,.025)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <small style={smallText}>FINANCE REPORTING</small>
+          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Monthly financial report.</h3>
+          <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 11 }}>
+            Review recorded payments and expenses for a selected month, then export the report for your records.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <select
+            value={selectedFinanceReportMonth}
+            onChange={(event) => setFinanceReportMonth(event.target.value)}
+            style={{ ...inputStyle, width: "auto", minWidth: 150, minHeight: 38 }}
+          >
+            {monthlyCashflow.slice().reverse().map((month) => {
+              const monthDate = new Date(month.key + "-01T00:00:00");
+              return (
+                <option key={month.key} value={month.key}>
+                  {monthDate.toLocaleDateString("en-AU", { month: "long", year: "numeric" })}
+                </option>
+              );
+            })}
+          </select>
+          <button
+            type="button"
+            onClick={() =>
+              exportFinanceMonthlyCsv({
+                monthKey: selectedFinanceReportMonth,
+                monthLabel: new Date(selectedFinanceReportMonth + "-01T00:00:00").toLocaleDateString("en-AU", {
+                  month: "long",
+                  year: "numeric",
+                }),
+                payments: selectedFinanceReportPayments,
+                expenses: selectedFinanceReportExpenses,
+                received: selectedFinanceReportReceived,
+                spent: selectedFinanceReportSpent,
+                net: selectedFinanceReportNet,
+              })
+            }
+            style={smallActionButton}
+          >
+            ↓ Export CSV
+          </button>
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: 10,
+          marginTop: 15,
+        }}
+      >
+        {[
+          ["RECEIVED", selectedFinanceReportReceived],
+          ["EXPENSES", selectedFinanceReportSpent],
+          ["NET CASHFLOW", selectedFinanceReportNet],
+        ].map(([label, value]) => (
+          <div
+            key={label}
+            style={{
+              padding: "13px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,.10)",
+              background: "rgba(255,255,255,.025)",
+            }}
+          >
+            <small style={{ ...smallText, fontSize: 9 }}>{label}</small>
+            <strong
+              style={{
+                display: "block",
+                marginTop: 6,
+                fontSize: 18,
+                color: label === "NET CASHFLOW" && value < 0 ? "#ff8c8c" : TEXT,
+              }}
+            >
+              {formatCurrency(value)}
+            </strong>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 8 }}>
+          <small style={smallText}>TRANSACTIONS</small>
+          <small style={{ ...smallText, color: MUTED }}>
+            {selectedFinanceReportPayments.length + selectedFinanceReportExpenses.length} recorded
+          </small>
+        </div>
+
+        {selectedFinanceReportPayments.length > 0 || selectedFinanceReportExpenses.length > 0 ? (
+          <div style={{ display: "grid", gap: 4 }}>
+            {[
+              ...selectedFinanceReportPayments.map((payment) => ({
+                id: "payment-" + payment.id,
+                date: payment.date,
+                type: "Payment",
+                amount: Number(payment.amount) || 0,
+                category: "Customer payment",
+                method: payment.method || "Other",
+                description: payment.description || "",
+                reference: payment.invoiceNumber || "",
+                person: payment.invoicePerson || "",
+              })),
+              ...selectedFinanceReportExpenses.map((expense) => ({
+                id: "expense-" + expense.id,
+                date: expense.date,
+                type: "Expense",
+                amount: Number(expense.amount) || 0,
+                category: expense.category || "Other",
+                method: expense.method || "Other",
+                description: expense.description || "",
+                reference: "",
+                person: "",
+              })),
+            ]
+              .sort((left, right) => String(right.date || "").localeCompare(String(left.date || "")))
+              .map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "82px 68px minmax(70px, auto) 1fr auto",
+                    alignItems: "center",
+                    gap: 9,
+                    padding: "8px 0",
+                    borderTop: "1px solid rgba(255,255,255,.06)",
+                  }}
+                >
+                  <span style={smallText}>{formatInvoiceDate(item.date)}</span>
+                  <strong style={{ fontSize: 12, color: item.type === "Expense" ? "#ffb0b0" : TEXT }}>
+                    {item.type}
+                  </strong>
+                  <strong style={{ fontSize: 13 }}>
+                    {formatCurrency(item.amount)}
+                  </strong>
+                  <span style={{ ...smallText, minWidth: 0 }}>
+                    {item.category}
+                    {item.method ? " · " + item.method : ""}
+                    {item.description ? " · " + item.description : ""}
+                    {item.reference ? " · " + item.reference : ""}
+                    {item.person ? " · " + item.person : ""}
+                  </span>
+                  <span />
+                </div>
+              ))}
+          </div>
+        ) : (
+          <p style={{ ...copyStyle, margin: 0, fontSize: 11 }}>
+            No payments or expenses were recorded for this month.
+          </p>
+        )}
+      </div>
+
+      <p style={{ ...copyStyle, margin: "13px 0 0", fontSize: 11 }}>
+        This report uses recorded customer payments and recorded expenses. It is a transaction report, not a bank statement or tax return.
+      </p>
     </section>
 
     {invoices.length > 0 ? (
