@@ -1,3 +1,12 @@
+## BizziBuddi Payment Activity Polish
+
+### Changed
+
+- Formatted Payment Activity timestamps for the Australian locale as **2 Oct 2026 · 1:09 PM**.
+- Formatted fallback activity amounts as currency.
+- Replaced the internal invoice UUID in fallback activity descriptions with the customer-facing invoice number.
+- Kept Payment History as the transaction ledger and Payment Activity as the separate audit trail.
+
 ## Visible Invoice Payment Activity Fallback
 
 ### Fixed
