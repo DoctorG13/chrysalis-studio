@@ -4808,7 +4808,24 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
           );
           const payments = paymentsByInvoice[invoice.id] || [];
-          const paymentActivity = paymentActivityByInvoice[invoice.id] || [];
+          const persistedPaymentActivity = paymentActivityByInvoice[invoice.id] || [];
+          const paymentActivity =
+            persistedPaymentActivity.length > 0
+              ? persistedPaymentActivity
+              : payments.map((payment) => ({
+                  id: "payment-fallback-" + payment.id,
+                  type: "finance-payment-recorded",
+                  title: "Payment recorded",
+                  detail:
+                    Number(payment.amount || 0).toFixed(2) +
+                    " payment recorded on " +
+                    invoice.id +
+                    " via " +
+                    (payment.method || "Other") +
+                    (payment.description ? " — " + payment.description : "") +
+                    ".",
+                  createdAt: payment.createdAt || payment.date || null,
+                }));
           const recordedPaymentTotal = payments.reduce(
             (sum, payment) => sum + (Number(payment.amount) || 0),
             0
