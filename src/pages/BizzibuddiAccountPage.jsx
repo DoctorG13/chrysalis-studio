@@ -4463,6 +4463,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [paymentsByInvoice, setPaymentsByInvoice] = useState({});
+  const [paymentActivityByInvoice, setPaymentActivityByInvoice] = useState({});
   const [paymentInvoiceId, setPaymentInvoiceId] = useState("");
   const [editingPaymentId, setEditingPaymentId] = useState("");
   const [editingPaymentForm, setEditingPaymentForm] = useState({
@@ -4498,6 +4499,14 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         invoices.map((invoice) => [
           invoice.id,
           Array.isArray(invoice.payments) ? invoice.payments : [],
+        ])
+      )
+    );
+    setPaymentActivityByInvoice(
+      Object.fromEntries(
+        invoices.map((invoice) => [
+          invoice.id,
+          Array.isArray(invoice.paymentActivity) ? invoice.paymentActivity : [],
         ])
       )
     );
@@ -4798,6 +4807,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
           );
           const payments = paymentsByInvoice[invoice.id] || [];
+          const paymentActivity = paymentActivityByInvoice[invoice.id] || [];
           const recordedPaymentTotal = payments.reduce(
             (sum, payment) => sum + (Number(payment.amount) || 0),
             0
@@ -5108,6 +5118,23 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   <div style={{ ...smallText, marginTop: 7 }}>
                     Payment details are not available yet.
                   </div>
+                )}
+
+                {paymentActivity.length > 0 && (
+                  <details style={{ marginTop: 10 }}>
+                    <summary style={{ ...smallText, cursor: "pointer" }}>PAYMENT ACTIVITY</summary>
+                    <div style={{ display: "grid", gap: 4, marginTop: 7 }}>
+                      {paymentActivity.map((event) => (
+                        <div key={event.id} style={{ ...smallText, paddingLeft: 8, borderLeft: "1px solid rgba(0,180,219,.18)" }}>
+                          <strong>{event.title}</strong>
+                          <span style={{ display: "block", marginTop: 2 }}>{event.detail}</span>
+                          <span style={{ display: "block", marginTop: 2, opacity: 0.75 }}>
+                            {event.createdAt ? new Date(event.createdAt).toLocaleString() : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 )}
               </div>
             )}
