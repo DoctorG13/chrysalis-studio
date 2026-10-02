@@ -15,6 +15,11 @@ import {
 } from "../services/paymentApi";
 
 import {
+  createTimelineEvent,
+  getTimeline,
+} from "../services/timelineApi";
+
+import {
   createQuote,
   deleteQuote,
   getQuotes,
@@ -192,6 +197,19 @@ function paymentDate(payment) {
     : time;
 }
 
+function formatActivityDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function formatPaymentDate(payment) {
   const value =
     payment?.date ||
@@ -286,6 +304,8 @@ export default function FinancePage({
 
   const [paymentForm, setPaymentForm] = useState(null);
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentActivity, setPaymentActivity] = useState([]);
+  const [activityExpanded, setActivityExpanded] = useState(false);
 
   const [financialDefaults, setFinancialDefaults] = useState({
     gstRate: DEFAULT_GST_RATE,
@@ -384,6 +404,51 @@ export default function FinancePage({
   useEffect(() => {
     loadFinancePayments();
   }, [jobs]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPaymentActivity() {
+      if (!jobs.length) {
+        setPaymentActivity([]);
+        return;
+      }
+
+      try {
+        const results = await Promise.all(
+          jobs
+            .filter((job) => job?.id && job?.clientId)
+            .map(async (job) => {
+              try {
+                return await getTimeline({ clientId: job.clientId, jobId: job.id });
+              } catch (error) {
+                console.warn(`Unable to load payment activity for job ${job.id}.`, error);
+                return [];
+              }
+            })
+        );
+
+        if (!active) return;
+
+        const events = results
+          .flat()
+          .filter((event) => event?.type === "payment")
+          .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+        setPaymentActivity(events);
+      } catch (error) {
+        console.warn("Unable to load Finance payment activity.", error);
+        if (active) setPaymentActivity([]);
+      }
+    }
+
+    loadPaymentActivity();
+
+    return () => {
+      active = false;
+    };
+  }, [jobs]);
+
 
   useEffect(() => {
     let active = true;
@@ -615,6 +680,61 @@ export default function FinancePage({
     setPaymentForm((current) => ({ ...current, [field]: value }));
   }
 
+  async function recordPaymentActivity(payment, edited) {
+    if (!payment?.jobId || !payment?.clientId) return;
+
+    const label = isDepositPayment(payment) ? "Deposit" : "Payment";
+    const title = edited ? `${label} Edited` : `${label} Recorded`;
+    const description =
+      `${money(Number(payment.amount || 0))} ${label.toLowerCase()} ${edited ? "edited" : "recorded"}` +
+      (payment.paymentMethod ? ` via ${payment.paymentMethod}` : "") +
+      ".";
+
+    try {
+      const event = await createTimelineEvent({
+        clientId: payment.clientId,
+        jobId: payment.jobId,
+        type: "payment",
+        title,
+        description,
+        date: new Date().toISOString(),
+      });
+
+      setPaymentActivity((current) =>
+        [event, ...current].sort(
+          (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
+        )
+      );
+    } catch (error) {
+      console.warn("Unable to persist Finance payment activity.", error);
+    }
+  }
+
+  async function recordRemovedPaymentActivity(payment) {
+    if (!payment?.jobId || !payment?.clientId) return;
+
+    const label = isDepositPayment(payment) ? "Deposit" : "Payment";
+
+    try {
+      const event = await createTimelineEvent({
+        clientId: payment.clientId,
+        jobId: payment.jobId,
+        type: "payment",
+        title: `${label} Removed`,
+        description: `${money(Number(payment.amount || 0))} ${label.toLowerCase()} removed.`,
+        date: new Date().toISOString(),
+      });
+
+      setPaymentActivity((current) =>
+        [event, ...current].sort(
+          (a, b) => new Date(b.date || 0) - new Date(a.date || 0)
+        )
+      );
+    } catch (error) {
+      console.warn("Unable to persist removed Finance payment activity.", error);
+    }
+  }
+
   async function saveRecordedPayment() {
     if (!paymentForm?.jobId) {
       setError("Please select a job for this payment.");
@@ -631,13 +751,17 @@ export default function FinancePage({
     setError("");
 
     try {
-      await savePayment({
+      const wasEdited = Boolean(paymentForm.id);
+
+      const savedPayment = await savePayment({
         ...paymentForm,
         amount,
         jobId: paymentForm.jobId,
         clientId: paymentForm.clientId,
       });
+
       await loadFinancePayments();
+      await recordPaymentActivity(savedPayment || paymentForm, wasEdited);
       setPaymentForm(null);
     } catch (err) {
       setError(err.message || "Unable to save payment.");
@@ -670,6 +794,7 @@ export default function FinancePage({
     try {
       await deletePayment(payment.id);
       await loadFinancePayments();
+      await recordRemovedPaymentActivity(payment);
 
       if (String(paymentForm?.id || "") === String(payment.id)) {
         setPaymentForm(null);
@@ -1515,6 +1640,53 @@ export default function FinancePage({
                     </div>
                   </div>
                 )
+              )}
+            </div>
+          )}
+        </section>
+
+        <section style={paymentActivityPanelStyle}>
+          <button
+            type="button"
+            onClick={() => setActivityExpanded((current) => !current)}
+            style={paymentActivityHeaderButtonStyle}
+            aria-expanded={activityExpanded}
+          >
+            <span style={paymentActivityHeaderContentStyle}>
+              <span style={paymentActivityChevronStyle}>{activityExpanded ? "▾" : "▸"}</span>
+              <span>
+                <span style={paymentActivityTitleStyle}>Payment Activity</span>
+                <span style={paymentActivitySubtitleStyle}>
+                  {paymentActivity.length === 0
+                    ? "No payment events yet"
+                    : paymentActivity.length + " " + (paymentActivity.length === 1 ? "event" : "events") + " recorded"}
+                </span>
+              </span>
+            </span>
+            <span style={paymentActivityCountBadgeStyle}>{paymentActivity.length}</span>
+          </button>
+
+          {activityExpanded && (
+            <div style={paymentActivityListStyle}>
+              {paymentActivity.length === 0 ? (
+                <div style={paymentActivityEmptyStyle}>
+                  Payment events such as recorded, edited and removed payments will appear here.
+                </div>
+              ) : (
+                paymentActivity.map((event, index) => (
+                  <div key={event.id || event.date + "-" + index} style={paymentActivityEventStyle}>
+                    <div style={paymentActivityDotStyle} />
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={paymentActivityEventTopStyle}>
+                        <strong style={paymentActivityEventTitleStyle}>{event.title || "Payment activity"}</strong>
+                        <span style={paymentActivityEventDateStyle}>{formatActivityDate(event.date)}</span>
+                      </div>
+                      {event.description && (
+                        <div style={paymentActivityEventDescriptionStyle}>{event.description}</div>
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           )}
@@ -3332,6 +3504,126 @@ const financeJobRow = {
     "13px 0",
   borderBottom:
     "1px solid #ECEEEF",
+};
+
+const paymentActivityPanelStyle = {
+  marginTop: 18,
+  border: "1px solid #E5E7EB",
+  borderRadius: 12,
+  background: "#FAFAFA",
+  overflow: "hidden",
+};
+
+const paymentActivityHeaderButtonStyle = {
+  width: "100%",
+  border: 0,
+  background: "transparent",
+  padding: "13px 15px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 12,
+  cursor: "pointer",
+  textAlign: "left",
+};
+
+const paymentActivityHeaderContentStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  minWidth: 0,
+};
+
+const paymentActivityChevronStyle = {
+  width: 20,
+  color: "#8B1E3F",
+  fontSize: 16,
+  fontWeight: 800,
+  textAlign: "center",
+};
+
+const paymentActivityTitleStyle = {
+  display: "block",
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: 0.8,
+  textTransform: "uppercase",
+  color: "#8B1E3F",
+};
+
+const paymentActivitySubtitleStyle = {
+  display: "block",
+  marginTop: 3,
+  fontSize: 11,
+  color: "#888",
+};
+
+const paymentActivityCountBadgeStyle = {
+  minWidth: 24,
+  height: 24,
+  padding: "0 7px",
+  boxSizing: "border-box",
+  borderRadius: 999,
+  background: "#F3E8ED",
+  color: "#8B1E3F",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: 11,
+  fontWeight: 800,
+};
+
+const paymentActivityListStyle = {
+  borderTop: "1px solid #E8EAED",
+  padding: "8px 15px 12px",
+};
+
+const paymentActivityEventStyle = {
+  display: "flex",
+  gap: 10,
+  padding: "10px 0",
+  borderBottom: "1px solid #ECEEEF",
+};
+
+const paymentActivityDotStyle = {
+  width: 7,
+  height: 7,
+  marginTop: 6,
+  borderRadius: "50%",
+  background: "#8B1E3F",
+  flexShrink: 0,
+};
+
+const paymentActivityEventTopStyle = {
+  display: "flex",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  gap: 12,
+};
+
+const paymentActivityEventTitleStyle = {
+  color: "#2F3A3F",
+  fontSize: 12,
+};
+
+const paymentActivityEventDateStyle = {
+  color: "#999",
+  fontSize: 10,
+  whiteSpace: "nowrap",
+};
+
+const paymentActivityEventDescriptionStyle = {
+  marginTop: 3,
+  color: "#666",
+  fontSize: 11,
+  lineHeight: 1.45,
+};
+
+const paymentActivityEmptyStyle = {
+  padding: "12px 0 5px",
+  color: "#888",
+  fontSize: 11,
+  lineHeight: 1.5,
 };
 
 const recentPaymentRow = {
