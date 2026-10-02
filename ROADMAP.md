@@ -20,6 +20,7 @@
 - [x] Repair legacy edited-payment audit history and prevent duplicate recorded events
 - [x] Fix legacy payment-audit migration amount parsing
 - [x] Make legacy payment-audit reconciliation deterministic
+- [x] Fix Payment Activity retrieval for persisted payment update and removal events
 
 
 
