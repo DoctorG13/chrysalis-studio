@@ -1,3 +1,13 @@
+## Payment Audit Migration Parsing Fix
+
+### Fixed
+
+- Corrected the legacy payment-audit migration amount parser so historical edited-payment events can be recognised correctly.
+- Ensured a legacy $150 → $300 payment edit can be presented as a Payment recorded event followed by a Payment updated audit event instead of two recorded events.
+- Prevented the legacy migration path from failing silently because of an incorrectly escaped whitespace expression.
+
+---
+
 ## Repair Legacy Payment Audit History
 
 ### Fixed
