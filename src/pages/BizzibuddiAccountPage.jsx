@@ -4464,6 +4464,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [saving, setSaving] = useState(false);
   const [paymentsByInvoice, setPaymentsByInvoice] = useState({});
   const [paymentActivityByInvoice, setPaymentActivityByInvoice] = useState({});
+  const [expandedPaymentActivity, setExpandedPaymentActivity] = useState({});
   const [paymentInvoiceId, setPaymentInvoiceId] = useState("");
   const [editingPaymentId, setEditingPaymentId] = useState("");
   const [editingPaymentForm, setEditingPaymentForm] = useState({
@@ -5121,20 +5122,102 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 )}
 
                 {paymentActivity.length > 0 && (
-                  <details style={{ marginTop: 10 }}>
-                    <summary style={{ ...smallText, cursor: "pointer" }}>PAYMENT ACTIVITY</summary>
-                    <div style={{ display: "grid", gap: 4, marginTop: 7 }}>
-                      {paymentActivity.map((event) => (
-                        <div key={event.id} style={{ ...smallText, paddingLeft: 8, borderLeft: "1px solid rgba(0,180,219,.18)" }}>
-                          <strong>{event.title}</strong>
-                          <span style={{ display: "block", marginTop: 2 }}>{event.detail}</span>
-                          <span style={{ display: "block", marginTop: 2, opacity: 0.75 }}>
-                            {event.createdAt ? new Date(event.createdAt).toLocaleString() : ""}
+                  <section
+                    style={{
+                      marginTop: 12,
+                      border: "1px solid rgba(255,255,255,.14)",
+                      borderRadius: 10,
+                      background: "rgba(255,255,255,.035)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedPaymentActivity((current) => ({
+                          ...current,
+                          [invoice.id]: !current[invoice.id],
+                        }))
+                      }
+                      aria-expanded={Boolean(expandedPaymentActivity[invoice.id])}
+                      style={{
+                        width: "100%",
+                        border: 0,
+                        background: "transparent",
+                        color: TEXT,
+                        padding: "11px 12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 12,
+                        cursor: "pointer",
+                        textAlign: "left",
+                      }}
+                    >
+                      <span style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                        <span style={{ color: CYAN, fontSize: 15, fontWeight: 800, width: 16, textAlign: "center" }}>
+                          {expandedPaymentActivity[invoice.id] ? "▾" : "▸"}
+                        </span>
+                        <span>
+                          <span style={{ display: "block", fontSize: 11, fontWeight: 800, letterSpacing: 0.8 }}>
+                            PAYMENT ACTIVITY
                           </span>
-                        </div>
-                      ))}
-                    </div>
-                  </details>
+                          <span style={{ display: "block", marginTop: 3, fontSize: 11, color: MUTED }}>
+                            {paymentActivity.length} {paymentActivity.length === 1 ? "event" : "events"} recorded
+                          </span>
+                        </span>
+                      </span>
+                      <span
+                        style={{
+                          minWidth: 24,
+                          height: 24,
+                          padding: "0 7px",
+                          borderRadius: 999,
+                          background: "rgba(0,180,219,.12)",
+                          border: "1px solid rgba(0,180,219,.28)",
+                          color: CYAN,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 11,
+                          fontWeight: 800,
+                        }}
+                      >
+                        {paymentActivity.length}
+                      </span>
+                    </button>
+
+                    {expandedPaymentActivity[invoice.id] && (
+                      <div
+                        style={{
+                          borderTop: "1px solid rgba(255,255,255,.10)",
+                          padding: "7px 12px 10px 37px",
+                        }}
+                      >
+                        {paymentActivity.map((event) => (
+                          <div
+                            key={event.id}
+                            style={{
+                              padding: "9px 0",
+                              borderBottom: "1px solid rgba(255,255,255,.07)",
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+                              <strong style={{ fontSize: 12, color: TEXT }}>
+                                {event.title}
+                              </strong>
+                              <span style={{ fontSize: 10, color: MUTED, whiteSpace: "nowrap" }}>
+                                {event.createdAt ? new Date(event.createdAt).toLocaleString() : ""}
+                              </span>
+                            </div>
+                            <span style={{ display: "block", marginTop: 4, fontSize: 11, color: MUTED, lineHeight: 1.45 }}>
+                              {event.detail}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
                 )}
               </div>
             )}
