@@ -286,7 +286,7 @@ function parseNaturalInvoiceRequest(rawQuestion, people) {
     dueDate: getLocalDateKey(defaultDue),
   };
 
-  let remainder = value
+  let remainder = valueForParsing
     .replace(/^(?:please\s+)?(?:create|make|raise|add|generate)\s+(?:an?\s+)?invoice\b[,:]?\s*/i, "")
     .trim();
 
@@ -341,6 +341,17 @@ function parseNaturalInvoiceRequest(rawQuestion, people) {
 
 function parseNaturalPaymentRequest(rawQuestion, people) {
   const value = String(rawQuestion || "").trim();
+  const normalizedValue = value.replace(
+    /^(?:please\s+)?(?:a\s+)?payment\s+received\s+from\s+(.+?)\s+of\s+((?:\$\s*)?[\d,.]+(?:k)?)(?:\s+(.*))?$/i,
+    (_, personName, amount, trailing) =>
+      "record a " + amount + " payment from " + personName + (trailing ? " " + trailing : "")
+  );
+  const normalizedValueWithoutReceived = normalizedValue.replace(
+    /^(?:please\s+)?(?:a\s+)?payment\s+received\s+from\s+(.+?)\s+((?:\$\s*)?[\d,.]+(?:k)?)(?:\s+(.*))?$/i,
+    (_, personName, amount, trailing) =>
+      "record a " + amount + " payment from " + personName + (trailing ? " " + trailing : "")
+  );
+  const valueForParsing = normalizedValueWithoutReceived;
   const draft = {
     amount: "",
     date: getLocalDateKey(),
