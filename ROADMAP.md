@@ -25,6 +25,7 @@
 - [x] Correct the legacy repair snapshot to preserve the original $150 Cash payment and avoid duplicate $300 → $100 audit events
 - [x] Preserve persisted Payment Activity through invoice API serialization
 - [x] Add Finance Revenue Overview with persisted payment metrics and six-month revenue view
+- [x] Add Finance Cashflow Outlook using recorded payments and outstanding invoices
 
 
 
