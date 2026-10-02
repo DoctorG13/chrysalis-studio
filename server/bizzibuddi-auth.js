@@ -1248,7 +1248,7 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
   const payment = database
     .prepare(
       `SELECT payments.id, payments.invoice_id, payments.amount, payments.date,
-              payments.method, payments.description, invoices.amount AS invoice_amount,
+              payments.method, payments.description, invoices.number AS invoice_number, invoices.amount AS invoice_amount,
               invoices.status AS invoice_status, invoices.due_date
        FROM bizzibuddi_payments AS payments
        INNER JOIN bizzibuddi_invoices AS invoices
@@ -1382,6 +1382,7 @@ function deleteInvoicePayment(userId, paymentId) {
   const payment = database
     .prepare(
       `SELECT payments.id, payments.invoice_id, payments.amount,
+              payments.date, payments.method, payments.description, invoices.number AS invoice_number,
               invoices.amount AS invoice_amount,
               invoices.status AS invoice_status, invoices.due_date
        FROM bizzibuddi_payments AS payments
