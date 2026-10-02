@@ -130,6 +130,11 @@ assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "paymentsByInvoice",
 
 
 assertContains(read("server/bizzibuddi-auth.js"), "function updateInvoicePayment", "persistent payment correction workflow");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "PAYMENT ACTIVITY", "Finance payment activity UI");
+assertContains(read("server/bizzibuddi-auth.js"), "finance-payment-removed", "payment removed audit event");
+assertContains(read("server/bizzibuddi-auth.js"), "finance-payment-updated", "payment updated audit event");
+assertContains(read("server/bizzibuddi-auth.js"), "finance-payment-recorded", "payment recorded audit event");
+assertContains(read("server/bizzibuddi-auth.js"), "function getInvoicePaymentActivity", "persistent finance payment activity");
 assertContains(read("server/bizzibuddi-auth.js"), "const actualInvoiceId = payment.invoice_id;", "payment correction uses persisted payment invoice identity");
 assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_payments", "payment correction persistence");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "function handleUpdatePayment", "Finance payment correction handler");
