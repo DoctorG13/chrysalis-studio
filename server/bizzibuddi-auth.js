@@ -950,224 +950,28 @@ function getInvoicePaymentActivity(userId, invoiceId) {
   const invoiceNumber = invoice?.number || invoiceId;
   const paymentIds = new Set(payments.map((payment) => payment.id));
 
-  const recordedEvents = database
+  const events = database
     .prepare(
       `SELECT id, type, title, detail, source_key, created_at
        FROM bizzibuddi_automation_events
        WHERE user_id = ?
-         AND source_key LIKE ?
-         AND type = 'finance-payment-recorded'
-       ORDER BY created_at DESC`
-    )
-    .all(userId, `finance-payment:recorded:%:${invoiceId}`);
-
-  const currentRecordedByPaymentId = new Map();
-  const staleRecordedEvents = [];
-
-  for (const event of recordedEvents) {
-    const match = String(event.source_key || "").match(
-      /^finance-payment:recorded:([^:]+):(.+)$/
-    );
-
-    if (match && paymentIds.has(match[1])) {
-      currentRecordedByPaymentId.set(match[1], event);
-    } else {
-      staleRecordedEvents.push(event);
-    }
-  }
-
-  // First guarantee a current recorded event exists for every current payment.
-  // This makes legacy migration deterministic even when an older event was
-  // missing or was created by an earlier version of the audit implementation.
-  for (const payment of payments) {
-    if (currentRecordedByPaymentId.has(payment.id)) continue;
-
-    const detail =
-      formatPaymentAuditCurrency(Number(payment.amount) || 0) +
-      " payment recorded on " +
-      invoiceNumber +
-      " · " +
-      formatPaymentAuditDate(payment.date) +
-      " · " +
-      (payment.method || "Other") +
-      (payment.description ? " · " + payment.description : "") +
-      ".";
-
-    const sourceKey =
-      "finance-payment:recorded:" + payment.id + ":" + invoiceId;
-
-    const created = createAutomationEvent(userId, {
-      type: "finance-payment-recorded",
-      title: "Payment recorded",
-      detail,
-      sourceKey,
-    });
-
-    currentRecordedByPaymentId.set(payment.id, created);
-  }
-
-  const hiddenCurrentRecordedIds = new Set();
-  const migratedUpdateEvents = [];
-
-  for (const payment of payments) {
-    const currentRecorded = currentRecordedByPaymentId.get(payment.id);
-
-    const candidateStale = staleRecordedEvents.filter((event) => {
-      const detail = String(event.detail || "");
-      const methodMatches = detail.includes(" via " + payment.method);
-      const descriptionMatches =
-        !payment.description || detail.includes(payment.description);
-      const amountMatch = detail.match(
-        /(?:^|\s|\$)([0-9]+(?:\.[0-9]{1,2})?) payment recorded/
-      );
-      const oldAmount = amountMatch ? Number(amountMatch[1]) : null;
-
-      return (
-        methodMatches &&
-        descriptionMatches &&
-        oldAmount !== null &&
-        oldAmount !== Number(payment.amount)
-      );
-    });
-
-    if (candidateStale.length === 1 && currentRecorded) {
-      const previous = candidateStale[0];
-      const amountMatch = String(previous.detail || "").match(
-        /(?:^|\s|\$)([0-9]+(?:\.[0-9]{1,2})?) payment recorded/
-      );
-      const previousAmount = amountMatch ? Number(amountMatch[1]) : null;
-
-      if (previousAmount !== null) {
-        const normalizedPreviousDetail =
-          formatPaymentAuditCurrency(previousAmount) +
-          " payment recorded on " +
-          invoiceNumber +
-          " · " +
-          formatPaymentAuditDate(payment.date) +
-          " · " +
-          (payment.method || "Other") +
-          (payment.description ? " · " + payment.description : "") +
-          ".";
-
-        database
-          .prepare(
-            `UPDATE bizzibuddi_automation_events
-             SET title = ?, detail = ?
-             WHERE id = ? AND user_id = ?`
-          )
-          .run(
-            "Payment recorded",
-            normalizedPreviousDetail,
-            previous.id,
-            userId
-          );
-
-        const migrationSourceKey =
-          "finance-payment:migrated-update:" +
-          payment.id +
-          ":" +
-          previous.id;
-
-        const existingMigration = database
-          .prepare(
-            `SELECT id, type, title, detail, created_at
-             FROM bizzibuddi_automation_events
-             WHERE user_id = ? AND source_key = ?`
-          )
-          .get(userId, migrationSourceKey);
-
-        if (existingMigration) {
-          migratedUpdateEvents.push({
-            id: existingMigration.id,
-            type: existingMigration.type,
-            title: existingMigration.title,
-            detail: existingMigration.detail,
-            createdAt: existingMigration.created_at,
-          });
-        } else {
-          const migratedDetail =
-            invoiceNumber +
-            " · Amount " +
-            formatPaymentAuditCurrency(previousAmount) +
-            " → " +
-            formatPaymentAuditCurrency(Number(payment.amount) || 0) +
-            ".";
-
-          const created = createAutomationEvent(userId, {
-            type: "finance-payment-updated",
-            title: "Payment updated",
-            detail: migratedDetail,
-            sourceKey: migrationSourceKey,
-          });
-
-          migratedUpdateEvents.push(created);
-        }
-
-        hiddenCurrentRecordedIds.add(currentRecorded.id);
-      }
-    }
-
-    const detail =
-      formatPaymentAuditCurrency(Number(payment.amount) || 0) +
-      " payment recorded on " +
-      invoiceNumber +
-      " · " +
-      formatPaymentAuditDate(payment.date) +
-      " · " +
-      (payment.method || "Other") +
-      (payment.description ? " · " + payment.description : "") +
-      ".";
-
-    const sourceKey =
-      "finance-payment:recorded:" + payment.id + ":" + invoiceId;
-
-    const existing = database
-      .prepare(
-        `SELECT id
-         FROM bizzibuddi_automation_events
-         WHERE user_id = ? AND source_key = ?`
-      )
-      .get(userId, sourceKey);
-
-    if (existing) {
-      database
-        .prepare(
-          `UPDATE bizzibuddi_automation_events
-           SET title = ?, detail = ?
-           WHERE id = ? AND user_id = ?`
-        )
-        .run("Payment recorded", detail, existing.id, userId);
-    }
-  }
-
-  const financeEvents = database
-    .prepare(
-      `SELECT id, type, title, detail, source_key, created_at
-       FROM bizzibuddi_automation_events
-       WHERE user_id = ?
-         AND type IN ('finance-payment-recorded', 'finance-payment-updated', 'finance-payment-removed')
+         AND type IN (
+           'finance-payment-recorded',
+           'finance-payment-updated',
+           'finance-payment-removed'
+         )
        ORDER BY created_at DESC
        LIMIT 500`
     )
-    .all(userId);
-
-  const paymentIdTokens = new Set(payments.map((payment) => payment.id));
-  const events = financeEvents
+    .all(userId)
     .filter((row) => {
-      if (hiddenCurrentRecordedIds.has(row.id)) return false;
-
       const sourceKey = String(row.source_key || "");
       const detail = String(row.detail || "");
 
-      // Recorded events carry the invoice ID directly.
       if (sourceKey.includes(":" + invoiceId)) return true;
 
-      // Updated/removed events historically carried the payment ID and
-      // timestamp but not the invoice ID. Match those against current
-      // payments, and use the customer-facing invoice number for removed
-      // payments whose payment record no longer exists.
       if (
-        [...paymentIdTokens].some((paymentId) =>
+        [...paymentIds].some((paymentId) =>
           sourceKey.includes(":" + paymentId + ":")
         )
       ) {
@@ -1183,13 +987,6 @@ function getInvoicePaymentActivity(userId, invoiceId) {
       detail: row.detail,
       createdAt: row.created_at,
     }));
-
-  const existingEventIds = new Set(events.map((event) => event.id));
-  for (const event of migratedUpdateEvents) {
-    if (!existingEventIds.has(event.id)) {
-      events.push(event);
-    }
-  }
 
   return events.sort(
     (left, right) =>
@@ -1616,7 +1413,7 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
         " · " +
         paymentChanges.join(" · ") +
         ".",
-      sourceKey: "finance-payment:updated:" + paymentId + ":" + now,
+      sourceKey: "finance-payment:updated:" + actualInvoiceId + ":" + paymentId + ":" + now,
     });
   }
 
@@ -1704,7 +1501,7 @@ function deleteInvoicePayment(userId, paymentId) {
       String(payment.method || "Other") +
       (payment.description ? " · " + payment.description : "") +
       ".",
-    sourceKey: "finance-payment:removed:" + paymentId + ":" + now,
+    sourceKey: "finance-payment:removed:" + payment.invoice_id + ":" + paymentId + ":" + now,
   });
 
   return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, payment.invoice_id) };
