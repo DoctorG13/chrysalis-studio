@@ -167,6 +167,22 @@ export default function BizzibuddiAccountPage() {
     );
   }
 
+  async function recordAccountPayment(invoiceId, payment) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/payments",
+      {
+        method: "POST",
+        body: JSON.stringify(payment),
+      }
+    );
+
+    setInvoices((current) =>
+      current.map((invoice) => invoice.id === invoiceId ? result.invoice : invoice)
+    );
+
+    return result.invoice;
+  }
+
   function writeWorkspaceRoute(nextView, target = {}) {
     const params = new URLSearchParams();
     if (nextView) params.set("view", nextView);
@@ -674,6 +690,7 @@ export default function BizzibuddiAccountPage() {
             people={people}
             initialInvoiceId={deepLink.invoiceId}
             onPlans={() => selectView("plans")}
+            onRecordPayment={recordAccountPayment}
             onAddInvoice={async (invoice) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices", {
                 method: "POST",
@@ -879,19 +896,7 @@ export default function BizzibuddiAccountPage() {
           });
           setInvoices((current) => [result.invoice, ...current]);
           return result.invoice;
-        }} onRecordPayment={async (invoiceId, payment) => {
-          const result = await bizzibuddiAuthRequest(
-            "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/payments",
-            {
-              method: "POST",
-              body: JSON.stringify(payment),
-            }
-          );
-          setInvoices((current) =>
-            current.map((invoice) => invoice.id === invoiceId ? result.invoice : invoice)
-          );
-          return result.invoice;
-        }} onAddAppointment={async (appointment) => {
+        }} onRecordPayment={recordAccountPayment} onAddAppointment={async (appointment) => {
           const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar", {
             method: "POST",
             body: JSON.stringify(appointment),
@@ -4416,12 +4421,19 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onRecordPayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [paymentsByInvoice, setPaymentsByInvoice] = useState({});
+  const [paymentInvoiceId, setPaymentInvoiceId] = useState("");
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    date: new Date().toISOString().slice(0, 10),
+    method: "Other",
+    description: "",
+  });
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
   useEffect(() => {
@@ -4470,6 +4482,64 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       setShowForm(false);
     } catch (requestError) {
       setError(requestError.message || "We could not save this invoice.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startPayment(invoice) {
+    setError("");
+    setPaymentInvoiceId(invoice.id);
+    setPaymentForm({
+      amount: "",
+      date: new Date().toISOString().slice(0, 10),
+      method: "Other",
+      description: "",
+    });
+  }
+
+  function cancelPayment() {
+    if (saving) return;
+    setPaymentInvoiceId("");
+    setError("");
+  }
+
+  async function handleRecordPayment(event, invoice) {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+
+    try {
+      const amount = Number(paymentForm.amount);
+      const balance = Math.max(
+        0,
+        Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
+      );
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error("Enter a payment amount greater than zero.");
+      }
+
+      if (amount > balance) {
+        throw new Error("Payment cannot be greater than the remaining balance of " + formatCurrency(balance) + ".");
+      }
+
+      await onRecordPayment(invoice.id, {
+        amount,
+        date: paymentForm.date,
+        method: paymentForm.method || "Other",
+        description: paymentForm.description || "Payment",
+      });
+
+      setPaymentInvoiceId("");
+      setPaymentForm({
+        amount: "",
+        date: new Date().toISOString().slice(0, 10),
+        method: "Other",
+        description: "",
+      });
+    } catch (requestError) {
+      setError(requestError.message || "We could not record this payment.");
     } finally {
       setSaving(false);
     }
@@ -4603,17 +4673,116 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               <strong>{formatCurrency(invoice.amount)}</strong>
               <span style={invoiceStatus(invoice.status)}>{invoice.status}</span>
               {invoice.status !== "Paid" && (
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => handleMarkPaid(invoice)}
-                  style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
-                >
-                  Mark paid
-                </button>
+                <>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => startPayment(invoice)}
+                    style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                  >
+                    Add payment
+                  </button>
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={() => handleMarkPaid(invoice)}
+                    style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                  >
+                    Mark paid
+                  </button>
+                </>
               )}
               {balance > 0 && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
             </div>
+
+            {paymentInvoiceId === invoice.id && (
+              <form
+                onSubmit={(event) => handleRecordPayment(event, invoice)}
+                style={{
+                  flexBasis: "100%",
+                  width: "calc(100% - 18px)",
+                  marginTop: 6,
+                  marginLeft: 18,
+                  paddingTop: 12,
+                  paddingLeft: 14,
+                  borderTop: "1px solid " + BORDER,
+                  borderLeft: "2px solid rgba(0,180,219,.28)",
+                }}
+              >
+                <small style={smallText}>RECORD PAYMENT</small>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 9 }}>
+                  <label style={fieldStyle}>
+                    Amount
+                    <input
+                      type="number"
+                      min="0.01"
+                      max={balance}
+                      step="0.01"
+                      value={paymentForm.amount}
+                      onChange={(event) => setPaymentForm((current) => ({ ...current, amount: event.target.value }))}
+                      placeholder="0.00"
+                      required
+                      disabled={saving}
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label style={fieldStyle}>
+                    Date
+                    <input
+                      type="date"
+                      value={paymentForm.date}
+                      onChange={(event) => setPaymentForm((current) => ({ ...current, date: event.target.value }))}
+                      required
+                      disabled={saving}
+                      style={inputStyle}
+                    />
+                  </label>
+                  <label style={fieldStyle}>
+                    Method
+                    <select
+                      value={paymentForm.method}
+                      onChange={(event) => setPaymentForm((current) => ({ ...current, method: event.target.value }))}
+                      disabled={saving}
+                      style={inputStyle}
+                    >
+                      <option>Other</option>
+                      <option>Bank Transfer</option>
+                      <option>Cash</option>
+                      <option>Card</option>
+                      <option>EFTPOS</option>
+                      <option>Direct Debit</option>
+                    </select>
+                  </label>
+                  <label style={fieldStyle}>
+                    Description
+                    <input
+                      value={paymentForm.description}
+                      onChange={(event) => setPaymentForm((current) => ({ ...current, description: event.target.value }))}
+                      placeholder="Optional"
+                      disabled={saving}
+                      style={inputStyle}
+                    />
+                  </label>
+                </div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: saving ? 0.65 : 1 }}
+                  >
+                    {saving ? "Saving…" : "Record payment"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelPayment}
+                    disabled={saving}
+                    style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
 
             {hasRecordedPayments && (
               <div
