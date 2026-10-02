@@ -1140,18 +1140,42 @@ function getInvoicePaymentActivity(userId, invoiceId) {
     }
   }
 
-  const events = database
+  const financeEvents = database
     .prepare(
       `SELECT id, type, title, detail, source_key, created_at
        FROM bizzibuddi_automation_events
        WHERE user_id = ?
-         AND source_key LIKE ?
          AND type IN ('finance-payment-recorded', 'finance-payment-updated', 'finance-payment-removed')
        ORDER BY created_at DESC
-       LIMIT 100`
+       LIMIT 500`
     )
-    .all(userId, `finance-payment:%:${invoiceId}%`)
-    .filter((row) => !hiddenCurrentRecordedIds.has(row.id))
+    .all(userId);
+
+  const paymentIdTokens = new Set(payments.map((payment) => payment.id));
+  const events = financeEvents
+    .filter((row) => {
+      if (hiddenCurrentRecordedIds.has(row.id)) return false;
+
+      const sourceKey = String(row.source_key || "");
+      const detail = String(row.detail || "");
+
+      // Recorded events carry the invoice ID directly.
+      if (sourceKey.includes(":" + invoiceId)) return true;
+
+      // Updated/removed events historically carried the payment ID and
+      // timestamp but not the invoice ID. Match those against current
+      // payments, and use the customer-facing invoice number for removed
+      // payments whose payment record no longer exists.
+      if (
+        [...paymentIdTokens].some((paymentId) =>
+          sourceKey.includes(":" + paymentId + ":")
+        )
+      ) {
+        return true;
+      }
+
+      return detail.includes(invoiceNumber);
+    })
     .map((row) => ({
       id: row.id,
       type: row.type,
