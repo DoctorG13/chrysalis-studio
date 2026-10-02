@@ -12,8 +12,10 @@ const BACKUP_DIR = join(DATA_DIR, "backups");
 const DEFAULTS = {
   invoiceNumber: "INV-995739",
   personName: "Jessica Williams",
-  originalAmount: 300,
+  originalAmount: 150,
+  firstEditedAmount: 300,
   restoredAmount: 100,
+  originalMethod: "Cash",
   method: "Card",
   description: "2nd payment installment",
 };
@@ -45,8 +47,16 @@ function backupName(invoiceNumber) {
 async function main() {
   const invoiceNumber = readOption("invoice", DEFAULTS.invoiceNumber);
   const personName = readOption("person", DEFAULTS.personName);
-  const originalAmount = Number(readOption("original", String(DEFAULTS.originalAmount)));
-  const restoredAmount = Number(readOption("restored", String(DEFAULTS.restoredAmount)));
+  const originalAmount = Number(
+    readOption("original", String(DEFAULTS.originalAmount))
+  );
+  const firstEditedAmount = Number(
+    readOption("first-edited", String(DEFAULTS.firstEditedAmount))
+  );
+  const restoredAmount = Number(
+    readOption("restored", String(DEFAULTS.restoredAmount))
+  );
+  const originalMethod = readOption("original-method", DEFAULTS.originalMethod);
   const method = readOption("method", DEFAULTS.method);
   const description = readOption("description", DEFAULTS.description);
 
@@ -54,8 +64,12 @@ async function main() {
     fail(`Database not found at ${DB_PATH}. Run "npm run db:init" first.`);
   }
 
-  if (!Number.isFinite(originalAmount) || !Number.isFinite(restoredAmount)) {
-    fail("Original and restored amounts must be valid numbers.");
+  if (
+    !Number.isFinite(originalAmount) ||
+    !Number.isFinite(firstEditedAmount) ||
+    !Number.isFinite(restoredAmount)
+  ) {
+    fail("Original, first-edited and restored amounts must be valid numbers.");
   }
 
   const database = new DatabaseSync(DB_PATH, {
@@ -74,7 +88,9 @@ async function main() {
       .all(invoiceNumber);
 
     if (invoice.length === 0) fail(`Invoice ${invoiceNumber} was not found.`);
-    if (invoice.length > 1) fail(`Invoice ${invoiceNumber} is not unique. Repair was not applied.`);
+    if (invoice.length > 1) {
+      fail(`Invoice ${invoiceNumber} is not unique. Repair was not applied.`);
+    }
 
     const selectedInvoice = invoice[0];
 
@@ -84,24 +100,32 @@ async function main() {
          FROM bizzibuddi_payments
          WHERE user_id = ?
            AND invoice_id = ?
-           AND method = ?
-           AND description = ?
+           AND (
+             (method = ? AND description = ?)
+             OR (method = ? AND description = ?)
+           )
          ORDER BY created_at ASC`
       )
       .all(
         selectedInvoice.user_id,
         selectedInvoice.id,
         method,
+        description,
+        originalMethod,
         description
       );
 
-    if (candidates.length !== 1) {
+    const uniqueCandidates = Array.from(
+      new Map(candidates.map((candidate) => [candidate.id, candidate])).values()
+    );
+
+    if (uniqueCandidates.length !== 1) {
       fail(
-        `Expected exactly one ${method} / "${description}" payment on ${invoiceNumber}, found ${candidates.length}. Repair was not applied.`
+        `Expected exactly one affected payment on ${invoiceNumber}, found ${uniqueCandidates.length}. Repair was not applied.`
       );
     }
 
-    const payment = candidates[0];
+    const payment = uniqueCandidates[0];
 
     const recordedSourceKey =
       `finance-payment:recorded:${payment.id}:${selectedInvoice.id}`;
@@ -126,16 +150,49 @@ async function main() {
       )
       .get(selectedInvoice.user_id, repairedUpdateSourceKey);
 
+    const restoredRecordedDetail =
+      `${formatCurrency(originalAmount)} payment recorded on ${invoiceNumber} · ${payment.date} · ${originalMethod}` +
+      (description ? ` · ${description}` : "") +
+      ".";
+
+    const realUpdateDetail =
+      `${invoiceNumber} · Amount ${formatCurrency(firstEditedAmount)} → ${formatCurrency(restoredAmount)}.`;
+
+    const realMatchingUpdateEvent = database
+      .prepare(
+        `SELECT id, type, title, detail, source_key, created_at
+         FROM bizzibuddi_automation_events
+         WHERE user_id = ?
+           AND type = 'finance-payment-updated'
+           AND detail = ?
+           AND source_key <> ?
+         ORDER BY created_at ASC
+         LIMIT 1`
+      )
+      .get(
+        selectedInvoice.user_id,
+        realUpdateDetail,
+        repairedUpdateSourceKey
+      );
+
     console.log("");
     console.log("Payment audit repair");
     console.log("--------------------");
-    console.log(`Invoice:        ${invoiceNumber}`);
-    console.log(`Person:         ${personName}`);
-    console.log(`Payment ID:     ${payment.id}`);
-    console.log(`Current amount: ${formatCurrency(payment.amount)}`);
-    console.log(`Historical:     ${formatCurrency(originalAmount)} → ${formatCurrency(restoredAmount)}`);
-    console.log(`Recorded event: ${recordedEvent ? "found" : "missing"}`);
-    console.log(`Repair event:   ${existingRepairEvent ? "found" : "missing"}`);
+    console.log(`Invoice:             ${invoiceNumber}`);
+    console.log(`Person:              ${personName}`);
+    console.log(`Payment ID:          ${payment.id}`);
+    console.log(`Current amount:      ${formatCurrency(payment.amount)}`);
+    console.log(
+      `Historical snapshot: ${formatCurrency(originalAmount)} ${originalMethod} → ${formatCurrency(firstEditedAmount)} ${method}`
+    );
+    console.log(
+      `Historical edit:     ${formatCurrency(firstEditedAmount)} → ${formatCurrency(restoredAmount)}`
+    );
+    console.log(`Recorded event:     ${recordedEvent ? "found" : "missing"}`);
+    console.log(`Legacy repair event: ${existingRepairEvent ? "found" : "missing"}`);
+    console.log(
+      `Real matching edit:  ${realMatchingUpdateEvent ? "found" : "missing"}`
+    );
     console.log("");
 
     const backupPath = backupName(invoiceNumber);
@@ -145,11 +202,6 @@ async function main() {
     database.exec("BEGIN IMMEDIATE");
 
     try {
-      const recordedDetail =
-        `${formatCurrency(originalAmount)} payment recorded on ${invoiceNumber} · ${payment.date} · ${payment.method}` +
-        (payment.description ? ` · ${payment.description}` : "") +
-        ".";
-
       if (recordedEvent) {
         database
           .prepare(
@@ -157,7 +209,11 @@ async function main() {
              SET detail = ?, title = 'Payment recorded', type = 'finance-payment-recorded'
              WHERE id = ? AND user_id = ?`
           )
-          .run(recordedDetail, recordedEvent.id, selectedInvoice.user_id);
+          .run(
+            restoredRecordedDetail,
+            recordedEvent.id,
+            selectedInvoice.user_id
+          );
       } else {
         database
           .prepare(
@@ -168,16 +224,20 @@ async function main() {
           .run(
             randomUUID(),
             selectedInvoice.user_id,
-            recordedDetail,
+            restoredRecordedDetail,
             recordedSourceKey,
             payment.created_at
           );
       }
 
-      if (!existingRepairEvent) {
-        const updateDetail =
-          `${invoiceNumber} · Amount ${formatCurrency(originalAmount)} → ${formatCurrency(restoredAmount)}.`;
-
+      if (existingRepairEvent && realMatchingUpdateEvent) {
+        database
+          .prepare(
+            `DELETE FROM bizzibuddi_automation_events
+             WHERE id = ? AND user_id = ?`
+          )
+          .run(existingRepairEvent.id, selectedInvoice.user_id);
+      } else if (!existingRepairEvent && !realMatchingUpdateEvent) {
         database
           .prepare(
             `INSERT INTO bizzibuddi_automation_events (
@@ -187,7 +247,7 @@ async function main() {
           .run(
             randomUUID(),
             selectedInvoice.user_id,
-            updateDetail,
+            realUpdateDetail,
             repairedUpdateSourceKey,
             recordedEvent?.created_at || payment.created_at
           );
@@ -199,13 +259,23 @@ async function main() {
       throw error;
     }
 
-    console.log(`Backup:         ${backupPath}`);
+    console.log(`Backup:              ${backupPath}`);
     console.log("Repair applied successfully.");
     console.log("");
-    console.log("The existing payment row was not changed.");
+    console.log("The current payment row was not changed.");
     console.log(
-      "The recorded event now preserves the original $300 snapshot, and the missing $300 → $100 update event has been restored."
+      "The recorded audit snapshot now reflects the original $150 Cash payment."
     );
+
+    if (realMatchingUpdateEvent) {
+      console.log(
+        "An existing real $300 → $100 update was preserved and any earlier synthetic duplicate was removed."
+      );
+    } else {
+      console.log(
+        "The missing $300 → $100 update event was restored because no matching real event was found."
+      );
+    }
   } finally {
     database.close();
   }
