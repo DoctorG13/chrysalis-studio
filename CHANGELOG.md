@@ -1,3 +1,11 @@
+## Visible Invoice Payment Activity Fallback
+
+### Fixed
+
+- Ensured the BizziBuddi invoice view renders **PAYMENT ACTIVITY** whenever payment records exist.
+- Uses persisted payment activity events when available and derives a safe legacy display from the invoice's payment records when older activity data is unavailable.
+- Keeps the activity panel collapsed by default with the event count visible.
+
 ## Guaranteed Invoice Payment Activity
 
 ### Fixed
