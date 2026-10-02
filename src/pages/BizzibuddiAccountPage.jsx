@@ -4817,9 +4817,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   type: "finance-payment-recorded",
                   title: "Payment recorded",
                   detail:
-                    Number(payment.amount || 0).toFixed(2) +
+                    formatCurrency(Number(payment.amount) || 0) +
                     " payment recorded on " +
-                    invoice.id +
+                    invoice.number +
                     " via " +
                     (payment.method || "Other") +
                     (payment.description ? " — " + payment.description : "") +
@@ -5224,7 +5224,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                                 {event.title}
                               </strong>
                               <span style={{ fontSize: 10, color: MUTED, whiteSpace: "nowrap" }}>
-                                {event.createdAt ? new Date(event.createdAt).toLocaleString() : ""}
+                                {formatPaymentActivityDate(event.createdAt)}
                               </span>
                             </div>
                             <span style={{ display: "block", marginTop: 4, fontSize: 11, color: MUTED, lineHeight: 1.45 }}>
@@ -5307,6 +5307,24 @@ function getAccountLocalDateKey() {
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(amount) || 0);
+}
+
+function formatPaymentActivityDate(value) {
+  const raw = String(value || "");
+  if (!raw) return "Date not set";
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw.slice(0, 16);
+
+  return date.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }) + " · " + date.toLocaleTimeString("en-AU", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 function formatInvoiceDate(date) {
