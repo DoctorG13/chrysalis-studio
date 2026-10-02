@@ -4816,6 +4816,11 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     ...monthlyRevenue.map((month) => month.amount)
   );
 
+  const knownIncomingCash30Days = currentMonthReceived + upcomingAmount;
+  const outstandingCoverage = outstanding > 0
+    ? Math.min(100, (upcomingAmount / outstanding) * 100)
+    : 0;
+
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
@@ -4938,6 +4943,83 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           ))}
         </div>
       </div>
+    </section>
+
+    <section
+      style={{
+        marginTop: 18,
+        padding: 18,
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        background: "rgba(0,180,219,.045)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <small style={smallText}>CASHFLOW OUTLOOK</small>
+          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>What is coming in?</h3>
+        </div>
+        <small style={{ ...smallText, color: MUTED }}>Known incoming cash only</small>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
+          gap: 10,
+          marginTop: 15,
+        }}
+      >
+        {[
+          ["CASH RECEIVED THIS MONTH", currentMonthReceived],
+          ["EXPECTED NEXT 30 DAYS", upcomingAmount],
+          ["KNOWN INCOMING", knownIncomingCash30Days],
+          ["TOTAL OUTSTANDING", outstanding],
+        ].map(([label, value]) => (
+          <div
+            key={label}
+            style={{
+              padding: "13px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,.10)",
+              background: "rgba(255,255,255,.025)",
+            }}
+          >
+            <small style={{ ...smallText, fontSize: 9 }}>{label}</small>
+            <strong style={{ display: "block", marginTop: 6, fontSize: 18 }}>
+              {formatCurrency(value)}
+            </strong>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 17 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 7 }}>
+          <small style={smallText}>OUTSTANDING DUE WITHIN 30 DAYS</small>
+          <strong style={{ fontSize: 12 }}>{Math.round(outstandingCoverage)}%</strong>
+        </div>
+        <div
+          style={{
+            height: 8,
+            borderRadius: 999,
+            background: "rgba(255,255,255,.07)",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            style={{
+              width: outstandingCoverage + "%",
+              height: "100%",
+              borderRadius: 999,
+              background: CYAN,
+            }}
+          />
+        </div>
+      </div>
+
+      <p style={{ ...copyStyle, margin: "13px 0 0", fontSize: 11 }}>
+        This view tracks incoming customer payments and invoice balances. Business expenses are not yet recorded in BizziBuddi, so this is an incoming-cash outlook rather than net cash flow.
+      </p>
     </section>
 
     {invoices.length > 0 ? (
