@@ -117,6 +117,8 @@ assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_production"
 
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddJob={async (job)", "account Buddi job persistence callback");
 assertContains(read("server/bizzibuddi-auth.js"), "function getInvoicePayments", "persistent invoice payment history query");
+assertContains(read("server/bizzibuddi-auth.js"), "payments: getInvoicePayments(userId, invoice.id)", "invoice list includes persistent payment history");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "Array.isArray(invoice.payments)", "Finance consumes persisted invoice payments");
 assertContains(read("server/bizzibuddi-auth.js"), "function toInvoicePayment", "invoice payment response mapping");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "PAYMENT HISTORY", "finance payment history rendering");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "paymentsByInvoice", "finance payment history state");
