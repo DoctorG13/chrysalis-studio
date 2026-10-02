@@ -15,6 +15,7 @@
 - [x] Guarantee Payment Activity for existing invoice payment records
 - [x] Guarantee visible Payment Activity when invoice payments exist
 - [x] Polish Payment Activity dates, amounts and customer-facing invoice references
+- [x] Record detailed payment audit changes for amount, date, method and description
 
 
 
