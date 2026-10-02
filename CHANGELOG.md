@@ -1,3 +1,10 @@
+## Finance Payment Activity Event Types
+
+### Fixed
+
+- Added the three persistent Finance payment activity event types to the BizziBuddi automation-event whitelist.
+- Existing invoice payments can now be backfilled into Payment Activity, and future recorded, edited and removed payment events can be persisted successfully.
+
 ## Invoice Payment Activity Backfill
 
 ### Fixed
