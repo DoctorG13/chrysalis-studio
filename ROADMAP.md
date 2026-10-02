@@ -22,6 +22,7 @@
 - [x] Make legacy payment-audit reconciliation deterministic
 - [x] Fix Payment Activity retrieval for persisted payment update and removal events
 - [x] Stabilise Payment Activity as a read-only audit trail\n- [x] Add one-time repair utility for the corrupted legacy payment audit snapshot
+- [x] Correct the legacy repair snapshot to preserve the original $150 Cash payment and avoid duplicate $300 → $100 audit events
 
 
 
