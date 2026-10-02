@@ -1,3 +1,14 @@
+## Finance Cashflow Intelligence
+
+### Added
+
+- Added a six-month Money In vs Money Out view using persisted payment and expense records.
+- Added monthly net cashflow values to the cashflow history.
+- Added an expense-by-category breakdown so recurring outgoing areas are visible at a glance.
+- Kept the analysis derived from existing Finance records without creating duplicate financial data.
+
+---
+
 ## Finance Expenses & Outgoings
 
 ### Added
