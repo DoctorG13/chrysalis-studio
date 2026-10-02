@@ -12,6 +12,7 @@
 - [x] Render persistent Payment Activity directly in the BizziBuddi account invoice view
 - [x] Backfill persistent Payment Activity for pre-existing invoice payments
 - [x] Allow persistent Finance payment activity event types in BizziBuddi event validation
+- [x] Guarantee Payment Activity for existing invoice payment records
 
 
 
