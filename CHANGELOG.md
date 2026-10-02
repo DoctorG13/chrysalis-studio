@@ -1,3 +1,12 @@
+## Finance Payment History
+
+### Added
+
+- Added a persistent Finance payment-history view for each invoice.
+- Added an authenticated invoice payment-history API endpoint backed by the existing `bizzibuddi_payments` records.
+- Displayed payment amount, date, method and description directly beneath the relevant invoice.
+- Kept invoice balances and existing payment recording behaviour unchanged.
+
 ## Buddi Payment Amount Parsing Fix
 
 ### Fixed
