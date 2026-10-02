@@ -1514,6 +1514,241 @@ function deleteInvoicePayment(userId, paymentId) {
 
 
 
+
+function toExpense(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    amount: Number(row.amount || 0),
+    date: row.date || "",
+    category: row.category || "Other",
+    method: row.method || "Other",
+    description: row.description || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function validateExpensePayload(payload = {}) {
+  const amount = Math.round(Number(payload?.amount || 0) * 100) / 100;
+  const date = String(payload?.date || todayDate()).trim();
+  const category = String(payload?.category || "Other").trim().slice(0, 80) || "Other";
+  const method = String(payload?.method || "Other").trim().slice(0, 60) || "Other";
+  const description = String(payload?.description || "").trim().slice(0, 160);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Expense amount must be greater than zero.");
+  }
+
+  if (!isValidDateString(date)) {
+    throw new Error("Please enter a valid expense date.");
+  }
+
+  return { amount, date, category, method, description };
+}
+
+function getExpenses(userId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, amount, date, category, method, description, created_at, updated_at
+       FROM bizzibuddi_expenses
+       WHERE user_id = ?
+       ORDER BY date DESC, created_at DESC`
+    )
+    .all(userId)
+    .map(toExpense);
+}
+
+function createExpense(userId, payload = {}) {
+  const values = validateExpensePayload(payload);
+  const now = new Date().toISOString();
+  const expense = {
+    id: randomUUID(),
+    user_id: userId,
+    amount: values.amount,
+    date: values.date,
+    category: values.category,
+    method: values.method,
+    description: values.description,
+    created_at: now,
+    updated_at: now,
+  };
+
+  getDatabase()
+    .prepare(
+      `INSERT INTO bizzibuddi_expenses (
+        id, user_id, amount, date, category, method, description, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      expense.id,
+      expense.user_id,
+      expense.amount,
+      expense.date,
+      expense.category,
+      expense.method,
+      expense.description,
+      expense.created_at,
+      expense.updated_at
+    );
+
+  createAutomationEvent(userId, {
+    type: "finance-expense-recorded",
+    title: "Expense recorded",
+    detail:
+      formatPaymentAuditCurrency(expense.amount) +
+      " expense recorded on " +
+      formatPaymentAuditDate(expense.date) +
+      " · " +
+      expense.category +
+      " · " +
+      expense.method +
+      (expense.description ? " · " + expense.description : "") +
+      ".",
+    sourceKey: "finance-expense:recorded:" + expense.id,
+  });
+
+  return toExpense(expense);
+}
+
+function updateExpense(userId, expenseId, payload = {}) {
+  const database = getDatabase();
+  const existing = database
+    .prepare(
+      `SELECT id, amount, date, category, method, description
+       FROM bizzibuddi_expenses
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(expenseId, userId);
+
+  if (!existing) return null;
+
+  const values = validateExpensePayload(payload);
+  const changes = [];
+
+  if (Number(existing.amount || 0) !== values.amount) {
+    changes.push(
+      "Amount " +
+      formatPaymentAuditCurrency(Number(existing.amount) || 0) +
+      " → " +
+      formatPaymentAuditCurrency(values.amount)
+    );
+  }
+
+  if (String(existing.date || "") !== values.date) {
+    changes.push(
+      "Date " +
+      formatPaymentAuditDate(existing.date) +
+      " → " +
+      formatPaymentAuditDate(values.date)
+    );
+  }
+
+  if (String(existing.category || "Other") !== values.category) {
+    changes.push(
+      "Category " +
+      String(existing.category || "Other") +
+      " → " +
+      values.category
+    );
+  }
+
+  if (String(existing.method || "Other") !== values.method) {
+    changes.push(
+      "Method " +
+      String(existing.method || "Other") +
+      " → " +
+      values.method
+    );
+  }
+
+  if (String(existing.description || "") !== values.description) {
+    changes.push(
+      "Description " +
+      (String(existing.description || "") || "—") +
+      " → " +
+      (values.description || "—")
+    );
+  }
+
+  const now = new Date().toISOString();
+
+  database
+    .prepare(
+      `UPDATE bizzibuddi_expenses
+       SET amount = ?, date = ?, category = ?, method = ?, description = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(
+      values.amount,
+      values.date,
+      values.category,
+      values.method,
+      values.description,
+      now,
+      expenseId,
+      userId
+    );
+
+  if (changes.length > 0) {
+    createAutomationEvent(userId, {
+      type: "finance-expense-updated",
+      title: "Expense updated",
+      detail: changes.join(" · ") + ".",
+      sourceKey: "finance-expense:updated:" + expenseId + ":" + now,
+    });
+  }
+
+  return toExpense(
+    getDatabase()
+      .prepare(
+        `SELECT id, amount, date, category, method, description, created_at, updated_at
+         FROM bizzibuddi_expenses
+         WHERE id = ? AND user_id = ?`
+      )
+      .get(expenseId, userId)
+  );
+}
+
+function deleteExpense(userId, expenseId) {
+  const database = getDatabase();
+  const expense = database
+    .prepare(
+      `SELECT id, amount, date, category, method, description
+       FROM bizzibuddi_expenses
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(expenseId, userId);
+
+  if (!expense) return null;
+
+  database
+    .prepare(
+      `DELETE FROM bizzibuddi_expenses
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(expenseId, userId);
+
+  createAutomationEvent(userId, {
+    type: "finance-expense-removed",
+    title: "Expense removed",
+    detail:
+      formatPaymentAuditCurrency(Number(expense.amount) || 0) +
+      " expense removed from " +
+      formatPaymentAuditDate(expense.date) +
+      " · " +
+      String(expense.category || "Other") +
+      " · " +
+      String(expense.method || "Other") +
+      (expense.description ? " · " + expense.description : "") +
+      ".",
+    sourceKey: "finance-expense:removed:" + expenseId + ":" + new Date().toISOString(),
+  });
+
+  return toExpense(expense);
+}
+
 function validateCalendarPayload(payload) {
   const title = String(payload?.title || "").trim();
   const date = String(payload?.date || "").trim();
@@ -3248,6 +3483,87 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         deleted: deleteAutomationEvents(user.id),
       });
       return true;
+    }
+
+
+    if (url.pathname === "/api/bizzibuddi/auth/expenses" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        expenses: getExpenses(user.id),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/expenses" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      sendJson(response, 201, {
+        ok: true,
+        authenticated: true,
+        expense: createExpense(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/expenses/")) {
+      const expenseId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/expenses/".length)
+      ).replace(/\/$/, "").trim();
+
+      if (!expenseId || expenseId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Expense not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const expense = updateExpense(user.id, expenseId, payload);
+        if (!expense) {
+          sendJson(response, 404, { ok: false, error: "Expense not found." });
+          return true;
+        }
+
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          expense,
+        });
+        return true;
+      }
+
+      if (request.method === "DELETE") {
+        const expense = deleteExpense(user.id, expenseId);
+        if (!expense) {
+          sendJson(response, 404, { ok: false, error: "Expense not found." });
+          return true;
+        }
+
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          deleted: true,
+          expenseId,
+        });
+        return true;
+      }
     }
 
     if (url.pathname === "/api/bizzibuddi/auth/invoices" && request.method === "GET") {
