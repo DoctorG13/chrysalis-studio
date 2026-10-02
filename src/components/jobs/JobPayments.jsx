@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { deletePayment, getPayments, savePayment } from "../../services/paymentApi";
+import { createTimelineEvent, getTimeline } from "../../services/timelineApi";
 
 const DEFAULT_DEPOSIT_PERCENT = 25;
 
@@ -11,6 +12,8 @@ export default function JobPayments({ job, onChange }) {
   const [error, setError] = useState("");
   const [savedMessage, setSavedMessage] = useState("");
   const [depositPercent, setDepositPercent] = useState(Number(job?.depositPercent ?? DEFAULT_DEPOSIT_PERCENT));
+  const [paymentActivity, setPaymentActivity] = useState([]);
+  const [activityExpanded, setActivityExpanded] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -50,6 +53,33 @@ export default function JobPayments({ job, onChange }) {
     setDepositPercent(Number(job?.depositPercent ?? DEFAULT_DEPOSIT_PERCENT));
   }, [job?.id, job?.depositPercent]);
 
+  useEffect(() => {
+    let active = true;
+    async function loadPaymentActivity() {
+      if (!job?.id) { setPaymentActivity([]); return; }
+      try {
+        const events = await getTimeline({ clientId: job.clientId, jobId: job.id });
+        if (!active) return;
+        setPaymentActivity((events || []).filter((event) => event.type === "payment").sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)));
+      } catch (activityError) {
+        console.warn("Unable to load payment activity.", activityError);
+        if (active) setPaymentActivity([]);
+      }
+    }
+    loadPaymentActivity();
+    return () => { active = false; };
+  }, [job?.id, job?.clientId]);
+
+  async function recordPaymentActivity(title, description) {
+    if (!job?.id || !job?.clientId) return;
+    try {
+      const event = await createTimelineEvent({ clientId: job.clientId, jobId: job.id, type: "payment", title, description, date: new Date().toISOString() });
+      setPaymentActivity((current) => [event, ...current].sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0)));
+    } catch (activityError) {
+      console.warn("Unable to persist payment activity.", activityError);
+    }
+  }
+
   const quote = Number(job?.price || 0);
   const safeDepositPercent = Math.min(Math.max(Number(depositPercent) || 0, 0), 100);
   const depositRequired = quote * (safeDepositPercent / 100);
@@ -69,17 +99,7 @@ export default function JobPayments({ job, onChange }) {
   const paymentPercent = quote > 0 ? Math.min(Math.max((totalPaid / quote) * 100, 0), 100) : 0;
   const depositProgress = depositRequired > 0 ? Math.min(Math.max((depositPaid / depositRequired) * 100, 0), 100) : 0;
 
-  function createTimelineEvent(type, title, description = "") {
-    return {
-      id: crypto.randomUUID(),
-      type,
-      title,
-      description,
-      date: new Date().toISOString(),
-    };
-  }
-
-  function notifyChange(nextPayments, event) {
+    function notifyChange(nextPayments, event) {
     setPayments(nextPayments);
     onChange?.(nextPayments, event);
   }
@@ -140,13 +160,10 @@ export default function JobPayments({ job, onChange }) {
         : [...payments, savedPayment];
 
       const label = savedPayment.paymentType === "Deposit" ? "Deposit" : "Payment";
-      const event = createTimelineEvent(
-        "payment",
-        editingPayment?.id ? `${label} Updated` : `${label} Added`,
-        `${formatCurrency(Number(savedPayment.amount || 0))} ${label.toLowerCase()} ${editingPayment?.id ? "updated" : "recorded"}${savedPayment.method ? ` via ${savedPayment.method}` : ""}.`
-      );
-
-      notifyChange(nextPayments, event);
+      const eventTitle = editingPayment?.id ? label + " Edited" : label + " Recorded";
+      const eventDescription = formatCurrency(Number(savedPayment.amount || 0)) + " " + label.toLowerCase() + " " + (editingPayment?.id ? "edited" : "recorded") + (savedPayment.method ? " via " + savedPayment.method : "") + ".";
+      notifyChange(nextPayments);
+      await recordPaymentActivity(eventTitle, eventDescription);
       setEditingPayment(null);
       setSavedMessage(`${label} saved to SQLite.`);
     } catch (saveError) {
@@ -166,13 +183,9 @@ export default function JobPayments({ job, onChange }) {
 
       const nextPayments = payments.filter((item) => item.id !== payment.id);
       const label = isDepositPayment(payment) ? "Deposit" : "Payment";
-      const event = createTimelineEvent(
-        "payment",
-        `${label} Deleted`,
-        `${formatCurrency(Number(payment.amount || 0))} ${label.toLowerCase()} removed.`
-      );
-
-      notifyChange(nextPayments, event);
+      const eventDescription = formatCurrency(Number(payment.amount || 0)) + " " + label.toLowerCase() + " removed.";
+      notifyChange(nextPayments);
+      await recordPaymentActivity(label + " Removed", eventDescription);
       setSavedMessage(`${label} deleted from SQLite.`);
     } catch (deleteError) {
       console.error("Unable to delete payment from SQLite.", deleteError);
@@ -294,6 +307,39 @@ export default function JobPayments({ job, onChange }) {
           </div>
         )}
       </div>
+
+      <section style={activityPanelStyle}>
+        <button type="button" onClick={() => setActivityExpanded((current) => !current)} style={activityHeaderButtonStyle} aria-expanded={activityExpanded}>
+          <span style={activityHeaderContentStyle}>
+            <span style={activityChevronStyle}>{activityExpanded ? "▾" : "▸"}</span>
+            <span>
+              <span style={activityTitleStyle}>Payment Activity</span>
+              <span style={activitySubtitleStyle}>{paymentActivity.length === 0 ? "No payment events yet" : paymentActivity.length + " " + (paymentActivity.length === 1 ? "event" : "events") + " recorded"}</span>
+            </span>
+          </span>
+          <span style={activityCountBadgeStyle}>{paymentActivity.length}</span>
+        </button>
+        {activityExpanded && (
+          <div style={activityListStyle}>
+            {paymentActivity.length === 0 ? (
+              <div style={activityEmptyStyle}>Payment events such as recorded, edited and removed payments will appear here.</div>
+            ) : (
+              paymentActivity.map((event, index) => (
+                <div key={event.id || event.date + "-" + index} style={activityEventStyle}>
+                  <div style={activityEventDotStyle} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={activityEventTopStyle}>
+                      <strong style={activityEventTitleStyle}>{event.title || "Payment activity"}</strong>
+                      <span style={activityEventDateStyle}>{formatActivityDate(event.date)}</span>
+                    </div>
+                    {event.description && <div style={activityEventDescriptionStyle}>{event.description}</div>}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </section>
 
       {error && <div style={errorStyle}>{error}</div>}
       {savedMessage && <div style={successStyle}>✓ {savedMessage}</div>}
@@ -602,6 +648,13 @@ function formatDisplayDate(value) {
   return date ? date.toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" }) : value;
 }
 
+function formatActivityDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString("en-AU", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("en-AU", { style: "currency", currency: "AUD" });
 }
@@ -634,6 +687,22 @@ const paymentTitleStyle = { display: "flex", alignItems: "center", gap: 8, fontS
 const paymentMetaStyle = { display: "flex", gap: 8, flexWrap: "wrap", fontSize: 12, color: "#888" };
 const paymentAmountStyle = { fontSize: 16, fontWeight: 700, color: "#2F3A3F", whiteSpace: "nowrap" };
 const paymentActionsStyle = { display: "flex", gap: 8, marginTop: 10, paddingTop: 10, borderTop: "1px solid #E8EAED" };
+
+const activityPanelStyle = { marginTop: 18, border: "1px solid #E5E7EB", borderRadius: 12, background: "#FAFAFA", overflow: "hidden" };
+const activityHeaderButtonStyle = { width: "100%", border: 0, background: "transparent", padding: "13px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, cursor: "pointer", textAlign: "left" };
+const activityHeaderContentStyle = { display: "flex", alignItems: "center", gap: 10, minWidth: 0 };
+const activityChevronStyle = { width: 20, color: "#8B1E3F", fontSize: 16, fontWeight: 800, textAlign: "center" };
+const activityTitleStyle = { display: "block", fontSize: 12, fontWeight: 800, letterSpacing: 0.8, textTransform: "uppercase", color: "#8B1E3F" };
+const activitySubtitleStyle = { display: "block", marginTop: 3, fontSize: 11, color: "#888" };
+const activityCountBadgeStyle = { minWidth: 24, height: 24, padding: "0 7px", boxSizing: "border-box", borderRadius: 999, background: "#F3E8ED", color: "#8B1E3F", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 };
+const activityListStyle = { borderTop: "1px solid #E8EAED", padding: "8px 15px 12px" };
+const activityEventStyle = { display: "flex", gap: 10, padding: "10px 0", borderBottom: "1px solid #ECEEEF" };
+const activityEventDotStyle = { width: 7, height: 7, marginTop: 6, borderRadius: "50%", background: "#8B1E3F", flexShrink: 0 };
+const activityEventTopStyle = { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 };
+const activityEventTitleStyle = { color: "#2F3A3F", fontSize: 12 };
+const activityEventDateStyle = { color: "#999", fontSize: 10, whiteSpace: "nowrap" };
+const activityEventDescriptionStyle = { marginTop: 3, color: "#666", fontSize: 11, lineHeight: 1.45 };
+const activityEmptyStyle = { padding: "12px 0 5px", color: "#888", fontSize: 11, lineHeight: 1.5 };
 const depositBadgeStyle = { padding: "3px 7px", borderRadius: 999, background: "#F4C33F", color: "#24344A", fontSize: 9, fontWeight: 800, letterSpacing: 0.5 };
 const emptyStateStyle = { marginTop: 12, padding: 20, borderRadius: 12, background: "#F8F9FA", border: "1px solid #E8EAED", textAlign: "center", color: "#888", fontSize: 13 };
 const errorStyle = { marginTop: 16, padding: 12, borderRadius: 10, background: "#FEE2E2", color: "#991B1B", fontSize: 13, fontWeight: 600 };
