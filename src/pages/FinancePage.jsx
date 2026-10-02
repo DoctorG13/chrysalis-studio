@@ -648,19 +648,32 @@ export default function FinancePage({
 
   async function removeRecordedPayment() {
     if (!paymentForm?.id) return;
+
+    await deletePaymentRecord(paymentForm);
+  }
+
+  async function deletePaymentRecord(payment) {
+    if (!payment?.id) return;
+
     const confirmed = await confirm({
       title: "Delete Payment",
       message: "Delete this payment record? This cannot be undone.",
       confirmLabel: "Delete Payment",
       danger: true,
     });
+
     if (!confirmed) return;
 
     setPaymentSaving(true);
+    setError("");
+
     try {
-      await deletePayment(paymentForm.id);
+      await deletePayment(payment.id);
       await loadFinancePayments();
-      setPaymentForm(null);
+
+      if (String(paymentForm?.id || "") === String(payment.id)) {
+        setPaymentForm(null);
+      }
     } catch (err) {
       setError(err.message || "Unable to delete payment.");
     } finally {
@@ -1462,16 +1475,43 @@ export default function FinancePage({
 
                     <div
                       style={{
-                        fontWeight: 800,
-                        color:
-                          "#2F3A3F",
-                        whiteSpace:
-                          "nowrap",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        flexShrink: 0,
                       }}
                     >
-                      {money(
-                        payment.amount
-                      )}
+                      <div
+                        style={{
+                          fontWeight: 800,
+                          color:
+                            "#2F3A3F",
+                          whiteSpace:
+                            "nowrap",
+                        }}
+                      >
+                        {money(
+                          payment.amount
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => startNewPayment(payment, payment.job)}
+                        style={activityActionButton}
+                        disabled={paymentSaving}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => deletePaymentRecord(payment)}
+                        style={activityDeleteButton}
+                        disabled={paymentSaving}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 )
@@ -3302,6 +3342,24 @@ const recentPaymentRow = {
     "11px 0",
   borderBottom:
     "1px solid #ECEEEF",
+};
+
+const activityActionButton = {
+  border: "1px solid #D9DEE2",
+  borderRadius: 7,
+  padding: "6px 9px",
+  background: "#FFFFFF",
+  color: "#2F3A3F",
+  fontSize: 11,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const activityDeleteButton = {
+  ...activityActionButton,
+  color: "#B42318",
+  borderColor: "#F0B4B4",
+  background: "#FFF8F8",
 };
 
 const primaryButton = {
