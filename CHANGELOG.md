@@ -1,3 +1,15 @@
+## Payment Entry Improvements
+
+### Added
+
+- Added a direct **Add payment** action to outstanding invoices in Finance.
+- Added a compact inline payment form for amount, date, method and description.
+- Kept **Mark paid** as a shortcut for recording the remaining invoice balance.
+
+### Fixed
+
+- Buddi now recognises natural-language phrasing such as `Payment received from Jessica Williams of $200` and routes it through the existing payment confirmation flow.
+
 ## Finance Payment History Ledger
 
 ### Improved
