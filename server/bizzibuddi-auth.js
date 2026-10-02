@@ -976,17 +976,50 @@ function getInvoicePaymentActivity(userId, invoiceId) {
     }
   }
 
+  // First guarantee a current recorded event exists for every current payment.
+  // This makes legacy migration deterministic even when an older event was
+  // missing or was created by an earlier version of the audit implementation.
+  for (const payment of payments) {
+    if (currentRecordedByPaymentId.has(payment.id)) continue;
+
+    const detail =
+      formatPaymentAuditCurrency(Number(payment.amount) || 0) +
+      " payment recorded on " +
+      invoiceNumber +
+      " · " +
+      formatPaymentAuditDate(payment.date) +
+      " · " +
+      (payment.method || "Other") +
+      (payment.description ? " · " + payment.description : "") +
+      ".";
+
+    const sourceKey =
+      "finance-payment:recorded:" + payment.id + ":" + invoiceId;
+
+    const created = createAutomationEvent(userId, {
+      type: "finance-payment-recorded",
+      title: "Payment recorded",
+      detail,
+      sourceKey,
+    });
+
+    currentRecordedByPaymentId.set(payment.id, created);
+  }
+
   const hiddenCurrentRecordedIds = new Set();
   const migratedUpdateEvents = [];
 
   for (const payment of payments) {
     const currentRecorded = currentRecordedByPaymentId.get(payment.id);
+
     const candidateStale = staleRecordedEvents.filter((event) => {
       const detail = String(event.detail || "");
       const methodMatches = detail.includes(" via " + payment.method);
       const descriptionMatches =
         !payment.description || detail.includes(payment.description);
-      const amountMatch = detail.match(/(?:^|\s|\$)([0-9]+(?:\.[0-9]{1,2})?) payment recorded/);
+      const amountMatch = detail.match(
+        /(?:^|\s|\$)([0-9]+(?:\.[0-9]{1,2})?) payment recorded/
+      );
       const oldAmount = amountMatch ? Number(amountMatch[1]) : null;
 
       return (
@@ -1104,13 +1137,6 @@ function getInvoicePaymentActivity(userId, invoiceId) {
            WHERE id = ? AND user_id = ?`
         )
         .run("Payment recorded", detail, existing.id, userId);
-    } else if (!hiddenCurrentRecordedIds.has(existing?.id)) {
-      createAutomationEvent(userId, {
-        type: "finance-payment-recorded",
-        title: "Payment recorded",
-        detail,
-        sourceKey,
-      });
     }
   }
 
