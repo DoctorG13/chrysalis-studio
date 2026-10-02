@@ -4,6 +4,7 @@
 - [x] Show persistent payment history on each invoice
 - [x] Return payment history with invoice data for reliable Finance rendering
 - [x] Simplify and indent invoice payment history presentation
+- [x] Display payment history as a compact multi-payment ledger
 
 - [x] Buddi answers who currently owes money
 - [x] Buddi reports client-specific outstanding balances
