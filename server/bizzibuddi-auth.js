@@ -986,7 +986,7 @@ function getInvoicePaymentActivity(userId, invoiceId) {
       const methodMatches = detail.includes(" via " + payment.method);
       const descriptionMatches =
         !payment.description || detail.includes(payment.description);
-      const amountMatch = detail.match(/(?:^|\\s|\\$)([0-9]+(?:\\.[0-9]{1,2})?) payment recorded/);
+      const amountMatch = detail.match(/(?:^|\s|\$)([0-9]+(?:\.[0-9]{1,2})?) payment recorded/);
       const oldAmount = amountMatch ? Number(amountMatch[1]) : null;
 
       return (
