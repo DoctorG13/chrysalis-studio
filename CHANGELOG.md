@@ -2,6 +2,7 @@
 
 ### Fixed
 
+- Finance payment corrections now use the persisted payment invoice ID when sending an edit request.
 - Made payment corrections resolve the persisted payment record by its account-scoped payment ID, avoiding stale parent-invoice state from causing a false “Payment not found” response.
 
 ### Added
