@@ -2,11 +2,13 @@
 
 ### Added
 
-- Added an idempotent one-time repair utility for legacy Payment Activity data that was previously overwritten by an earlier migration.
-- The repair targets the affected invoice/payment by persisted invoice and payment identity rather than changing the current payment amount.
+- Added an idempotent one-time repair utility for the affected legacy Payment Activity record.
+- The repair targets the affected invoice/payment by persisted invoice and payment identity without changing the current payment row.
 - Creates a database backup before applying the repair.
-- Restores the original recorded payment snapshot and the missing **$300.00 → $100.00** update event for the affected historical payment.
-- Safe to rerun: existing repair events are detected by a stable source key.
+- Restores the original **$150.00 Cash** recorded snapshot for the affected payment.
+- Preserves a real **$300.00 → $100.00** update event when one already exists and removes only the earlier synthetic repair duplicate.
+- If the real update event is genuinely missing, the utility restores it using a stable source key.
+- Safe to rerun without creating duplicate audit events.
 
 ---
 
