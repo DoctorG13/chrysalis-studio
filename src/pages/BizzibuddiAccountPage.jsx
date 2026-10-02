@@ -4421,6 +4421,8 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [paymentsByInvoice, setPaymentsByInvoice] = useState({});
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
   useEffect(() => {
@@ -4435,6 +4437,44 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
     return () => window.cancelAnimationFrame(frame);
   }, [initialInvoiceId, invoices]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPaymentHistory() {
+      if (!invoices.length) {
+        setPaymentsByInvoice({});
+        setPaymentsLoading(false);
+        return;
+      }
+
+      setPaymentsLoading(true);
+
+      const entries = await Promise.all(
+        invoices.map(async (invoice) => {
+          try {
+            const result = await bizzibuddiAuthRequest(
+              "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoice.id) + "/payments"
+            );
+            return [invoice.id, Array.isArray(result.payments) ? result.payments : []];
+          } catch {
+            return [invoice.id, []];
+          }
+        })
+      );
+
+      if (!active) return;
+
+      setPaymentsByInvoice(Object.fromEntries(entries));
+      setPaymentsLoading(false);
+    }
+
+    loadPaymentHistory();
+
+    return () => {
+      active = false;
+    };
+  }, [invoices]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -4550,6 +4590,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             0,
             Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
           );
+          const payments = paymentsByInvoice[invoice.id] || [];
 
           const selected = String(invoice.id) === String(initialInvoiceId);
           return <article
@@ -4595,6 +4636,46 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               )}
               {balance > 0 && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
             </div>
+
+            {(payments.length > 0 || (paymentsLoading && paymentsByInvoice[invoice.id] === undefined)) && (
+              <div style={{ flexBasis: "100%", width: "100%", marginTop: 4, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
+                <small style={smallText}>PAYMENT HISTORY</small>
+                {paymentsLoading && paymentsByInvoice[invoice.id] === undefined ? (
+                  <div style={{ ...smallText, marginTop: 8 }}>Loading payment history…</div>
+                ) : (
+                  <div style={{ display: "grid", gap: 8, marginTop: 9 }}>
+                    {payments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 14,
+                          flexWrap: "wrap",
+                          padding: "9px 0",
+                        }}
+                      >
+                        <div>
+                          <strong style={{ display: "block", fontSize: 14 }}>{formatCurrency(payment.amount)}</strong>
+                          <span style={{ ...smallText, display: "block", marginTop: 3 }}>
+                            {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
+                          </span>
+                          {payment.description && (
+                            <span style={{ ...smallText, display: "block", marginTop: 3 }}>
+                              {payment.description}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ ...smallText, textAlign: "right" }}>
+                          Payment received
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </article>;
         })}
       </div>
