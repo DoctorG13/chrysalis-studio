@@ -1,3 +1,12 @@
+## Detailed Payment Audit Activity
+
+### Changed
+
+- Payment Activity now records customer-facing invoice numbers rather than internal invoice IDs.
+- Payment recorded events include amount, payment date, method and description.
+- Payment updated events include old → new values for amount, date, method and description.
+- Payment removed events retain the removed payment's amount, date, method and description.
+
 ## BizziBuddi Payment Activity Polish
 
 ### Changed
