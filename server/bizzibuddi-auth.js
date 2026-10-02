@@ -902,9 +902,8 @@ function getInvoicePaymentActivity(userId, invoiceId) {
   const database = getDatabase();
   const payments = getInvoicePayments(userId, invoiceId);
 
-  // Backfill the persistent "Payment recorded" event for payments that
-  // existed before payment activity tracking was introduced. The source key
-  // makes this idempotent, so an existing event is never duplicated.
+  // Ensure every existing payment has a persistent "Payment recorded"
+  // event. The source key makes this idempotent.
   for (const payment of payments) {
     createAutomationEvent(userId, {
       type: "finance-payment-recorded",
@@ -921,7 +920,7 @@ function getInvoicePaymentActivity(userId, invoiceId) {
     });
   }
 
-  return database
+  const events = database
     .prepare(
       `SELECT id, type, title, detail, created_at
        FROM bizzibuddi_automation_events
@@ -939,6 +938,51 @@ function getInvoicePaymentActivity(userId, invoiceId) {
       detail: row.detail,
       createdAt: row.created_at,
     }));
+
+  // Older databases may contain the payment rows but no activity rows.
+  // Guarantee the invoice response still exposes a complete activity trail
+  // while the idempotent inserts above establish the persistent records.
+  const recordedEventPaymentIds = new Set(
+    events
+      .filter((event) => event.type === "finance-payment-recorded")
+      .map((event) => {
+        const match = String(event.detail || "").match(/^([0-9]+(?:\\.[0-9]+)?) payment recorded/);
+        return match ? null : null;
+      })
+  );
+
+  const existingRecordedKeys = new Set(
+    events
+      .filter((event) => event.type === "finance-payment-recorded")
+      .map((event) => String(event.detail || ""))
+  );
+
+  for (const payment of payments) {
+    const detail =
+      Number(payment.amount || 0).toFixed(2) +
+      " payment recorded on " +
+      invoiceId +
+      " via " +
+      (payment.method || "Other") +
+      (payment.description ? " — " + payment.description : "") +
+      ".";
+
+    if (!existingRecordedKeys.has(detail)) {
+      events.push({
+        id: "payment-recorded:" + payment.id,
+        type: "finance-payment-recorded",
+        title: "Payment recorded",
+        detail,
+        createdAt: payment.createdAt || payment.date || null,
+      });
+    }
+  }
+
+  return events.sort(
+    (left, right) =>
+      new Date(right.createdAt || 0).getTime() -
+      new Date(left.createdAt || 0).getTime()
+  );
 }
 
 function getInvoiceStatus(amount, amountPaid, storedStatus, dueDate) {
