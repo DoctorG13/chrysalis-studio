@@ -4972,6 +4972,54 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     (sum, expense) => sum + (Number(expense.amount) || 0),
     0
   );
+
+  const monthlyCashflow = Array.from({ length: 6 }, (_, index) => {
+    const monthDate = new Date(
+      todayDateValue.getFullYear(),
+      todayDateValue.getMonth() - (5 - index),
+      1
+    );
+    const monthKey =
+      monthDate.getFullYear() +
+      "-" +
+      String(monthDate.getMonth() + 1).padStart(2, "0");
+
+    const received = financePayments
+      .filter((payment) => String(payment.date || "").slice(0, 7) === monthKey)
+      .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+
+    const spent = expenses
+      .filter((expense) => String(expense.date || "").slice(0, 7) === monthKey)
+      .reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
+
+    return {
+      key: monthKey,
+      label: monthDate.toLocaleDateString("en-AU", { month: "short" }),
+      received,
+      spent,
+      net: received - spent,
+    };
+  });
+
+  const maxCashflowValue = Math.max(
+    1,
+    ...monthlyCashflow.map((month) => Math.max(month.received, month.spent))
+  );
+
+  const expenseByCategory = Object.entries(
+    expenses.reduce((totals, expense) => {
+      const category = expense.category || "Other";
+      totals[category] = (totals[category] || 0) + (Number(expense.amount) || 0);
+      return totals;
+    }, {})
+  )
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((left, right) => right.amount - left.amount);
+
+  const maxExpenseCategory = Math.max(
+    1,
+    ...expenseByCategory.map((item) => item.amount)
+  );
   const expensesNext30Days = expenses
     .filter((expense) => {
       if (!expense.date) return false;
@@ -5399,6 +5447,128 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           No expenses recorded yet. Add your first outgoing so BizziBuddi can include it in cashflow calculations.
         </p>
       )}
+    </section>
+
+    <section
+      style={{
+        marginTop: 18,
+        padding: 18,
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        background: "rgba(255,255,255,.025)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <small style={smallText}>CASHFLOW INTELLIGENCE</small>
+          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Where is the money moving?</h3>
+        </div>
+        <small style={{ ...smallText, color: MUTED }}>Last 6 months</small>
+      </div>
+
+      <div style={{ marginTop: 16 }}>
+        <div style={{ ...smallText, fontSize: 10, marginBottom: 9 }}>MONEY IN VS MONEY OUT</div>
+        <div style={{ display: "grid", gap: 9 }}>
+          {monthlyCashflow.map((month) => (
+            <div key={month.key}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 5 }}>
+                <span style={{ ...smallText, minWidth: 38 }}>{month.label}</span>
+                <span style={{ ...smallText, color: month.net >= 0 ? TEXT : "#ff8c8c" }}>
+                  Net {formatCurrency(month.net)}
+                </span>
+              </div>
+              <div style={{ display: "grid", gap: 4 }}>
+                <div
+                  style={{
+                    height: 7,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,.07)",
+                    overflow: "hidden",
+                  }}
+                  title={"Received " + formatCurrency(month.received)}
+                >
+                  <div
+                    style={{
+                      width: (month.received / maxCashflowValue) * 100 + "%",
+                      height: "100%",
+                      borderRadius: 999,
+                      background: CYAN,
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    height: 7,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,.07)",
+                    overflow: "hidden",
+                  }}
+                  title={"Spent " + formatCurrency(month.spent)}
+                >
+                  <div
+                    style={{
+                      width: (month.spent / maxCashflowValue) * 100 + "%",
+                      height: "100%",
+                      borderRadius: 999,
+                      background: "rgba(255,255,255,.42)",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 14, marginTop: 10, flexWrap: "wrap" }}>
+          <small style={smallText}>● Received</small>
+          <small style={{ ...smallText, color: MUTED }}>● Spent</small>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <div style={{ ...smallText, fontSize: 10, marginBottom: 9 }}>EXPENSES BY CATEGORY</div>
+        {expenseByCategory.length > 0 ? (
+          <div style={{ display: "grid", gap: 8 }}>
+            {expenseByCategory.map((item) => (
+              <div
+                key={item.category}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "90px 1fr auto",
+                  alignItems: "center",
+                  gap: 10,
+                  fontSize: 11,
+                }}
+              >
+                <span style={{ color: MUTED }}>{item.category}</span>
+                <div
+                  style={{
+                    height: 8,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,.07)",
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: (item.amount / maxExpenseCategory) * 100 + "%",
+                      height: "100%",
+                      borderRadius: 999,
+                      background: "rgba(255,255,255,.42)",
+                    }}
+                  />
+                </div>
+                <strong style={{ minWidth: 78, textAlign: "right" }}>
+                  {formatCurrency(item.amount)}
+                </strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ ...copyStyle, margin: 0, fontSize: 11 }}>
+            Expense categories will appear here as you record outgoings.
+          </p>
+        )}
+      </div>
     </section>
 
     {invoices.length > 0 ? (
