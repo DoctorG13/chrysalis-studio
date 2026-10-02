@@ -898,29 +898,82 @@ function getInvoicePayments(userId, invoiceId) {
     .map(toInvoicePayment);
 }
 
+function formatPaymentAuditDate(value) {
+  const raw = String(value || "");
+  if (!raw) return "Date not set";
+
+  const parts = raw.split("-");
+  if (parts.length === 3 && parts[0].length === 4) {
+    const date = new Date(
+      Number(parts[0]),
+      Number(parts[1]) - 1,
+      Number(parts[2])
+    );
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+  }
+
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+
+  return date.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 function getInvoicePaymentActivity(userId, invoiceId) {
   const database = getDatabase();
   const payments = getInvoicePayments(userId, invoiceId);
 
-  // Ensure every existing payment has a persistent "Payment recorded"
-  // event. The source key makes this idempotent.
+  // Backfill and upgrade recorded events so older payments use the same
+  // customer-facing audit format as newly recorded payments.
   for (const payment of payments) {
-    createAutomationEvent(userId, {
-      type: "finance-payment-recorded",
-      title: "Payment recorded",
-      detail:
-        Number(payment.amount || 0).toFixed(2) +
-        " payment recorded on " +
-        invoiceId +
-        " via " +
-        (payment.method || "Other") +
-        (payment.description ? " — " + payment.description : "") +
-        ".",
-      sourceKey: "finance-payment:recorded:" + payment.id + ":" + invoiceId,
-    });
+    const detail =
+      formatCurrency(Number(payment.amount) || 0) +
+      " payment recorded on " +
+      invoiceId +
+      " · " +
+      formatPaymentAuditDate(payment.date) +
+      " · " +
+      (payment.method || "Other") +
+      (payment.description ? " · " + payment.description : "") +
+      ".";
+
+    const sourceKey = "finance-payment:recorded:" + payment.id + ":" + invoiceId;
+    const existing = database
+      .prepare(
+        `SELECT id
+         FROM bizzibuddi_automation_events
+         WHERE user_id = ? AND source_key = ?`
+      )
+      .get(userId, sourceKey);
+
+    if (existing) {
+      database
+        .prepare(
+          `UPDATE bizzibuddi_automation_events
+           SET title = ?, detail = ?
+           WHERE id = ? AND user_id = ?`
+        )
+        .run("Payment recorded", detail, existing.id, userId);
+    } else {
+      createAutomationEvent(userId, {
+        type: "finance-payment-recorded",
+        title: "Payment recorded",
+        detail,
+        sourceKey,
+      });
+    }
   }
 
-  const events = database
+  return database
     .prepare(
       `SELECT id, type, title, detail, created_at
        FROM bizzibuddi_automation_events
@@ -938,42 +991,6 @@ function getInvoicePaymentActivity(userId, invoiceId) {
       detail: row.detail,
       createdAt: row.created_at,
     }));
-
-  // Older databases may contain the payment rows but no activity rows.
-  // Guarantee the invoice response still exposes a complete activity trail
-  // while the idempotent inserts above establish the persistent records.
-  const existingRecordedKeys = new Set(
-    events
-      .filter((event) => event.type === "finance-payment-recorded")
-      .map((event) => String(event.detail || ""))
-  );
-
-  for (const payment of payments) {
-    const detail =
-      Number(payment.amount || 0).toFixed(2) +
-      " payment recorded on " +
-      invoiceId +
-      " via " +
-      (payment.method || "Other") +
-      (payment.description ? " — " + payment.description : "") +
-      ".";
-
-    if (!existingRecordedKeys.has(detail)) {
-      events.push({
-        id: "payment-recorded:" + payment.id,
-        type: "finance-payment-recorded",
-        title: "Payment recorded",
-        detail,
-        createdAt: payment.createdAt || payment.date || null,
-      });
-    }
-  }
-
-  return events.sort(
-    (left, right) =>
-      new Date(right.createdAt || 0).getTime() -
-      new Date(left.createdAt || 0).getTime()
-  );
 }
 
 function getInvoiceStatus(amount, amountPaid, storedStatus, dueDate) {
@@ -1227,11 +1244,11 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
     type: "finance-payment-recorded",
     title: "Payment recorded",
     detail:
-      Number(amount).toFixed(2) +
+      formatCurrency(Number(amount) || 0) +
       " payment recorded on " +
       (updatedInvoice.number || invoiceId) +
       " · " +
-      date +
+      formatPaymentAuditDate(date) +
       " · " +
       method +
       (description ? " · " + description : "") +
@@ -1347,31 +1364,56 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
     payments: getInvoicePayments(userId, actualInvoiceId),
   });
 
-  createAutomationEvent(userId, {
-    type: "finance-payment-updated",
-    title: "Payment updated",
-    detail:
-      (payment.invoice_number || actualInvoiceId) +
-      " · " +
+  const paymentChanges = [];
+
+  if (Number(currentAmount) !== Number(amount)) {
+    paymentChanges.push(
       "Amount " +
-      Number(currentAmount).toFixed(2) +
+      formatCurrency(Number(currentAmount) || 0) +
       " → " +
-      Number(amount).toFixed(2) +
-      " · Date " +
-      String(payment.date || "—") +
+      formatCurrency(Number(amount) || 0)
+    );
+  }
+
+  if (String(payment.date || "") !== date) {
+    paymentChanges.push(
+      "Date " +
+      formatPaymentAuditDate(payment.date) +
       " → " +
-      date +
-      " · Method " +
+      formatPaymentAuditDate(date)
+    );
+  }
+
+  if (String(payment.method || "Other") !== method) {
+    paymentChanges.push(
+      "Method " +
       String(payment.method || "Other") +
       " → " +
-      method +
-      " · Description " +
-      String(payment.description || "—") +
+      method
+    );
+  }
+
+  if (String(payment.description || "Payment") !== description) {
+    paymentChanges.push(
+      "Description " +
+      String(payment.description || "Payment") +
       " → " +
-      description +
-      ".",
-    sourceKey: "finance-payment:updated:" + paymentId + ":" + now,
-  });
+      description
+    );
+  }
+
+  if (paymentChanges.length > 0) {
+    createAutomationEvent(userId, {
+      type: "finance-payment-updated",
+      title: "Payment updated",
+      detail:
+        (payment.invoice_number || actualInvoiceId) +
+        " · " +
+        paymentChanges.join(" · ") +
+        ".",
+      sourceKey: "finance-payment:updated:" + paymentId + ":" + now,
+    });
+  }
 
   return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, actualInvoiceId) };
 }
@@ -1448,11 +1490,11 @@ function deleteInvoicePayment(userId, paymentId) {
     type: "finance-payment-removed",
     title: "Payment removed",
     detail:
-      Number(payment.amount).toFixed(2) +
+      formatCurrency(Number(payment.amount) || 0) +
       " payment removed from " +
       (payment.invoice_number || payment.invoice_id) +
       " · " +
-      String(payment.date || "—") +
+      formatPaymentAuditDate(payment.date) +
       " · " +
       String(payment.method || "Other") +
       (payment.description ? " · " + payment.description : "") +
