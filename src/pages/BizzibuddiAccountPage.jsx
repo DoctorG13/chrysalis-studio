@@ -4422,7 +4422,6 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [paymentsByInvoice, setPaymentsByInvoice] = useState({});
-  const [paymentsLoading, setPaymentsLoading] = useState(false);
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
   useEffect(() => {
@@ -4439,41 +4438,14 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   }, [initialInvoiceId, invoices]);
 
   useEffect(() => {
-    let active = true;
-
-    async function loadPaymentHistory() {
-      if (!invoices.length) {
-        setPaymentsByInvoice({});
-        setPaymentsLoading(false);
-        return;
-      }
-
-      setPaymentsLoading(true);
-
-      const entries = await Promise.all(
-        invoices.map(async (invoice) => {
-          try {
-            const result = await bizzibuddiAuthRequest(
-              "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoice.id) + "/payments"
-            );
-            return [invoice.id, Array.isArray(result.payments) ? result.payments : []];
-          } catch {
-            return [invoice.id, []];
-          }
-        })
-      );
-
-      if (!active) return;
-
-      setPaymentsByInvoice(Object.fromEntries(entries));
-      setPaymentsLoading(false);
-    }
-
-    loadPaymentHistory();
-
-    return () => {
-      active = false;
-    };
+    setPaymentsByInvoice(
+      Object.fromEntries(
+        invoices.map((invoice) => [
+          invoice.id,
+          Array.isArray(invoice.payments) ? invoice.payments : [],
+        ])
+      )
+    );
   }, [invoices]);
 
   async function handleSubmit(event) {
@@ -4591,6 +4563,8 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
           );
           const payments = paymentsByInvoice[invoice.id] || [];
+          const hasRecordedPayments =
+            payments.length > 0 || Number(invoice.amountPaid || 0) > 0;
 
           const selected = String(invoice.id) === String(initialInvoiceId);
           return <article
@@ -4637,12 +4611,10 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               {balance > 0 && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
             </div>
 
-            {(payments.length > 0 || (paymentsLoading && paymentsByInvoice[invoice.id] === undefined)) && (
+            {hasRecordedPayments && (
               <div style={{ flexBasis: "100%", width: "100%", marginTop: 4, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
                 <small style={smallText}>PAYMENT HISTORY</small>
-                {paymentsLoading && paymentsByInvoice[invoice.id] === undefined ? (
-                  <div style={{ ...smallText, marginTop: 8 }}>Loading payment history…</div>
-                ) : (
+                {payments.length > 0 ? (
                   <div style={{ display: "grid", gap: 8, marginTop: 9 }}>
                     {payments.map((payment) => (
                       <div
@@ -4672,6 +4644,10 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                         </span>
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div style={{ ...smallText, marginTop: 8 }}>
+                    Payments have been recorded, but payment details are not available yet.
                   </div>
                 )}
               </div>
