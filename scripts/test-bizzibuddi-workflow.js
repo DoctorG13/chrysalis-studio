@@ -33,6 +33,7 @@ const routeContracts = [
   ["POST", "/api/bizzibuddi/auth/invoices"],
   ["GET", 'url.pathname.endsWith("/payments")'],
   ["POST", 'url.pathname.endsWith("/payments")'],
+  ["PUT", 'url.pathname.includes("/payments/")'],
   ["GET", "/api/bizzibuddi/auth/calendar"],
   ["POST", "/api/bizzibuddi/auth/calendar"],
   ["PUT", "url.pathname.startsWith(\"/api/bizzibuddi/auth/calendar/\")"],
@@ -124,6 +125,11 @@ assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "PAYMENT HISTORY", "
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "paymentsByInvoice", "finance payment history state");
 
 
+assertContains(read("server/bizzibuddi-auth.js"), "function updateInvoicePayment", "persistent payment correction workflow");
+assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_payments", "payment correction persistence");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "function handleUpdatePayment", "Finance payment correction handler");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "EDIT PAYMENT", "Finance payment correction UI");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onUpdatePayment={updateAccountPayment}", "Finance payment correction integration");
 console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 38 UI workflow contracts.`);\nassertContains(page, "function handleOpenJob(jobId)", "jobs timeline open-job handler");\nassertContains(page, "onClick={() => handleOpenJob(item.jobId)}", "jobs timeline open-job action");\n
 assertContains(page, "setTimelineJobId(null);", "jobs open-job closes timeline");
 assertContains(page, "startEdit(job);", "jobs open-job opens job details");
@@ -143,7 +149,7 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), '(?:\\$
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "CONFIRM PAYMENT", "account Buddi payment confirmation UI");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Confirm & record payment", "account Buddi payment save confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onRecordPayment", "account Buddi payment persistence integration");
-assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onRecordPayment={async (invoiceId, payment)", "account page Buddi payment integration");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onRecordPayment={recordAccountPayment}", "account page Buddi payment integration");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "parseNaturalInvoiceRequest", "account Buddi natural-language invoice parsing");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "CONFIRM NEW INVOICE", "account Buddi invoice confirmation UI");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Confirm & create invoice", "account Buddi invoice save confirmation");
