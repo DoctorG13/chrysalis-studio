@@ -1,3 +1,13 @@
+## Payment Activity API response fix
+
+### Fixed
+
+- Preserved the persisted invoice paymentActivity array when invoice responses pass through the shared toInvoice() serializer.
+- Prevented the account invoice view from falling back to the three current payment records and hiding historical Payment Activity events.
+- Kept backward compatibility with the legacy payment_activity property shape.
+
+---
+
 ## Historical Payment Audit Repair Utility
 
 ### Added
