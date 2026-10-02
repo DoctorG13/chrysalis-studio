@@ -4516,6 +4516,13 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
   function startPayment(invoice) {
     setError("");
+    setEditingPaymentId("");
+    setEditingPaymentForm({
+      amount: "",
+      date: "",
+      method: "Other",
+      description: "",
+    });
     setPaymentInvoiceId(invoice.id);
     setPaymentForm({
       amount: "",
@@ -4533,6 +4540,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
   function startEditPayment(payment) {
     setError("");
+    setPaymentInvoiceId("");
     setEditingPaymentId(payment.id);
     setEditingPaymentForm({
       amount: String(payment.amount ?? ""),
