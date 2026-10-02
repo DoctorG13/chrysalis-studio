@@ -151,6 +151,9 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onCrea
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onCreateInvoice={async (invoice)", "account page Buddi invoice integration");
 assertContains(read("server/bizzibuddi-auth.js"), "description", "invoice description persistence");
 assertContains(read("server/index.js"), "bizzibuddi-invoice-descriptions", "invoice description migration");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "payment received\\s+from", "natural-language payment received phrasing");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "RECORD PAYMENT", "direct invoice payment entry UI");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "Add payment", "direct invoice payment action");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "autoMatchPaymentInvoice", "account Buddi payment-to-invoice matching");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "invoiceDescription.includes(description)", "account Buddi payment description matching");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "outstanding.length === 1", "account Buddi single-outstanding-invoice matching");
