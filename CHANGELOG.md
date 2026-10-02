@@ -1,3 +1,11 @@
+## Finance Payment History Presentation
+
+### Improved
+
+- Indented invoice payment history so it reads as supporting detail beneath the invoice.
+- Simplified payment rows by removing the redundant “Payment received” label.
+- Kept amount, date, method and optional payment description visible in a more compact layout.
+
 ## Finance Payment History Reliability
 
 ### Fixed
