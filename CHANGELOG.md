@@ -1,3 +1,17 @@
+## Finance Expenses & Outgoings
+
+### Added
+
+- Added persistent BizziBuddi expense storage with a dedicated Finance expenses table and migration.
+- Added authenticated Finance expense APIs for listing, recording, editing and removing expenses.
+- Added expense categories, payment methods, dates, amounts and descriptions.
+- Added Finance expense totals for this month, all time and the next 30 days.
+- Added net cashflow calculations using recorded customer payments minus recorded expenses.
+- Expanded Cashflow Outlook to show money in, money out, current-month net cashflow and projected net cashflow for the next 30 days.
+- Added Finance expense audit events for recorded, updated and removed outgoings.
+
+---
+
 ## Finance Cashflow Outlook
 
 ### Added
