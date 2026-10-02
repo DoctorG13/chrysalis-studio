@@ -1,3 +1,12 @@
+## Repair Legacy Payment Audit History
+
+### Fixed
+
+- Corrected legacy edited-payment activity so an old **Payment recorded** entry can be paired with the corresponding current payment when the historical payment version is identifiable.
+- Added a migrated **Payment updated** event showing the actual amount transition.
+- Suppressed the misleading duplicate current **Payment recorded** event from the displayed audit trail when it represents an edited historical payment.
+- Normalized the migrated recorded entry with AUD currency, Australian date formatting and the customer-facing invoice number.
+
 ## Correct Payment Audit Change Tracking
 
 ### Fixed
