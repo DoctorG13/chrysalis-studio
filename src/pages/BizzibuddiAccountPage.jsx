@@ -4563,6 +4563,10 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
           );
           const payments = paymentsByInvoice[invoice.id] || [];
+          const recordedPaymentTotal = payments.reduce(
+            (sum, payment) => sum + (Number(payment.amount) || 0),
+            0
+          );
           const hasRecordedPayments =
             payments.length > 0 || Number(invoice.amountPaid || 0) > 0;
 
@@ -4624,28 +4628,38 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   borderLeft: "2px solid rgba(0,180,219,.28)",
                 }}
               >
-                <small style={smallText}>PAYMENT HISTORY</small>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+                  <small style={smallText}>PAYMENT HISTORY</small>
+                  {recordedPaymentTotal > 0 && (
+                    <small style={{ ...smallText, fontWeight: 700 }}>
+                      {formatCurrency(recordedPaymentTotal)} PAID
+                    </small>
+                  )}
+                </div>
+
                 {payments.length > 0 ? (
-                  <div style={{ display: "grid", gap: 4, marginTop: 7 }}>
+                  <div style={{ display: "grid", gap: 2, marginTop: 7 }}>
                     {payments.map((payment) => (
                       <div
                         key={payment.id}
                         style={{
-                          display: "flex",
+                          display: "grid",
+                          gridTemplateColumns: "minmax(78px, auto) minmax(150px, auto) 1fr",
                           alignItems: "baseline",
                           gap: 10,
-                          flexWrap: "wrap",
-                          padding: "5px 0",
+                          padding: "4px 0",
                         }}
                       >
                         <strong style={{ fontSize: 14 }}>{formatCurrency(payment.amount)}</strong>
                         <span style={smallText}>
                           {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
                         </span>
-                        {payment.description && (
-                          <span style={{ ...smallText, flexBasis: "100%" }}>
+                        {payment.description ? (
+                          <span style={{ ...smallText, minWidth: 0 }}>
                             {payment.description}
                           </span>
+                        ) : (
+                          <span />
                         )}
                       </div>
                     ))}
