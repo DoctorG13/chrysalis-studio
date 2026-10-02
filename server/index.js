@@ -635,6 +635,33 @@ const MIGRATIONS = [
         WHERE stopped_at IS NULL;
     `,
   },
+  {
+    version: 19,
+    name: "bizzibuddi-expenses",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_expenses (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        amount REAL NOT NULL DEFAULT 0,
+        date TEXT NOT NULL,
+        category TEXT NOT NULL DEFAULT 'Other',
+        method TEXT NOT NULL DEFAULT 'Other',
+        description TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_expenses_user_id
+        ON bizzibuddi_expenses(user_id);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_expenses_date
+        ON bizzibuddi_expenses(date);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_expenses_category
+        ON bizzibuddi_expenses(category);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
