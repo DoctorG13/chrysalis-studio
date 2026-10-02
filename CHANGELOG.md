@@ -1,3 +1,11 @@
+## Finance Payment History Ledger
+
+### Improved
+
+- Added a compact paid-total summary to invoice payment history.
+- Displayed multiple payments as a concise ledger-style list of amount, date, method and description.
+- Kept payment history visually subordinate to the invoice while allowing it to scale to multiple instalments.
+
 ## Finance Payment History Presentation
 
 ### Improved
