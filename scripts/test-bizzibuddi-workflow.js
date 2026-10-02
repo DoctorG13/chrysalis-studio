@@ -79,8 +79,10 @@ assertContains(page, "Promise.allSettled", "concurrent legacy production migrati
 assertContains(page, "aria-live=\"polite\"", "accessible status messaging");
 assertContains(page, "bizzibuddi-table-scroll", "responsive reporting table");
 assertContains(page, "bizzibuddi-skip-link", "keyboard skip navigation");
-assertContains(page, "<>\n      {account && shortcutHelpOpen && (", "account page fragment wrapper");
-assertContains(page, "</main>\n    </>", "account page fragment closure");
+assertContains(page, "<>
+      {account && shortcutHelpOpen && (", "account page fragment wrapper");
+assertContains(page, "</main>
+    </>", "account page fragment closure");
 assertContains(page, "const filteredPeople = normalizedQuery", "people search filtering");
 assertContains(page, "{filteredPeople.map((person) => {", "filtered people render");
 if (page.includes("{(() => {")) throw new Error("Legacy People filter IIFE must not return.");
@@ -130,7 +132,10 @@ assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_payments", 
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "function handleUpdatePayment", "Finance payment correction handler");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "EDIT PAYMENT", "Finance payment correction UI");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onUpdatePayment={updateAccountPayment}", "Finance payment correction integration");
-console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 38 UI workflow contracts.`);\nassertContains(page, "function handleOpenJob(jobId)", "jobs timeline open-job handler");\nassertContains(page, "onClick={() => handleOpenJob(item.jobId)}", "jobs timeline open-job action");\n
+console.log("BizziBuddi workflow contract checks passed.");
+assertContains(page, "function handleOpenJob(jobId)", "jobs timeline open-job handler");
+assertContains(page, "onClick={() => handleOpenJob(item.jobId)}", "jobs timeline open-job action");
+
 assertContains(page, "setTimelineJobId(null);", "jobs open-job closes timeline");
 assertContains(page, "startEdit(job);", "jobs open-job opens job details");
 assertContains(page, "setSelectedJobId(String(job.id));", "jobs open-job focuses selected job");
