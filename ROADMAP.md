@@ -3,6 +3,7 @@
 - [x] Preserve natural-language payment amounts during parsing
 - [x] Show persistent payment history on each invoice
 - [x] Return payment history with invoice data for reliable Finance rendering
+- [x] Simplify and indent invoice payment history presentation
 
 - [x] Buddi answers who currently owes money
 - [x] Buddi reports client-specific outstanding balances
