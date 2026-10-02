@@ -1,3 +1,11 @@
+## Guaranteed Invoice Payment Activity
+
+### Fixed
+
+- Ensured invoice responses always expose a complete Payment Activity history for existing payment records.
+- Persisted missing **Payment recorded** events using idempotent payment-specific source keys.
+- Added a response fallback for legacy databases so existing payments cannot disappear from Payment Activity while the persistent records are established.
+
 ## Finance Payment Activity Event Types
 
 ### Fixed
