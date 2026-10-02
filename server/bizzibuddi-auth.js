@@ -1059,6 +1059,7 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
            ON people.id = invoices.person_id AND people.user_id = invoices.user_id
          WHERE invoices.id = ? AND invoices.user_id = ?`
       ).get(invoiceId, userId),
+      payments: getInvoicePayments(userId, invoiceId),
     });
   }
 
@@ -1127,6 +1128,111 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
   }
 
   const updatedInvoice = getDatabase()
+    .prepare(
+      `SELECT invoices.*, people.name AS person_name,
+              COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+       FROM bizzibuddi_invoices AS invoices
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = invoices.person_id AND people.user_id = invoices.user_id
+       WHERE invoices.id = ? AND invoices.user_id = ?`
+    )
+    .get(invoiceId, userId);
+
+  return toInvoice({
+    ...updatedInvoice,
+    payments: getInvoicePayments(userId, invoiceId),
+  });
+}
+
+
+function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
+  const database = getDatabase();
+  const payment = database
+    .prepare(
+      `SELECT payments.id, payments.invoice_id, payments.amount, payments.date,
+              payments.method, payments.description, invoices.amount AS invoice_amount,
+              invoices.status AS invoice_status, invoices.due_date
+       FROM bizzibuddi_payments AS payments
+       INNER JOIN bizzibuddi_invoices AS invoices
+         ON invoices.id = payments.invoice_id
+        AND invoices.user_id = payments.user_id
+       WHERE payments.id = ? AND payments.invoice_id = ? AND payments.user_id = ?`
+    )
+    .get(paymentId, invoiceId, userId);
+
+  if (!payment) return null;
+
+  const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
+  const currentAmount = Number(payment.amount || 0);
+  const maximumAmount = Math.max(
+    currentAmount,
+    Number(payment.invoice_amount || 0) - (currentPaid - currentAmount)
+  );
+
+  const requestedAmount =
+    payload?.amount === undefined || payload?.amount === null || payload?.amount === ""
+      ? currentAmount
+      : Number(payload.amount);
+  const amount = Math.round(requestedAmount * 100) / 100;
+  const method = String(payload?.method || payment.method || "Other").trim().slice(0, 60) || "Other";
+  const date = String(payload?.date || payment.date || todayDate()).trim();
+  const description = String(
+    payload?.description === undefined ? payment.description || "Payment" : payload.description
+  ).trim().slice(0, 160) || "Payment";
+
+  if (!Number.isFinite(amount) || amount <= 0 || amount > maximumAmount) {
+    throw new Error(
+      `Payment amount must be greater than zero and no more than the available invoice balance of ${maximumAmount.toFixed(2)}.`
+    );
+  }
+
+  if (!isValidDateString(date)) {
+    throw new Error("Please enter a valid payment date.");
+  }
+
+  const now = new Date().toISOString();
+  database.exec("BEGIN");
+  try {
+    database
+      .prepare(
+        `UPDATE bizzibuddi_payments
+         SET amount = ?, date = ?, method = ?, description = ?, updated_at = ?
+         WHERE id = ? AND invoice_id = ? AND user_id = ?`
+      )
+      .run(
+        amount,
+        date,
+        method,
+        description,
+        now,
+        paymentId,
+        invoiceId,
+        userId
+      );
+
+    const nextPaid = currentPaid - currentAmount + amount;
+    const nextStatus = getInvoiceStatus(
+      payment.invoice_amount,
+      nextPaid,
+      payment.invoice_status,
+      payment.due_date
+    );
+
+    database
+      .prepare(
+        `UPDATE bizzibuddi_invoices
+         SET status = ?, updated_at = ?
+         WHERE id = ? AND user_id = ?`
+      )
+      .run(nextStatus, now, invoiceId, userId);
+
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  const updatedInvoice = database
     .prepare(
       `SELECT invoices.*, people.name AS person_name,
               COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
@@ -2902,6 +3008,43 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         ok: true,
         authenticated: true,
         invoice: createInvoice(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
+        url.pathname.includes("/payments/") &&
+        request.method === "PUT") {
+      const paymentsPrefix = "/api/bizzibuddi/auth/invoices/";
+      const paymentRoute = url.pathname.slice(paymentsPrefix.length);
+      const [rawInvoiceId, rawPaymentId, extra] = paymentRoute.split("/");
+
+      const invoiceId = decodeURIComponent(rawInvoiceId || "").trim();
+      const paymentId = decodeURIComponent(rawPaymentId || "").trim();
+
+      if (!invoiceId || !paymentId || extra || invoiceId.includes("/") || paymentId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      const invoice = updateInvoicePayment(user.id, invoiceId, paymentId, payload);
+
+      if (!invoice) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        invoice,
       });
       return true;
     }
