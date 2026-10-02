@@ -4588,7 +4588,13 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         );
       }
 
-      await onUpdatePayment(invoice.id, payment.id, {
+      const paymentInvoiceId = String(payment.invoiceId || invoice.id || "").trim();
+
+      if (!paymentInvoiceId) {
+        throw new Error("This payment is not linked to an invoice.");
+      }
+
+      await onUpdatePayment(paymentInvoiceId, payment.id, {
         amount,
         date: editingPaymentForm.date,
         method: editingPaymentForm.method || "Other",
