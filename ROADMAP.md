@@ -1,6 +1,7 @@
 ## Post-1.0 — Finance Intelligence
 
 - [x] Correct recorded payment amount, date, method and description from Finance
+- [x] Harden payment correction against stale invoice context
 
 
 
