@@ -1,3 +1,13 @@
+## BizziBuddi Invoice Payment Activity
+
+### Changed
+
+- Replaced the small native **PAYMENT ACTIVITY** details control beneath invoice payment history with a prominent expandable activity panel.
+- Added a clear **▸ / ▾** expand indicator and event-count badge.
+- Kept activity collapsed by default while allowing each invoice to expand independently.
+- Preserved the existing dark BizziBuddi visual language and persisted payment activity data.
+- Continued displaying recorded payment activity with event detail and timestamp information.
+
 ## Finance Payment Activity Presentation
 
 ### Added
