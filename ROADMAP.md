@@ -4,6 +4,7 @@
 - [x] Harden payment correction against stale invoice context
 - [x] Send payment corrections using the payment's persisted invoice identity
 - [x] Use a payment-specific API route for Finance payment corrections
+- [x] Remove an incorrectly recorded payment from Finance
 
 
 
