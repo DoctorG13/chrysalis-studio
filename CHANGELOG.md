@@ -1,5 +1,9 @@
 ## Finance Payment Corrections
 
+### Fixed
+
+- Made payment corrections resolve the persisted payment record by its account-scoped payment ID, avoiding stale parent-invoice state from causing a false “Payment not found” response.
+
 ### Added
 
 - Added an **Edit** action to each recorded invoice payment.
