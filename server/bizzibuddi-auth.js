@@ -1251,6 +1251,76 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
 }
 
 
+function deleteInvoicePayment(userId, paymentId) {
+  const database = getDatabase();
+  const payment = database
+    .prepare(
+      `SELECT payments.id, payments.invoice_id, payments.amount,
+              invoices.amount AS invoice_amount,
+              invoices.status AS invoice_status, invoices.due_date
+       FROM bizzibuddi_payments AS payments
+       INNER JOIN bizzibuddi_invoices AS invoices
+         ON invoices.id = payments.invoice_id
+        AND invoices.user_id = payments.user_id
+       WHERE payments.id = ? AND payments.user_id = ?`
+    )
+    .get(paymentId, userId);
+
+  if (!payment) return null;
+
+  const currentPaid = getInvoicePaymentTotal(userId, payment.invoice_id);
+  const nextPaid = Math.max(0, currentPaid - Number(payment.amount || 0));
+  const nextStatus = getInvoiceStatus(
+    payment.invoice_amount,
+    nextPaid,
+    payment.invoice_status,
+    payment.due_date
+  );
+  const now = new Date().toISOString();
+
+  database.exec("BEGIN");
+  try {
+    database
+      .prepare(
+        `DELETE FROM bizzibuddi_payments
+         WHERE id = ? AND user_id = ?`
+      )
+      .run(paymentId, userId);
+
+    database
+      .prepare(
+        `UPDATE bizzibuddi_invoices
+         SET status = ?, updated_at = ?
+         WHERE id = ? AND user_id = ?`
+      )
+      .run(nextStatus, now, payment.invoice_id, userId);
+
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  const updatedInvoice = database
+    .prepare(
+      `SELECT invoices.*, people.name AS person_name,
+              COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+       FROM bizzibuddi_invoices AS invoices
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = invoices.person_id AND people.user_id = invoices.user_id
+       WHERE invoices.id = ? AND invoices.user_id = ?`
+    )
+    .get(payment.invoice_id, userId);
+
+  return toInvoice({
+    ...updatedInvoice,
+    payments: getInvoicePayments(userId, payment.invoice_id),
+  });
+}
+
+
+
+
 function validateCalendarPayload(payload) {
   const title = String(payload?.title || "").trim();
   const date = String(payload?.date || "").trim();
@@ -3163,6 +3233,40 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       sendJson(response, 200, {
         ok: true,
         authenticated: true,
+        invoice,
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/payments/") &&
+        request.method === "DELETE") {
+      const paymentId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/payments/".length)
+      ).replace(/\/$/, "").trim();
+
+      if (!paymentId || paymentId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const invoice = deleteInvoicePayment(user.id, paymentId);
+
+      if (!invoice) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        deleted: true,
+        paymentId,
         invoice,
       });
       return true;
