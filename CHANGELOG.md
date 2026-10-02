@@ -1,3 +1,12 @@
+## Finance Revenue Overview file restoration
+
+### Fixed
+
+- Restored the complete `BizzibuddiAccountPage.jsx` after the Finance Revenue Overview commit accidentally truncated the Help & Support section.
+- Reapplied the Revenue Overview changes to the intact page without removing existing account functionality.
+
+---
+
 ## Finance Revenue Overview
 
 ### Added
