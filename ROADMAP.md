@@ -5,6 +5,8 @@
 - [x] Return payment history with invoice data for reliable Finance rendering
 - [x] Simplify and indent invoice payment history presentation
 - [x] Display payment history as a compact multi-payment ledger
+- [x] Add direct payment entry from Finance invoices
+- [x] Recognize natural-language payment received phrasing in Buddi
 
 - [x] Buddi answers who currently owes money
 - [x] Buddi reports client-specific outstanding balances
