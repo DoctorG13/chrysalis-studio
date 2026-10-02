@@ -4612,42 +4612,47 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             </div>
 
             {hasRecordedPayments && (
-              <div style={{ flexBasis: "100%", width: "100%", marginTop: 4, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
+              <div
+                style={{
+                  flexBasis: "100%",
+                  width: "calc(100% - 18px)",
+                  marginTop: 6,
+                  marginLeft: 18,
+                  paddingTop: 12,
+                  paddingLeft: 14,
+                  borderTop: "1px solid " + BORDER,
+                  borderLeft: "2px solid rgba(0,180,219,.28)",
+                }}
+              >
                 <small style={smallText}>PAYMENT HISTORY</small>
                 {payments.length > 0 ? (
-                  <div style={{ display: "grid", gap: 8, marginTop: 9 }}>
+                  <div style={{ display: "grid", gap: 4, marginTop: 7 }}>
                     {payments.map((payment) => (
                       <div
                         key={payment.id}
                         style={{
                           display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          gap: 14,
+                          alignItems: "baseline",
+                          gap: 10,
                           flexWrap: "wrap",
-                          padding: "9px 0",
+                          padding: "5px 0",
                         }}
                       >
-                        <div>
-                          <strong style={{ display: "block", fontSize: 14 }}>{formatCurrency(payment.amount)}</strong>
-                          <span style={{ ...smallText, display: "block", marginTop: 3 }}>
-                            {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
-                          </span>
-                          {payment.description && (
-                            <span style={{ ...smallText, display: "block", marginTop: 3 }}>
-                              {payment.description}
-                            </span>
-                          )}
-                        </div>
-                        <span style={{ ...smallText, textAlign: "right" }}>
-                          Payment received
+                        <strong style={{ fontSize: 14 }}>{formatCurrency(payment.amount)}</strong>
+                        <span style={smallText}>
+                          {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
                         </span>
+                        {payment.description && (
+                          <span style={{ ...smallText, flexBasis: "100%" }}>
+                            {payment.description}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div style={{ ...smallText, marginTop: 8 }}>
-                    Payments have been recorded, but payment details are not available yet.
+                  <div style={{ ...smallText, marginTop: 7 }}>
+                    Payment details are not available yet.
                   </div>
                 )}
               </div>
