@@ -1,3 +1,18 @@
+## Payment Activity Audit Trail Stabilisation
+
+### Fixed
+
+- Made Payment Activity retrieval strictly read-only so opening an invoice can never rewrite historical audit records.
+- Simplified event matching around persisted invoice and payment identities.
+- Added the invoice ID to newly created payment update and removal event source keys for deterministic retrieval.
+- Preserved support for older payment update and removal events whose source keys used the payment ID only.
+
+### Important
+
+- Historical audit data already overwritten by an earlier migration cannot be reconstructed from the current database alone. New payment edits now persist their before/after values in a dedicated update event without relying on display-time migration.
+
+---
+
 ## Payment Audit Event Retrieval Fix
 
 ### Fixed
