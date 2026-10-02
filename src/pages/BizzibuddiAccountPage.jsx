@@ -201,6 +201,23 @@ export default function BizzibuddiAccountPage() {
     return result.invoice;
   }
 
+  async function deleteAccountPayment(paymentId) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/payments/" + encodeURIComponent(paymentId),
+      {
+        method: "DELETE",
+      }
+    );
+
+    setInvoices((current) =>
+      current.map((invoice) =>
+        invoice.id === result.invoice.id ? result.invoice : invoice
+      )
+    );
+
+    return result.invoice;
+  }
+
   function writeWorkspaceRoute(nextView, target = {}) {
     const params = new URLSearchParams();
     if (nextView) params.set("view", nextView);
@@ -4549,6 +4566,44 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     });
   }
 
+  async function handleDeletePayment(payment) {
+    if (saving) return;
+
+    const paymentId = String(payment.id || "").trim();
+    if (!paymentId) {
+      setError("This payment record is missing its payment ID.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Remove this payment of " +
+        formatCurrency(payment.amount) +
+        "? This will recalculate the invoice balance."
+    );
+
+    if (!confirmed) return;
+
+    setError("");
+    setSaving(true);
+
+    try {
+      await deleteAccountPayment(paymentId);
+      if (editingPaymentId === paymentId) {
+        setEditingPaymentId("");
+        setEditingPaymentForm({
+          amount: "",
+          date: "",
+          method: "Other",
+          description: "",
+        });
+      }
+    } catch (requestError) {
+      setError(requestError.message || "We could not remove this payment.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   function cancelEditPayment() {
     if (saving) return;
     setEditingPaymentId("");
@@ -4940,14 +4995,24 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                           ) : (
                             <span />
                           )}
-                          <button
-                            type="button"
-                            onClick={() => startEditPayment(payment)}
-                            disabled={saving}
-                            style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
-                          >
-                            Edit
-                          </button>
+                          <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                            <button
+                              type="button"
+                              onClick={() => startEditPayment(payment)}
+                              disabled={saving}
+                              style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePayment(payment)}
+                              disabled={saving}
+                              style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                            >
+                              Remove
+                            </button>
+                          </div>
                         </div>
 
                         {editingPaymentId === payment.id && (
