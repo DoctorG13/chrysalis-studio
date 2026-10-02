@@ -3013,6 +3013,52 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       return true;
     }
 
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/payments/") &&
+        request.method === "PUT") {
+      const paymentId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/payments/".length)
+      ).replace(/\/$/, "").trim();
+
+      if (!paymentId || paymentId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const payment = getDatabase()
+        .prepare(
+          `SELECT invoice_id
+           FROM bizzibuddi_payments
+           WHERE id = ? AND user_id = ?`
+        )
+        .get(paymentId, user.id);
+
+      if (!payment) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      const invoice = updateInvoicePayment(user.id, payment.invoice_id, paymentId, payload);
+
+      if (!invoice) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        invoice,
+      });
+      return true;
+    }
+
     if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
         url.pathname.includes("/payments/") &&
         request.method === "PUT") {
