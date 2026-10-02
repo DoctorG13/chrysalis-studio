@@ -871,6 +871,33 @@ function getInvoicePaymentTotal(userId, invoiceId) {
   return Number(row?.amount_paid || 0);
 }
 
+function toInvoicePayment(row) {
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    invoiceId: row.invoice_id,
+    amount: Number(row.amount || 0),
+    date: row.date,
+    method: row.method || "Other",
+    description: row.description || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getInvoicePayments(userId, invoiceId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, invoice_id, amount, date, method, description, created_at, updated_at
+       FROM bizzibuddi_payments
+       WHERE invoice_id = ? AND user_id = ?
+       ORDER BY date DESC, created_at DESC`
+    )
+    .all(invoiceId, userId)
+    .map(toInvoicePayment);
+}
+
 function getInvoiceStatus(amount, amountPaid, storedStatus, dueDate) {
   const balance = Math.max(0, Number(amount || 0) - Number(amountPaid || 0));
 
@@ -2865,6 +2892,45 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         ok: true,
         authenticated: true,
         invoice: createInvoice(user.id, payload),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
+        url.pathname.endsWith("/payments") &&
+        request.method === "GET") {
+      const invoiceId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/invoices/".length, -"/payments".length)
+      ).replace(/\/$/, "").trim();
+
+      if (!invoiceId || invoiceId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Invoice not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const invoice = getDatabase()
+        .prepare(
+          `SELECT id
+           FROM bizzibuddi_invoices
+           WHERE id = ? AND user_id = ?`
+        )
+        .get(invoiceId, user.id);
+
+      if (!invoice) {
+        sendJson(response, 404, { ok: false, error: "Invoice not found." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        payments: getInvoicePayments(user.id, invoiceId),
       });
       return true;
     }
