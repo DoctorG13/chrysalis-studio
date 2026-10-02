@@ -898,6 +898,15 @@ function getInvoicePayments(userId, invoiceId) {
     .map(toInvoicePayment);
 }
 
+function formatPaymentAuditCurrency(value) {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
+}
+
 function formatPaymentAuditDate(value) {
   const raw = String(value || "");
   if (!raw) return "Date not set";
@@ -931,14 +940,22 @@ function formatPaymentAuditDate(value) {
 function getInvoicePaymentActivity(userId, invoiceId) {
   const database = getDatabase();
   const payments = getInvoicePayments(userId, invoiceId);
+  const invoice = database
+    .prepare(
+      `SELECT number
+       FROM bizzibuddi_invoices
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(invoiceId, userId);
+  const invoiceNumber = invoice?.number || invoiceId;
 
   // Backfill and upgrade recorded events so older payments use the same
   // customer-facing audit format as newly recorded payments.
   for (const payment of payments) {
     const detail =
-      formatCurrency(Number(payment.amount) || 0) +
+      formatPaymentAuditCurrency(Number(payment.amount) || 0) +
       " payment recorded on " +
-      invoiceId +
+      invoiceNumber +
       " · " +
       formatPaymentAuditDate(payment.date) +
       " · " +
@@ -1244,7 +1261,7 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
     type: "finance-payment-recorded",
     title: "Payment recorded",
     detail:
-      formatCurrency(Number(amount) || 0) +
+      formatPaymentAuditCurrency(Number(amount) || 0) +
       " payment recorded on " +
       (updatedInvoice.number || invoiceId) +
       " · " +
@@ -1369,9 +1386,9 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
   if (Number(currentAmount) !== Number(amount)) {
     paymentChanges.push(
       "Amount " +
-      formatCurrency(Number(currentAmount) || 0) +
+      formatPaymentAuditCurrency(Number(currentAmount) || 0) +
       " → " +
-      formatCurrency(Number(amount) || 0)
+      formatPaymentAuditCurrency(Number(amount) || 0)
     );
   }
 
@@ -1490,7 +1507,7 @@ function deleteInvoicePayment(userId, paymentId) {
     type: "finance-payment-removed",
     title: "Payment removed",
     detail:
-      formatCurrency(Number(payment.amount) || 0) +
+      formatPaymentAuditCurrency(Number(payment.amount) || 0) +
       " payment removed from " +
       (payment.invoice_number || payment.invoice_id) +
       " · " +
