@@ -6,6 +6,7 @@
 - [x] Use a payment-specific API route for Finance payment corrections
 - [x] Remove an incorrectly recorded payment from Finance
 - [x] Show persistent payment activity for recorded, edited and removed payments
+- [x] Make Finance payment activity directly editable and removable
 
 
 
