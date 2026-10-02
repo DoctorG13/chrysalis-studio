@@ -1,3 +1,15 @@
+## Finance Payment Activity Presentation
+
+### Added
+
+- Added a prominent expandable **Payment Activity** row directly beneath Finance's **Recent Payments** ledger.
+- Made the entire header clickable with a visible **▸ / ▾** expand indicator.
+- Added an event-count badge and kept the activity collapsed by default.
+- Clearly separated the activity history from the actual payment transaction ledger.
+- Loaded payment activity from the persistent database timeline.
+- Finance-recorded payments now persist **Payment Recorded**, **Payment Edited**, and **Payment Removed** events.
+- Displayed event timestamps and payment details when expanded.
+
 ## Payment Activity Presentation
 
 ### Added
