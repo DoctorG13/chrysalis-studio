@@ -14,6 +14,7 @@
 - [x] Allow persistent Finance payment activity event types in BizziBuddi event validation
 - [x] Guarantee Payment Activity for existing invoice payment records
 - [x] Guarantee visible Payment Activity when invoice payments exist
+- [x] Polish Payment Activity dates, amounts and customer-facing invoice references
 
 
 
