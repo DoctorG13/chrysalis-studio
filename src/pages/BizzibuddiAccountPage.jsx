@@ -4479,6 +4479,16 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     method: "Other",
     description: "",
   });
+  const [expenses, setExpenses] = useState([]);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState("");
+  const [expenseForm, setExpenseForm] = useState({
+    amount: "",
+    date: getAccountLocalDateKey(),
+    category: "Other",
+    method: "Other",
+    description: "",
+  });
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
   useEffect(() => {
@@ -4512,6 +4522,26 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       )
     );
   }, [invoices]);
+
+  useEffect(() => {
+    if (!available) return undefined;
+
+    let active = true;
+
+    bizzibuddiAuthRequest("/api/bizzibuddi/auth/expenses")
+      .then((result) => {
+        if (!active) return;
+        setExpenses(Array.isArray(result.expenses) ? result.expenses : []);
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        setError(requestError.message || "We could not load your expenses.");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [available]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -4733,6 +4763,125 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     }
   }
 
+  function resetExpenseForm() {
+    setExpenseForm({
+      amount: "",
+      date: getAccountLocalDateKey(),
+      category: "Other",
+      method: "Other",
+      description: "",
+    });
+    setEditingExpenseId("");
+  }
+
+  function startAddExpense() {
+    setError("");
+    resetExpenseForm();
+    setShowExpenseForm(true);
+  }
+
+  function startEditExpense(expense) {
+    setError("");
+    setEditingExpenseId(expense.id);
+    setExpenseForm({
+      amount: String(expense.amount ?? ""),
+      date: expense.date || getAccountLocalDateKey(),
+      category: expense.category || "Other",
+      method: expense.method || "Other",
+      description: expense.description || "",
+    });
+    setShowExpenseForm(true);
+  }
+
+  function cancelExpense() {
+    if (saving) return;
+    setShowExpenseForm(false);
+    resetExpenseForm();
+    setError("");
+  }
+
+  async function handleExpenseSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setSaving(true);
+
+    try {
+      const amount = Number(expenseForm.amount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error("Enter an expense amount greater than zero.");
+      }
+
+      const payload = {
+        amount,
+        date: expenseForm.date,
+        category: expenseForm.category || "Other",
+        method: expenseForm.method || "Other",
+        description: expenseForm.description || "",
+      };
+
+      if (editingExpenseId) {
+        const result = await bizzibuddiAuthRequest(
+          "/api/bizzibuddi/auth/expenses/" + encodeURIComponent(editingExpenseId),
+          {
+            method: "PUT",
+            body: JSON.stringify(payload),
+          }
+        );
+
+        setExpenses((current) =>
+          current
+            .map((expense) => expense.id === editingExpenseId ? result.expense : expense)
+            .sort((left, right) =>
+              String(right.date || "").localeCompare(String(left.date || "")) ||
+              String(right.createdAt || "").localeCompare(String(left.createdAt || ""))
+            )
+        );
+      } else {
+        const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/expenses", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+
+        setExpenses((current) => [result.expense, ...current]);
+      }
+
+      setShowExpenseForm(false);
+      resetExpenseForm();
+    } catch (requestError) {
+      setError(requestError.message || "We could not save this expense.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteExpense(expense) {
+    if (saving) return;
+
+    const confirmed = window.confirm(
+      "Remove this expense of " + formatCurrency(expense.amount) + "?"
+    );
+    if (!confirmed) return;
+
+    setError("");
+    setSaving(true);
+
+    try {
+      await bizzibuddiAuthRequest(
+        "/api/bizzibuddi/auth/expenses/" + encodeURIComponent(expense.id),
+        { method: "DELETE" }
+      );
+      setExpenses((current) => current.filter((item) => item.id !== expense.id));
+      if (editingExpenseId === expense.id) {
+        setShowExpenseForm(false);
+        resetExpenseForm();
+      }
+    } catch (requestError) {
+      setError(requestError.message || "We could not remove this expense.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!available) {
     return <section style={cardStyle(760)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -4816,7 +4965,23 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     ...monthlyRevenue.map((month) => month.amount)
   );
 
-  const knownIncomingCash30Days = currentMonthReceived + upcomingAmount;
+  const currentMonthExpenses = expenses
+    .filter((expense) => String(expense.date || "").slice(0, 7) === currentMonthKey)
+    .reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
+  const totalExpenses = expenses.reduce(
+    (sum, expense) => sum + (Number(expense.amount) || 0),
+    0
+  );
+  const expensesNext30Days = expenses
+    .filter((expense) => {
+      if (!expense.date) return false;
+      const date = new Date(expense.date + "T00:00:00");
+      const days = Math.ceil((date - todayDateValue) / 86400000);
+      return days >= 0 && days <= 30;
+    })
+    .reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
+  const netCashflowThisMonth = currentMonthReceived - currentMonthExpenses;
+  const projectedNetCashflow30Days = upcomingAmount - expensesNext30Days;
   const outstandingCoverage = outstanding > 0
     ? Math.min(100, (upcomingAmount / outstanding) * 100)
     : 0;
@@ -4957,9 +5122,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
         <div>
           <small style={smallText}>CASHFLOW OUTLOOK</small>
-          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>What is coming in?</h3>
+          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Money in, money out.</h3>
         </div>
-        <small style={{ ...smallText, color: MUTED }}>Known incoming cash only</small>
+        <small style={{ ...smallText, color: MUTED }}>Based on recorded cash activity</small>
       </div>
 
       <div
@@ -4971,10 +5136,12 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         }}
       >
         {[
-          ["CASH RECEIVED THIS MONTH", currentMonthReceived],
-          ["EXPECTED NEXT 30 DAYS", upcomingAmount],
-          ["KNOWN INCOMING", knownIncomingCash30Days],
-          ["TOTAL OUTSTANDING", outstanding],
+          ["RECEIVED THIS MONTH", currentMonthReceived],
+          ["EXPENSES THIS MONTH", currentMonthExpenses],
+          ["NET THIS MONTH", netCashflowThisMonth],
+          ["EXPECTED IN NEXT 30 DAYS", upcomingAmount],
+          ["EXPENSES NEXT 30 DAYS", expensesNext30Days],
+          ["PROJECTED NET 30 DAYS", projectedNetCashflow30Days],
         ].map(([label, value]) => (
           <div
             key={label}
@@ -5018,8 +5185,220 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </div>
 
       <p style={{ ...copyStyle, margin: "13px 0 0", fontSize: 11 }}>
-        This view tracks incoming customer payments and invoice balances. Business expenses are not yet recorded in BizziBuddi, so this is an incoming-cash outlook rather than net cash flow.
+        Net cashflow is calculated as recorded customer payments minus recorded expenses. Upcoming figures use invoice due dates and expense dates, so they are a planning view rather than a bank balance.
       </p>
+    </section>
+
+    <section
+      style={{
+        marginTop: 18,
+        padding: 18,
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        background: "rgba(255,255,255,.025)",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <small style={smallText}>EXPENSES & OUTGOINGS</small>
+          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Money going out.</h3>
+        </div>
+        <button
+          type="button"
+          onClick={startAddExpense}
+          disabled={saving}
+          style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+        >
+          + Add expense
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: 10,
+          marginTop: 15,
+        }}
+      >
+        {[
+          ["EXPENSES THIS MONTH", currentMonthExpenses],
+          ["EXPENSES ALL TIME", totalExpenses],
+          ["EXPENSES NEXT 30 DAYS", expensesNext30Days],
+        ].map(([label, value]) => (
+          <div
+            key={label}
+            style={{
+              padding: "13px 14px",
+              borderRadius: 10,
+              border: "1px solid rgba(255,255,255,.10)",
+              background: "rgba(255,255,255,.025)",
+            }}
+          >
+            <small style={{ ...smallText, fontSize: 9 }}>{label}</small>
+            <strong style={{ display: "block", marginTop: 6, fontSize: 18 }}>
+              {formatCurrency(value)}
+            </strong>
+          </div>
+        ))}
+      </div>
+
+      {showExpenseForm && (
+        <form
+          onSubmit={handleExpenseSubmit}
+          style={{
+            marginTop: 16,
+            padding: "13px 14px",
+            borderRadius: 10,
+            border: "1px solid rgba(0,180,219,.25)",
+            background: "rgba(0,180,219,.035)",
+          }}
+        >
+          <small style={smallText}>{editingExpenseId ? "EDIT EXPENSE" : "RECORD EXPENSE"}</small>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 9, marginTop: 9 }}>
+            <label style={fieldStyle}>
+              Amount
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={expenseForm.amount}
+                onChange={(event) => setExpenseForm((current) => ({ ...current, amount: event.target.value }))}
+                required
+                disabled={saving}
+                style={inputStyle}
+              />
+            </label>
+            <label style={fieldStyle}>
+              Date
+              <input
+                type="date"
+                value={expenseForm.date}
+                onChange={(event) => setExpenseForm((current) => ({ ...current, date: event.target.value }))}
+                required
+                disabled={saving}
+                style={inputStyle}
+              />
+            </label>
+            <label style={fieldStyle}>
+              Category
+              <select
+                value={expenseForm.category}
+                onChange={(event) => setExpenseForm((current) => ({ ...current, category: event.target.value }))}
+                disabled={saving}
+                style={inputStyle}
+              >
+                <option>Other</option>
+                <option>Rent</option>
+                <option>Utilities</option>
+                <option>Supplies</option>
+                <option>Wages</option>
+                <option>Tax</option>
+                <option>Insurance</option>
+                <option>Software</option>
+                <option>Marketing</option>
+                <option>Fees</option>
+                <option>Equipment</option>
+                <option>Travel</option>
+              </select>
+            </label>
+            <label style={fieldStyle}>
+              Method
+              <select
+                value={expenseForm.method}
+                onChange={(event) => setExpenseForm((current) => ({ ...current, method: event.target.value }))}
+                disabled={saving}
+                style={inputStyle}
+              >
+                <option>Other</option>
+                <option>Bank Transfer</option>
+                <option>Cash</option>
+                <option>Card</option>
+                <option>EFTPOS</option>
+                <option>Direct Debit</option>
+              </select>
+            </label>
+            <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>
+              Description
+              <input
+                value={expenseForm.description}
+                onChange={(event) => setExpenseForm((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Optional"
+                disabled={saving}
+                style={inputStyle}
+              />
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+            <button
+              type="submit"
+              disabled={saving}
+              style={{ ...primaryButton, width: "auto", minHeight: 38, marginTop: 0, opacity: saving ? 0.65 : 1 }}
+            >
+              {saving ? "Saving…" : editingExpenseId ? "Save changes" : "Record expense"}
+            </button>
+            <button
+              type="button"
+              onClick={cancelExpense}
+              disabled={saving}
+              style={{ ...secondaryButton, width: "auto", minHeight: 38, marginTop: 0 }}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {expenses.length > 0 ? (
+        <div style={{ display: "grid", gap: 3, marginTop: 14 }}>
+          {expenses.slice(0, 12).map((expense) => (
+            <div
+              key={expense.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(82px, auto) minmax(90px, auto) 1fr auto",
+                alignItems: "center",
+                gap: 10,
+                padding: "7px 0",
+                borderTop: "1px solid rgba(255,255,255,.06)",
+              }}
+            >
+              <strong style={{ fontSize: 14 }}>{formatCurrency(expense.amount)}</strong>
+              <span style={smallText}>{formatInvoiceDate(expense.date)}</span>
+              <span style={{ ...smallText, minWidth: 0 }}>
+                {expense.category}{expense.description ? " · " + expense.description : ""}
+              </span>
+              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => startEditExpense(expense)}
+                  disabled={saving}
+                  style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteExpense(expense)}
+                  disabled={saving}
+                  style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+          {expenses.length > 12 && (
+            <small style={{ ...smallText, marginTop: 7 }}>
+              Showing the 12 most recent expenses.
+            </small>
+          )}
+        </div>
+      ) : (
+        <p style={{ ...copyStyle, margin: "14px 0 0", fontSize: 11 }}>
+          No expenses recorded yet. Add your first outgoing so BizziBuddi can include it in cashflow calculations.
+        </p>
+      )}
     </section>
 
     {invoices.length > 0 ? (
