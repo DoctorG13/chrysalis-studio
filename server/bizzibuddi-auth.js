@@ -1156,13 +1156,14 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
        INNER JOIN bizzibuddi_invoices AS invoices
          ON invoices.id = payments.invoice_id
         AND invoices.user_id = payments.user_id
-       WHERE payments.id = ? AND payments.invoice_id = ? AND payments.user_id = ?`
+       WHERE payments.id = ? AND payments.user_id = ?`
     )
-    .get(paymentId, invoiceId, userId);
+    .get(paymentId, userId);
 
   if (!payment) return null;
 
-  const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
+  const actualInvoiceId = payment.invoice_id;
+  const currentPaid = getInvoicePaymentTotal(userId, actualInvoiceId);
   const currentAmount = Number(payment.amount || 0);
   const maximumAmount = Math.max(
     currentAmount,
@@ -1206,7 +1207,7 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
         description,
         now,
         paymentId,
-        invoiceId,
+        actualInvoiceId,
         userId
       );
 
@@ -1224,7 +1225,7 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
          SET status = ?, updated_at = ?
          WHERE id = ? AND user_id = ?`
       )
-      .run(nextStatus, now, invoiceId, userId);
+      .run(nextStatus, now, actualInvoiceId, userId);
 
     database.exec("COMMIT");
   } catch (error) {
@@ -1241,11 +1242,11 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
          ON people.id = invoices.person_id AND people.user_id = invoices.user_id
        WHERE invoices.id = ? AND invoices.user_id = ?`
     )
-    .get(invoiceId, userId);
+    .get(actualInvoiceId, userId);
 
   return toInvoice({
     ...updatedInvoice,
-    payments: getInvoicePayments(userId, invoiceId),
+    payments: getInvoicePayments(userId, actualInvoiceId),
   });
 }
 
