@@ -8,6 +8,7 @@
 - [x] Show persistent payment activity for recorded, edited and removed payments
 - [x] Make Finance payment activity directly editable and removable
 - [x] Make Payment Activity clearly expandable with persisted recorded, edited and removed events
+- [x] Render persistent Payment Activity directly in Finance
 
 
 
