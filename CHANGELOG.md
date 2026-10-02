@@ -1,3 +1,13 @@
+## Deterministic Payment Audit Reconciliation
+
+### Fixed
+
+- Reconciled current payment audit events before attempting legacy edited-payment migration.
+- Made historical payment edit detection reliable when a current payment event was missing or created by an earlier audit implementation.
+- Preserved the customer-facing invoice number, AUD currency and payment details throughout the repaired audit trail.
+
+---
+
 ## Payment Audit Migration Parsing Fix
 
 ### Fixed
