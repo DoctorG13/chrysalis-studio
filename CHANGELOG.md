@@ -1,3 +1,16 @@
+## Finance Monthly Reporting & CSV Export
+
+### Added
+
+- Added a selected-month Finance report using the persistent payment and expense records already loaded by BizziBuddi.
+- Added monthly Received, Expenses and Net Cashflow summary figures.
+- Added a transaction-level view showing payment and expense date, type, amount, category, method and description, with invoice and client references for payments.
+- Added a Finance-specific CSV export containing the selected month's summary and transactions.
+- Added an Excel-friendly UTF-8 BOM to Finance CSV exports.
+- Kept the report clearly scoped as a transaction report rather than a bank statement or tax return.
+
+---
+
 ## Finance Cashflow Intelligence
 
 ### Added
