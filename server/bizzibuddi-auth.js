@@ -1024,7 +1024,11 @@ function toInvoice(row) {
     dueDate: row.due_date,
     description: row.description || "",
     payments: Array.isArray(row.payments) ? row.payments : [],
-    paymentActivity: Array.isArray(row.payment_activity) ? row.payment_activity : [],
+    paymentActivity: Array.isArray(row.paymentActivity)
+      ? row.paymentActivity
+      : Array.isArray(row.payment_activity)
+        ? row.payment_activity
+        : [],
     status: getInvoiceStatus(amount, amountPaid, row.status, row.due_date),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -3869,4 +3873,3 @@ export function closeBizziBuddiAuthDatabase() {
   database.close();
   database = null;
 }
-
