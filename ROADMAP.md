@@ -18,6 +18,7 @@
 - [x] Record detailed payment audit changes for amount, date, method and description
 - [x] Record only actual payment-field changes in audit events
 - [x] Repair legacy edited-payment audit history and prevent duplicate recorded events
+- [x] Fix legacy payment-audit migration amount parsing
 
 
 
