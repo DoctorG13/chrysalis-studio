@@ -1,3 +1,14 @@
+## Finance Cashflow Outlook
+
+### Added
+
+- Added a Cashflow Outlook beneath Revenue Overview in Finance.
+- Shows cash received this month, expected customer payments due within 30 days, known incoming cash and total outstanding.
+- Added a visual indicator for the portion of outstanding invoice balances currently due within 30 days.
+- Clearly identifies the view as incoming-cash intelligence because BizziBuddi does not yet record business expenses.
+
+---
+
 ## Finance Revenue Overview file restoration
 
 ### Fixed
