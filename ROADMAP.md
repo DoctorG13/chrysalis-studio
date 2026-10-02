@@ -2,6 +2,7 @@
 
 - [x] Correct recorded payment amount, date, method and description from Finance
 - [x] Harden payment correction against stale invoice context
+- [x] Send payment corrections using the payment's persisted invoice identity
 
 
 
