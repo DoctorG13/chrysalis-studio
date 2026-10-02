@@ -1,3 +1,15 @@
+## Historical Payment Audit Repair Utility
+
+### Added
+
+- Added an idempotent one-time repair utility for legacy Payment Activity data that was previously overwritten by an earlier migration.
+- The repair targets the affected invoice/payment by persisted invoice and payment identity rather than changing the current payment amount.
+- Creates a database backup before applying the repair.
+- Restores the original recorded payment snapshot and the missing **$300.00 → $100.00** update event for the affected historical payment.
+- Safe to rerun: existing repair events are detected by a stable source key.
+
+---
+
 ## Payment Activity Audit Trail Stabilisation
 
 ### Fixed

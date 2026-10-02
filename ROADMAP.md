@@ -21,7 +21,7 @@
 - [x] Fix legacy payment-audit migration amount parsing
 - [x] Make legacy payment-audit reconciliation deterministic
 - [x] Fix Payment Activity retrieval for persisted payment update and removal events
-- [x] Stabilise Payment Activity as a read-only audit trail
+- [x] Stabilise Payment Activity as a read-only audit trail\n- [x] Add one-time repair utility for the corrupted legacy payment audit snapshot
 
 
 
