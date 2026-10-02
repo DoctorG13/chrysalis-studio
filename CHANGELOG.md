@@ -1,3 +1,14 @@
+## Finance Revenue Overview
+
+### Added
+
+- Added a database-backed Revenue Overview to the BizziBuddi Finance view.
+- Shows revenue received this month and all time, outstanding balances, overdue balances and amounts due within 30 days.
+- Added a six-month month-by-month revenue view based on persisted invoice payment records.
+- Revenue metrics are calculated from the invoice payment data already returned by the authenticated Finance API; no duplicate revenue state is stored in the frontend.
+
+---
+
 ## Payment Activity API response fix
 
 ### Fixed
