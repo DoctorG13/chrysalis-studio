@@ -1,3 +1,11 @@
+## Invoice Payment Activity Backfill
+
+### Fixed
+
+- Backfilled persistent **Payment recorded** activity events for existing invoice payments that were created before payment activity tracking was introduced.
+- Made the backfill idempotent using the existing payment-specific activity source keys, preventing duplicate events.
+- Kept newly recorded, edited and removed payment events on the existing persistent activity path.
+
 ## BizziBuddi Invoice Payment Activity
 
 ### Changed
