@@ -1,3 +1,12 @@
+## Correct Payment Audit Change Tracking
+
+### Fixed
+
+- Upgraded existing recorded-payment activity entries to use the current payment amount, date, method, description and customer-facing invoice number.
+- Payment updates now record **only fields that actually changed**.
+- Amount changes use currency formatting and date changes use the Australian date format.
+- No update activity event is created when an edit produces no actual payment-field change.
+
 ## Detailed Payment Audit Activity
 
 ### Changed
