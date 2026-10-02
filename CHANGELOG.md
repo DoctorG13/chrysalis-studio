@@ -1,3 +1,11 @@
+## Finance Payment History Reliability
+
+### Fixed
+
+- Returned persisted payment history with invoice data so Finance does not depend on a separate request for each invoice.
+- Kept payment history available immediately after recording a payment and after a fresh Finance load.
+- Added a visible fallback when an invoice reports recorded payments but detailed payment rows are unavailable.
+
 ## Finance Payment History
 
 ### Added
