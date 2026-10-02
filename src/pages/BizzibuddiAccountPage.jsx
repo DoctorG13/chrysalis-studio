@@ -183,12 +183,9 @@ export default function BizzibuddiAccountPage() {
     return result.invoice;
   }
 
-  async function updateAccountPayment(invoiceId, paymentId, payment) {
+  async function updateAccountPayment(paymentId, payment) {
     const result = await bizzibuddiAuthRequest(
-      "/api/bizzibuddi/auth/invoices/" +
-        encodeURIComponent(invoiceId) +
-        "/payments/" +
-        encodeURIComponent(paymentId),
+      "/api/bizzibuddi/auth/payments/" + encodeURIComponent(paymentId),
       {
         method: "PUT",
         body: JSON.stringify(payment),
@@ -196,7 +193,9 @@ export default function BizzibuddiAccountPage() {
     );
 
     setInvoices((current) =>
-      current.map((invoice) => invoice.id === invoiceId ? result.invoice : invoice)
+      current.map((invoice) =>
+        invoice.id === result.invoice.id ? result.invoice : invoice
+      )
     );
 
     return result.invoice;
@@ -4588,13 +4587,13 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         );
       }
 
-      const paymentInvoiceId = String(payment.invoiceId || invoice.id || "").trim();
+      const paymentId = String(payment.id || "").trim();
 
-      if (!paymentInvoiceId) {
-        throw new Error("This payment is not linked to an invoice.");
+      if (!paymentId) {
+        throw new Error("This payment record is missing its payment ID.");
       }
 
-      await onUpdatePayment(paymentInvoiceId, payment.id, {
+      await onUpdatePayment(paymentId, {
         amount,
         date: editingPaymentForm.date,
         method: editingPaymentForm.method || "Other",
