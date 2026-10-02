@@ -898,6 +898,27 @@ function getInvoicePayments(userId, invoiceId) {
     .map(toInvoicePayment);
 }
 
+function getInvoicePaymentActivity(userId, invoiceId) {
+  return getDatabase()
+    .prepare(
+      `SELECT id, type, title, detail, created_at
+       FROM bizzibuddi_automation_events
+       WHERE user_id = ?
+         AND source_key LIKE ?
+         AND type IN ('finance-payment-recorded', 'finance-payment-updated', 'finance-payment-removed')
+       ORDER BY created_at DESC
+       LIMIT 50`
+    )
+    .all(userId, `finance-payment:%:${invoiceId}%`)
+    .map((row) => ({
+      id: row.id,
+      type: row.type,
+      title: row.title,
+      detail: row.detail,
+      createdAt: row.created_at,
+    }));
+}
+
 function getInvoiceStatus(amount, amountPaid, storedStatus, dueDate) {
   const balance = Math.max(0, Number(amount || 0) - Number(amountPaid || 0));
 
@@ -927,6 +948,7 @@ function toInvoice(row) {
     dueDate: row.due_date,
     description: row.description || "",
     payments: Array.isArray(row.payments) ? row.payments : [],
+    paymentActivity: Array.isArray(row.payment_activity) ? row.payment_activity : [],
     status: getInvoiceStatus(amount, amountPaid, row.status, row.due_date),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -967,6 +989,7 @@ function getInvoices(userId) {
   return invoices.map((invoice) => ({
     ...invoice,
     payments: getInvoicePayments(userId, invoice.id),
+    paymentActivity: getInvoicePaymentActivity(userId, invoice.id),
   }));
 }
 
@@ -1138,10 +1161,19 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
     )
     .get(invoiceId, userId);
 
-  return toInvoice({
+  const resultInvoice = toInvoice({
     ...updatedInvoice,
     payments: getInvoicePayments(userId, invoiceId),
   });
+
+  createAutomationEvent(userId, {
+    type: "finance-payment-recorded",
+    title: "Payment recorded",
+    detail: Number(amount).toFixed(2) + " payment recorded on " + invoiceId + " via " + method + ".",
+    sourceKey: "finance-payment:recorded:" + payment.id + ":" + invoiceId,
+  });
+
+  return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, invoiceId) };
 }
 
 
@@ -1244,10 +1276,19 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
     )
     .get(actualInvoiceId, userId);
 
-  return toInvoice({
+  const resultInvoice = toInvoice({
     ...updatedInvoice,
     payments: getInvoicePayments(userId, actualInvoiceId),
   });
+
+  createAutomationEvent(userId, {
+    type: "finance-payment-updated",
+    title: "Payment updated",
+    detail: Number(currentAmount).toFixed(2) + " → " + Number(amount).toFixed(2) + " on " + actualInvoiceId + ".",
+    sourceKey: "finance-payment:updated:" + paymentId + ":" + now,
+  });
+
+  return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, actualInvoiceId) };
 }
 
 
@@ -1312,10 +1353,19 @@ function deleteInvoicePayment(userId, paymentId) {
     )
     .get(payment.invoice_id, userId);
 
-  return toInvoice({
+  const resultInvoice = toInvoice({
     ...updatedInvoice,
     payments: getInvoicePayments(userId, payment.invoice_id),
   });
+
+  createAutomationEvent(userId, {
+    type: "finance-payment-removed",
+    title: "Payment removed",
+    detail: Number(payment.amount).toFixed(2) + " payment removed from " + payment.invoice_id + ".",
+    sourceKey: "finance-payment:removed:" + paymentId + ":" + now,
+  });
+
+  return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, payment.invoice_id) };
 }
 
 
