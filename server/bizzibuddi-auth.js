@@ -942,15 +942,6 @@ function getInvoicePaymentActivity(userId, invoiceId) {
   // Older databases may contain the payment rows but no activity rows.
   // Guarantee the invoice response still exposes a complete activity trail
   // while the idempotent inserts above establish the persistent records.
-  const recordedEventPaymentIds = new Set(
-    events
-      .filter((event) => event.type === "finance-payment-recorded")
-      .map((event) => {
-        const match = String(event.detail || "").match(/^([0-9]+(?:\\.[0-9]+)?) payment recorded/);
-        return match ? null : null;
-      })
-  );
-
   const existingRecordedKeys = new Set(
     events
       .filter((event) => event.type === "finance-payment-recorded")
