@@ -10,6 +10,7 @@
 - [x] Make Payment Activity clearly expandable with persisted recorded, edited and removed events
 - [x] Render persistent Payment Activity directly in Finance
 - [x] Render persistent Payment Activity directly in the BizziBuddi account invoice view
+- [x] Backfill persistent Payment Activity for pre-existing invoice payments
 
 
 
