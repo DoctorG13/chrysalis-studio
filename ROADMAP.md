@@ -5,6 +5,7 @@
 - [x] Send payment corrections using the payment's persisted invoice identity
 - [x] Use a payment-specific API route for Finance payment corrections
 - [x] Remove an incorrectly recorded payment from Finance
+- [x] Show persistent payment activity for recorded, edited and removed payments
 
 
 
