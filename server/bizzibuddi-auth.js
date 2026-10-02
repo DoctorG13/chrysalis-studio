@@ -1000,7 +1000,7 @@ function getInvoicePaymentActivity(userId, invoiceId) {
     if (candidateStale.length === 1 && currentRecorded) {
       const previous = candidateStale[0];
       const amountMatch = String(previous.detail || "").match(
-        /(?:^|\\s|\\$)([0-9]+(?:\\.[0-9]{1,2})?) payment recorded/
+        /(?:^|\s|\$)([0-9]+(?:\.[0-9]{1,2})?) payment recorded/
       );
       const previousAmount = amountMatch ? Number(amountMatch[1]) : null;
 
