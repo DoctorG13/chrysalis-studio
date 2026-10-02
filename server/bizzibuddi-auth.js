@@ -1226,7 +1226,16 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
   createAutomationEvent(userId, {
     type: "finance-payment-recorded",
     title: "Payment recorded",
-    detail: Number(amount).toFixed(2) + " payment recorded on " + invoiceId + " via " + method + ".",
+    detail:
+      Number(amount).toFixed(2) +
+      " payment recorded on " +
+      (updatedInvoice.number || invoiceId) +
+      " · " +
+      date +
+      " · " +
+      method +
+      (description ? " · " + description : "") +
+      ".",
     sourceKey: "finance-payment:recorded:" + payment.id + ":" + invoiceId,
   });
 
@@ -1341,7 +1350,26 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
   createAutomationEvent(userId, {
     type: "finance-payment-updated",
     title: "Payment updated",
-    detail: Number(currentAmount).toFixed(2) + " → " + Number(amount).toFixed(2) + " on " + actualInvoiceId + ".",
+    detail:
+      (payment.invoice_number || actualInvoiceId) +
+      " · " +
+      "Amount " +
+      Number(currentAmount).toFixed(2) +
+      " → " +
+      Number(amount).toFixed(2) +
+      " · Date " +
+      String(payment.date || "—") +
+      " → " +
+      date +
+      " · Method " +
+      String(payment.method || "Other") +
+      " → " +
+      method +
+      " · Description " +
+      String(payment.description || "—") +
+      " → " +
+      description +
+      ".",
     sourceKey: "finance-payment:updated:" + paymentId + ":" + now,
   });
 
@@ -1418,7 +1446,16 @@ function deleteInvoicePayment(userId, paymentId) {
   createAutomationEvent(userId, {
     type: "finance-payment-removed",
     title: "Payment removed",
-    detail: Number(payment.amount).toFixed(2) + " payment removed from " + payment.invoice_id + ".",
+    detail:
+      Number(payment.amount).toFixed(2) +
+      " payment removed from " +
+      (payment.invoice_number || payment.invoice_id) +
+      " · " +
+      String(payment.date || "—") +
+      " · " +
+      String(payment.method || "Other") +
+      (payment.description ? " · " + payment.description : "") +
+      ".",
     sourceKey: "finance-payment:removed:" + paymentId + ":" + now,
   });
 
