@@ -926,6 +926,7 @@ function toInvoice(row) {
     issueDate: row.issue_date,
     dueDate: row.due_date,
     description: row.description || "",
+    payments: Array.isArray(row.payments) ? row.payments : [],
     status: getInvoiceStatus(amount, amountPaid, row.status, row.due_date),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -933,7 +934,7 @@ function toInvoice(row) {
 }
 
 function getInvoices(userId) {
-  return getDatabase()
+  const invoices = getDatabase()
     .prepare(
       `SELECT
          invoices.id,
@@ -962,6 +963,11 @@ function getInvoices(userId) {
        ORDER BY invoices.due_date ASC, invoices.created_at ASC`
     )
     .all(userId);
+
+  return invoices.map((invoice) => ({
+    ...invoice,
+    payments: getInvoicePayments(userId, invoice.id),
+  }));
 }
 
 function nextInvoiceNumber(userId) {
@@ -1025,6 +1031,7 @@ function createInvoice(userId, payload) {
     ...invoice,
     person_name: person.name,
     amount_paid: 0,
+    payments: [],
   });
 }
 
@@ -1119,18 +1126,21 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
     throw error;
   }
 
-  return toInvoice(
-    getDatabase()
-      .prepare(
-        `SELECT invoices.*, people.name AS person_name,
-                COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
-         FROM bizzibuddi_invoices AS invoices
-         LEFT JOIN bizzibuddi_people AS people
-           ON people.id = invoices.person_id AND people.user_id = invoices.user_id
-         WHERE invoices.id = ? AND invoices.user_id = ?`
-      )
-      .get(invoiceId, userId)
-  );
+  const updatedInvoice = getDatabase()
+    .prepare(
+      `SELECT invoices.*, people.name AS person_name,
+              COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+       FROM bizzibuddi_invoices AS invoices
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = invoices.person_id AND people.user_id = invoices.user_id
+       WHERE invoices.id = ? AND invoices.user_id = ?`
+    )
+    .get(invoiceId, userId);
+
+  return toInvoice({
+    ...updatedInvoice,
+    payments: getInvoicePayments(userId, invoiceId),
+  });
 }
 
 
