@@ -1,3 +1,13 @@
+## Finance Payment Corrections
+
+### Added
+
+- Added an **Edit** action to each recorded invoice payment.
+- Added compact editing for payment amount, date, method and description.
+- Recalculated the invoice balance and status when an existing payment is corrected.
+- Kept payment corrections account-scoped and persisted through the authenticated Finance API.
+- Fixed Finance payment-entry defaults to use the browser's local calendar date rather than UTC.
+
 ## Payment Entry Improvements
 
 ### Added
