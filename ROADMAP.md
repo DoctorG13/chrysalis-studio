@@ -28,6 +28,7 @@
 - [x] Add Finance Cashflow Outlook using recorded payments and outstanding invoices
 - [x] Add persistent Finance Expenses & Outgoings with net cashflow calculations
 - [x] Add six-month Finance cashflow intelligence and expense category analysis
+- [x] Add Finance monthly reporting with selected-month transaction detail and CSV export
 
 
 
