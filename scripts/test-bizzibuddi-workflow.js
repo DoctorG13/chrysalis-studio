@@ -31,6 +31,7 @@ const routeContracts = [
   ["DELETE", "/api/bizzibuddi/auth/automation/reset"],
   ["GET", "/api/bizzibuddi/auth/invoices"],
   ["POST", "/api/bizzibuddi/auth/invoices"],
+  ["GET", 'url.pathname.endsWith("/payments")'],
   ["POST", 'url.pathname.endsWith("/payments")'],
   ["GET", "/api/bizzibuddi/auth/calendar"],
   ["POST", "/api/bizzibuddi/auth/calendar"],
@@ -115,6 +116,11 @@ assertContains(read("server/bizzibuddi-auth.js"), "price", "BizziBuddi job price
 assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_production", "BizziBuddi job due-date production sync");
 
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onAddJob={async (job)", "account Buddi job persistence callback");
+assertContains(read("server/bizzibuddi-auth.js"), "function getInvoicePayments", "persistent invoice payment history query");
+assertContains(read("server/bizzibuddi-auth.js"), "function toInvoicePayment", "invoice payment response mapping");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "PAYMENT HISTORY", "finance payment history rendering");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "paymentsByInvoice", "finance payment history state");
+
 
 console.log(`BizziBuddi workflow contract checks passed: ${routeContracts.length} backend route contracts + 38 UI workflow contracts.`);\nassertContains(page, "function handleOpenJob(jobId)", "jobs timeline open-job handler");\nassertContains(page, "onClick={() => handleOpenJob(item.jobId)}", "jobs timeline open-job action");\n
 assertContains(page, "setTimelineJobId(null);", "jobs open-job closes timeline");
