@@ -948,10 +948,132 @@ function getInvoicePaymentActivity(userId, invoiceId) {
     )
     .get(invoiceId, userId);
   const invoiceNumber = invoice?.number || invoiceId;
+  const paymentIds = new Set(payments.map((payment) => payment.id));
 
-  // Backfill and upgrade recorded events so older payments use the same
-  // customer-facing audit format as newly recorded payments.
+  const recordedEvents = database
+    .prepare(
+      `SELECT id, type, title, detail, source_key, created_at
+       FROM bizzibuddi_automation_events
+       WHERE user_id = ?
+         AND source_key LIKE ?
+         AND type = 'finance-payment-recorded'
+       ORDER BY created_at DESC`
+    )
+    .all(userId, `finance-payment:recorded:%:${invoiceId}`);
+
+  const currentRecordedByPaymentId = new Map();
+  const staleRecordedEvents = [];
+
+  for (const event of recordedEvents) {
+    const match = String(event.source_key || "").match(
+      /^finance-payment:recorded:([^:]+):(.+)$/
+    );
+
+    if (match && paymentIds.has(match[1])) {
+      currentRecordedByPaymentId.set(match[1], event);
+    } else {
+      staleRecordedEvents.push(event);
+    }
+  }
+
+  const hiddenCurrentRecordedIds = new Set();
+  const migratedUpdateEvents = [];
+
   for (const payment of payments) {
+    const currentRecorded = currentRecordedByPaymentId.get(payment.id);
+    const candidateStale = staleRecordedEvents.filter((event) => {
+      const detail = String(event.detail || "");
+      const methodMatches = detail.includes(" via " + payment.method);
+      const descriptionMatches =
+        !payment.description || detail.includes(payment.description);
+      const amountMatch = detail.match(/(?:^|\\s|\\$)([0-9]+(?:\\.[0-9]{1,2})?) payment recorded/);
+      const oldAmount = amountMatch ? Number(amountMatch[1]) : null;
+
+      return (
+        methodMatches &&
+        descriptionMatches &&
+        oldAmount !== null &&
+        oldAmount !== Number(payment.amount)
+      );
+    });
+
+    if (candidateStale.length === 1 && currentRecorded) {
+      const previous = candidateStale[0];
+      const amountMatch = String(previous.detail || "").match(
+        /(?:^|\\s|\\$)([0-9]+(?:\\.[0-9]{1,2})?) payment recorded/
+      );
+      const previousAmount = amountMatch ? Number(amountMatch[1]) : null;
+
+      if (previousAmount !== null) {
+        const normalizedPreviousDetail =
+          formatPaymentAuditCurrency(previousAmount) +
+          " payment recorded on " +
+          invoiceNumber +
+          " · " +
+          formatPaymentAuditDate(payment.date) +
+          " · " +
+          (payment.method || "Other") +
+          (payment.description ? " · " + payment.description : "") +
+          ".";
+
+        database
+          .prepare(
+            `UPDATE bizzibuddi_automation_events
+             SET title = ?, detail = ?
+             WHERE id = ? AND user_id = ?`
+          )
+          .run(
+            "Payment recorded",
+            normalizedPreviousDetail,
+            previous.id,
+            userId
+          );
+
+        const migrationSourceKey =
+          "finance-payment:migrated-update:" +
+          payment.id +
+          ":" +
+          previous.id;
+
+        const existingMigration = database
+          .prepare(
+            `SELECT id, type, title, detail, created_at
+             FROM bizzibuddi_automation_events
+             WHERE user_id = ? AND source_key = ?`
+          )
+          .get(userId, migrationSourceKey);
+
+        if (existingMigration) {
+          migratedUpdateEvents.push({
+            id: existingMigration.id,
+            type: existingMigration.type,
+            title: existingMigration.title,
+            detail: existingMigration.detail,
+            createdAt: existingMigration.created_at,
+          });
+        } else {
+          const migratedDetail =
+            invoiceNumber +
+            " · Amount " +
+            formatPaymentAuditCurrency(previousAmount) +
+            " → " +
+            formatPaymentAuditCurrency(Number(payment.amount) || 0) +
+            ".";
+
+          const created = createAutomationEvent(userId, {
+            type: "finance-payment-updated",
+            title: "Payment updated",
+            detail: migratedDetail,
+            sourceKey: migrationSourceKey,
+          });
+
+          migratedUpdateEvents.push(created);
+        }
+
+        hiddenCurrentRecordedIds.add(currentRecorded.id);
+      }
+    }
+
     const detail =
       formatPaymentAuditCurrency(Number(payment.amount) || 0) +
       " payment recorded on " +
@@ -963,7 +1085,9 @@ function getInvoicePaymentActivity(userId, invoiceId) {
       (payment.description ? " · " + payment.description : "") +
       ".";
 
-    const sourceKey = "finance-payment:recorded:" + payment.id + ":" + invoiceId;
+    const sourceKey =
+      "finance-payment:recorded:" + payment.id + ":" + invoiceId;
+
     const existing = database
       .prepare(
         `SELECT id
@@ -980,7 +1104,7 @@ function getInvoicePaymentActivity(userId, invoiceId) {
            WHERE id = ? AND user_id = ?`
         )
         .run("Payment recorded", detail, existing.id, userId);
-    } else {
+    } else if (!hiddenCurrentRecordedIds.has(existing?.id)) {
       createAutomationEvent(userId, {
         type: "finance-payment-recorded",
         title: "Payment recorded",
@@ -990,17 +1114,18 @@ function getInvoicePaymentActivity(userId, invoiceId) {
     }
   }
 
-  return database
+  const events = database
     .prepare(
-      `SELECT id, type, title, detail, created_at
+      `SELECT id, type, title, detail, source_key, created_at
        FROM bizzibuddi_automation_events
        WHERE user_id = ?
          AND source_key LIKE ?
          AND type IN ('finance-payment-recorded', 'finance-payment-updated', 'finance-payment-removed')
        ORDER BY created_at DESC
-       LIMIT 50`
+       LIMIT 100`
     )
     .all(userId, `finance-payment:%:${invoiceId}%`)
+    .filter((row) => !hiddenCurrentRecordedIds.has(row.id))
     .map((row) => ({
       id: row.id,
       type: row.type,
@@ -1008,6 +1133,19 @@ function getInvoicePaymentActivity(userId, invoiceId) {
       detail: row.detail,
       createdAt: row.created_at,
     }));
+
+  const existingEventIds = new Set(events.map((event) => event.id));
+  for (const event of migratedUpdateEvents) {
+    if (!existingEventIds.has(event.id)) {
+      events.push(event);
+    }
+  }
+
+  return events.sort(
+    (left, right) =>
+      new Date(right.createdAt || 0).getTime() -
+      new Date(left.createdAt || 0).getTime()
+  );
 }
 
 function getInvoiceStatus(amount, amountPaid, storedStatus, dueDate) {
