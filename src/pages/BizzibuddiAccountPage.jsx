@@ -2973,17 +2973,30 @@ function DashboardPanel({
         </div>
         {recentActivityCount > 0 ? (
           <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
-            {recentActivity.map((item) => (
-              <button key={item.key} type="button" onClick={item.onClick} style={{ display: "grid", gridTemplateColumns: "38px minmax(0,1fr) auto", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.025)", color: TEXT, textAlign: "left", cursor: "pointer" }}>
-                <span style={{ width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 9, background: "rgba(0,180,219,.10)" }}>{item.icon}</span>
-                <span style={{ minWidth: 0 }}>
-                  <small style={smallText}>{item.label}</small>
-                  <strong style={{ display: "block", marginTop: 2, fontSize: 14 }}>{item.title}</strong>
-                  <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 12 }}>{item.detail}</span>
-                </span>
-                <span style={{ color: MUTED, fontSize: 11, whiteSpace: "nowrap" }}>{formatTimelineDate(item.date)}</span>
-              </button>
-            ))}
+            {recentActivity.map((item) => {
+              const activityStyle =
+                item.label === "Finance"
+                  ? { color: "#7dd3fc", background: "rgba(56,189,248,.10)", borderColor: "rgba(56,189,248,.24)" }
+                  : item.label === "Job"
+                    ? { color: "#c4b5fd", background: "rgba(139,92,246,.10)", borderColor: "rgba(139,92,246,.24)" }
+                    : item.label === "Calendar"
+                      ? { color: "#86efac", background: "rgba(34,197,94,.10)", borderColor: "rgba(34,197,94,.24)" }
+                      : item.label === "Production"
+                        ? { color: "#fcd34d", background: "rgba(245,158,11,.10)", borderColor: "rgba(245,158,11,.24)" }
+                        : { color: "#d8b4fe", background: "rgba(168,85,247,.10)", borderColor: "rgba(168,85,247,.24)" };
+
+              return (
+                <button key={item.key} type="button" onClick={item.onClick} style={{ display: "grid", gridTemplateColumns: "38px minmax(0,1fr) auto", alignItems: "center", gap: 11, width: "100%", padding: "11px 12px", borderRadius: 10, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.025)", color: TEXT, textAlign: "left", cursor: "pointer" }}>
+                  <span style={{ width: 34, height: 34, display: "grid", placeItems: "center", borderRadius: 9, background: activityStyle.background }}>{item.icon}</span>
+                  <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: activityStyle.color, background: activityStyle.background, border: "1px solid " + activityStyle.borderColor, borderRadius: 999, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: ".07em", textTransform: "uppercase" }}>{item.label}</span>
+                    <strong style={{ display: "block", marginTop: 5, fontSize: 14 }}>{item.title}</strong>
+                    <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 12 }}>{item.detail}</span>
+                  </span>
+                  <span style={{ color: MUTED, fontSize: 11, whiteSpace: "nowrap" }}>{formatTimelineDate(item.date)}</span>
+                </button>
+              );
+            })}
           </div>
         ) : (
           <span style={todayViewEmpty}>No recent business activity has been recorded yet.</span>
