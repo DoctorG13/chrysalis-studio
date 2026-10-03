@@ -1,3 +1,16 @@
+## BizziBuddi Sticky Workspace Navigation
+
+### Changed
+
+- Fixed the JSX parse error introduced while refining the workspace navigation.
+- Kept **FINANCE** as the primary money section label.
+- Made the main workspace navigation and its contextual submenu sticky so they remain available while scrolling.
+- Removed horizontal menu/submenu scrolling and kept submenu items wrapped within their aligned section area.
+- Kept submenu destinations connected to their real in-page sections, including Finance reporting, invoices, payments, expenses and cashflow; Reports sections; Account sections; and Today sections.
+- Adjusted submenu alignment so each contextual tray sits beneath the selected main section without creating a horizontal scrollbar.
+- Adjusted internal anchor scrolling so selected submenu destinations are not hidden beneath the sticky navigation.
+
+---
 ## BizziBuddi Workspace Navigation — Sticky No-Scroll Navigation
 
 ### Changed
