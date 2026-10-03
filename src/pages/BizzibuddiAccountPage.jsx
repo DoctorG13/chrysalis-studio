@@ -869,32 +869,30 @@ export default function BizzibuddiAccountPage() {
             </>
           )}
 
-          <div className="bizzibuddi-help-nav">
-            <div className="bizzibuddi-help-nav-heading">
-              <span aria-hidden="true" />
-              <span>NEED A HAND?</span>
-              <span aria-hidden="true" />
-            </div>
-            <p className="bizzibuddi-help-nav-subheading">Get answers. Find help. Keep moving.</p>
-            <div className="bizzibuddi-help-nav-buttons">
-              <button type="button" onClick={() => openBuddi()} className={view === "buddi" ? "bizzibuddi-help-action bizzibuddi-help-action-primary active" : "bizzibuddi-help-action bizzibuddi-help-action-primary"}>
-                <span className="bizzibuddi-help-action-icon primary" aria-hidden="true">•••</span>
-                <span className="bizzibuddi-help-action-copy">
-                  <strong>ASK BUDDI</strong>
-                  <small>Get instant help with your business</small>
-                </span>
-                <span className="bizzibuddi-help-action-arrow primary" aria-hidden="true">→</span>
+          {account && (
+            <div className="bizzibuddi-help-rail" aria-label="Help and support">
+              <button
+                type="button"
+                onClick={() => openBuddi()}
+                className={view === "buddi" ? "bizzibuddi-help-rail-action primary active" : "bizzibuddi-help-rail-action primary"}
+                aria-label="Ask Buddi"
+                title="Ask Buddi"
+              >
+                <span className="bizzibuddi-help-rail-icon primary" aria-hidden="true">•••</span>
+                <span className="bizzibuddi-help-rail-label">ASK BUDDI</span>
               </button>
-              <button type="button" onClick={() => selectView("help")} className={view === "help" ? "bizzibuddi-help-action bizzibuddi-help-action-secondary active" : "bizzibuddi-help-action bizzibuddi-help-action-secondary"}>
-                <span className="bizzibuddi-help-action-icon" aria-hidden="true">◯</span>
-                <span className="bizzibuddi-help-action-copy">
-                  <strong>HELP & SUPPORT</strong>
-                  <small>Guides, FAQs and contact options</small>
-                </span>
-                <span className="bizzibuddi-help-action-arrow" aria-hidden="true">→</span>
+              <button
+                type="button"
+                onClick={() => selectView("help")}
+                className={view === "help" ? "bizzibuddi-help-rail-action active" : "bizzibuddi-help-rail-action"}
+                aria-label="Help and Support"
+                title="Help & Support"
+              >
+                <span className="bizzibuddi-help-rail-icon" aria-hidden="true">?</span>
+                <span className="bizzibuddi-help-rail-label">HELP</span>
               </button>
             </div>
-          </div>
+          )}
         </nav>
 
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
@@ -1359,23 +1357,79 @@ export default function BizzibuddiAccountPage() {
               .bizzibuddi-workspace-nav-group > div { display:flex; gap:5px; flex-wrap:wrap; justify-content:center; }
               .bizzibuddi-workspace-nav-group button { padding:9px 11px !important; min-height:38px !important; font-size:12px !important; }
               .bizzibuddi-workspace-nav-group.secondary { opacity:.82; }
-              .bizzibuddi-help-nav { display:grid; gap:6px; justify-items:center; min-width:420px; padding:14px 0 0 20px; border-left:1px solid rgba(255,255,255,.18); }
-              .bizzibuddi-help-nav-heading { width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; color:#BFD8F0; font-size:11px; font-weight:900; letter-spacing:.18em; }
-              .bizzibuddi-help-nav-heading span:first-child,.bizzibuddi-help-nav-heading span:last-child { height:1px; background:rgba(0,180,219,.30); }
-              .bizzibuddi-help-nav-subheading { margin:0 0 8px; color:#B8C6D6; font-size:11px; font-style:italic; line-height:1.3; }
-              .bizzibuddi-help-nav-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
-              .bizzibuddi-help-action { display:grid; grid-template-columns:40px minmax(0,1fr) 34px; align-items:center; gap:11px; min-height:76px; padding:10px 12px; border-radius:38px; color:#fff; cursor:pointer; }
-              .bizzibuddi-help-action-primary { border:1px solid rgba(0,180,219,.48); background:linear-gradient(135deg,rgba(0,180,219,.13),rgba(37,99,235,.18)); box-shadow:0 8px 22px rgba(0,0,0,.12); }
-              .bizzibuddi-help-action-primary.active { border-color:#2DE8FF; background:linear-gradient(135deg,#12DDF5 0%,#1688F5 45%,#2563EB 100%); box-shadow:0 10px 28px rgba(0,180,219,.30),0 0 24px rgba(0,180,219,.18); }
-              .bizzibuddi-help-action-secondary { border:1px solid rgba(72,133,186,.58); background:rgba(7,31,51,.48); }
-              .bizzibuddi-help-action-secondary.active { border-color:rgba(0,180,219,.8); background:rgba(0,180,219,.13); }
-              .bizzibuddi-help-action-icon { width:38px; height:38px; display:grid; place-items:center; flex:0 0 auto; border-radius:12px; border:1px solid rgba(0,180,219,.42); color:#00B4DB; background:rgba(0,180,219,.08); font-size:20px; font-weight:900; }
-              .bizzibuddi-help-action-icon.primary { border-color:rgba(255,255,255,.45); color:#fff; background:rgba(255,255,255,.12); font-size:17px; letter-spacing:.08em; }
-              .bizzibuddi-help-action-copy { display:grid; gap:3px; min-width:0; text-align:left; }
-              .bizzibuddi-help-action-copy strong { font-size:14px; letter-spacing:.03em; }
-              .bizzibuddi-help-action-copy small { color:#B8C6D6; font-size:10px; line-height:1.25; }
-              .bizzibuddi-help-action-arrow { width:34px; height:34px; display:grid; place-items:center; flex:0 0 auto; border-radius:50%; background:rgba(37,99,235,.22); color:#fff; font-size:22px; font-weight:500; }
-              .bizzibuddi-help-action-arrow.primary { background:rgba(255,255,255,.16); }
+              .bizzibuddi-help-rail {
+                position: fixed;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 60;
+                display: grid;
+                gap: 7px;
+                width: 58px;
+                padding: 6px;
+                box-sizing: border-box;
+                border: 1px solid rgba(0,180,219,.22);
+                border-radius: 18px;
+                background: rgba(6,28,47,.88);
+                box-shadow: 0 14px 34px rgba(0,0,0,.28);
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+              }
+              .bizzibuddi-help-rail-action {
+                width: 46px;
+                min-height: 104px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 7px;
+                padding: 8px 4px;
+                box-sizing: border-box;
+                border: 1px solid rgba(72,133,186,.38);
+                border-radius: 13px;
+                background: rgba(255,255,255,.025);
+                color: #fff;
+                cursor: pointer;
+              }
+              .bizzibuddi-help-rail-action.primary {
+                border-color: rgba(0,180,219,.48);
+                background: linear-gradient(180deg, rgba(0,180,219,.14), rgba(37,99,235,.16));
+              }
+              .bizzibuddi-help-rail-action.active {
+                border-color: #2DE8FF;
+                background: rgba(0,180,219,.14);
+                box-shadow: 0 0 18px rgba(0,180,219,.16);
+              }
+              .bizzibuddi-help-rail-action.primary.active {
+                background: linear-gradient(180deg, #12DDF5 0%, #1688F5 48%, #2563EB 100%);
+              }
+              .bizzibuddi-help-rail-icon {
+                width: 30px;
+                height: 30px;
+                display: grid;
+                place-items: center;
+                border-radius: 10px;
+                border: 1px solid rgba(0,180,219,.42);
+                color: #00B4DB;
+                background: rgba(0,180,219,.08);
+                font-size: 16px;
+                font-weight: 900;
+              }
+              .bizzibuddi-help-rail-icon.primary {
+                border-color: rgba(255,255,255,.45);
+                color: #fff;
+                background: rgba(255,255,255,.12);
+                letter-spacing: .08em;
+              }
+              .bizzibuddi-help-rail-label {
+                writing-mode: vertical-rl;
+                transform: rotate(180deg);
+                color: #BFD8F0;
+                font-size: 9px;
+                font-weight: 900;
+                letter-spacing: .12em;
+                line-height: 1;
+              }
               .bizzibuddi-dashboard-buddi-content {
                 display: flex;
                 align-items: flex-start;
@@ -1386,8 +1440,35 @@ export default function BizzibuddiAccountPage() {
                 min-width: 0;
               }
               @media (max-width: 760px) {
-                .bizzibuddi-help-nav { min-width:0; width:100%; padding:14px 0 0; border-left:0; border-top:1px solid rgba(255,255,255,.18); }
-                .bizzibuddi-help-nav-buttons { grid-template-columns:1fr; }
+                .bizzibuddi-help-rail {
+                  right: 10px;
+                  left: 10px;
+                  top: auto;
+                  bottom: 10px;
+                  transform: none;
+                  width: auto;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 6px;
+                  padding: 5px;
+                  border-radius: 15px;
+                }
+                .bizzibuddi-help-rail-action {
+                  width: 100%;
+                  min-height: 50px;
+                  flex-direction: row;
+                  gap: 8px;
+                  padding: 6px 10px;
+                  border-radius: 11px;
+                }
+                .bizzibuddi-help-rail-label {
+                  writing-mode: horizontal-tb;
+                  transform: none;
+                  font-size: 10px;
+                }
+                .bizzibuddi-help-rail-icon {
+                  width: 28px;
+                  height: 28px;
+                }
               }
               @media (max-width: 760px) {
                 .bizzibuddi-dashboard-buddi-content {
@@ -8746,8 +8827,9 @@ const workspaceNavShell = {
   WebkitBackdropFilter: "blur(14px)",
 }; 
 const workspaceStickyNav = {
-  position: "relative",
-  zIndex: 1,
+  position: "sticky",
+  top: 0,
+  zIndex: 50,
   margin: "0 -1px",
   padding: "4px 0 4px",
   background: "rgba(6,28,47,.97)",
