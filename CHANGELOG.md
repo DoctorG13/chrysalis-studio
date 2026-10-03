@@ -1,3 +1,16 @@
+## BizziBuddi Workspace Navigation — Compact Sticky Menu
+
+### Changed
+
+- Made the sticky workspace navigation more compact to preserve more vertical space while scrolling.
+- Kept the main menu and contextual submenu together as one sticky navigation unit.
+- Kept all primary menu sections visible without horizontal scrolling.
+- Kept submenu items wrapping within their aligned section rather than introducing a horizontal scrollbar.
+- Kept contextual submenus visually close to and aligned beneath the selected main-menu section.
+- Preserved the existing contextual destinations and in-page anchor scrolling.
+
+---
+
 ## BizziBuddi Workspace Navigation — Sticky Fix
 
 ### Changed
