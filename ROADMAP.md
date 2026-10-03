@@ -29,6 +29,8 @@
 - [x] Add persistent Finance Expenses & Outgoings with net cashflow calculations
 - [x] Add six-month Finance cashflow intelligence and expense category analysis
 - [x] Add Finance monthly reporting with selected-month transaction detail and CSV export
+- [x] Add Australian financial-year and custom date-range Finance reports
+- [x] Allow Finance report content to be customised before CSV export
 
 
 
