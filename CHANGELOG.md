@@ -1,3 +1,16 @@
+## BizziBuddi Workspace Navigation — Sticky Help Rail
+
+### Changed
+
+- Kept the main workspace menu and contextual submenu sticky together at the top of the viewport while scrolling.
+- Replaced the large inline **ASK BUDDI** / **HELP & SUPPORT** area beneath the navigation with a compact vertical sticky utility rail.
+- Kept the help actions available without consuming a large block of workspace height.
+- Kept the help rail keyboard- and screen-reader-friendly with labels, titles and accessible button names.
+- Added a compact two-button bottom bar for narrow screens instead of allowing the help rail to interfere with the workspace.
+- Preserved existing Ask Buddi and Help & Support navigation behaviour.
+
+---
+
 ## BizziBuddi Workspace Navigation — Compact Sticky Menu
 
 ### Changed
