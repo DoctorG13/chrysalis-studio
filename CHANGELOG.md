@@ -1,3 +1,15 @@
+## Finance Printable / PDF Reports
+
+### Added
+
+- Added a print-ready Finance report generated from the same selected period and report-content settings used by CSV export.
+- Added browser print/PDF output with A4 layout, financial summary, expense categories and transaction detail.
+- Added report-safe HTML escaping for printed financial data.
+- Kept PDF output dependency-free by using the browser's native print/save-as-PDF workflow.
+- Preserved the existing CSV export alongside the printable report.
+
+---
+
 ## Finance Financial Year & Custom Reports
 
 ### Added
