@@ -1,3 +1,14 @@
+## BizziBuddi Workspace Navigation — Help Rail Placement
+
+### Changed
+
+- Moved the vertical **ASK BUDDI / HELP** utility rail out of the workspace navigation area so it no longer overlaps the selected primary menu or contextual submenu.
+- Positioned the utility rail in the clear left-side viewport margin on desktop.
+- Preserved the compact bottom utility bar on smaller screens.
+- Kept the help rail fixed and available while the workspace navigation remains sticky.
+
+---
+
 ## BizziBuddi Workspace Navigation — Sticky Help Rail
 
 ### Changed
