@@ -307,7 +307,7 @@ export default function BizzibuddiAccountPage() {
       openBuddi();
       return;
     }
-    selectView(firstItem[2] || "dashboard", { workspaceAnchor: firstItem[3] || "" });
+    selectView(firstItem[2] || "dashboard", { workspaceAnchor: firstItem[3] || "", workspaceNavItem: firstItem[0] || "" });
   }
 
   function navigateWorkspaceSubitem(section, item) {
@@ -318,7 +318,7 @@ export default function BizzibuddiAccountPage() {
       openBuddi();
       return;
     }
-    selectView(targetView || "dashboard", { workspaceAnchor: workspaceAnchor || "" });
+    selectView(targetView || "dashboard", { workspaceAnchor: workspaceAnchor || "", workspaceNavItem: key });
   }
 
   function selectView(nextView, target = {}) {
@@ -354,29 +354,30 @@ export default function BizzibuddiAccountPage() {
     setView(nextView);
     setWorkspaceScrollTarget(target.workspaceAnchor || "");
     setWorkspaceNavItem(
-      nextView === "dashboard"
-        ? "overview"
-        : nextView === "people"
-          ? "people"
-          : nextView === "jobs"
-            ? "jobs"
-            : nextView === "calendar"
-              ? "calendar"
-              : nextView === "production"
-                ? "production"
-                : nextView === "finance"
-                  ? "finance-overview"
-                  : nextView === "reports"
-                    ? "reports"
-                    : nextView === "buddi"
-                      ? "buddi"
-                      : nextView === "automation"
-                        ? "automation"
-                        : nextView === "plans"
-                          ? "plans"
-                          : nextView === "account"
-                            ? "account"
-                            : "overview"
+      target.workspaceNavItem ||
+        (nextView === "dashboard"
+          ? "overview"
+          : nextView === "people"
+            ? "people"
+            : nextView === "jobs"
+              ? "jobs"
+              : nextView === "calendar"
+                ? "calendar"
+                : nextView === "production"
+                  ? "production"
+                  : nextView === "finance"
+                    ? "finance-overview"
+                    : nextView === "reports"
+                      ? "reports"
+                      : nextView === "buddi"
+                        ? "buddi"
+                        : nextView === "automation"
+                          ? "automation"
+                          : nextView === "plans"
+                            ? "plans"
+                            : nextView === "account"
+                              ? "account"
+                              : "overview")
     );
     if (nextView === "dashboard") {
       setWorkspaceNavSection("today");
@@ -443,7 +444,9 @@ export default function BizzibuddiAccountPage() {
                             ? "automation"
                             : nextView === "plans"
                               ? "plans"
-                              : "overview"
+                              : nextView === "account"
+                                ? "account"
+                                : "overview"
         );
         if (nextView === "dashboard") {
           setWorkspaceNavSection("today");
@@ -455,7 +458,7 @@ export default function BizzibuddiAccountPage() {
           setWorkspaceNavSection("insights");
         } else if (["buddi", "automation"].includes(nextView)) {
           setWorkspaceNavSection("assist");
-        } else if (nextView === "plans") {
+        } else if (nextView === "plans" || nextView === "account") {
           setWorkspaceNavSection("account");
         }
       }
