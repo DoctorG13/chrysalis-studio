@@ -1,3 +1,19 @@
+## BizziBuddi Contextual Navigation Links
+
+### Changed
+
+- Renamed the primary Money workspace section to Finance to match the existing Finance module.
+- Made Today submenu items jump to Overview, Priorities, Upcoming and Attention areas on the dashboard.
+- Made Finance submenu items jump directly to Revenue Overview, Invoices, Payment History, Expenses and Cashflow.
+- Made Insights submenu items jump to Reports, Performance and Trends areas.
+- Made Account submenu items connect to Plans, Membership and the new Account area.
+- Added an account workspace view for authenticated account and membership details.
+- Kept Work, Assist and existing workspace routes connected to their real destinations rather than creating placeholder pages.
+- Repositioned the contextual submenu closer to the main navigation and aligned it with the selected primary section.
+- Preserved keyboard navigation and browser-history behaviour.
+
+---
+
 ## BizziBuddi Workspace Navigation Hierarchy
 
 ### Changed
