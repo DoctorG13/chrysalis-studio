@@ -1,3 +1,11 @@
+## BizziBuddi Today Business Health States
+
+### Changed
+
+- Added clear Good, Watch and Neutral state badges to Business Health metrics.
+- Improved the visual hierarchy between each metric's state, value and detail.
+- Preserved the existing descriptive health calculations and data.
+
 ## BizziBuddi Today Notifications Polish
 
 ### Changed
