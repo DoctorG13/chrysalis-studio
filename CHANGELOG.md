@@ -1,3 +1,11 @@
+## BizziBuddi Work Submenu Polish
+
+### Changed
+
+- Applied the balanced submenu sizing treatment to Work: People, Jobs, Calendar and Production.
+- Kept each Work item evenly distributed within the existing Work navigation span.
+- Preserved the existing Work routes, anchors, sticky navigation and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Finance Overlap Fix and Today Submenu Polish
 
 ### Changed
