@@ -1,3 +1,14 @@
+## BizziBuddi Today Navigation Polish
+
+### Changed
+
+- Verified the Today submenu now provides four distinct daily operating views: Overview, Priorities, Upcoming and Attention.
+- Kept Overview focused on the current business picture and highest-priority actions.
+- Kept Priorities focused on actionable items requiring follow-up.
+- Kept Upcoming focused on today's schedule and near-term due work.
+- Kept Attention focused on active notifications with open and dismiss actions.
+- Preserved existing deep links, sticky navigation, in-page scrolling and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Account Submenu Polish
 
 ### Changed
