@@ -2565,6 +2565,15 @@ function DashboardPanel({
     const days = Math.ceil((due - today) / 86400000);
     return days >= 0 && days <= 7;
   });
+  const dueSoonLabel = (dateValue) => {
+    if (!dateValue) return "Due soon";
+    const due = new Date(dateValue + "T00:00:00");
+    const days = Math.round((due - today) / 86400000);
+    if (days === 0) return "Today";
+    if (days === 1) return "Tomorrow";
+    if (days >= 2 && days <= 7) return "This week";
+    return "Due soon";
+  };
   const appointmentsToday = appointments
     .filter((appointment) => appointment.date === todayKey)
     .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
@@ -2907,13 +2916,13 @@ function DashboardPanel({
             <span style={todayViewLabel}>items in the next 7 days</span>
             {dueSoonInvoices.slice(0, 2).map((invoice) => (
               <button key={`today-invoice-${invoice.id}`} type="button" onClick={() => onFinance?.(invoice.id)} style={todayViewItem}>
-                <span>{invoice.dueDate === todayKey ? "Today" : `Due ${invoice.dueDate}`}</span>
+                <span>{dueSoonLabel(invoice.dueDate)} · {invoice.dueDate}</span>
                 <strong>{invoice.clientName || invoice.client || "Invoice"}</strong>
               </button>
             ))}
             {productionDueSoon.slice(0, 2).map((job) => (
               <button key={`today-production-${job.id}`} type="button" onClick={() => onJobs?.(job.id)} style={todayViewItem}>
-                <span>Production · {formatProductionDate(job.productionDueDate)}</span>
+                <span>{dueSoonLabel(job.productionDueDate)} · Production</span>
                 <strong>{job.title || "Production job"}</strong>
               </button>
             ))}
