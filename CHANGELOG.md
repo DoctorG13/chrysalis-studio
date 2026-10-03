@@ -1,3 +1,12 @@
+## BizziBuddi Finance Navigation Terminology
+
+### Changed
+
+- Renamed the Finance submenu's Overview item to Revenue to reflect its destination more directly.
+- Renamed Expenses to Expenses & Outgoings for clearer financial terminology.
+- Renamed Cashflow to Cashflow Outlook to better describe the linked cashflow view.
+- Preserved all existing Finance routes, anchors, sticky navigation behaviour and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Workspace Navigation — Responsive No-Scroll Polish
 
 ### Changed
