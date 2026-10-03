@@ -31,6 +31,7 @@
 - [x] Add Finance monthly reporting with selected-month transaction detail and CSV export
 - [x] Add Australian financial-year and custom date-range Finance reports
 - [x] Allow Finance report content to be customised before CSV export
+- [x] Add printable Finance reports with browser PDF output using the selected period and report contents
 
 
 
