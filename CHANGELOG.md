@@ -1,3 +1,15 @@
+## BizziBuddi Workspace Navigation — Compact Sticky No-Scroll Refinement
+
+### Changed
+
+- Kept **FINANCE** as the primary label for the money-management section.
+- Made the outer workspace navigation shell the single sticky container, avoiding nested sticky behaviour.
+- Kept the primary menu and contextual submenu visually connected as one compact navigation unit.
+- Explicitly clipped horizontal overflow in the navigation layers so no horizontal scrollbar can be introduced by menu items.
+- Preserved all existing submenu destinations and in-page anchor scrolling.
+
+---
+
 ## BizziBuddi Workspace Navigation — Utility Rail Outside Sticky Nav
 
 ### Changed
