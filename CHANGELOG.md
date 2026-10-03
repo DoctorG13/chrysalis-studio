@@ -1,3 +1,11 @@
+## BizziBuddi Assist Submenu Polish
+
+### Changed
+
+- Applied and verified the balanced submenu treatment for Assist: Buddi and Automation.
+- Kept the two Assist items evenly distributed within the existing Assist navigation span.
+- Preserved existing Assist routes, sticky navigation and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Insights Submenu Polish
 
 ### Changed
