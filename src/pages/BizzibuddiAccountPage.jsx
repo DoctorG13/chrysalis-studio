@@ -8953,11 +8953,11 @@ const workspaceSubnav = {
     ["production", "Production", "production"],
   ],
   finance: [
-    ["finance-overview", "Overview", "finance", "finance-revenue"],
+    ["finance-overview", "Revenue", "finance", "finance-revenue"],
     ["invoices", "Invoices", "finance", "finance-invoices"],
     ["payments", "Payments", "finance", "finance-payments"],
-    ["expenses", "Expenses", "finance", "finance-expenses"],
-    ["cashflow", "Cashflow", "finance", "finance-cashflow"],
+    ["expenses", "Expenses & Outgoings", "finance", "finance-expenses"],
+    ["cashflow", "Cashflow Outlook", "finance", "finance-cashflow"],
   ],
   insights: [
     ["reports", "Reports", "reports", "reports-summary"],
