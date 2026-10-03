@@ -1,3 +1,11 @@
+## BizziBuddi Today Notifications Polish
+
+### Changed
+
+- Added clear Urgent, Attention and Today status badges to notifications.
+- Strengthened notification title hierarchy and action visibility.
+- Preserved existing Open and Dismiss behaviour and notification filtering.
+
 ## BizziBuddi Today Recent Activity Categories
 
 ### Changed
