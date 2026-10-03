@@ -1,3 +1,15 @@
+## BizziBuddi Workspace Navigation — No-Scroll Layout
+
+### Changed
+
+- Removed horizontal scrolling from the primary workspace navigation and contextual submenus.
+- Kept all six primary sections visible within the navigation container.
+- Repositioned contextual submenu groups beneath the selected workspace section.
+- Allowed submenu items to wrap naturally when space is limited instead of introducing a horizontal scrollbar.
+- Preserved the existing contextual destinations and in-page anchor scrolling for submenu items.
+
+---
+
 ## BizziBuddi Contextual Navigation Rendering Fix
 
 ### Fixed
