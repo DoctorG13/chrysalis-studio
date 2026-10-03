@@ -1,3 +1,15 @@
+## BizziBuddi Horizontal Workspace Submenus
+
+### Added
+
+- Reworked the authenticated workspace navigation into a horizontal primary section bar.
+- Added contextual horizontal submenus for Work, Money, Insights, Assist and Account.
+- Kept existing views and routes intact while making the current workspace area clearer.
+- Kept keyboard navigation and browser history aligned with the active workspace section.
+- Preserved the existing help/support navigation.
+
+---
+
 ## Finance Printable / PDF Reports
 
 ### Added
