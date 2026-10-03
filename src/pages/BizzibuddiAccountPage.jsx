@@ -2794,17 +2794,40 @@ function DashboardPanel({
 
         {priorityItems.length > 0 ? (
           <div id="today-priority-list" style={attentionList}>
-            {priorityItems.map((item) => (
-              <article key={item.key} style={attentionItem(item.tone)}>
-                <div style={attentionItemIcon}>{item.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <small style={smallText}>{item.label}</small>
-                  <strong style={{ display: "block", marginTop: 3, fontSize: 16 }}>{item.title}</strong>
-                  <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 13 }}>{item.detail}</span>
-                </div>
-                <button type="button" onClick={item.onClick} style={attentionAction}>{item.action} →</button>
-              </article>
-            ))}
+            {priorityItems.map((item, index) => {
+              const urgencyLabel =
+                item.tone === "urgent"
+                  ? "URGENT"
+                  : item.tone === "attention"
+                    ? "ATTENTION"
+                    : item.tone === "today"
+                      ? "TODAY"
+                      : "NEXT";
+              const urgencyStyle =
+                item.tone === "urgent"
+                  ? { color: "#ff9b9b", background: "rgba(255,107,107,.10)", borderColor: "rgba(255,107,107,.25)" }
+                  : item.tone === "attention"
+                    ? { color: "#f6c453", background: "rgba(246,196,83,.10)", borderColor: "rgba(246,196,83,.25)" }
+                    : item.tone === "today"
+                      ? { color: CYAN, background: "rgba(0,180,219,.10)", borderColor: "rgba(0,180,219,.25)" }
+                      : { color: MUTED, background: "rgba(255,255,255,.05)", borderColor: "rgba(255,255,255,.10)" };
+
+              return (
+                <article key={item.key} style={{ ...attentionItem(item.tone), position: "relative", overflow: "hidden" }}>
+                  <div style={{ ...attentionItemIcon, alignSelf: "flex-start" }}>{item.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                      <small style={smallText}>{item.label}</small>
+                      <span style={{ ...urgencyStyle, border: "1px solid", borderRadius: 999, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: ".08em" }}>{urgencyLabel}</span>
+                      <span style={{ color: MUTED, fontSize: 10, fontWeight: 700, marginLeft: "auto" }}>#{index + 1}</span>
+                    </div>
+                    <strong style={{ display: "block", marginTop: 5, fontSize: 16, lineHeight: 1.3 }}>{item.title}</strong>
+                    <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 13, lineHeight: 1.45 }}>{item.detail}</span>
+                  </div>
+                  <button type="button" onClick={item.onClick} style={{ ...attentionAction, flexShrink: 0 }}>{item.action} →</button>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div style={attentionClear}>
