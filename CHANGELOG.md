@@ -1,3 +1,12 @@
+## BizziBuddi Account Submenu Polish
+
+### Changed
+
+- Verified and completed the Account submenu with Plans, Membership and Account destinations.
+- Kept Plans linked to the membership/pricing view and Membership linked to the account membership section.
+- Kept Account linked to the account details section.
+- Preserved the balanced submenu sizing, sticky navigation and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Assist Submenu Polish
 
 ### Changed
