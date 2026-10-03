@@ -1,12 +1,12 @@
-## BizziBuddi Horizontal Workspace Submenus
+## BizziBuddi Workspace Navigation Hierarchy
 
-### Added
+### Changed
 
-- Reworked the authenticated workspace navigation into a horizontal primary section bar.
-- Added contextual horizontal submenus for Work, Money, Insights, Assist and Account.
-- Kept existing views and routes intact while making the current workspace area clearer.
-- Kept keyboard navigation and browser history aligned with the active workspace section.
-- Preserved the existing help/support navigation.
+- Made the primary Work, Money, Insights, Assist and Account section buttons navigate directly to their first contextual destination instead of only changing the visible submenu.
+- Added a clear visual offset so each contextual submenu sits underneath the corresponding primary section.
+- Used a shared six-column navigation alignment so Work, Money, Insights, Assist and Account submenus visually map to their parent sections.
+- Preserved the existing Today, Help & Support, keyboard navigation and browser-history behaviour.
+- Kept all existing workspace routes and destinations unchanged.
 
 ---
 
