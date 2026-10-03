@@ -37,6 +37,10 @@
 - [x] Align contextual submenus visually beneath their parent workspace sections
 - [x] Add contextual submenu items to every primary BizziBuddi workspace section
 - [x] Redesign the workspace submenu tray for cleaner responsive presentation
+- [x] Rename the primary Money workspace section to Finance
+- [x] Make contextual submenu items link to their real workspace areas
+- [x] Add an authenticated Account workspace destination for Account navigation
+- [x] Align contextual submenu items directly beneath the selected primary workspace section
 
 
 
