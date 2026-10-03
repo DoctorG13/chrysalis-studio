@@ -1,3 +1,13 @@
+## BizziBuddi Contextual Navigation Rendering Fix
+
+### Fixed
+
+- Corrected the contextual submenu to pass the generated style object to JSX instead of the submenu style function itself.
+- Kept the Finance label and real submenu destinations introduced in the contextual navigation update.
+- Tightened the submenu spacing so it sits immediately beneath the primary navigation while retaining alignment with the selected workspace section.
+
+---
+
 ## BizziBuddi Contextual Navigation Links
 
 ### Changed
