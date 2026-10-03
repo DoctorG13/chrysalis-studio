@@ -2933,18 +2933,30 @@ function DashboardPanel({
             <small style={smallText}>WORKFLOW</small>
             <strong style={todayViewMetric}>{productionNeedsAttention.length + waitingJobs.length}</strong>
             <span style={todayViewLabel}>jobs needing a workflow step</span>
-            {productionNeedsAttention.slice(0, 2).map((job) => (
-              <button key={`today-workflow-${job.id}`} type="button" onClick={onJobs} style={todayViewItem}>
-                <span>{job.productionReadiness}</span>
-                <strong>{job.title || "Production job"}</strong>
-              </button>
-            ))}
-            {waitingJobs.slice(0, 2).map((job) => (
-              <button key={`today-waiting-${job.id}`} type="button" onClick={onJobs} style={todayViewItem}>
-                <span>Waiting</span>
-                <strong>{job.title || "Job waiting"}</strong>
-              </button>
-            ))}
+            {[...productionNeedsAttention, ...waitingJobs.filter((job) => !productionNeedsAttention.some((item) => item.id === job.id))]
+              .slice(0, 4)
+              .map((job) => {
+                const status = productionNeedsAttention.includes(job)
+                  ? job.productionReadiness
+                  : "Waiting";
+                const statusStyle =
+                  status === "Overdue"
+                    ? { color: "#ff9b9b", background: "rgba(255,107,107,.10)", borderColor: "rgba(255,107,107,.25)" }
+                    : status === "Tasks outstanding"
+                      ? { color: "#f6c453", background: "rgba(246,196,83,.10)", borderColor: "rgba(246,196,83,.25)" }
+                      : status === "Stage update needed"
+                        ? { color: CYAN, background: "rgba(0,180,219,.10)", borderColor: "rgba(0,180,219,.25)" }
+                        : { color: MUTED, background: "rgba(255,255,255,.05)", borderColor: "rgba(255,255,255,.10)" };
+                return (
+                  <button key={`today-workflow-${job.id}`} type="button" onClick={() => onJobs?.(job.id)} style={todayViewItem}>
+                    <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <span>{job.title || "Job"}</span>
+                      <span style={{ color: statusStyle.color, background: statusStyle.background, border: "1px solid " + statusStyle.borderColor, borderRadius: 999, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: ".06em", whiteSpace: "nowrap" }}>{status.toUpperCase()}</span>
+                    </span>
+                    <strong>{status === "Waiting" ? "Waiting for next step" : status}</strong>
+                  </button>
+                );
+              })}
             {productionNeedsAttention.length === 0 && waitingJobs.length === 0 && <span style={todayViewEmpty}>No workflow blockers are showing.</span>}
           </div>
         </div>
