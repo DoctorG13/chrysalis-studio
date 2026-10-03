@@ -8826,16 +8826,14 @@ const workspaceNavShell = {
   WebkitBackdropFilter: "blur(14px)",
 }; 
 const workspaceStickyNav = {
-  position: "sticky",
-  top: 0,
-  zIndex: 50,
-  margin: "0 -1px",
-  padding: "4px 0 4px",
-  background: "rgba(6,28,47,.97)",
-  borderBottom: "1px solid rgba(0,180,219,.14)",
-  boxShadow: "0 7px 18px rgba(0,0,0,.16)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
+  position: "relative",
+  zIndex: 1,
+  width: "100%",
+  minWidth: 0,
+  margin: 0,
+  padding: 0,
+  background: "transparent",
+  overflow: "hidden",
 };
 const workspaceMainNav = {
   display: "grid",
@@ -8843,6 +8841,7 @@ const workspaceMainNav = {
   gap: 5,
   width: "100%",
   minWidth: 0,
+  overflow: "hidden",
 };
 const workspaceMainTab = (active) => ({
   width: "100%",
@@ -8866,12 +8865,12 @@ const workspaceSubnavTray = {
   width: "100%",
   minWidth: 0,
   minHeight: 30,
-  margin: "1px 0 0",
-  padding: "1px 0 2px",
+  margin: 0,
+  padding: "2px 0 1px",
   boxSizing: "border-box",
   borderTop: "1px solid rgba(0,180,219,.10)",
   background: "linear-gradient(180deg, rgba(0,180,219,.03), rgba(0,180,219,0))",
-  overflow: "visible",
+  overflow: "hidden",
 };
 const workspaceSubnavItems = (section) => {
   const layout = {
@@ -8885,13 +8884,14 @@ const workspaceSubnavItems = (section) => {
   return {
     ...(layout[section] || layout.today),
     minWidth: 0,
+    maxWidth: "100%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: 4,
     rowGap: 3,
     flexWrap: "wrap",
-    overflow: "visible",
+    overflow: "hidden",
   };
 };
 const workspaceSubnavTab = (active) => ({
