@@ -1,3 +1,11 @@
+## BizziBuddi Workspace Navigation — Sticky, No-Scroll Polish
+
+- [x] Keep the primary workspace menu sticky while scrolling
+- [x] Keep the contextual submenu attached to the sticky menu
+- [x] Remove horizontal scrolling from the primary menu
+- [x] Keep submenu items wrapping within their selected section
+- [x] Keep FINANCE as the money-management section label
+
 ## BizziBuddi Sticky Workspace Navigation
 
 - [x] Keep BizziBuddi main navigation and contextual submenus sticky while scrolling
