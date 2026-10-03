@@ -41,6 +41,7 @@
 - [x] Make contextual submenu items link to their real workspace areas
 - [x] Add an authenticated Account workspace destination for Account navigation
 - [x] Align contextual submenu items directly beneath the selected primary workspace section
+- [x] Fix contextual submenu rendering after the Finance navigation update
 
 
 
