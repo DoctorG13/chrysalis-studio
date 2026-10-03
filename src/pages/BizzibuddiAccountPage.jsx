@@ -747,6 +747,7 @@ export default function BizzibuddiAccountPage() {
                     {label}
                   </button>
                 ))}
+                </div>
               </div>
             </>
           )}
