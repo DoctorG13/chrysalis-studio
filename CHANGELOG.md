@@ -1,3 +1,13 @@
+## BizziBuddi Workspace Navigation — Sticky Fix
+
+### Changed
+
+- Fixed the workspace navigation so the **FINANCE** menu and all contextual submenus remain sticky during page scrolling.
+- Changed the account page horizontal overflow handling to `overflow-x: clip`, allowing CSS `position: sticky` to work without introducing a horizontal scrollbar.
+- Made the outer workspace navigation shell the single sticky container so the main menu and submenu stay together as one unit.
+- Kept the submenu aligned beneath the selected main-menu section and wrapped within the available width.
+
+---
 ## BizziBuddi Workspace Navigation — Sticky, No-Scroll Polish
 
 ### Changed
