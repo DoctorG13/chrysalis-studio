@@ -1,3 +1,11 @@
+## BizziBuddi Today Workflow Status Polish
+
+### Changed
+
+- Added clear workflow status badges for Overdue, Tasks Outstanding, Stage Update Needed and Waiting.
+- Combined workflow blockers into one compact, scannable list while avoiding duplicate jobs.
+- Preserved direct job navigation from every workflow item.
+
 ## BizziBuddi Today Due Soon Polish
 
 ### Changed
