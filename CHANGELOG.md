@@ -1,3 +1,13 @@
+## BizziBuddi Today Responsive Polish
+
+### Changed
+
+- Added a dedicated responsive treatment for the completed Today operating view.
+- Tightened panel padding and heading scale on narrow screens.
+- Stacked Today information grids cleanly at tablet/mobile widths.
+- Kept the summary metrics compact and readable in a two-column mobile layout.
+- Preserved existing navigation, actions and desktop presentation.
+
 ## BizziBuddi Today Dashboard Completion Pass
 
 ### Changed
