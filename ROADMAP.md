@@ -1,3 +1,13 @@
+## BizziBuddi Workspace Navigation — Sticky Help Rail
+
+- [x] Make the main workspace navigation sticky at the top of the viewport
+- [x] Keep the contextual submenu attached to the sticky navigation
+- [x] Replace the large inline help area with a compact vertical sticky utility rail
+- [x] Keep Ask Buddi and Help & Support available without consuming workspace height
+- [x] Provide a compact mobile help bar without horizontal scrolling
+
+---
+
 ## BizziBuddi Workspace Navigation — Compact Sticky Menu
 
 - [x] Make the sticky primary workspace menu more compact
