@@ -2565,7 +2565,25 @@ function DashboardPanel({
     const days = Math.ceil((due - today) / 86400000);
     return days >= 0 && days <= 7;
   });
-  const appointmentsToday = appointments.filter((appointment) => appointment.date === todayKey);
+  const appointmentsToday = appointments
+    .filter((appointment) => appointment.date === todayKey)
+    .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
+  const currentMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+  const appointmentMinutes = (appointment) => {
+    const match = String(appointment.time || "").match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    if (!match) return null;
+    let hour = Number(match[1]);
+    const minute = Number(match[2] || 0);
+    const period = String(match[3] || "").toLowerCase();
+    if (period === "pm" && hour < 12) hour += 12;
+    if (period === "am" && hour === 12) hour = 0;
+    return hour * 60 + minute;
+  };
+  const nowAppointment = appointmentsToday.find((appointment) => {
+    const minutes = appointmentMinutes(appointment);
+    return minutes !== null && minutes <= currentMinutes && currentMinutes - minutes < 60;
+  });
+  const upcomingAppointments = appointmentsToday.filter((appointment) => appointment.id !== nowAppointment?.id);
   const waitingJobs = jobs.filter((job) => job.status === "Waiting");
   const openJobs = jobs.filter((job) => job.status !== "Complete").length;
   const productionNeedsAttention = jobs.filter((job) =>
@@ -2857,10 +2875,24 @@ function DashboardPanel({
 
         <div style={todayViewGrid}>
           <div style={todayViewCard}>
+            <small style={smallText}>NOW</small>
+            <strong style={todayViewMetric}>{nowAppointment ? "1" : "—"}</strong>
+            <span style={todayViewLabel}>{nowAppointment ? "appointment in progress" : "no appointment right now"}</span>
+            {nowAppointment ? (
+              <button type="button" onClick={() => onCalendar?.(nowAppointment.id)} style={todayViewItem}>
+                <span>Now · {nowAppointment.time || "Time not set"}</span>
+                <strong>{nowAppointment.title || "Appointment"}</strong>
+              </button>
+            ) : (
+              <span style={todayViewEmpty}>Nothing scheduled in the current hour.</span>
+            )}
+          </div>
+
+          <div style={todayViewCard}>
             <small style={smallText}>TODAY</small>
             <strong style={todayViewMetric}>{appointmentsToday.length}</strong>
             <span style={todayViewLabel}>{appointmentsToday.length === 1 ? "appointment" : "appointments"}</span>
-            {appointmentsToday.slice(0, 3).map((appointment) => (
+            {upcomingAppointments.slice(0, 3).map((appointment) => (
               <button key={appointment.id} type="button" onClick={() => onCalendar?.(appointment.id)} style={todayViewItem}>
                 <span>{appointment.time || "Time not set"}</span>
                 <strong>{appointment.title || "Appointment"}</strong>
