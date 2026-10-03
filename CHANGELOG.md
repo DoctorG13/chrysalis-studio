@@ -1,3 +1,15 @@
+## BizziBuddi Workspace Navigation — Responsive No-Scroll Polish
+
+### Changed
+
+- Added a compact three-column workspace menu layout below 900px.
+- Added a two-column workspace menu layout on narrow screens.
+- Let contextual submenus use the full available width on smaller screens instead of preserving desktop column offsets.
+- Reduced navigation button sizing at phone widths while keeping all menu items accessible.
+- Preserved the sticky navigation and the no-horizontal-scroll requirement.
+
+---
+
 ## BizziBuddi Workspace Navigation — Compact Sticky No-Scroll Refinement
 
 ### Changed
