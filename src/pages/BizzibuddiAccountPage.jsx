@@ -2690,6 +2690,18 @@ function DashboardPanel({
       <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
       <p style={copyStyle}>Your business is ready. This is your operating view — what needs attention, what is happening today and where to go next.</p>
 
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginTop: 18, padding: "10px 12px", borderRadius: 12, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
+        <div style={{ minWidth: 0 }}>
+          <small style={smallText}>TODAY</small>
+          <strong style={{ display: "block", marginTop: 3, fontSize: 16 }}>{today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</strong>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => document.getElementById("today-priority-list")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={todayJumpButton}>Priorities <span>{actionCount}</span></button>
+          <button type="button" onClick={() => document.getElementById("today-upcoming")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={todayJumpButton}>Upcoming <span>{appointmentsToday.length}</span></button>
+          <button type="button" onClick={() => document.getElementById("today-attention")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={todayJumpButton}>Attention <span>{notificationCount}</span></button>
+        </div>
+      </div>
+
       <div style={{ marginTop: 20, padding: 16, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(0,180,219,.045)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
@@ -8668,6 +8680,21 @@ const buddiDashboardIcon = {
 
 const businessActions = { marginTop: 28, padding: 24, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
 const planSummary = { marginTop: 18, display: "grid", gap: 8, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
+const todayJumpButton = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  border: "1px solid rgba(0,180,219,.28)",
+  borderRadius: 999,
+  padding: "5px 9px",
+  background: "rgba(0,180,219,.06)",
+  color: TEXT,
+  fontSize: 11,
+  fontWeight: 800,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
 const actionGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12, marginTop: 20 };
 const actionCard = { display: "flex", alignItems: "flex-start", gap: 12, textAlign: "left", minHeight: 92, padding: 16, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)", color: TEXT, cursor: "pointer" };
 const actionIcon = { fontSize: 22, lineHeight: 1, flex: "0 0 auto", marginTop: 2 };
