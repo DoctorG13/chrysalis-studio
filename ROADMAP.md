@@ -1,3 +1,14 @@
+## BizziBuddi Workspace Navigation — Sticky No-Scroll Navigation
+
+- [x] Make the authenticated primary workspace menu sticky while scrolling
+- [x] Keep the contextual submenu attached to the sticky primary navigation
+- [x] Keep Finance as the primary money-management label
+- [x] Prevent horizontal scrolling in the contextual submenu
+- [x] Allow submenu items to wrap within their selected section
+- [x] Preserve direct in-page destinations for contextual submenu items
+
+---
+
 ## BizziBuddi Workspace Navigation — Sticky Navigation
 
 - [x] Keep the workspace navigation visible while scrolling
