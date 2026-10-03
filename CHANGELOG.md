@@ -1,3 +1,14 @@
+## BizziBuddi Workspace Navigation — Sticky Utility Rail Fix
+
+### Changed
+
+- Moved the **ASK BUDDI / HELP** utility rail completely outside the sticky workspace navigation DOM.
+- Prevented the rail from being trapped inside the sticky navigation's visual effects or appearing over the selected menu.
+- Kept the desktop utility rail fixed to the viewport and the compact mobile layout intact.
+- Preserved the sticky primary menu and contextual submenu.
+
+---
+
 ## BizziBuddi Workspace Navigation — Help Rail Placement
 
 ### Changed
