@@ -1271,6 +1271,19 @@ export default function BizzibuddiAccountPage() {
                 outline-offset: 4px;
               }
               @media (max-width: 900px) {
+                .bizzibuddi-account-page .bizzibuddi-workspace-main-nav {
+                  grid-template-columns: repeat(3, minmax(0, 1fr));
+                  gap: 4px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav {
+                  grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav > div {
+                  grid-column: 1 / -1 !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav button {
+                  max-width: 100%;
+                }
                 .bizzibuddi-account-page .bizzibuddi-account-nav-main {
                   width: 100%;
                 }
@@ -1288,6 +1301,25 @@ export default function BizzibuddiAccountPage() {
                 }
               }
               @media (max-width: 560px) {
+                .bizzibuddi-account-page .bizzibuddi-workspace-main-nav {
+                  grid-template-columns: repeat(2, minmax(0, 1fr));
+                  gap: 4px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-main-nav button {
+                  min-height: 36px !important;
+                  padding: 6px 4px !important;
+                  font-size: 10px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav {
+                  grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav > div {
+                  grid-column: 1 / -1 !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav button {
+                  padding: 4px 7px !important;
+                  font-size: 9px !important;
+                }
                 .bizzibuddi-account-page {
                   padding-top: 18px !important;
                 }
