@@ -1,3 +1,12 @@
+## BizziBuddi Today Priority Card Polish
+
+### Changed
+
+- Added clear urgency badges to Today priority cards: Urgent, Attention, Today and Next.
+- Added a simple priority position indicator so the queue is easier to scan.
+- Improved priority-card text hierarchy and detail readability without changing the underlying intelligence or actions.
+- Preserved existing priority ordering, deep links and action handlers.
+
 ## BizziBuddi Today Operating View Command Bar
 
 ### Added
