@@ -1,3 +1,14 @@
+## BizziBuddi Workspace Navigation — Utility Rail Outside Sticky Nav
+
+### Changed
+
+- Moved the **ASK BUDDI / HELP** rail outside the sticky workspace navigation container.
+- Prevented the rail from being positioned relative to the sticky navigation's visual-effects container.
+- Kept the utility rail fixed to the viewport with a high stacking order.
+- Preserved the sticky primary menu and contextual submenu.
+
+---
+
 ## BizziBuddi Workspace Navigation — Sticky Utility Rail Fix
 
 ### Changed
