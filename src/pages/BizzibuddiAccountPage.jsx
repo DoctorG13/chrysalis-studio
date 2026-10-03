@@ -39,6 +39,17 @@ export default function BizzibuddiAccountPage() {
   const [productionTemplates, setProductionTemplates] = useState([]);
   const [productionTimeEntries, setProductionTimeEntries] = useState([]);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+  const initialWorkspaceNavSection =
+    requestedView === "people" || requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
+      ? "work"
+      : requestedView === "finance"
+        ? "money"
+        : requestedView === "reports"
+          ? "insights"
+          : requestedView === "buddi" || requestedView === "automation"
+            ? "assist"
+            : "account";
+  const [workspaceNavSection, setWorkspaceNavSection] = useState(initialWorkspaceNavSection);
 
   useEffect(() => {
     function handleKeyboardShortcuts(event) {
@@ -637,51 +648,58 @@ export default function BizzibuddiAccountPage() {
               ))}
             </div>
           ) : (
-            <div className="bizzibuddi-workspace-nav">
-              <div className="bizzibuddi-workspace-nav-home">
-                <button type="button" onClick={() => selectView("dashboard")} style={tabStyle(view === "dashboard")}>
-                  <span>⌂</span> Today
+            <>
+              <div
+                className="bizzibuddi-workspace-main-nav"
+                role="tablist"
+                aria-label="BizziBuddi workspace sections"
+              >
+                <button
+                  type="button"
+                  onClick={() => selectView("dashboard")}
+                  style={workspaceMainTab(view === "dashboard")}
+                  aria-selected={view === "dashboard"}
+                >
+                  <span aria-hidden="true">⌂</span> Today
                 </button>
+                {[
+                  ["work", "WORK"],
+                  ["money", "MONEY"],
+                  ["insights", "INSIGHTS"],
+                  ["assist", "ASSIST"],
+                  ["account", "ACCOUNT"],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setWorkspaceNavSection(key)}
+                    style={workspaceMainTab(workspaceNavSection === key)}
+                    aria-selected={workspaceNavSection === key}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
 
-              <div className="bizzibuddi-workspace-nav-group">
-                <small>WORK</small>
-                <div>
-                  {[["people", "People"], ["jobs", "Jobs"], ["calendar", "Calendar"], ["production", "Production"]].map(([key, label]) => (
-                    <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
-                  ))}
-                </div>
+              <div
+                className="bizzibuddi-workspace-subnav"
+                aria-label={workspaceNavSection + " submenu"}
+              >
+                {(workspaceSubnav[workspaceNavSection] || []).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => key === "buddi" ? openBuddi() : selectView(key)}
+                    style={workspaceSubnavTab(
+                      key === view ||
+                      (workspaceNavSection === "assist" && key === "buddi" && view === "buddi")
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-
-              <div className="bizzibuddi-workspace-nav-group">
-                <small>MONEY</small>
-                <div>
-                  <button type="button" onClick={() => selectView("finance")} style={tabStyle(view === "finance")}>Finance</button>
-                </div>
-              </div>
-
-              <div className="bizzibuddi-workspace-nav-group">
-                <small>INSIGHTS</small>
-                <div>
-                  <button type="button" onClick={() => selectView("reports")} style={tabStyle(view === "reports")}>Reports</button>
-                </div>
-              </div>
-
-              <div className="bizzibuddi-workspace-nav-group">
-                <small>ASSIST</small>
-                <div>
-                  <button type="button" onClick={() => openBuddi()} style={view === "buddi" ? tabStyle(true) : tabStyle(false)}>Buddi</button>
-                  <button type="button" onClick={() => selectView("automation")} style={tabStyle(view === "automation")}>Automation</button>
-                </div>
-              </div>
-
-              <div className="bizzibuddi-workspace-nav-group secondary">
-                <small>ACCOUNT</small>
-                <div>
-                  <button type="button" onClick={() => selectView("plans")} style={tabStyle(view === "plans")}>Plans</button>
-                </div>
-              </div>
-            </div>
+            </>
           )}
 
           <div className="bizzibuddi-help-nav">
@@ -710,6 +728,7 @@ export default function BizzibuddiAccountPage() {
               </button>
             </div>
           </div>
+        </nav>
         </nav>
 
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
@@ -8503,6 +8522,36 @@ const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15
 const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "34px 0 28px" };
 const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
+const workspaceMainTab = (active) => ({
+  border: "1px solid " + (active ? RED : BORDER),
+  borderRadius: 10,
+  padding: "10px 18px",
+  background: active ? "rgba(37,99,235,.16)" : "rgba(255,255,255,.035)",
+  color: TEXT,
+  fontSize: 12,
+  fontWeight: 800,
+  letterSpacing: ".08em",
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+});
+const workspaceSubnavTab = (active) => ({
+  border: "1px solid " + (active ? CYAN : "rgba(255,255,255,.10)"),
+  borderRadius: 999,
+  padding: "8px 15px",
+  background: active ? "rgba(0,180,219,.12)" : "rgba(255,255,255,.025)",
+  color: active ? TEXT : MUTED,
+  fontSize: 12,
+  fontWeight: 700,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+});
+const workspaceSubnav = {
+  work: [["people", "People"], ["jobs", "Jobs"], ["calendar", "Calendar"], ["production", "Production"]],
+  money: [["finance", "Finance"]],
+  insights: [["reports", "Reports"]],
+  assist: [["buddi", "Buddi"], ["automation", "Automation"]],
+  account: [["plans", "Plans"]],
+};
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
 const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
 const centerStyle = { textAlign: "center" };
