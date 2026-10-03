@@ -858,6 +858,7 @@ export default function BizzibuddiAccountPage() {
                       type="button"
                       onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
                       style={workspaceSubnavTab(workspaceNavItem === item[0], workspaceNavSection)}
+                      title={item[1]}
                     >
                       {item[1]}
                     </button>
@@ -8927,8 +8928,11 @@ const workspaceSubnavItems = (section) => {
   };
 };
 const workspaceSubnavTab = (active, section = "") => ({
-  flex: section === "finance" ? "1 1 0" : "0 0 auto",
-  minWidth: section === "finance" ? 0 : undefined,
+  flex: section === "finance" || section === "today" ? "1 1 0" : "0 0 auto",
+  minWidth: section === "finance" || section === "today" ? 0 : undefined,
+  boxSizing: "border-box",
+  overflow: section === "finance" || section === "today" ? "hidden" : undefined,
+  textOverflow: section === "finance" || section === "today" ? "ellipsis" : undefined,
   border: "1px solid " + (active ? CYAN : "rgba(255,255,255,.10)"),
   borderRadius: 999,
   padding: "4px 9px",
