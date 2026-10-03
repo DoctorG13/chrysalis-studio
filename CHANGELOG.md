@@ -1,3 +1,15 @@
+## BizziBuddi Workspace Navigation — Sticky No-Scroll Navigation
+
+### Changed
+
+- Made the authenticated primary workspace menu and contextual submenu sticky together at the top of the workspace while scrolling.
+- Kept Finance as the primary money-management label.
+- Kept contextual submenu groups aligned beneath the selected primary section.
+- Removed horizontal scrolling from the submenu tray so items wrap within their available section rather than showing a scrollbar.
+- Preserved the existing in-page submenu destinations for Today, Finance, Insights and Account.
+
+---
+
 ## BizziBuddi Workspace Navigation — Sticky Finance Navigation
 
 ### Changed
