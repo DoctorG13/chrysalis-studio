@@ -1,3 +1,11 @@
+## BizziBuddi Today Dashboard Completion Pass
+
+### Changed
+
+- Tightened the spacing between the Today dashboard's major sections.
+- Reduced panel padding and grid gaps for a cleaner operating-view rhythm.
+- Preserved the existing Today hierarchy, content, actions and responsive layout.
+
 ## BizziBuddi Today Business Health States
 
 ### Changed
