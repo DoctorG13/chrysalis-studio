@@ -4125,6 +4125,248 @@ function exportFinanceReportCsv({
   URL.revokeObjectURL(url);
 }
 
+function escapeFinanceReportHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function printFinanceReport({
+  reportLabel,
+  startDate,
+  endDate,
+  payments,
+  expenses,
+  received,
+  spent,
+  net,
+  includeSummary,
+  includeTransactions,
+  includeCategories,
+}) {
+  const printWindow = window.open("", "_blank", "width=1000,height=800");
+
+  if (!printWindow) {
+    window.alert("Please allow pop-ups for BizziBuddi to print or save this report as a PDF.");
+    return;
+  }
+
+  const transactionRows = [
+    ...payments.map((payment) => ({
+      date: payment.date || "",
+      type: "Payment",
+      amount: Number(payment.amount) || 0,
+      category: "Customer payment",
+      method: payment.method || "Other",
+      description: payment.description || "",
+      reference: payment.invoiceNumber || "",
+      client: payment.invoicePerson || "",
+    })),
+    ...expenses.map((expense) => ({
+      date: expense.date || "",
+      type: "Expense",
+      amount: Number(expense.amount) || 0,
+      category: expense.category || "Other",
+      method: expense.method || "Other",
+      description: expense.description || "",
+      reference: "",
+      client: "",
+    })),
+  ].sort((left, right) => String(right.date).localeCompare(String(left.date)));
+
+  const categoryTotals = Object.entries(
+    expenses.reduce((totals, expense) => {
+      const category = expense.category || "Other";
+      totals[category] = (totals[category] || 0) + (Number(expense.amount) || 0);
+      return totals;
+    }, {})
+  ).sort((left, right) => right[1] - left[1]);
+
+  const summaryHtml = includeSummary
+    ? `
+      <section>
+        <h2>Financial Summary</h2>
+        <div class="summary">
+          <div><span>Received</span><strong>${escapeFinanceReportHtml(formatCurrency(received))}</strong></div>
+          <div><span>Expenses</span><strong>${escapeFinanceReportHtml(formatCurrency(spent))}</strong></div>
+          <div><span>Net Cashflow</span><strong>${escapeFinanceReportHtml(formatCurrency(net))}</strong></div>
+        </div>
+      </section>
+    `
+    : "";
+
+  const categoryHtml = includeCategories
+    ? `
+      <section>
+        <h2>Expenses by Category</h2>
+        ${
+          categoryTotals.length
+            ? `<table><thead><tr><th>Category</th><th class="amount">Amount</th></tr></thead><tbody>${categoryTotals
+                .map(
+                  ([category, amount]) =>
+                    `<tr><td>${escapeFinanceReportHtml(category)}</td><td class="amount">${escapeFinanceReportHtml(formatCurrency(amount))}</td></tr>`
+                )
+                .join("")}</tbody></table>`
+            : "<p class=\"muted\">No expenses recorded for this period.</p>"
+        }
+      </section>
+    `
+    : "";
+
+  const transactionsHtml = includeTransactions
+    ? `
+      <section>
+        <h2>Transactions</h2>
+        ${
+          transactionRows.length
+            ? `<table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Category</th><th>Method</th><th>Description</th><th>Invoice / Client</th></tr></thead><tbody>${transactionRows
+                .map(
+                  (item) =>
+                    `<tr>
+                      <td>${escapeFinanceReportHtml(formatInvoiceDate(item.date))}</td>
+                      <td>${escapeFinanceReportHtml(item.type)}</td>
+                      <td class="amount">${escapeFinanceReportHtml(formatCurrency(item.amount))}</td>
+                      <td>${escapeFinanceReportHtml(item.category)}</td>
+                      <td>${escapeFinanceReportHtml(item.method)}</td>
+                      <td>${escapeFinanceReportHtml(item.description)}</td>
+                      <td>${escapeFinanceReportHtml([item.reference, item.client].filter(Boolean).join(" · "))}</td>
+                    </tr>`
+                )
+                .join("")}</tbody></table>`
+            : "<p class=\"muted\">No payments or expenses were recorded for this period.</p>"
+        }
+      </section>
+    `
+    : "";
+
+  printWindow.document.write(`
+    <!doctype html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <title>BizziBuddi Finance Report - ${escapeFinanceReportHtml(reportLabel)}</title>
+        <style>
+          @page { size: A4; margin: 16mm; }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            color: #17212b;
+            background: #fff;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            line-height: 1.45;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: flex-start;
+            border-bottom: 2px solid #17212b;
+            padding-bottom: 14px;
+            margin-bottom: 20px;
+          }
+          .brand {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -.3px;
+          }
+          .eyebrow {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: #617080;
+          }
+          h1 { margin: 4px 0 4px; font-size: 24px; }
+          h2 {
+            margin: 0 0 10px;
+            font-size: 15px;
+            page-break-after: avoid;
+          }
+          section {
+            margin-bottom: 22px;
+            page-break-inside: auto;
+          }
+          .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+          }
+          .summary div {
+            border: 1px solid #d5dce2;
+            border-radius: 6px;
+            padding: 12px;
+          }
+          .summary span {
+            display: block;
+            color: #617080;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: .7px;
+          }
+          .summary strong {
+            display: block;
+            margin-top: 5px;
+            font-size: 17px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th, td {
+            padding: 7px 6px;
+            border-bottom: 1px solid #e2e6e9;
+            text-align: left;
+            vertical-align: top;
+          }
+          th {
+            background: #f2f4f6;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+          }
+          .amount { text-align: right; white-space: nowrap; }
+          .muted { color: #617080; }
+          .footer {
+            border-top: 1px solid #d5dce2;
+            padding-top: 10px;
+            color: #617080;
+            font-size: 9px;
+          }
+          tr { page-break-inside: avoid; }
+          @media print {
+            .no-print { display: none !important; }
+          }
+        </style>
+      </head>
+      <body>
+        <header class="header">
+          <div>
+            <div class="brand">BizziBuddi</div>
+            <div class="eyebrow">Finance Report</div>
+            <h1>${escapeFinanceReportHtml(reportLabel)}</h1>
+            <div class="muted">${escapeFinanceReportHtml(formatInvoiceDate(startDate))} to ${escapeFinanceReportHtml(formatInvoiceDate(endDate))}</div>
+          </div>
+          <div class="muted">Generated ${escapeFinanceReportHtml(new Date().toLocaleString("en-AU"))}</div>
+        </header>
+        ${summaryHtml}
+        ${categoryHtml}
+        ${transactionsHtml}
+        <div class="footer">
+          This report uses recorded customer payments and recorded expenses. It is a transaction report, not a bank statement or tax return.
+        </div>
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.setTimeout(() => printWindow.print(), 250);
+}
+
 function getFinancialYearStartKey(dateValue = new Date()) {
   const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
   const year = date.getFullYear();
@@ -5806,27 +6048,50 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             Choose a month, Australian financial year or your own date range, then customise what goes into the export.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() =>
-            exportFinanceReportCsv({
-              reportLabel: selectedFinanceReportLabel,
-              startDate: selectedFinanceReportStartDate,
-              endDate: selectedFinanceReportEndDate,
-              payments: selectedFinanceReportPayments,
-              expenses: selectedFinanceReportExpenses,
-              received: selectedFinanceReportReceived,
-              spent: selectedFinanceReportSpent,
-              net: selectedFinanceReportNet,
-              includeSummary: financeReportIncludeSummary,
-              includeTransactions: financeReportIncludeTransactions,
-              includeCategories: financeReportIncludeCategories,
-            })
-          }
-          style={smallActionButton}
-        >
-          ↓ Export CSV
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() =>
+              printFinanceReport({
+                reportLabel: selectedFinanceReportLabel,
+                startDate: selectedFinanceReportStartDate,
+                endDate: selectedFinanceReportEndDate,
+                payments: selectedFinanceReportPayments,
+                expenses: selectedFinanceReportExpenses,
+                received: selectedFinanceReportReceived,
+                spent: selectedFinanceReportSpent,
+                net: selectedFinanceReportNet,
+                includeSummary: financeReportIncludeSummary,
+                includeTransactions: financeReportIncludeTransactions,
+                includeCategories: financeReportIncludeCategories,
+              })
+            }
+            style={smallActionButton}
+          >
+            ⎙ Print / PDF
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              exportFinanceReportCsv({
+                reportLabel: selectedFinanceReportLabel,
+                startDate: selectedFinanceReportStartDate,
+                endDate: selectedFinanceReportEndDate,
+                payments: selectedFinanceReportPayments,
+                expenses: selectedFinanceReportExpenses,
+                received: selectedFinanceReportReceived,
+                spent: selectedFinanceReportSpent,
+                net: selectedFinanceReportNet,
+                includeSummary: financeReportIncludeSummary,
+                includeTransactions: financeReportIncludeTransactions,
+                includeCategories: financeReportIncludeCategories,
+              })
+            }
+            style={smallActionButton}
+          >
+            ↓ Export CSV
+          </button>
+        </div>
       </div>
 
       <div
