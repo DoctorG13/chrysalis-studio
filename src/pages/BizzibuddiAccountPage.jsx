@@ -1358,6 +1358,29 @@ export default function BizzibuddiAccountPage() {
                 }
               }
               @media (max-width: 760px) {
+                .bizzibuddi-account-page .bizzibuddi-today-overview {
+                  margin-top: 16px !important;
+                  padding: 16px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-today-panel {
+                  padding: 15px !important;
+                  margin-top: 14px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-today-overview h3,
+                .bizzibuddi-account-page .bizzibuddi-today-panel h3 {
+                  font-size: 21px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-attention-summary {
+                  grid-template-columns: repeat(2, minmax(0, 1fr));
+                  margin-top: 14px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-today-header {
+                  gap: 10px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-today-grid {
+                  grid-template-columns: 1fr;
+                }
+              }
                 .bizzibuddi-account-page {
                   padding-left: 14px !important;
                   padding-right: 14px !important;
@@ -2787,7 +2810,7 @@ function DashboardPanel({
         </div>
       )}
 
-      <div id="today-overview" style={attentionPanel}>
+      <div id="today-overview" className="bizzibuddi-today-overview" style={attentionPanel}>
         <div style={attentionHeader}>
           <div>
             <small style={smallText}>TODAY'S BUSINESS PICTURE</small>
@@ -2800,7 +2823,7 @@ function DashboardPanel({
           </button>
         </div>
 
-        <div style={attentionSummary}>
+        <div className="bizzibuddi-attention-summary" style={attentionSummary}>
           <div style={attentionSummaryItem}>
             <strong style={{ fontSize: 18, lineHeight: 1.1 }}>{actionCount}</strong>
             <span style={{ color: MUTED, fontSize: 11, lineHeight: 1.25 }}>{actionCount === 1 ? "action item" : "action items"}</span>
@@ -2872,8 +2895,8 @@ function DashboardPanel({
         </div>
       </div>
 
-      <div id="today-upcoming" style={todayViewPanel}>
-        <div style={todayViewHeader}>
+      <div id="today-upcoming" className="bizzibuddi-today-panel" style={todayViewPanel}>
+        <div className="bizzibuddi-today-header" style={todayViewHeader}>
           <div>
             <small style={smallText}>DAILY OPERATING VIEW</small>
             <h3 style={{ margin: "6px 0 5px", fontSize: 24 }}>Today & next up.</h3>
@@ -2882,7 +2905,7 @@ function DashboardPanel({
           <span style={todayViewDate}>{new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</span>
         </div>
 
-        <div style={todayViewGrid}>
+        <div className="bizzibuddi-today-grid" style={todayViewGrid}>
           <div style={todayViewCard}>
             <small style={smallText}>NOW</small>
             <strong style={todayViewMetric}>{nowAppointment ? "1" : "—"}</strong>
@@ -3056,7 +3079,7 @@ function DashboardPanel({
             <p style={{ ...copyStyle, margin: 0 }}>A compact health snapshot based on the activity already recorded in BizziBuddi.</p>
           </div>
         </div>
-        <div style={{ ...todayViewGrid, marginTop: 16 }}>
+        <div className="bizzibuddi-today-grid" style={{ ...todayViewGrid, marginTop: 16 }}>
           {healthMetrics.map((metric) => {
             const stateLabel = metric.tone === "good" ? "GOOD" : metric.tone === "watch" ? "WATCH" : "NEUTRAL";
             const stateStyle =
