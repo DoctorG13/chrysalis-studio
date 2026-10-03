@@ -1,3 +1,12 @@
+## BizziBuddi Today Schedule Grouping
+
+### Changed
+
+- Split today's appointment view into a clearer Now and Today presentation.
+- Added current-hour detection for appointments with recognisable times.
+- Kept today's appointments sorted by time for easier scanning.
+- Preserved the existing Due Soon and Workflow views and their actions.
+
 ## BizziBuddi Today Priority Card Polish
 
 ### Changed
