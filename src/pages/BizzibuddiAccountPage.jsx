@@ -846,18 +846,20 @@ export default function BizzibuddiAccountPage() {
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
-                style={workspaceSubnavTray(workspaceNavSection)}
+                style={workspaceSubnavTray}
               >
-                {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
-                  <button
-                    key={item[0]}
-                    type="button"
-                    onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
-                    style={workspaceSubnavTab(workspaceNavItem === item[0])}
-                  >
-                    {item[1]}
-                  </button>
-                ))}
+                <div style={workspaceSubnavItems(workspaceNavSection)}>
+                  {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
+                    <button
+                      key={item[0]}
+                      type="button"
+                      onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
+                      style={workspaceSubnavTab(workspaceNavItem === item[0])}
+                    >
+                      {item[1]}
+                    </button>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -8726,45 +8728,57 @@ const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexW
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const workspaceMainNav = {
   display: "grid",
-  gridTemplateColumns: "repeat(6, minmax(112px, 1fr))",
+  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
   gap: 8,
   width: "100%",
-  overflowX: "auto",
+  minWidth: 0,
   paddingBottom: 2,
 };
 const workspaceMainTab = (active) => ({
   width: "100%",
+  minWidth: 0,
   minHeight: 48,
   border: "1px solid " + (active ? RED : BORDER),
   borderRadius: 11,
-  padding: "10px 14px",
+  padding: "10px 8px",
   background: active ? "rgba(37,99,235,.18)" : "rgba(255,255,255,.035)",
   color: TEXT,
   fontSize: 12,
   fontWeight: 800,
   letterSpacing: ".08em",
+  lineHeight: 1.15,
   cursor: "pointer",
-  whiteSpace: "nowrap",
+  whiteSpace: "normal",
 });
-const workspaceSubnavTray = (section) => {
-  const sectionIndex = ["today", "work", "finance", "insights", "assist", "account"].indexOf(section);
-  const safeIndex = sectionIndex < 0 ? 0 : sectionIndex;
-  const percentageOffset = safeIndex * 16.6667;
-  const gapOffset = safeIndex * 1.3333;
+const workspaceSubnavTray = {
+  display: "grid",
+  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+  width: "100%",
+  minWidth: 0,
+  minHeight: 38,
+  margin: "1px 0 0",
+  padding: "3px 0 4px",
+  boxSizing: "border-box",
+  borderTop: "1px solid rgba(0,180,219,.12)",
+  background: "linear-gradient(180deg, rgba(0,180,219,.035), rgba(0,180,219,0))",
+};
+const workspaceSubnavItems = (section) => {
+  const layout = {
+    today: { gridColumn: "1 / span 2" },
+    work: { gridColumn: "2 / span 2" },
+    finance: { gridColumn: "2 / span 3" },
+    insights: { gridColumn: "4 / span 2" },
+    assist: { gridColumn: "5 / span 2" },
+    account: { gridColumn: "5 / span 2" },
+  };
   return {
+    ...(layout[section] || layout.today),
+    minWidth: 0,
     display: "flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
-    flexWrap: "nowrap",
-    overflowX: "auto",
-    width: "100%",
-    minHeight: 36,
-    margin: "1px 0 0",
-    padding: "2px 4px 4px calc(" + percentageOffset + "% + " + gapOffset + "px + 4px)",
-    boxSizing: "border-box",
-    borderTop: "1px solid rgba(0,180,219,.12)",
-    background: "linear-gradient(180deg, rgba(0,180,219,.035), rgba(0,180,219,0))",
-    scrollbarWidth: "thin",
+    flexWrap: "wrap",
   };
 };
 const workspaceSubnavTab = (active) => ({
