@@ -1,3 +1,15 @@
+## BizziBuddi Workspace Navigation — Sticky Finance Navigation
+
+### Changed
+
+- Made the authenticated workspace navigation sticky so the primary menu and contextual submenu remain available while scrolling.
+- Kept the Finance label as the primary name for the money-management section.
+- Kept contextual submenu groups aligned beneath their selected primary section.
+- Removed horizontal overflow from the submenu tray so items wrap rather than creating a horizontal scrollbar.
+- Connected the Account submenu's Membership item to the account membership area instead of the Plans page.
+
+---
+
 ## BizziBuddi Workspace Navigation — No-Scroll Layout
 
 ### Changed
