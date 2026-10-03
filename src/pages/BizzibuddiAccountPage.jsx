@@ -8639,13 +8639,13 @@ const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(au
 const membershipFeature = (available) => ({ display: "flex", alignItems: "flex-start", gap: 9, padding: 12, borderRadius: 10, border: "1px solid " + (available ? "rgba(0,180,219,.28)" : BORDER), background: available ? "rgba(0,180,219,.08)" : "rgba(255,255,255,.025)", color: available ? TEXT : MUTED });
 
 const todayViewPanel = {
-  marginTop: 18, padding: 20, borderRadius: 16,
+  marginTop: 16, padding: 18, borderRadius: 16,
   border: "1px solid " + BORDER,
   background: "rgba(255,255,255,.025)",
 };
 const todayViewHeader = {
   display: "flex", alignItems: "flex-start", justifyContent: "space-between",
-  gap: 16, flexWrap: "wrap",
+  gap: 14, flexWrap: "wrap",
 };
 const todayViewDate = {
   display: "inline-flex", alignItems: "center", minHeight: 34,
@@ -8654,7 +8654,7 @@ const todayViewDate = {
 };
 const todayViewGrid = {
   display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-  gap: 10, marginTop: 16,
+  gap: 9, marginTop: 14,
 };
 const todayViewCard = {
   display: "flex", flexDirection: "column", minWidth: 0, padding: 15,
@@ -8708,7 +8708,7 @@ const nextActionButton = {
 };
 
 const attentionPanel = {
-  marginTop: 24, padding: 22, borderRadius: 18,
+  marginTop: 20, padding: 20, borderRadius: 18,
   border: "1px solid rgba(0,180,219,.55)",
   background: "linear-gradient(135deg, rgba(0,180,219,.10), rgba(37,99,235,.10))",
   boxShadow: "0 16px 34px rgba(0,0,0,.18)",
@@ -8739,7 +8739,7 @@ const attentionSummaryItem = {
   background: "rgba(255,255,255,.025)",
   textAlign: "center",
 };
-const attentionList = { display: "grid", gap: 9, marginTop: 16 };
+const attentionList = { display: "grid", gap: 8, marginTop: 15 };
 const attentionItem = (tone) => ({
   display: "flex", alignItems: "center", gap: 12, padding: 13,
   borderRadius: 12,
