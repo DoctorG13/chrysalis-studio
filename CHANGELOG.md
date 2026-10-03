@@ -1,3 +1,15 @@
+## BizziBuddi Workspace Navigation — Sticky, No-Scroll Polish
+
+### Changed
+
+- Kept **FINANCE** as the primary label for the money section.
+- Kept the authenticated workspace menu and contextual submenu sticky together while scrolling.
+- Removed horizontal overflow from the primary menu so it cannot produce a horizontal scrollbar.
+- Kept contextual submenu items wrapped within their aligned section area rather than scrolling sideways.
+- Kept the submenu visually attached directly beneath the selected main-menu section.
+- Preserved the existing contextual destinations and in-page anchor scrolling.
+
+---
 ## BizziBuddi Sticky Workspace Navigation
 
 ### Changed
