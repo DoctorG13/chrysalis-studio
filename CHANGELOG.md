@@ -1,3 +1,11 @@
+## BizziBuddi Finance Submenu Balance
+
+### Changed
+
+- Balanced the five Finance submenu controls across the available Finance navigation area.
+- Kept Finance items visually consistent while allowing the longer Expenses & Outgoings label to remain contained.
+- Preserved existing Finance labels, routes, anchors, sticky behaviour and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Finance Navigation Terminology
 
 ### Changed
