@@ -846,7 +846,7 @@ export default function BizzibuddiAccountPage() {
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
-                style={workspaceSubnavTray}
+                style={workspaceSubnavTray(workspaceNavSection)}
               >
                 {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
                   <button
@@ -8749,6 +8749,8 @@ const workspaceMainTab = (active) => ({
 const workspaceSubnavTray = (section) => {
   const sectionIndex = ["today", "work", "finance", "insights", "assist", "account"].indexOf(section);
   const safeIndex = sectionIndex < 0 ? 0 : sectionIndex;
+  const percentageOffset = safeIndex * 16.6667;
+  const gapOffset = safeIndex * 1.3333;
   return {
     display: "flex",
     alignItems: "center",
@@ -8757,8 +8759,8 @@ const workspaceSubnavTray = (section) => {
     overflowX: "auto",
     width: "100%",
     minHeight: 36,
-    margin: "3px 0 0",
-    padding: "2px 4px 4px calc(" + (safeIndex * 16.6667) + "% + 4px)",
+    margin: "1px 0 0",
+    padding: "2px 4px 4px calc(" + percentageOffset + "% + " + gapOffset + "px + 4px)",
     boxSizing: "border-box",
     borderTop: "1px solid rgba(0,180,219,.12)",
     background: "linear-gradient(180deg, rgba(0,180,219,.035), rgba(0,180,219,0))",
