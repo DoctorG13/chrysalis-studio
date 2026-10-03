@@ -1,3 +1,12 @@
+## BizziBuddi Finance Overlap Fix and Today Submenu Polish
+
+### Changed
+
+- Fixed the Finance submenu sizing so Expenses & Outgoings no longer overlaps Cashflow Outlook.
+- Applied border-box sizing and contained text rendering to the balanced Finance controls.
+- Applied the same balanced-width treatment to the Today submenu for a cleaner, more consistent navigation row.
+- Added full-label hover titles for submenu items while preserving the existing labels, routes, sticky behaviour and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Finance Submenu Balance
 
 ### Changed
