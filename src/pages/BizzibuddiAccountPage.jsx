@@ -3016,19 +3016,32 @@ function DashboardPanel({
         </div>
         {notificationItems.length > 0 ? (
           <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            {notificationItems.map((item) => (
-              <article key={item.key} style={attentionItem(item.tone)}>
-                <div style={attentionItemIcon}>{item.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <strong style={{ display: "block", fontSize: 15 }}>{item.title}</strong>
-                  <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 13 }}>{item.detail}</span>
-                </div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button type="button" onClick={item.onClick} style={attentionAction}>Open →</button>
-                  <button type="button" onClick={() => setDismissedNotifications((current) => [...current, item.key])} style={smallActionButton}>Dismiss</button>
-                </div>
-              </article>
-            ))}
+            {notificationItems.map((item) => {
+              const statusLabel = item.tone === "urgent" ? "URGENT" : item.tone === "attention" ? "ATTENTION" : "TODAY";
+              const statusStyle =
+                item.tone === "urgent"
+                  ? { color: "#ff9b9b", background: "rgba(255,107,107,.10)", borderColor: "rgba(255,107,107,.25)" }
+                  : item.tone === "attention"
+                    ? { color: "#f6c453", background: "rgba(246,196,83,.10)", borderColor: "rgba(246,196,83,.25)" }
+                    : { color: CYAN, background: "rgba(0,180,219,.10)", borderColor: "rgba(0,180,219,.25)" };
+
+              return (
+                <article key={item.key} style={{ ...attentionItem(item.tone), position: "relative", overflow: "hidden" }}>
+                  <div style={{ ...attentionItemIcon, alignSelf: "flex-start" }}>{item.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                      <span style={{ color: statusStyle.color, background: statusStyle.background, border: "1px solid " + statusStyle.borderColor, borderRadius: 999, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: ".08em" }}>{statusLabel}</span>
+                      <strong style={{ fontSize: 15 }}>{item.title}</strong>
+                    </div>
+                    <span style={{ display: "block", marginTop: 5, color: MUTED, fontSize: 13, lineHeight: 1.45 }}>{item.detail}</span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <button type="button" onClick={item.onClick} style={{ ...attentionAction, fontWeight: 900 }}>Open →</button>
+                    <button type="button" onClick={() => setDismissedNotifications((current) => [...current, item.key])} style={smallActionButton}>Dismiss</button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         ) : (
           <div style={todayViewEmpty}>No active notifications. Your notification feed is clear.</div>
