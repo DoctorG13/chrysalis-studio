@@ -1,3 +1,11 @@
+## BizziBuddi Today Due Soon Polish
+
+### Changed
+
+- Added clearer relative deadline labels for invoices and production deadlines: Today, Tomorrow and This week.
+- Kept the underlying due dates visible for precise reference.
+- Preserved existing Finance and Jobs navigation actions.
+
 ## BizziBuddi Today Schedule Grouping
 
 ### Changed
