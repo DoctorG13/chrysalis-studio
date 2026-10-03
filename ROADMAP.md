@@ -1,3 +1,12 @@
+## BizziBuddi Workspace Navigation — No-Scroll Layout
+
+- [x] Remove horizontal scrollbars from the primary workspace navigation
+- [x] Remove horizontal scrollbars from contextual workspace submenus
+- [x] Align contextual submenu groups beneath the selected workspace section
+- [x] Allow submenu items to wrap cleanly on narrower screens
+
+---
+
 ## Post-1.0 — Finance Intelligence
 
 - [x] Correct recorded payment amount, date, method and description from Finance
