@@ -1,3 +1,12 @@
+## BizziBuddi Today Operating View Command Bar
+
+### Added
+
+- Added a compact Today command bar to the main business operating view.
+- Shows the current day prominently and provides direct jumps to Priorities, Upcoming and Attention.
+- Added live counts for priority actions, today's appointments and active attention items.
+- Preserved the existing sticky navigation, deep links and no-horizontal-scroll behaviour.
+
 ## BizziBuddi Today Navigation Polish
 
 ### Changed
