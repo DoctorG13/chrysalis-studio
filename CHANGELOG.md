@@ -2,11 +2,11 @@
 
 ### Changed
 
-- Made the primary Work, Money, Insights, Assist and Account section buttons navigate directly to their first contextual destination instead of only changing the visible submenu.
-- Added a clear visual offset so each contextual submenu sits underneath the corresponding primary section.
-- Used a shared six-column navigation alignment so Work, Money, Insights, Assist and Account submenus visually map to their parent sections.
-- Preserved the existing Today, Help & Support, keyboard navigation and browser-history behaviour.
-- Kept all existing workspace routes and destinations unchanged.
+- Made every primary workspace section navigate directly to its first contextual destination.
+- Reworked the contextual submenu into a single clean navigation tray instead of allowing submenu items to wrap awkwardly beneath individual columns.
+- Added contextual submenu items for Today, Work, Money, Insights, Assist and Account.
+- Kept the active submenu item visibly highlighted and aligned with the selected workspace section.
+- Preserved existing workspace routes, keyboard navigation and browser-history behaviour.
 
 ---
 
