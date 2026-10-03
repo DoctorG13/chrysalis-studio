@@ -754,7 +754,6 @@ export default function BizzibuddiAccountPage() {
             </div>
           </div>
         </nav>
-        </nav>
 
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
         {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} />}
