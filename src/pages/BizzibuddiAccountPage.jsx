@@ -90,7 +90,10 @@ export default function BizzibuddiAccountPage() {
       if (cancelled) return;
       const element = document.getElementById(workspaceScrollTarget);
       if (element) {
-        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
+        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
         setWorkspaceScrollTarget("");
         return;
       }
@@ -810,7 +813,7 @@ export default function BizzibuddiAccountPage() {
             </div>
           ) : (
             <>
-              <div style={workspaceStickyNav}>
+              <div className="bizzibuddi-workspace-sticky-nav" style={workspaceStickyNav}>
                 <div
                   className="bizzibuddi-workspace-main-nav"
                   role="tablist"
@@ -8776,7 +8779,7 @@ const workspaceMainTab = (active) => ({
   lineHeight: 1.15,
   cursor: "pointer",
   whiteSpace: "normal",
-};
+});
 const workspaceSubnavTray = {
   display: "grid",
   gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
@@ -8794,7 +8797,7 @@ const workspaceSubnavItems = (section) => {
   const layout = {
     today: { gridColumn: "1 / span 2" },
     work: { gridColumn: "2 / span 2" },
-    finance: { gridColumn: "3 / span 2" },
+    finance: { gridColumn: "3 / span 3" },
     insights: { gridColumn: "4 / span 2" },
     assist: { gridColumn: "5 / span 2" },
     account: { gridColumn: "5 / span 2" },
