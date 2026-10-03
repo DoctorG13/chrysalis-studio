@@ -8718,7 +8718,7 @@ function Field({ name, label, type, placeholder, defaultValue }) {
   return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
 }
 
-const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "hidden", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
 const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" };
 const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
@@ -8746,9 +8746,8 @@ const workspaceNavShell = {
   WebkitBackdropFilter: "blur(14px)",
 }; 
 const workspaceStickyNav = {
-  position: "sticky",
-  top: 0,
-  zIndex: 40,
+  position: "relative",
+  zIndex: 1,
   margin: "0 -1px",
   padding: "8px 0 7px",
   background: "rgba(6,28,47,.97)",
