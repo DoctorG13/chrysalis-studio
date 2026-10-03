@@ -1,3 +1,10 @@
+## BizziBuddi Workspace Navigation — Sticky Fix
+
+- [x] Fix sticky navigation being prevented by page-level horizontal overflow handling
+- [x] Keep the main menu and contextual submenu together in one sticky container
+- [x] Preserve the no-horizontal-scroll menu layout
+- [x] Keep contextual submenu alignment beneath the selected main section
+
 ## BizziBuddi Workspace Navigation — Sticky, No-Scroll Polish
 
 - [x] Keep the primary workspace menu sticky while scrolling
