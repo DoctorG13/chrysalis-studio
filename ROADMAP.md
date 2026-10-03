@@ -33,6 +33,8 @@
 - [x] Allow Finance report content to be customised before CSV export
 - [x] Add printable Finance reports with browser PDF output using the selected period and report contents
 - [x] Add horizontal workspace section submenus across BizziBuddi navigation
+- [x] Make BizziBuddi primary workspace sections navigate directly to their contextual destination
+- [x] Align contextual submenus visually beneath their parent workspace sections
 
 
 
