@@ -3057,13 +3057,26 @@ function DashboardPanel({
           </div>
         </div>
         <div style={{ ...todayViewGrid, marginTop: 16 }}>
-          {healthMetrics.map((metric) => (
-            <article key={metric.label} style={todayViewCard}>
-              <small style={smallText}>{metric.label.toUpperCase()}</small>
-              <strong style={{ ...todayViewMetric, color: metric.tone === "watch" ? "#f6c453" : metric.tone === "good" ? "#58e0b1" : TEXT }}>{metric.value}</strong>
-              <span style={todayViewLabel}>{metric.detail}</span>
-            </article>
-          ))}
+          {healthMetrics.map((metric) => {
+            const stateLabel = metric.tone === "good" ? "GOOD" : metric.tone === "watch" ? "WATCH" : "NEUTRAL";
+            const stateStyle =
+              metric.tone === "good"
+                ? { color: "#58e0b1", background: "rgba(88,224,177,.10)", borderColor: "rgba(88,224,177,.25)" }
+                : metric.tone === "watch"
+                  ? { color: "#f6c453", background: "rgba(246,196,83,.10)", borderColor: "rgba(246,196,83,.25)" }
+                  : { color: MUTED, background: "rgba(255,255,255,.05)", borderColor: "rgba(255,255,255,.10)" };
+
+            return (
+              <article key={metric.label} style={{ ...todayViewCard, position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <small style={smallText}>{metric.label.toUpperCase()}</small>
+                  <span style={{ color: stateStyle.color, background: stateStyle.background, border: "1px solid " + stateStyle.borderColor, borderRadius: 999, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: ".08em" }}>{stateLabel}</span>
+                </div>
+                <strong style={{ ...todayViewMetric, color: metric.tone === "watch" ? "#f6c453" : metric.tone === "good" ? "#58e0b1" : TEXT }}>{metric.value}</strong>
+                <span style={todayViewLabel}>{metric.detail}</span>
+              </article>
+            );
+          })}
         </div>
         <p style={{ ...smallText, margin: "14px 0 0" }}>These indicators are descriptive snapshots, not financial or business advice.</p>
       </div>
