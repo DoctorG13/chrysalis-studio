@@ -40,7 +40,9 @@ export default function BizzibuddiAccountPage() {
   const [productionTimeEntries, setProductionTimeEntries] = useState([]);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
   const initialWorkspaceNavSection =
-    requestedView === "people" || requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
+    requestedView === "dashboard" || !requestedView
+      ? "today"
+      : requestedView === "people" || requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
       ? "work"
       : requestedView === "finance"
         ? "money"
@@ -49,7 +51,30 @@ export default function BizzibuddiAccountPage() {
           : requestedView === "buddi" || requestedView === "automation"
             ? "assist"
             : "account";
+  const initialWorkspaceNavItem =
+    requestedView === "dashboard" || !requestedView
+      ? "overview"
+      : requestedView === "people"
+        ? "people"
+        : requestedView === "jobs"
+          ? "jobs"
+          : requestedView === "calendar"
+            ? "calendar"
+            : requestedView === "production"
+              ? "production"
+              : requestedView === "finance"
+                ? "finance-overview"
+                : requestedView === "reports"
+                  ? "reports"
+                  : requestedView === "buddi"
+                    ? "buddi"
+                    : requestedView === "automation"
+                      ? "automation"
+                      : requestedView === "plans"
+                        ? "plans"
+                        : "overview";
   const [workspaceNavSection, setWorkspaceNavSection] = useState(initialWorkspaceNavSection);
+  const [workspaceNavItem, setWorkspaceNavItem] = useState(initialWorkspaceNavItem);
 
   useEffect(() => {
     function handleKeyboardShortcuts(event) {
@@ -243,14 +268,26 @@ export default function BizzibuddiAccountPage() {
   }
 
   function navigateWorkspaceSection(section) {
-    const firstItem = workspaceSubnav[section]?.[0]?.[0];
+    const firstItem = workspaceSubnav[section]?.[0];
     setWorkspaceNavSection(section);
+    setWorkspaceNavItem(firstItem?.[0] || "overview");
     if (!firstItem) return;
-    if (firstItem === "buddi") {
+    if (firstItem[2] === "buddi") {
       openBuddi();
       return;
     }
-    selectView(firstItem);
+    selectView(firstItem[2] || "dashboard");
+  }
+
+  function navigateWorkspaceSubitem(section, item) {
+    const [key, , targetView] = item;
+    setWorkspaceNavSection(section);
+    setWorkspaceNavItem(key);
+    if (targetView === "buddi") {
+      openBuddi();
+      return;
+    }
+    selectView(targetView || "dashboard");
   }
 
   function selectView(nextView, target = {}) {
@@ -283,7 +320,32 @@ export default function BizzibuddiAccountPage() {
     writeWorkspaceRoute(nextView, nextDeepLink);
     setDeepLink(nextDeepLink);
     setView(nextView);
-    if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+    setWorkspaceNavItem(
+      nextView === "dashboard"
+        ? "overview"
+        : nextView === "people"
+          ? "people"
+          : nextView === "jobs"
+            ? "jobs"
+            : nextView === "calendar"
+              ? "calendar"
+              : nextView === "production"
+                ? "production"
+                : nextView === "finance"
+                  ? "finance-overview"
+                  : nextView === "reports"
+                    ? "reports"
+                    : nextView === "buddi"
+                      ? "buddi"
+                      : nextView === "automation"
+                        ? "automation"
+                        : nextView === "plans"
+                          ? "plans"
+                          : "overview"
+    );
+    if (nextView === "dashboard") {
+      setWorkspaceNavSection("today");
+    } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
       setWorkspaceNavSection("work");
     } else if (nextView === "finance") {
       setWorkspaceNavSection("money");
@@ -325,7 +387,32 @@ export default function BizzibuddiAccountPage() {
       });
       if (account) {
         setView(nextView);
-        if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+        setWorkspaceNavItem(
+          nextView === "dashboard"
+            ? "overview"
+            : nextView === "people"
+              ? "people"
+              : nextView === "jobs"
+                ? "jobs"
+                : nextView === "calendar"
+                  ? "calendar"
+                  : nextView === "production"
+                    ? "production"
+                    : nextView === "finance"
+                      ? "finance-overview"
+                      : nextView === "reports"
+                        ? "reports"
+                        : nextView === "buddi"
+                          ? "buddi"
+                          : nextView === "automation"
+                            ? "automation"
+                            : nextView === "plans"
+                              ? "plans"
+                              : "overview"
+        );
+        if (nextView === "dashboard") {
+          setWorkspaceNavSection("today");
+        } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
           setWorkspaceNavSection("work");
         } else if (nextView === "finance") {
           setWorkspaceNavSection("money");
@@ -693,9 +780,9 @@ export default function BizzibuddiAccountPage() {
               >
                 <button
                   type="button"
-                  onClick={() => selectView("dashboard")}
-                  style={workspaceMainTab(view === "dashboard")}
-                  aria-selected={view === "dashboard"}
+                  onClick={() => navigateWorkspaceSection("today")}
+                  style={workspaceMainTab(workspaceNavSection === "today")}
+                  aria-selected={workspaceNavSection === "today"}
                 >
                   <span aria-hidden="true">⌂</span> Today
                 </button>
@@ -721,33 +808,18 @@ export default function BizzibuddiAccountPage() {
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
-                style={workspaceSubnavGrid}
+                style={workspaceSubnavTray}
               >
-                <div
-                  style={{
-                    gridColumn: workspaceSubnavPlacement[workspaceNavSection] || "2",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "flex-start",
-                    gap: 8,
-                    flexWrap: "wrap",
-                    minWidth: 0,
-                  }}
-                >
-                  {(workspaceSubnav[workspaceNavSection] || []).map(([key, label]) => (
+                {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
                   <button
-                    key={key}
+                    key={item[0]}
                     type="button"
-                    onClick={() => key === "buddi" ? openBuddi() : selectView(key)}
-                    style={workspaceSubnavTab(
-                      key === view ||
-                      (workspaceNavSection === "assist" && key === "buddi" && view === "buddi")
-                    )}
+                    onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
+                    style={workspaceSubnavTab(workspaceNavItem === item[0])}
                   >
-                    {label}
+                    {item[1]}
                   </button>
                 ))}
-                </div>
               </div>
             </>
           )}
@@ -8573,20 +8645,19 @@ const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexW
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
 const workspaceMainNav = {
   display: "grid",
-  gridTemplateColumns: "repeat(6, minmax(96px, 1fr))",
+  gridTemplateColumns: "repeat(6, minmax(112px, 1fr))",
   gap: 8,
-  width: "min(100%, 980px)",
-  margin: "0 auto",
+  width: "100%",
   overflowX: "auto",
   paddingBottom: 2,
 };
 const workspaceMainTab = (active) => ({
   width: "100%",
-  minHeight: 42,
+  minHeight: 48,
   border: "1px solid " + (active ? RED : BORDER),
-  borderRadius: 10,
-  padding: "10px 12px",
-  background: active ? "rgba(37,99,235,.16)" : "rgba(255,255,255,.035)",
+  borderRadius: 11,
+  padding: "10px 14px",
+  background: active ? "rgba(37,99,235,.18)" : "rgba(255,255,255,.035)",
   color: TEXT,
   fontSize: 12,
   fontWeight: 800,
@@ -8594,40 +8665,67 @@ const workspaceMainTab = (active) => ({
   cursor: "pointer",
   whiteSpace: "nowrap",
 });
-const workspaceSubnavGrid = {
-  display: "grid",
-  gridTemplateColumns: "repeat(6, minmax(96px, 1fr))",
-  gap: 8,
-  width: "min(100%, 980px)",
+const workspaceSubnavTray = {
+  width: "min(100%, 920px)",
+  minHeight: 54,
   margin: "8px auto 0",
-  overflowX: "auto",
-  paddingBottom: 2,
+  padding: "7px 12px",
+  boxSizing: "border-box",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: 7,
+  flexWrap: "wrap",
+  border: "1px solid rgba(0,180,219,.16)",
+  borderRadius: 13,
+  background: "rgba(0,180,219,.045)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,.025)",
 };
-const workspaceSubnavPlacement = {
-  work: "2 / span 2",
-  money: "3",
-  insights: "4",
-  assist: "5",
-  account: "6",
-};
-
 const workspaceSubnavTab = (active) => ({
   border: "1px solid " + (active ? CYAN : "rgba(255,255,255,.10)"),
   borderRadius: 999,
-  padding: "8px 15px",
-  background: active ? "rgba(0,180,219,.12)" : "rgba(255,255,255,.025)",
+  padding: "7px 13px",
+  background: active ? "rgba(0,180,219,.13)" : "rgba(255,255,255,.025)",
   color: active ? TEXT : MUTED,
-  fontSize: 12,
+  fontSize: 11,
   fontWeight: 700,
   cursor: "pointer",
   whiteSpace: "nowrap",
 });
 const workspaceSubnav = {
-  work: [["people", "People"], ["jobs", "Jobs"], ["calendar", "Calendar"], ["production", "Production"]],
-  money: [["finance", "Finance"]],
-  insights: [["reports", "Reports"]],
-  assist: [["buddi", "Buddi"], ["automation", "Automation"]],
-  account: [["plans", "Plans"]],
+  today: [
+    ["overview", "Overview", "dashboard"],
+    ["priorities", "Priorities", "dashboard"],
+    ["upcoming", "Upcoming", "dashboard"],
+    ["attention", "Attention", "dashboard"],
+  ],
+  work: [
+    ["people", "People", "people"],
+    ["jobs", "Jobs", "jobs"],
+    ["calendar", "Calendar", "calendar"],
+    ["production", "Production", "production"],
+  ],
+  money: [
+    ["finance-overview", "Overview", "finance"],
+    ["invoices", "Invoices", "finance"],
+    ["payments", "Payments", "finance"],
+    ["expenses", "Expenses", "finance"],
+    ["cashflow", "Cashflow", "finance"],
+  ],
+  insights: [
+    ["reports", "Reports", "reports"],
+    ["performance", "Performance", "reports"],
+    ["trends", "Trends", "reports"],
+  ],
+  assist: [
+    ["buddi", "Buddi", "buddi"],
+    ["automation", "Automation", "automation"],
+  ],
+  account: [
+    ["plans", "Plans", "plans"],
+    ["account", "Account", "plans"],
+    ["membership", "Membership", "plans"],
+  ],
 };
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
 const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
