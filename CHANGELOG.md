@@ -1,3 +1,16 @@
+## Finance Financial Year & Custom Reports
+
+### Added
+
+- Added Australian financial-year reporting using the 1 July to 30 June financial year.
+- Added selection of the current and previous financial years.
+- Added custom start and end dates for flexible reporting periods.
+- Added report-content controls for Summary, Transactions and Expenses by category.
+- Updated Finance CSV export to use the selected reporting period and selected report contents.
+- Kept the on-screen transaction view aligned with the selected reporting period.
+
+---
+
 ## Finance Monthly Reporting & CSV Export
 
 ### Added
