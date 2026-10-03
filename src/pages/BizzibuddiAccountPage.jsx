@@ -801,7 +801,7 @@ export default function BizzibuddiAccountPage() {
           <div style={previewBadge}>Secure account and login · People, Jobs, Calendar and Finance are account-backed · No live billing</div>
         </section>
 
-        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={navStyle}>
+        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={workspaceNavShell}>
           {!account ? (
             <div className="bizzibuddi-account-nav-main">
               {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
@@ -8726,6 +8726,20 @@ const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15
 const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "34px 0 28px" };
 const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
+const workspaceNavShell = {
+  position: "sticky",
+  top: 10,
+  zIndex: 100,
+  width: "100%",
+  boxSizing: "border-box",
+  padding: 10,
+  border: "1px solid rgba(255,255,255,.10)",
+  borderRadius: 16,
+  background: "rgba(6,28,47,.92)",
+  boxShadow: "0 12px 30px rgba(0,0,0,.22)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+}; 
 const workspaceMainNav = {
   display: "grid",
   gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
@@ -8761,6 +8775,7 @@ const workspaceSubnavTray = {
   boxSizing: "border-box",
   borderTop: "1px solid rgba(0,180,219,.12)",
   background: "linear-gradient(180deg, rgba(0,180,219,.035), rgba(0,180,219,0))",
+  overflow: "hidden",
 };
 const workspaceSubnavItems = (section) => {
   const layout = {
@@ -8779,6 +8794,7 @@ const workspaceSubnavItems = (section) => {
     justifyContent: "center",
     gap: 6,
     flexWrap: "wrap",
+    overflow: "hidden",
   };
 };
 const workspaceSubnavTab = (active) => ({
@@ -8824,7 +8840,7 @@ const workspaceSubnav = {
   ],
   account: [
     ["plans", "Plans", "plans", "plans-membership"],
-    ["membership", "Membership", "plans", "plans-membership"],
+    ["membership", "Membership", "account", "account-membership"],
     ["account", "Account", "account", "account-details"],
   ],
 };
