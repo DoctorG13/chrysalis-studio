@@ -1,3 +1,9 @@
+## BizziBuddi Workspace Navigation — Utility Rail Outside Sticky Nav
+
+- [x] Keep Ask Buddi / Help outside the sticky navigation container
+- [x] Prevent sticky navigation effects from trapping the utility rail
+- [x] Keep the utility rail fixed above workspace content
+
 ## BizziBuddi Workspace Navigation — Sticky Utility Rail Fix
 
 - [x] Move Ask Buddi / Help outside the sticky navigation container
