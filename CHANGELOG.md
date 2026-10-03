@@ -1,3 +1,11 @@
+## BizziBuddi Today Recent Activity Categories
+
+### Changed
+
+- Added clear category badges to Recent Activity for Finance, Jobs, Calendar, Production and Automation.
+- Matched each activity category with a distinct visual treatment for faster scanning.
+- Preserved existing activity ordering, timestamps and navigation actions.
+
 ## BizziBuddi Today Workflow Status Polish
 
 ### Changed
