@@ -4013,18 +4013,57 @@ function exportBizziBuddiReportCsv(reportData) {
   URL.revokeObjectURL(url);
 }
 
-function exportFinanceMonthlyCsv({ monthKey, monthLabel, payments, expenses, received, spent, net }) {
+function exportFinanceReportCsv({
+  reportLabel,
+  startDate,
+  endDate,
+  payments,
+  expenses,
+  received,
+  spent,
+  net,
+  includeSummary,
+  includeTransactions,
+  includeCategories,
+}) {
   const rows = [
     ["BizziBuddi Finance Report", ""],
-    ["Period", monthLabel],
-    ["Month", monthKey],
-    ["" , ""],
-    ["Summary", "Received", received],
-    ["Summary", "Expenses", spent],
-    ["Summary", "Net cashflow", net],
-    ["" , ""],
-    ["Transactions", "Date", "Type", "Amount", "Category", "Method", "Description", "Invoice", "Client"],
-    ...[
+    ["Period", reportLabel],
+    ["Start date", startDate],
+    ["End date", endDate],
+  ];
+
+  if (includeSummary) {
+    rows.push(
+      ["" , ""],
+      ["Summary", "Received", received],
+      ["Summary", "Expenses", spent],
+      ["Summary", "Net cashflow", net]
+    );
+  }
+
+  if (includeCategories) {
+    const categories = Object.entries(
+      expenses.reduce((totals, expense) => {
+        const category = expense.category || "Other";
+        totals[category] = (totals[category] || 0) + (Number(expense.amount) || 0);
+        return totals;
+      }, {})
+    ).sort((left, right) => right[1] - left[1]);
+
+    rows.push(["" , ""], ["Expenses by category", "Category", "Amount"]);
+    categories.forEach(([category, amount]) => {
+      rows.push(["Expenses by category", category, amount]);
+    });
+  }
+
+  if (includeTransactions) {
+    rows.push(
+      ["" , ""],
+      ["Transactions", "Date", "Type", "Amount", "Category", "Method", "Description", "Invoice", "Client"]
+    );
+
+    [
       ...payments.map((payment) => ({
         date: payment.date || "",
         type: "Payment",
@@ -4047,18 +4086,20 @@ function exportFinanceMonthlyCsv({ monthKey, monthLabel, payments, expenses, rec
       })),
     ]
       .sort((left, right) => String(right.date).localeCompare(String(left.date)))
-      .map((item) => [
-        "Transactions",
-        item.date,
-        item.type,
-        item.amount,
-        item.category,
-        item.method,
-        item.description,
-        item.invoice,
-        item.client,
-      ]),
-  ];
+      .forEach((item) => {
+        rows.push([
+          "Transactions",
+          item.date,
+          item.type,
+          item.amount,
+          item.category,
+          item.method,
+          item.description,
+          item.invoice,
+          item.client,
+        ]);
+      });
+  }
 
   const csv = rows
     .map((row) =>
@@ -4071,16 +4112,30 @@ function exportFinanceMonthlyCsv({ monthKey, monthLabel, payments, expenses, rec
     )
     .join("\n");
 
-  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
+  const fileStart = String(startDate || "").replaceAll("-", "");
+  const fileEnd = String(endDate || "").replaceAll("-", "");
   link.href = url;
-  link.download = "bizzibuddi-finance-" + monthKey + ".csv";
+  link.download = "bizzibuddi-finance-" + fileStart + "-to-" + fileEnd + ".csv";
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
 }
+
+function getFinancialYearStartKey(dateValue = new Date()) {
+  const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+  const year = date.getFullYear();
+  const startYear = date.getMonth() >= 6 ? year : year - 1;
+  return startYear + "-07-01";
+}
+
+function getFinancialYearLabel(startYear) {
+  return "FY " + startYear + "-" + String(startYear + 1).slice(-2);
+}
+
 
 function ReportsPanel({ account, onPlans, onBack }) {
   const [reportData, setReportData] = useState(null);
@@ -4558,9 +4613,22 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     method: "Other",
     description: "",
   });
+  const [financeReportMode, setFinanceReportMode] = useState("month");
   const [financeReportMonth, setFinanceReportMonth] = useState(
     getAccountLocalDateKey().slice(0, 7)
   );
+  const [financeReportFinancialYear, setFinanceReportFinancialYear] = useState(
+    getFinancialYearStartKey()
+  );
+  const [financeReportStartDate, setFinanceReportStartDate] = useState(
+    getFinancialYearStartKey()
+  );
+  const [financeReportEndDate, setFinanceReportEndDate] = useState(
+    getAccountLocalDateKey()
+  );
+  const [financeReportIncludeSummary, setFinanceReportIncludeSummary] = useState(true);
+  const [financeReportIncludeTransactions, setFinanceReportIncludeTransactions] = useState(true);
+  const [financeReportIncludeCategories, setFinanceReportIncludeCategories] = useState(true);
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
   useEffect(() => {
@@ -5105,16 +5173,63 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const outstandingCoverage = outstanding > 0
     ? Math.min(100, (upcomingAmount / outstanding) * 100)
     : 0;
+  const financialYearOptions = Array.from({ length: 5 }, (_, index) => {
+    const currentStartYear = Number(getFinancialYearStartKey(todayDateValue).slice(0, 4));
+    const startYear = currentStartYear - index;
+    return {
+      key: startYear + "-07-01",
+      label: getFinancialYearLabel(startYear),
+    };
+  });
+
   const selectedFinanceReport = monthlyCashflow.find(
     (month) => month.key === financeReportMonth
   ) || monthlyCashflow[monthlyCashflow.length - 1];
+
   const selectedFinanceReportMonth = selectedFinanceReport?.key || currentMonthKey;
-  const selectedFinanceReportPayments = financePayments.filter(
-    (payment) => String(payment.date || "").slice(0, 7) === selectedFinanceReportMonth
+  const monthStartDate = selectedFinanceReportMonth + "-01";
+  const monthEndDate = new Date(
+    Number(selectedFinanceReportMonth.slice(0, 4)),
+    Number(selectedFinanceReportMonth.slice(5, 7)),
+    0
   );
-  const selectedFinanceReportExpenses = expenses.filter(
-    (expense) => String(expense.date || "").slice(0, 7) === selectedFinanceReportMonth
-  );
+  const monthEndDateKey =
+    monthEndDate.getFullYear() +
+    "-" +
+    String(monthEndDate.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(monthEndDate.getDate()).padStart(2, "0");
+
+  const financialYearStartYear = Number(financeReportFinancialYear.slice(0, 4));
+  const financialYearEndDate = new Date(financialYearStartYear + 1, 6, 0);
+  const financialYearEndDateKey =
+    financialYearEndDate.getFullYear() +
+    "-" +
+    String(financialYearEndDate.getMonth() + 1).padStart(2, "0") +
+    "-" +
+    String(financialYearEndDate.getDate()).padStart(2, "0");
+
+  const selectedFinanceReportStartDate =
+    financeReportMode === "month"
+      ? monthStartDate
+      : financeReportMode === "financial-year"
+        ? financeReportFinancialYear
+        : financeReportStartDate;
+  const selectedFinanceReportEndDate =
+    financeReportMode === "month"
+      ? monthEndDateKey
+      : financeReportMode === "financial-year"
+        ? financialYearEndDateKey
+        : financeReportEndDate;
+
+  const selectedFinanceReportPayments = financePayments.filter((payment) => {
+    const date = String(payment.date || "");
+    return date >= selectedFinanceReportStartDate && date <= selectedFinanceReportEndDate;
+  });
+  const selectedFinanceReportExpenses = expenses.filter((expense) => {
+    const date = String(expense.date || "");
+    return date >= selectedFinanceReportStartDate && date <= selectedFinanceReportEndDate;
+  });
   const selectedFinanceReportReceived = selectedFinanceReportPayments.reduce(
     (sum, payment) => sum + (Number(payment.amount) || 0),
     0
@@ -5125,6 +5240,17 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   );
   const selectedFinanceReportNet =
     selectedFinanceReportReceived - selectedFinanceReportSpent;
+
+  const selectedFinanceReportLabel =
+    financeReportMode === "month"
+      ? new Date(selectedFinanceReportStartDate + "T00:00:00").toLocaleDateString("en-AU", {
+          month: "long",
+          year: "numeric",
+        })
+      : financeReportMode === "financial-year"
+        ? financialYearOptions.find((option) => option.key === financeReportFinancialYear)?.label ||
+          getFinancialYearLabel(financialYearStartYear)
+        : "Custom report · " + formatInvoiceDate(selectedFinanceReportStartDate) + " to " + formatInvoiceDate(selectedFinanceReportEndDate);
 
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -5675,46 +5801,150 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
         <div>
           <small style={smallText}>FINANCE REPORTING</small>
-          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Monthly financial report.</h3>
+          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Build your financial report.</h3>
           <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 11 }}>
-            Review recorded payments and expenses for a selected month, then export the report for your records.
+            Choose a month, Australian financial year or your own date range, then customise what goes into the export.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() =>
+            exportFinanceReportCsv({
+              reportLabel: selectedFinanceReportLabel,
+              startDate: selectedFinanceReportStartDate,
+              endDate: selectedFinanceReportEndDate,
+              payments: selectedFinanceReportPayments,
+              expenses: selectedFinanceReportExpenses,
+              received: selectedFinanceReportReceived,
+              spent: selectedFinanceReportSpent,
+              net: selectedFinanceReportNet,
+              includeSummary: financeReportIncludeSummary,
+              includeTransactions: financeReportIncludeTransactions,
+              includeCategories: financeReportIncludeCategories,
+            })
+          }
+          style={smallActionButton}
+        >
+          ↓ Export CSV
+        </button>
+      </div>
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: 10,
+          marginTop: 16,
+        }}
+      >
+        <label style={fieldStyle}>
+          Report period
           <select
-            value={selectedFinanceReportMonth}
-            onChange={(event) => setFinanceReportMonth(event.target.value)}
-            style={{ ...inputStyle, width: "auto", minWidth: 150, minHeight: 38 }}
+            value={financeReportMode}
+            onChange={(event) => setFinanceReportMode(event.target.value)}
+            style={inputStyle}
           >
-            {monthlyCashflow.slice().reverse().map((month) => {
-              const monthDate = new Date(month.key + "-01T00:00:00");
-              return (
-                <option key={month.key} value={month.key}>
-                  {monthDate.toLocaleDateString("en-AU", { month: "long", year: "numeric" })}
-                </option>
-              );
-            })}
+            <option value="month">Month</option>
+            <option value="financial-year">Financial year</option>
+            <option value="custom">Custom range</option>
           </select>
-          <button
-            type="button"
-            onClick={() =>
-              exportFinanceMonthlyCsv({
-                monthKey: selectedFinanceReportMonth,
-                monthLabel: new Date(selectedFinanceReportMonth + "-01T00:00:00").toLocaleDateString("en-AU", {
-                  month: "long",
-                  year: "numeric",
-                }),
-                payments: selectedFinanceReportPayments,
-                expenses: selectedFinanceReportExpenses,
-                received: selectedFinanceReportReceived,
-                spent: selectedFinanceReportSpent,
-                net: selectedFinanceReportNet,
-              })
-            }
-            style={smallActionButton}
-          >
-            ↓ Export CSV
-          </button>
+        </label>
+
+        {financeReportMode === "month" && (
+          <label style={fieldStyle}>
+            Month
+            <select
+              value={selectedFinanceReportMonth}
+              onChange={(event) => setFinanceReportMonth(event.target.value)}
+              style={inputStyle}
+            >
+              {monthlyCashflow.slice().reverse().map((month) => {
+                const monthDate = new Date(month.key + "-01T00:00:00");
+                return (
+                  <option key={month.key} value={month.key}>
+                    {monthDate.toLocaleDateString("en-AU", { month: "long", year: "numeric" })}
+                  </option>
+                );
+              })}
+            </select>
+          </label>
+        )}
+
+        {financeReportMode === "financial-year" && (
+          <label style={fieldStyle}>
+            Financial year
+            <select
+              value={financeReportFinancialYear}
+              onChange={(event) => setFinanceReportFinancialYear(event.target.value)}
+              style={inputStyle}
+            >
+              {financialYearOptions.map((option) => (
+                <option key={option.key} value={option.key}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {financeReportMode === "custom" && (
+          <>
+            <label style={fieldStyle}>
+              Start date
+              <input
+                type="date"
+                value={financeReportStartDate}
+                onChange={(event) => setFinanceReportStartDate(event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+            <label style={fieldStyle}>
+              End date
+              <input
+                type="date"
+                value={financeReportEndDate}
+                min={financeReportStartDate}
+                onChange={(event) => setFinanceReportEndDate(event.target.value)}
+                style={inputStyle}
+              />
+            </label>
+          </>
+        )}
+      </div>
+
+      <div
+        style={{
+          marginTop: 10,
+          padding: "12px 14px",
+          borderRadius: 10,
+          border: "1px solid rgba(255,255,255,.10)",
+          background: "rgba(0,180,219,.035)",
+        }}
+      >
+        <small style={smallText}>REPORT CONTENT</small>
+        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", marginTop: 8 }}>
+          {[
+            ["Summary", financeReportIncludeSummary, setFinanceReportIncludeSummary],
+            ["Transactions", financeReportIncludeTransactions, setFinanceReportIncludeTransactions],
+            ["Expenses by category", financeReportIncludeCategories, setFinanceReportIncludeCategories],
+          ].map(([label, checked, setChecked]) => (
+            <label
+              key={label}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 7,
+                color: TEXT,
+                fontSize: 12,
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={(event) => setChecked(event.target.checked)}
+              />
+              {label}
+            </label>
+          ))}
         </div>
       </div>
 
@@ -5806,9 +6036,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   <strong style={{ fontSize: 12, color: item.type === "Expense" ? "#ffb0b0" : TEXT }}>
                     {item.type}
                   </strong>
-                  <strong style={{ fontSize: 13 }}>
-                    {formatCurrency(item.amount)}
-                  </strong>
+                  <strong style={{ fontSize: 13 }}>{formatCurrency(item.amount)}</strong>
                   <span style={{ ...smallText, minWidth: 0 }}>
                     {item.category}
                     {item.method ? " · " + item.method : ""}
@@ -5822,13 +6050,13 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           </div>
         ) : (
           <p style={{ ...copyStyle, margin: 0, fontSize: 11 }}>
-            No payments or expenses were recorded for this month.
+            No payments or expenses were recorded for this period.
           </p>
         )}
       </div>
 
       <p style={{ ...copyStyle, margin: "13px 0 0", fontSize: 11 }}>
-        This report uses recorded customer payments and recorded expenses. It is a transaction report, not a bank statement or tax return.
+        Periods use Australian financial years (1 July to 30 June). This report uses recorded customer payments and expenses. It is a transaction report, not a bank statement or tax return.
       </p>
     </section>
 
