@@ -272,6 +272,17 @@ export default function BizzibuddiAccountPage() {
     writeWorkspaceRoute(nextView, nextDeepLink);
     setDeepLink(nextDeepLink);
     setView(nextView);
+    if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+      setWorkspaceNavSection("work");
+    } else if (nextView === "finance") {
+      setWorkspaceNavSection("money");
+    } else if (nextView === "reports") {
+      setWorkspaceNavSection("insights");
+    } else if (["buddi", "automation"].includes(nextView)) {
+      setWorkspaceNavSection("assist");
+    } else if (nextView === "plans") {
+      setWorkspaceNavSection("account");
+    }
     setMessage("");
     if (nextView !== "buddi") setBuddiPrompt("");
   }
@@ -286,6 +297,7 @@ export default function BizzibuddiAccountPage() {
     writeWorkspaceRoute("buddi");
     setDeepLink({});
     setBuddiPrompt(String(prompt || "").trim());
+    setWorkspaceNavSection("assist");
     setView("buddi");
     setMessage("");
   }
@@ -300,7 +312,20 @@ export default function BizzibuddiAccountPage() {
         appointmentId: params.get("appointment") || "",
         invoiceId: params.get("invoice") || "",
       });
-      if (account) setView(nextView);
+      if (account) {
+        setView(nextView);
+        if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+          setWorkspaceNavSection("work");
+        } else if (nextView === "finance") {
+          setWorkspaceNavSection("money");
+        } else if (nextView === "reports") {
+          setWorkspaceNavSection("insights");
+        } else if (["buddi", "automation"].includes(nextView)) {
+          setWorkspaceNavSection("assist");
+        } else if (nextView === "plans") {
+          setWorkspaceNavSection("account");
+        }
+      }
     }
 
     window.addEventListener("popstate", handleWorkspaceHistory);
