@@ -242,6 +242,17 @@ export default function BizzibuddiAccountPage() {
     window.history.pushState({}, "", nextUrl);
   }
 
+  function navigateWorkspaceSection(section) {
+    const firstItem = workspaceSubnav[section]?.[0]?.[0];
+    setWorkspaceNavSection(section);
+    if (!firstItem) return;
+    if (firstItem === "buddi") {
+      openBuddi();
+      return;
+    }
+    selectView(firstItem);
+  }
+
   function selectView(nextView, target = {}) {
     const protectedViews = new Set([
       "onboarding",
@@ -678,6 +689,7 @@ export default function BizzibuddiAccountPage() {
                 className="bizzibuddi-workspace-main-nav"
                 role="tablist"
                 aria-label="BizziBuddi workspace sections"
+                style={workspaceMainNav}
               >
                 <button
                   type="button"
@@ -697,7 +709,7 @@ export default function BizzibuddiAccountPage() {
                   <button
                     key={key}
                     type="button"
-                    onClick={() => setWorkspaceNavSection(key)}
+                    onClick={() => navigateWorkspaceSection(key)}
                     style={workspaceMainTab(workspaceNavSection === key)}
                     aria-selected={workspaceNavSection === key}
                   >
@@ -709,8 +721,20 @@ export default function BizzibuddiAccountPage() {
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
+                style={workspaceSubnavGrid}
               >
-                {(workspaceSubnav[workspaceNavSection] || []).map(([key, label]) => (
+                <div
+                  style={{
+                    gridColumn: workspaceSubnavPlacement[workspaceNavSection] || "2",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-start",
+                    gap: 8,
+                    flexWrap: "wrap",
+                    minWidth: 0,
+                  }}
+                >
+                  {(workspaceSubnav[workspaceNavSection] || []).map(([key, label]) => (
                   <button
                     key={key}
                     type="button"
@@ -8546,10 +8570,21 @@ const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15
 const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "34px 0 28px" };
 const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
+const workspaceMainNav = {
+  display: "grid",
+  gridTemplateColumns: "repeat(6, minmax(96px, 1fr))",
+  gap: 8,
+  width: "min(100%, 980px)",
+  margin: "0 auto",
+  overflowX: "auto",
+  paddingBottom: 2,
+};
 const workspaceMainTab = (active) => ({
+  width: "100%",
+  minHeight: 42,
   border: "1px solid " + (active ? RED : BORDER),
   borderRadius: 10,
-  padding: "10px 18px",
+  padding: "10px 12px",
   background: active ? "rgba(37,99,235,.16)" : "rgba(255,255,255,.035)",
   color: TEXT,
   fontSize: 12,
@@ -8558,6 +8593,23 @@ const workspaceMainTab = (active) => ({
   cursor: "pointer",
   whiteSpace: "nowrap",
 });
+const workspaceSubnavGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(6, minmax(96px, 1fr))",
+  gap: 8,
+  width: "min(100%, 980px)",
+  margin: "8px auto 0",
+  overflowX: "auto",
+  paddingBottom: 2,
+};
+const workspaceSubnavPlacement = {
+  work: "2 / span 2",
+  money: "3",
+  insights: "4",
+  assist: "5",
+  account: "6",
+};
+
 const workspaceSubnavTab = (active) => ({
   border: "1px solid " + (active ? CYAN : "rgba(255,255,255,.10)"),
   borderRadius: 999,
