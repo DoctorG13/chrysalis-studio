@@ -35,6 +35,8 @@
 - [x] Add horizontal workspace section submenus across BizziBuddi navigation
 - [x] Make BizziBuddi primary workspace sections navigate directly to their contextual destination
 - [x] Align contextual submenus visually beneath their parent workspace sections
+- [x] Add contextual submenu items to every primary BizziBuddi workspace section
+- [x] Redesign the workspace submenu tray for cleaner responsive presentation
 
 
 
