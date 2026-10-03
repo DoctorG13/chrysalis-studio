@@ -1,3 +1,12 @@
+## BizziBuddi Workspace Navigation — Sticky Navigation
+
+- [x] Keep the workspace navigation visible while scrolling
+- [x] Keep contextual submenu items aligned beneath the selected primary section
+- [x] Prevent horizontal submenu scrolling by wrapping items within the available section width
+- [x] Connect Account Membership to the dedicated membership area
+
+---
+
 ## BizziBuddi Workspace Navigation — No-Scroll Layout
 
 - [x] Remove horizontal scrollbars from the primary workspace navigation
