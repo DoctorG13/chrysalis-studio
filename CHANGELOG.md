@@ -1,3 +1,11 @@
+## BizziBuddi Insights Submenu Polish
+
+### Changed
+
+- Applied the balanced submenu sizing treatment to Insights: Reports, Performance and Trends.
+- Kept the three Insights items evenly distributed within the existing Insights navigation span.
+- Preserved existing Insights routes, anchors, sticky navigation and no-horizontal-scroll safeguards.
+
 ## BizziBuddi Work Submenu Polish
 
 ### Changed
