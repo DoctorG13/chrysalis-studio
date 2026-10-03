@@ -1,3 +1,11 @@
+## BizziBuddi Sticky Workspace Navigation
+
+- [x] Keep BizziBuddi main navigation and contextual submenus sticky while scrolling
+- [x] Remove horizontal scrolling from workspace menus and submenus
+- [x] Align contextual submenus beneath their selected main section
+- [x] Connect contextual submenu items to their actual in-page destinations
+- [x] Fix navigation JSX parsing regression
+
 ## BizziBuddi Workspace Navigation — Sticky No-Scroll Navigation
 
 - [x] Make the authenticated primary workspace menu sticky while scrolling
