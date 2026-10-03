@@ -867,6 +867,8 @@ export default function BizzibuddiAccountPage() {
             </div>
           )}
 
+        </nav>
+
           {account && (
             <div className="bizzibuddi-help-rail" aria-label="Help and support">
               <button
@@ -891,8 +893,6 @@ export default function BizzibuddiAccountPage() {
               </button>
             </div>
           )}
-
-        </nav>
 
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
         {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} />}
