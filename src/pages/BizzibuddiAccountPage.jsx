@@ -812,61 +812,59 @@ export default function BizzibuddiAccountPage() {
               ))}
             </div>
           ) : (
-            <>
-              <div className="bizzibuddi-workspace-sticky-nav" style={workspaceStickyNav}>
-                <div
-                  className="bizzibuddi-workspace-main-nav"
-                  role="tablist"
-                  aria-label="BizziBuddi workspace sections"
-                  style={workspaceMainNav}
+            <div className="bizzibuddi-workspace-sticky-nav" style={workspaceStickyNav}>
+              <div
+                className="bizzibuddi-workspace-main-nav"
+                role="tablist"
+                aria-label="BizziBuddi workspace sections"
+                style={workspaceMainNav}
+              >
+                <button
+                  type="button"
+                  onClick={() => navigateWorkspaceSection("today")}
+                  style={workspaceMainTab(workspaceNavSection === "today")}
+                  aria-selected={workspaceNavSection === "today"}
                 >
+                  <span aria-hidden="true">⌂</span> Today
+                </button>
+                {[
+                  ["work", "WORK"],
+                  ["finance", "FINANCE"],
+                  ["insights", "INSIGHTS"],
+                  ["assist", "ASSIST"],
+                  ["account", "ACCOUNT"],
+                ].map(([key, label]) => (
                   <button
+                    key={key}
                     type="button"
-                    onClick={() => navigateWorkspaceSection("today")}
-                    style={workspaceMainTab(workspaceNavSection === "today")}
-                    aria-selected={workspaceNavSection === "today"}
+                    onClick={() => navigateWorkspaceSection(key)}
+                    style={workspaceMainTab(workspaceNavSection === key)}
+                    aria-selected={workspaceNavSection === key}
                   >
-                    <span aria-hidden="true">⌂</span> Today
+                    {label}
                   </button>
-                  {[
-                    ["work", "WORK"],
-                    ["finance", "FINANCE"],
-                    ["insights", "INSIGHTS"],
-                    ["assist", "ASSIST"],
-                    ["account", "ACCOUNT"],
-                  ].map(([key, label]) => (
+                ))}
+              </div>
+
+              <div
+                className="bizzibuddi-workspace-subnav"
+                aria-label={workspaceNavSection + " submenu"}
+                style={workspaceSubnavTray}
+              >
+                <div style={workspaceSubnavItems(workspaceNavSection)}>
+                  {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
                     <button
-                      key={key}
+                      key={item[0]}
                       type="button"
-                      onClick={() => navigateWorkspaceSection(key)}
-                      style={workspaceMainTab(workspaceNavSection === key)}
-                      aria-selected={workspaceNavSection === key}
+                      onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
+                      style={workspaceSubnavTab(workspaceNavItem === item[0])}
                     >
-                      {label}
+                      {item[1]}
                     </button>
                   ))}
                 </div>
-
-                <div
-                  className="bizzibuddi-workspace-subnav"
-                  aria-label={workspaceNavSection + " submenu"}
-                  style={workspaceSubnavTray}
-                >
-                  <div style={workspaceSubnavItems(workspaceNavSection)}>
-                    {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
-                      <button
-                        key={item[0]}
-                        type="button"
-                        onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
-                        style={workspaceSubnavTab(workspaceNavItem === item[0])}
-                      >
-                        {item[1]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
-            </>
+            </div>
           )}
 
           {account && (
@@ -893,6 +891,7 @@ export default function BizzibuddiAccountPage() {
               </button>
             </div>
           )}
+
         </nav>
 
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
