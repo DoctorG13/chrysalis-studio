@@ -23,7 +23,7 @@ export default function BizzibuddiAccountPage() {
     appointmentId: initialRouteParams.get("appointment") || "",
     invoiceId: initialRouteParams.get("invoice") || "",
   };
-  const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "help"]);
+  const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "account", "help"]);
   const requestedView = requestedViews.has(initialView) ? initialView : "";
   const [view, setView] = useState(initialView === "create" ? "create" : "login");
   const [deepLink, setDeepLink] = useState(initialDeepLink);
@@ -45,7 +45,7 @@ export default function BizzibuddiAccountPage() {
       : requestedView === "people" || requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
       ? "work"
       : requestedView === "finance"
-        ? "money"
+        ? "finance"
         : requestedView === "reports"
           ? "insights"
           : requestedView === "buddi" || requestedView === "automation"
@@ -72,9 +72,40 @@ export default function BizzibuddiAccountPage() {
                       ? "automation"
                       : requestedView === "plans"
                         ? "plans"
-                        : "overview";
+                        : requestedView === "account"
+                          ? "account"
+                          : "overview";
   const [workspaceNavSection, setWorkspaceNavSection] = useState(initialWorkspaceNavSection);
   const [workspaceNavItem, setWorkspaceNavItem] = useState(initialWorkspaceNavItem);
+  const [workspaceScrollTarget, setWorkspaceScrollTarget] = useState("");
+
+  useEffect(() => {
+    if (!workspaceScrollTarget) return undefined;
+
+    let cancelled = false;
+    let attempts = 0;
+    let timer = null;
+
+    const scrollToTarget = () => {
+      if (cancelled) return;
+      const element = document.getElementById(workspaceScrollTarget);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        setWorkspaceScrollTarget("");
+        return;
+      }
+      attempts += 1;
+      if (attempts < 20) timer = window.setTimeout(scrollToTarget, 50);
+      else setWorkspaceScrollTarget("");
+    };
+
+    const frame = window.requestAnimationFrame(scrollToTarget);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [workspaceScrollTarget, view, account, people.length, jobs.length, appointments.length, invoices.length, productionRecords.length]);
 
   useEffect(() => {
     function handleKeyboardShortcuts(event) {
@@ -276,18 +307,18 @@ export default function BizzibuddiAccountPage() {
       openBuddi();
       return;
     }
-    selectView(firstItem[2] || "dashboard");
+    selectView(firstItem[2] || "dashboard", { workspaceAnchor: firstItem[3] || "" });
   }
 
   function navigateWorkspaceSubitem(section, item) {
-    const [key, , targetView] = item;
+    const [key, , targetView, workspaceAnchor] = item;
     setWorkspaceNavSection(section);
     setWorkspaceNavItem(key);
     if (targetView === "buddi") {
       openBuddi();
       return;
     }
-    selectView(targetView || "dashboard");
+    selectView(targetView || "dashboard", { workspaceAnchor: workspaceAnchor || "" });
   }
 
   function selectView(nextView, target = {}) {
@@ -302,6 +333,7 @@ export default function BizzibuddiAccountPage() {
       "production",
       "reports",
       "buddi",
+      "account",
     ]);
 
     if (protectedViews.has(nextView) && !account) {
@@ -320,6 +352,7 @@ export default function BizzibuddiAccountPage() {
     writeWorkspaceRoute(nextView, nextDeepLink);
     setDeepLink(nextDeepLink);
     setView(nextView);
+    setWorkspaceScrollTarget(target.workspaceAnchor || "");
     setWorkspaceNavItem(
       nextView === "dashboard"
         ? "overview"
@@ -341,19 +374,21 @@ export default function BizzibuddiAccountPage() {
                         ? "automation"
                         : nextView === "plans"
                           ? "plans"
-                          : "overview"
+                          : nextView === "account"
+                            ? "account"
+                            : "overview"
     );
     if (nextView === "dashboard") {
       setWorkspaceNavSection("today");
     } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
       setWorkspaceNavSection("work");
     } else if (nextView === "finance") {
-      setWorkspaceNavSection("money");
+      setWorkspaceNavSection("finance");
     } else if (nextView === "reports") {
       setWorkspaceNavSection("insights");
     } else if (["buddi", "automation"].includes(nextView)) {
       setWorkspaceNavSection("assist");
-    } else if (nextView === "plans") {
+    } else if (nextView === "plans" || nextView === "account") {
       setWorkspaceNavSection("account");
     }
     setMessage("");
@@ -415,7 +450,7 @@ export default function BizzibuddiAccountPage() {
         } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
           setWorkspaceNavSection("work");
         } else if (nextView === "finance") {
-          setWorkspaceNavSection("money");
+          setWorkspaceNavSection("finance");
         } else if (nextView === "reports") {
           setWorkspaceNavSection("insights");
         } else if (["buddi", "automation"].includes(nextView)) {
@@ -788,7 +823,7 @@ export default function BizzibuddiAccountPage() {
                 </button>
                 {[
                   ["work", "WORK"],
-                  ["money", "MONEY"],
+                  ["finance", "FINANCE"],
                   ["insights", "INSIGHTS"],
                   ["assist", "ASSIST"],
                   ["account", "ACCOUNT"],
@@ -857,6 +892,7 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
+        {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} />}
         {view === "finance" && (
           <FinancePanel
@@ -2350,7 +2386,45 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
 }
 
 function PlansPanel({ onSelectPlan }) {
-  return <section><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. Your selected membership is saved to your BizziBuddi account in this development preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
+  return <section id="plans-membership"><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. Your selected membership is saved to your BizziBuddi account in this development preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
+}
+
+function AccountPanel({ account, onBack, onPlans }) {
+  return (
+    <section style={cardStyle(940)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ marginTop: 22 }}>
+        <p style={eyebrowStyle}>ACCOUNT</p>
+        <h2 style={sectionHeading}>Your account.</h2>
+        <p style={copyStyle}>Manage your BizziBuddi account details and membership from one place.</p>
+      </div>
+      <div id="account-details" style={{ ...reportSectionGrid, marginTop: 28 }}>
+        <article style={reportCard}>
+          <div style={reportCardHeading}>
+            <div>
+              <small style={smallText}>BUSINESS</small>
+              <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>{account?.business || "Your business"}</strong>
+            </div>
+          </div>
+          <div style={reportRows}>
+            <div style={reportRow}><span>Account name</span><strong>{account?.name || "—"}</strong></div>
+            <div style={reportRow}><span>Email</span><strong>{account?.email || "—"}</strong></div>
+            <div style={reportRow}><span>Username</span><strong>@{account?.username || "—"}</strong></div>
+          </div>
+        </article>
+        <article id="account-membership" style={reportCard}>
+          <div style={reportCardHeading}>
+            <div>
+              <small style={smallText}>MEMBERSHIP</small>
+              <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>{account?.plan || "Free"}</strong>
+            </div>
+          </div>
+          <p style={{ ...copyStyle, marginTop: 14 }}>Your current BizziBuddi membership and available upgrade options.</p>
+          <button type="button" onClick={onPlans} style={{ ...primaryButton, width: "auto" }}>View plans & membership</button>
+        </article>
+      </div>
+    </section>
+  );
 }
 
 function DashboardPanel({
@@ -2551,7 +2625,7 @@ function DashboardPanel({
         </div>
       )}
 
-      <div style={attentionPanel}>
+      <div id="today-overview" style={attentionPanel}>
         <div style={attentionHeader}>
           <div>
             <small style={smallText}>TODAY'S BUSINESS PICTURE</small>
@@ -2584,7 +2658,7 @@ function DashboardPanel({
         </div>
 
         {priorityItems.length > 0 ? (
-          <div style={attentionList}>
+          <div id="today-priority-list" style={attentionList}>
             {priorityItems.map((item) => (
               <article key={item.key} style={attentionItem(item.tone)}>
                 <div style={attentionItemIcon}>{item.icon}</div>
@@ -2613,7 +2687,7 @@ function DashboardPanel({
         </div>
       </div>
 
-      <div style={todayViewPanel}>
+      <div id="today-upcoming" style={todayViewPanel}>
         <div style={todayViewHeader}>
           <div>
             <small style={smallText}>DAILY OPERATING VIEW</small>
@@ -2705,7 +2779,7 @@ function DashboardPanel({
         )}
       </div>
 
-      <div style={{ ...todayViewPanel, marginTop: 18 }}>
+      <div id="today-attention" style={{ ...todayViewPanel, marginTop: 18 }}>
         <div style={todayViewHeader}>
           <div>
             <small style={smallText}>NOTIFICATIONS</small>
@@ -4678,7 +4752,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
         </div>
       </div>
 
-      <div style={reportSummaryGrid}>
+      <div id="reports-summary" style={reportSummaryGrid}>
         <div style={reportSummaryCard}>
           <small style={smallText}>PEOPLE</small>
           <strong style={reportSummaryValue}>{reportData.people.total}</strong>
@@ -4708,7 +4782,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
         </div>
       </div>
 
-      <div style={{ ...reportSummaryGrid, marginTop: 14 }}>
+      <div id="reports-performance" style={{ ...reportSummaryGrid, marginTop: 14 }}>
         <div style={reportSummaryCard}>
           <small style={smallText}>JOB COMPLETION</small>
           <strong style={reportSummaryValue}>{insights?.jobCompletionRate ?? 0}%</strong>
@@ -4876,7 +4950,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
         </article>
       </div>
 
-      <article style={{ ...reportCard, marginTop: 14 }}>
+      <article id="reports-trends" style={{ ...reportCard, marginTop: 14 }}>
         <div style={reportCardHeading}>
           <div>
             <small style={smallText}>MONTHLY STATISTICS</small>
@@ -5668,6 +5742,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
     <section
+      id="finance-revenue"
       style={{
         marginTop: 24,
         padding: 18,
@@ -5759,6 +5834,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     </section>
 
     <section
+      id="finance-cashflow"
       style={{
         marginTop: 18,
         padding: 18,
@@ -5838,6 +5914,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     </section>
 
     <section
+      id="finance-expenses"
       style={{
         marginTop: 18,
         padding: 18,
@@ -6172,6 +6249,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     </section>
 
     <section
+      id="finance-reporting"
       style={{
         marginTop: 18,
         padding: 18,
@@ -6466,7 +6544,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     </section>
 
     {invoices.length > 0 ? (
-      <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
+      <div id="finance-invoices" style={{ display: "grid", gap: 12, marginTop: 28 }}>
         {invoices.map((invoice) => {
           const balance = Math.max(
             0,
@@ -6656,7 +6734,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <small style={smallText}>PAYMENT HISTORY</small>
+                  <small id="finance-payments" style={smallText}>PAYMENT HISTORY</small>
                   {recordedPaymentTotal > 0 && (
                     <small style={{ ...smallText, fontWeight: 700 }}>
                       {formatCurrency(recordedPaymentTotal)} PAID
@@ -8665,26 +8743,30 @@ const workspaceMainTab = (active) => ({
   cursor: "pointer",
   whiteSpace: "nowrap",
 });
-const workspaceSubnavTray = {
-  width: "min(100%, 920px)",
-  minHeight: 54,
-  margin: "8px auto 0",
-  padding: "7px 12px",
-  boxSizing: "border-box",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: 7,
-  flexWrap: "wrap",
-  border: "1px solid rgba(0,180,219,.16)",
-  borderRadius: 13,
-  background: "rgba(0,180,219,.045)",
-  boxShadow: "inset 0 1px 0 rgba(255,255,255,.025)",
+const workspaceSubnavTray = (section) => {
+  const sectionIndex = ["today", "work", "finance", "insights", "assist", "account"].indexOf(section);
+  const safeIndex = sectionIndex < 0 ? 0 : sectionIndex;
+  return {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "nowrap",
+    overflowX: "auto",
+    width: "100%",
+    minHeight: 36,
+    margin: "3px 0 0",
+    padding: "2px 4px 4px calc(" + (safeIndex * 16.6667) + "% + 4px)",
+    boxSizing: "border-box",
+    borderTop: "1px solid rgba(0,180,219,.12)",
+    background: "linear-gradient(180deg, rgba(0,180,219,.035), rgba(0,180,219,0))",
+    scrollbarWidth: "thin",
+  };
 };
 const workspaceSubnavTab = (active) => ({
+  flex: "0 0 auto",
   border: "1px solid " + (active ? CYAN : "rgba(255,255,255,.10)"),
   borderRadius: 999,
-  padding: "7px 13px",
+  padding: "6px 12px",
   background: active ? "rgba(0,180,219,.13)" : "rgba(255,255,255,.025)",
   color: active ? TEXT : MUTED,
   fontSize: 11,
@@ -8694,10 +8776,10 @@ const workspaceSubnavTab = (active) => ({
 });
 const workspaceSubnav = {
   today: [
-    ["overview", "Overview", "dashboard"],
-    ["priorities", "Priorities", "dashboard"],
-    ["upcoming", "Upcoming", "dashboard"],
-    ["attention", "Attention", "dashboard"],
+    ["overview", "Overview", "dashboard", "today-overview"],
+    ["priorities", "Priorities", "dashboard", "today-priority-list"],
+    ["upcoming", "Upcoming", "dashboard", "today-upcoming"],
+    ["attention", "Attention", "dashboard", "today-attention"],
   ],
   work: [
     ["people", "People", "people"],
@@ -8705,26 +8787,26 @@ const workspaceSubnav = {
     ["calendar", "Calendar", "calendar"],
     ["production", "Production", "production"],
   ],
-  money: [
-    ["finance-overview", "Overview", "finance"],
-    ["invoices", "Invoices", "finance"],
-    ["payments", "Payments", "finance"],
-    ["expenses", "Expenses", "finance"],
-    ["cashflow", "Cashflow", "finance"],
+  finance: [
+    ["finance-overview", "Overview", "finance", "finance-revenue"],
+    ["invoices", "Invoices", "finance", "finance-invoices"],
+    ["payments", "Payments", "finance", "finance-payments"],
+    ["expenses", "Expenses", "finance", "finance-expenses"],
+    ["cashflow", "Cashflow", "finance", "finance-cashflow"],
   ],
   insights: [
-    ["reports", "Reports", "reports"],
-    ["performance", "Performance", "reports"],
-    ["trends", "Trends", "reports"],
+    ["reports", "Reports", "reports", "reports-summary"],
+    ["performance", "Performance", "reports", "reports-performance"],
+    ["trends", "Trends", "reports", "reports-trends"],
   ],
   assist: [
     ["buddi", "Buddi", "buddi"],
     ["automation", "Automation", "automation"],
   ],
   account: [
-    ["plans", "Plans", "plans"],
-    ["account", "Account", "plans"],
-    ["membership", "Membership", "plans"],
+    ["plans", "Plans", "plans", "plans-membership"],
+    ["membership", "Membership", "plans", "plans-membership"],
+    ["account", "Account", "account", "account-details"],
   ],
 };
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
