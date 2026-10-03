@@ -810,55 +810,57 @@ export default function BizzibuddiAccountPage() {
             </div>
           ) : (
             <>
-              <div
-                className="bizzibuddi-workspace-main-nav"
-                role="tablist"
-                aria-label="BizziBuddi workspace sections"
-                style={workspaceMainNav}
-              >
-                <button
-                  type="button"
-                  onClick={() => navigateWorkspaceSection("today")}
-                  style={workspaceMainTab(workspaceNavSection === "today")}
-                  aria-selected={workspaceNavSection === "today"}
+              <div style={workspaceStickyNav}>
+                <div
+                  className="bizzibuddi-workspace-main-nav"
+                  role="tablist"
+                  aria-label="BizziBuddi workspace sections"
+                  style={workspaceMainNav}
                 >
-                  <span aria-hidden="true">⌂</span> Today
-                </button>
-                {[
-                  ["work", "WORK"],
-                  ["finance", "FINANCE"],
-                  ["insights", "INSIGHTS"],
-                  ["assist", "ASSIST"],
-                  ["account", "ACCOUNT"],
-                ].map(([key, label]) => (
                   <button
-                    key={key}
                     type="button"
-                    onClick={() => navigateWorkspaceSection(key)}
-                    style={workspaceMainTab(workspaceNavSection === key)}
-                    aria-selected={workspaceNavSection === key}
+                    onClick={() => navigateWorkspaceSection("today")}
+                    style={workspaceMainTab(workspaceNavSection === "today")}
+                    aria-selected={workspaceNavSection === "today"}
                   >
-                    {label}
+                    <span aria-hidden="true">⌂</span> Today
                   </button>
-                ))}
-              </div>
-
-              <div
-                className="bizzibuddi-workspace-subnav"
-                aria-label={workspaceNavSection + " submenu"}
-                style={workspaceSubnavTray}
-              >
-                <div style={workspaceSubnavItems(workspaceNavSection)}>
-                  {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
+                  {[
+                    ["work", "WORK"],
+                    ["finance", "FINANCE"],
+                    ["insights", "INSIGHTS"],
+                    ["assist", "ASSIST"],
+                    ["account", "ACCOUNT"],
+                  ].map(([key, label]) => (
                     <button
-                      key={item[0]}
+                      key={key}
                       type="button"
-                      onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
-                      style={workspaceSubnavTab(workspaceNavItem === item[0])}
+                      onClick={() => navigateWorkspaceSection(key)}
+                      style={workspaceMainTab(workspaceNavSection === key)}
+                      aria-selected={workspaceNavSection === key}
                     >
-                      {item[1]}
+                      {label}
                     </button>
                   ))}
+                </div>
+
+                <div
+                  className="bizzibuddi-workspace-subnav"
+                  aria-label={workspaceNavSection + " submenu"}
+                  style={workspaceSubnavTray}
+                >
+                  <div style={workspaceSubnavItems(workspaceNavSection)}>
+                    {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
+                      <button
+                        key={item[0]}
+                        type="button"
+                        onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
+                        style={workspaceSubnavTab(workspaceNavItem === item[0])}
+                      >
+                        {item[1]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </>
@@ -8713,7 +8715,7 @@ function Field({ name, label, type, placeholder, defaultValue }) {
   return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
 }
 
-const pageStyle = { minHeight: "100vh", position: "relative", overflow: "hidden", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "hidden", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
 const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" };
 const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
@@ -8740,13 +8742,24 @@ const workspaceNavShell = {
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
 }; 
+const workspaceStickyNav = {
+  position: "sticky",
+  top: 0,
+  zIndex: 40,
+  margin: "0 -1px",
+  padding: "10px 0 8px",
+  background: "rgba(6,28,47,.97)",
+  borderBottom: "1px solid rgba(0,180,219,.14)",
+  boxShadow: "0 10px 24px rgba(0,0,0,.18)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+};
 const workspaceMainNav = {
   display: "grid",
   gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
   gap: 8,
   width: "100%",
   minWidth: 0,
-  paddingBottom: 2,
 };
 const workspaceMainTab = (active) => ({
   width: "100%",
@@ -8763,15 +8776,15 @@ const workspaceMainTab = (active) => ({
   lineHeight: 1.15,
   cursor: "pointer",
   whiteSpace: "normal",
-});
+};
 const workspaceSubnavTray = {
   display: "grid",
   gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
   width: "100%",
   minWidth: 0,
   minHeight: 38,
-  margin: "1px 0 0",
-  padding: "3px 0 4px",
+  margin: "3px 0 0",
+  padding: "3px 0 0",
   boxSizing: "border-box",
   borderTop: "1px solid rgba(0,180,219,.12)",
   background: "linear-gradient(180deg, rgba(0,180,219,.035), rgba(0,180,219,0))",
@@ -8781,7 +8794,7 @@ const workspaceSubnavItems = (section) => {
   const layout = {
     today: { gridColumn: "1 / span 2" },
     work: { gridColumn: "2 / span 2" },
-    finance: { gridColumn: "2 / span 3" },
+    finance: { gridColumn: "3 / span 2" },
     insights: { gridColumn: "4 / span 2" },
     assist: { gridColumn: "5 / span 2" },
     account: { gridColumn: "5 / span 2" },
