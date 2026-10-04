@@ -678,13 +678,17 @@ export default function BizzibuddiAccountPage() {
     return result.entry;
   }
 
-  async function resetDemo() {
+  async function resetBusinessData() {
     if (!account?.id) return;
 
-    // Persistent BizziBuddi records stay on the server. Only clear legacy browser-local Production data.
+    await bizzibuddiAuthRequest("/api/bizzibuddi/auth/reset", {
+      method: "DELETE",
+      body: JSON.stringify({ confirmation: "START FRESH" }),
+    });
+
     localStorage.removeItem(storageKey("productionRecords", account.id));
     await applyAccount(account);
-    setMessage("Local legacy preview data cleared. Your BizziBuddi account data remains stored.");
+    setMessage("Business data cleared. Your BizziBuddi account is ready for a fresh start.");
     setView("dashboard");
   }
 
@@ -900,7 +904,7 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} />}
+        {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onReset={resetDemo} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} />}
         {view === "finance" && (
           <FinancePanel
@@ -2851,7 +2855,29 @@ function PlansPanel({ onSelectPlan }) {
   return <section id="plans-membership"><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. Your selected membership is saved to your BizziBuddi account in this development preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function AccountPanel({ account, onBack, onPlans }) {
+function AccountPanel({ account, onBack, onPlans, onResetBusiness }) {
+  const [resetOpen, setResetOpen] = useState(false);
+  const [confirmation, setConfirmation] = useState("");
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState("");
+
+  async function handleReset() {
+    if (confirmation.trim() !== "START FRESH") return;
+
+    setResetting(true);
+    setResetError("");
+
+    try {
+      await onResetBusiness();
+      setResetOpen(false);
+      setConfirmation("");
+    } catch (error) {
+      setResetError(error instanceof Error ? error.message : "The business data could not be reset.");
+    } finally {
+      setResetting(false);
+    }
+  }
+
   return (
     <section style={cardStyle(940)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -2885,6 +2911,99 @@ function AccountPanel({ account, onBack, onPlans }) {
           <button type="button" onClick={onPlans} style={{ ...primaryButton, width: "auto" }}>View plans & membership</button>
         </article>
       </div>
+
+      <article style={{ ...reportCard, marginTop: 22, borderColor: "rgba(220,38,38,.38)" }}>
+        <div style={reportCardHeading}>
+          <div>
+            <small style={smallText}>BUSINESS DATA</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Start fresh</strong>
+          </div>
+        </div>
+        <p style={{ ...copyStyle, marginTop: 14 }}>
+          Permanently clear the business data in this BizziBuddi account and start with an empty workspace.
+          Your account, login, membership and business identity will remain.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setResetError("");
+            setConfirmation("");
+            setResetOpen(true);
+          }}
+          style={{ ...textButton, color: "#FCA5A5" }}
+        >
+          Start fresh →
+        </button>
+      </article>
+
+      {resetOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="bizzibuddi-reset-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(2, 8, 23, .78)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div style={{ ...cardStyle(560), width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <p style={eyebrowStyle}>START FRESH</p>
+            <h2 id="bizzibuddi-reset-title" style={sectionHeading}>Clear this business data?</h2>
+            <p style={copyStyle}>
+              This permanently removes the business data stored for this BizziBuddi account:
+              people, jobs, calendar, finance, expenses, production, production templates,
+              time entries, measurements and automation history.
+            </p>
+            <p style={copyStyle}>
+              Your account, login, membership and business identity are kept. A full database
+              safety backup is created before anything is deleted.
+            </p>
+            <div style={{ marginTop: 20 }}>
+              <label style={{ ...smallText, display: "block", marginBottom: 8 }} htmlFor="start-fresh-confirmation">
+                Type START FRESH to continue
+              </label>
+              <input
+                id="start-fresh-confirmation"
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+                autoComplete="off"
+                spellCheck="false"
+                disabled={resetting}
+                style={inputStyle}
+              />
+            </div>
+            {resetError && (
+              <p role="alert" style={{ ...copyStyle, color: "#FCA5A5", marginTop: 14 }}>
+                {resetError}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: 12, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 22 }}>
+              <button type="button" onClick={() => setResetOpen(false)} disabled={resetting} style={textButton}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={resetting || confirmation.trim() !== "START FRESH"}
+                style={{
+                  ...primaryButton,
+                  width: "auto",
+                  opacity: resetting || confirmation.trim() !== "START FRESH" ? 0.5 : 1,
+                  background: "#B91C1C",
+                }}
+              >
+                {resetting ? "Starting fresh…" : "Permanently clear business data"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
