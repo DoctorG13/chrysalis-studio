@@ -1934,9 +1934,21 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
     </div>
 
     <div className="bizzibuddi-people-summary" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 9, marginTop: 18 }}>
-      <div style={personSummaryCard}><small style={smallText}>PEOPLE</small><strong>{people.length}</strong><span>{people.length === 1 ? "person" : "people"} in your list</span></div>
-      <div style={personSummaryCard}><small style={smallText}>WITH JOBS</small><strong>{people.filter((person) => jobs.some((job) => job.personId === person.id)).length}</strong><span>people with active work</span></div>
-      <div style={personSummaryCard}><small style={smallText}>WITH BOOKINGS</small><strong>{people.filter((person) => appointments.some((appointment) => appointment.personId === person.id)).length}</strong><span>people linked to calendar</span></div>
+      <div style={personSummaryCard}>
+        <small style={{ ...smallText, display: "block", marginBottom: 4 }}>PEOPLE</small>
+        <strong style={{ display: "block", fontSize: 22, lineHeight: 1.05, marginBottom: 3 }}>{people.length}</strong>
+        <span style={{ display: "block", color: MUTED, fontSize: 12, lineHeight: 1.35 }}>{people.length === 1 ? "person" : "people"} in your list</span>
+      </div>
+      <div style={personSummaryCard}>
+        <small style={{ ...smallText, display: "block", marginBottom: 4 }}>WITH JOBS</small>
+        <strong style={{ display: "block", fontSize: 22, lineHeight: 1.05, marginBottom: 3 }}>{people.filter((person) => jobs.some((job) => job.personId === person.id)).length}</strong>
+        <span style={{ display: "block", color: MUTED, fontSize: 12, lineHeight: 1.35 }}>people with active work</span>
+      </div>
+      <div style={personSummaryCard}>
+        <small style={{ ...smallText, display: "block", marginBottom: 4 }}>WITH BOOKINGS</small>
+        <strong style={{ display: "block", fontSize: 22, lineHeight: 1.05, marginBottom: 3 }}>{people.filter((person) => appointments.some((appointment) => appointment.personId === person.id)).length}</strong>
+        <span style={{ display: "block", color: MUTED, fontSize: 12, lineHeight: 1.35 }}>people linked to calendar</span>
+      </div>
     </div>
 
     <div style={{ marginTop: 18, padding: 14, borderRadius: 12, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
