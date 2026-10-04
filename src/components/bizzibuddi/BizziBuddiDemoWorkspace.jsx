@@ -41,7 +41,8 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
   const [appointmentForm, setAppointmentForm] = useState({ title: "", personId: "", date: "", time: "" });
   const [customFieldName, setCustomFieldName] = useState("");
   const [pendingRemove, setPendingRemove] = useState("");
-  const peopleWorkspaceRef = useRef(null);\n  const noticeTimerRef = useRef(null);
+  const peopleWorkspaceRef = useRef(null);
+  const noticeTimerRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -118,7 +119,11 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
     window.setTimeout(() => setNotice(""));
   }
 
-  useEffect(() => () => {\n    if (noticeTimerRef.current) window.clearTimeout(noticeTimerRef.current);\n  }, []);\n\n  function resetDemo() {
+  useEffect(() => () => {
+    if (noticeTimerRef.current) window.clearTimeout(noticeTimerRef.current);
+  }, []);
+
+  function resetDemo() {
     setData(cloneSeed());
     setModule("overview");
     setPersonForm({ name: "", email: "", phone: "" });
