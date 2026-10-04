@@ -2133,7 +2133,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           </button>
         </div>
       </form>
-    )}
+    ) : null}
   </section>;
 }
 
