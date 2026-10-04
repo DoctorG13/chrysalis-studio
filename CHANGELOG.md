@@ -2991,3 +2991,14 @@ All notable changes to Chrysalis are recorded here.
 ### Changed
 
 - Invoice financial state no longer depends solely on manually entered `amountPaid`, `balance` or status values when the invoice is linked to a Job.
+
+---
+
+## BizziBuddi Demo — People Workspace Positioning
+
+### Fixed
+
+- Made the Demo People module reliably scroll into its own workspace after selecting **People**.
+- Reworked the scroll timing to wait for the People panel to mount before positioning it.
+- Uses the actual module element as the scroll target and offsets it for the sticky authenticated workspace navigation.
+- Keeps the **Add a person** form as the first functional area visible in the People workspace.
