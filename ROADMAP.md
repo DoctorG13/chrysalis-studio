@@ -10,7 +10,7 @@
 - [x] Render custom fields directly in People and Jobs forms
 - [ ] Render custom fields directly in Calendar and Finance forms
 - [ ] Add industry-aware Buddi terminology and prompts
-- [ ] Add interactive demo CRUD sandbox with temporary session data
+- [x] Add interactive demo CRUD sandbox with temporary session data
 
 ---
 
