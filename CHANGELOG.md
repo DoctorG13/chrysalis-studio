@@ -1,4 +1,4 @@
-## BizziBuddi Demo Action Feedback
+## BizziBuddi Demo — Action Feedback Visibility\n\n### Fixed\n\n- Demo action feedback now remains visible for 4 seconds instead of being cleared immediately.\n- Rapid successive actions replace the previous notice cleanly without stacking timers.\n- The feedback notice remains sticky and visually prominent while navigating the Demo workspace.\n\n\n---\n\n## BizziBuddi Demo Action Feedback
 
 ### Changed
 
