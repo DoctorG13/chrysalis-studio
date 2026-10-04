@@ -1,3 +1,10 @@
+## BizziBuddi People Parse Error Hotfix
+
+### Fixed
+
+- Corrected the People form conditional introduced by the workspace landing polish.
+- Restored valid JSX conditional syntax so Vite/OXC can transform the page successfully.
+
 ## BizziBuddi People Workspace Landing Polish
 
 ### Changed
