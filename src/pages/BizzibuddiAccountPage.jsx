@@ -1718,6 +1718,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPersonId, setSelectedPersonId] = useState(null);
   const [timelinePersonId, setTimelinePersonId] = useState(null);
   const [measurementPersonId, setMeasurementPersonId] = useState(null);
   const [measurements, setMeasurements] = useState([]);
@@ -1965,6 +1966,71 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       </label>
     </div>
 
+    {selectedPersonId && (() => {
+      const selectedPerson = people.find((person) => person.id === selectedPersonId);
+      if (!selectedPerson) return null;
+      const selectedJobs = jobs.filter((job) => job.personId === selectedPerson.id);
+      const selectedAppointments = appointments
+        .filter((appointment) => appointment.personId === selectedPerson.id)
+        .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
+      const selectedInvoices = invoices.filter((invoice) => invoice.personId === selectedPerson.id || invoice.clientId === selectedPerson.id);
+      const selectedOutstanding = selectedInvoices.reduce((total, invoice) => total + Number(invoice.balance || 0), 0);
+      const selectedPrimaryJob = [...selectedJobs].sort((a, b) => String(b.createdAt || b.date || "").localeCompare(String(a.createdAt || a.date || "")))[0];
+      const selectedNextAppointment = selectedAppointments.find((appointment) => appointment.date && String(appointment.date) >= new Date().toISOString().slice(0, 10));
+      const selectedTimeline = personTimeline(selectedPerson).slice(0, 5);
+      return (
+        <section style={personFocusPanel}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0 }}>
+              <small style={smallText}>CLIENT OVERVIEW</small>
+              <h3 style={{ margin: "5px 0 3px", fontSize: 24 }}>{selectedPerson.name}</h3>
+              <span style={{ color: MUTED, fontSize: 12 }}>
+                {selectedPerson.email || "No email"}{selectedPerson.phone ? ` · ${selectedPerson.phone}` : ""}
+              </span>
+            </div>
+            <button type="button" onClick={() => setSelectedPersonId(null)} style={smallActionButton}>Close overview</button>
+          </div>
+
+          <div style={personFocusMetrics}>
+            <div style={personFocusMetric}><small style={personRelationshipLabel}>JOBS</small><strong style={personRelationshipValue}>{selectedJobs.length}</strong></div>
+            <div style={personFocusMetric}><small style={personRelationshipLabel}>NEXT BOOKING</small><strong style={personRelationshipValue}>{selectedNextAppointment ? formatTimelineDate(selectedNextAppointment.date) : "None scheduled"}</strong></div>
+            <div style={personFocusMetric}><small style={personRelationshipLabel}>OUTSTANDING</small><strong style={personRelationshipValue}>{formatCurrency(selectedOutstanding)}</strong></div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+            {selectedPrimaryJob && (
+              <button type="button" onClick={() => handleOpenJob(selectedPrimaryJob.id)} style={{ ...primaryButton, width: "auto", marginTop: 0 }}>Open latest job</button>
+            )}
+            <button type="button" onClick={() => {
+              setTimelinePersonId(selectedPerson.id);
+              setMeasurementPersonId(null);
+              setMeasurements([]);
+            }} style={smallActionButton}>View timeline</button>
+            <button type="button" onClick={() => toggleMeasurements(selectedPerson)} style={smallActionButton}>Measurements</button>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <small style={smallText}>RECENT ACTIVITY</small>
+            {selectedTimeline.length > 0 ? (
+              <div style={personFocusActivity}>
+                {selectedTimeline.map((item) => (
+                  <div key={item.id} style={personFocusActivityItem}>
+                    <span style={{ color: MUTED, fontSize: 10, whiteSpace: "nowrap" }}>{formatTimelineDate(item.date)}</span>
+                    <div>
+                      <strong style={{ display: "block", fontSize: 12 }}>{item.label}</strong>
+                      <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 11 }}>{item.detail}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>No activity recorded yet.</span>
+            )}
+          </div>
+        </section>
+      );
+    })()}
+
     {filteredPeople.length > 0 ? (
       <div style={{ display: "grid", gap: 12, marginTop: 12 }}>
         {filteredPeople.map((person) => {
@@ -1989,7 +2055,14 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           return (
             <article key={person.id} style={personCard}>
               <div style={{ minWidth: 0, flex: "1 1 280px" }}>
-                <strong style={{ display: "block", fontSize: 17 }}>{person.name}</strong>
+                <button
+                  type="button"
+                  onClick={() => setSelectedPersonId(person.id)}
+                  style={personNameButton}
+                  title={`Open overview for ${person.name}`}
+                >
+                  {person.name}
+                </button>
                 <span style={smallText}>
                   {person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}
                 </span>
@@ -9082,6 +9155,60 @@ const personSummaryCard = {
   minWidth: 0, padding: "11px 12px", borderRadius: 11,
   border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)",
 };
+const personNameButton = {
+  display: "block",
+  padding: 0,
+  margin: 0,
+  border: 0,
+  background: "transparent",
+  color: TEXT,
+  fontSize: 17,
+  fontWeight: 800,
+  lineHeight: 1.25,
+  textAlign: "left",
+  cursor: "pointer",
+};
+
+const personFocusPanel = {
+  marginTop: 14,
+  padding: 16,
+  borderRadius: 13,
+  border: "1px solid rgba(0,180,219,.28)",
+  background: "linear-gradient(180deg, rgba(0,180,219,.08), rgba(255,255,255,.025))",
+  boxShadow: "0 12px 28px rgba(0,0,0,.12)",
+};
+
+const personFocusMetrics = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 8,
+  marginTop: 14,
+};
+
+const personFocusMetric = {
+  minWidth: 0,
+  padding: "9px 10px",
+  borderRadius: 9,
+  border: "1px solid rgba(255,255,255,.08)",
+  background: "rgba(255,255,255,.025)",
+};
+
+const personFocusActivity = {
+  display: "grid",
+  gap: 6,
+  marginTop: 9,
+};
+
+const personFocusActivityItem = {
+  display: "grid",
+  gridTemplateColumns: "86px minmax(0,1fr)",
+  gap: 9,
+  padding: "8px 9px",
+  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,.07)",
+  background: "rgba(255,255,255,.02)",
+};
+
 const personMetaBadge = {
   display: "inline-flex",
   alignItems: "center",
