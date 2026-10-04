@@ -1,3 +1,11 @@
+## BizziBuddi Help Rail Text Direction
+
+### Changed
+
+- Reversed the vertical text direction on the fixed Ask Buddi and Help rail.
+- Kept **Ask Buddi** as the top action and **Help** as the lower action.
+- Preserved the existing icons, click behaviour, active states and mobile horizontal layout.
+
 ## People Upcoming Booking Accuracy
 
 ### Fixed
