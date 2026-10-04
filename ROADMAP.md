@@ -565,3 +565,13 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Wait for the People workspace to mount before scrolling
 - [x] Account for the sticky workspace navigation
 - [x] Keep the Add Person form as the first functional area
+
+
+---
+
+## BizziBuddi Demo — Navigation Isolation
+
+- [x] Hide authenticated workspace navigation while Demo is active
+- [x] Hide authenticated Help / Ask Buddi rail while Demo is active
+- [x] Keep Demo module navigation self-contained
+- [x] Prevent Demo People from routing to real account-backed People
