@@ -290,6 +290,15 @@ Donna can comfortably run Chrysalis as her primary business application every da
 
 ---
 
+## ✅ Clean Start / Business Reset
+
+- [x] Account-scoped business-data reset
+- [x] Explicit destructive confirmation
+- [x] Full database safety backup before reset
+- [x] Preserve account, login, membership and business identity
+- [x] Remove legacy local-demo reset behaviour
+- [x] Remove development-preview language
+
 # Post-1.0 — Operational Depth
 
 ## ✅ Production Workflow 2.0
