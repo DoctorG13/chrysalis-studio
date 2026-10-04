@@ -41,7 +41,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
   const [appointmentForm, setAppointmentForm] = useState({ title: "", personId: "", date: "", time: "" });
   const [customFieldName, setCustomFieldName] = useState("");
   const [pendingRemove, setPendingRemove] = useState("");
-  const peopleWorkspaceRef = useRef(null);
+  const peopleWorkspaceRef = useRef(null);\n  const noticeTimerRef = useRef(null);
 
   useEffect(() => {
     try {
@@ -118,7 +118,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
     window.setTimeout(() => setNotice(""));
   }
 
-  function resetDemo() {
+  useEffect(() => () => {\n    if (noticeTimerRef.current) window.clearTimeout(noticeTimerRef.current);\n  }, []);\n\n  function resetDemo() {
     setData(cloneSeed());
     setModule("overview");
     setPersonForm({ name: "", email: "", phone: "" });
@@ -743,7 +743,7 @@ function money(value) {
 
 const shell = { width: "100%", maxWidth: 940, margin: "0 auto", padding: "0 0 40px" };
 const banner = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap", padding: 16, borderRadius: 14, border: "1px solid rgba(245,196,83,.48)", background: "rgba(245,196,83,.08)", color: TEXT };
-const noticeStyle = { position: "sticky", top: 10, zIndex: 5, margin: "12px 0", padding: "10px 13px", borderRadius: 10, background: "rgba(0,180,219,.14)", border: "1px solid rgba(0,180,219,.34)", color: TEXT, fontSize: 12, fontWeight: 700 };
+const noticeStyle = { position: "sticky", top: 10, zIndex: 20, margin: "12px 0", padding: "12px 14px", borderRadius: 10, background: "rgba(0,180,219,.18)", border: "1px solid rgba(0,180,219,.48)", color: TEXT, fontSize: 12, fontWeight: 700, boxShadow: "0 8px 24px rgba(0,0,0,.18)" };
 const header = { marginTop: 24 };
 const eyebrow = { color: CYAN, fontSize: 11, fontWeight: 800, letterSpacing: ".12em" };
 const heading = { margin: "8px 0", fontSize: "clamp(32px,5vw,48px)", letterSpacing: "-.04em" };
