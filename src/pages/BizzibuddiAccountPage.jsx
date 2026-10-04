@@ -1975,6 +1975,10 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         .sort((a, b) => String(a.date || "").localeCompare(String(b.date || "")));
       const selectedInvoices = invoices.filter((invoice) => invoice.personId === selectedPerson.id || invoice.clientId === selectedPerson.id);
       const selectedOutstanding = selectedInvoices.reduce((total, invoice) => total + Number(invoice.balance || 0), 0);
+      const selectedPayments = selectedInvoices
+        .flatMap((invoice) => (Array.isArray(invoice.payments) ? invoice.payments.map((payment) => ({ ...payment, invoiceNumber: invoice.number || "Invoice" })) : []))
+        .sort((a, b) => String(b.date || b.createdAt || "").localeCompare(String(a.date || a.createdAt || "")));
+      const selectedPaid = selectedPayments.reduce((total, payment) => total + Number(payment.amount || 0), 0);
       const selectedPrimaryJob = [...selectedJobs].sort((a, b) => String(b.createdAt || b.date || "").localeCompare(String(a.createdAt || a.date || "")))[0];
       const selectedNextAppointment = selectedAppointments.find((appointment) => appointment.date && String(appointment.date) >= new Date().toISOString().slice(0, 10));
       const selectedTimeline = personTimeline(selectedPerson).slice(0, 5);
@@ -2040,6 +2044,37 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
               </div>
             ) : (
               <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>No invoices linked to this person.</span>
+            )}
+          </div>
+
+          <div style={{ marginTop: 16, padding: 12, borderRadius: 10, border: "1px solid " + BORDER, background: "rgba(255,255,255,.02)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div>
+                <small style={smallText}>PAYMENTS</small>
+                <strong style={{ display: "block", marginTop: 3, fontSize: 14 }}>
+                  {selectedPayments.length} {selectedPayments.length === 1 ? "payment" : "payments"} · {formatCurrency(selectedPaid)} received
+                </strong>
+              </div>
+              {selectedPayments.length > 0 && (
+                <span style={{ color: MUTED, fontSize: 11 }}>Latest {formatTimelineDate(selectedPayments[0].date || selectedPayments[0].createdAt)}</span>
+              )}
+            </div>
+            {selectedPayments.length > 0 ? (
+              <div style={{ display: "grid", gap: 6, marginTop: 9 }}>
+                {selectedPayments.slice(0, 4).map((payment) => (
+                  <div key={payment.id || (payment.invoiceNumber + "-" + payment.date + "-" + payment.amount)} style={personFinanceRow}>
+                    <div style={{ minWidth: 0 }}>
+                      <strong style={{ display: "block", fontSize: 12 }}>{formatCurrency(Number(payment.amount) || 0)}</strong>
+                      <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 10 }}>
+                        {payment.invoiceNumber} · {payment.method || "Other"}{payment.description ? " · " + payment.description : ""}
+                      </span>
+                    </div>
+                    <span style={{ color: MUTED, fontSize: 10 }}>{formatTimelineDate(payment.date || payment.createdAt)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>No payments recorded for this person yet.</span>
             )}
           </div>
 
