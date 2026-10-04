@@ -1,3 +1,20 @@
+## BizziBuddi Universal Business Foundation
+
+### Added
+
+- Added an isolated Explore BizziBuddi demo workspace with realistic sample People, Jobs, Calendar, Finance, Production, Automation, custom-field and Buddi examples.
+- Added configurable business profiles with industry starting templates for general business, dressmaking, hairdressing, tattoo studios, schools, trades and consulting.
+- Added configurable business terminology so industry language can sit above the shared BizziBuddi core.
+- Added persistent custom-field definitions and values for People, Jobs, Appointments and Invoices.
+- Added Account → Business Profile configuration for selecting an industry template and adding custom fields.
+- Kept demo data isolated from real BizziBuddi account storage.
+
+### Changed
+
+- BizziBuddi account data now exposes business type and terminology configuration alongside existing account information.
+
+---
+
 ## BizziBuddi Clean Start / Business Reset
 
 ### Added
