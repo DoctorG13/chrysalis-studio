@@ -1970,6 +1970,9 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         {filteredPeople.map((person) => {
           const isTimelineOpen = timelinePersonId === person.id;
           const timelineItems = isTimelineOpen ? personTimeline(person) : [];
+          const personJobCount = jobs.filter((job) => job.personId === person.id).length;
+          const personBookingCount = appointments.filter((appointment) => appointment.personId === person.id).length;
+          const personInvoiceCount = invoices.filter((invoice) => invoice.personId === person.id || invoice.clientId === person.id).length;
           return (
             <article key={person.id} style={personCard}>
               <div style={{ minWidth: 0, flex: "1 1 280px" }}>
@@ -1977,6 +1980,11 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                 <span style={smallText}>
                   {person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}
                 </span>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 9 }}>
+                  <span style={personMetaBadge}>{personJobCount} {personJobCount === 1 ? "job" : "jobs"}</span>
+                  <span style={personMetaBadge}>{personBookingCount} {personBookingCount === 1 ? "booking" : "bookings"}</span>
+                  <span style={personMetaBadge}>{personInvoiceCount} {personInvoiceCount === 1 ? "invoice" : "invoices"}</span>
+                </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                 <button
@@ -9025,6 +9033,18 @@ const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px
 const personSummaryCard = {
   minWidth: 0, padding: "11px 12px", borderRadius: 11,
   border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)",
+};
+const personMetaBadge = {
+  display: "inline-flex",
+  alignItems: "center",
+  padding: "3px 7px",
+  borderRadius: 999,
+  border: "1px solid rgba(255,255,255,.1)",
+  background: "rgba(255,255,255,.035)",
+  color: MUTED,
+  fontSize: 10,
+  fontWeight: 700,
+  lineHeight: 1.2,
 };
 
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
