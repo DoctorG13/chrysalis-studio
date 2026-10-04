@@ -1492,7 +1492,7 @@ export default function BizzibuddiAccountPage() {
               }
               .bizzibuddi-help-rail-label {
                 writing-mode: vertical-rl;
-                transform: rotate(180deg);
+                transform: none;
                 color: #BFD8F0;
                 font-size: 9px;
                 font-weight: 900;
