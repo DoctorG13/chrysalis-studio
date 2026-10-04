@@ -115,8 +115,12 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
   const summary = useMemo(() => getDemoSummary(data), [data]);
 
   function notify(message) {
+    if (noticeTimerRef.current) window.clearTimeout(noticeTimerRef.current);
     setNotice(message);
-    window.setTimeout(() => setNotice(""));
+    noticeTimerRef.current = window.setTimeout(() => {
+      setNotice("");
+      noticeTimerRef.current = null;
+    }, 4000);
   }
 
   useEffect(() => () => {
