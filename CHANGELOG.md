@@ -3027,3 +3027,15 @@ All notable changes to Chrysalis are recorded here.
 - The active Demo module is restored after refresh.
 - Demo session data remains completely isolated from authenticated account data and is never written to the BizziBuddi database.
 - **Exit demo** and **Create real account** explicitly clear the temporary Demo session.
+
+
+---
+
+## BizziBuddi Demo — Route Persistence Fix
+
+### Fixed
+
+- Demo module selection now writes an explicit view=demo route.
+- The active Demo module is stored in the URL as demoModule.
+- Refreshing Demo → People, Jobs, Calendar, Finance or another Demo module now remains inside the isolated Demo workspace.
+- Prevents a Demo module from being interpreted as the authenticated account-backed workspace after refresh.
