@@ -1,3 +1,12 @@
+## People Primary Action Polish
+
+### Changed
+
+- Made the most relevant action on each People card visually prominent.
+- People with jobs now show a direct **Open job** primary action.
+- People without jobs now use **Timeline** as the primary action.
+- Kept Timeline, Measurements, Edit and Delete available as secondary actions.
+
 ## People Relationship Summary
 
 ### Added
