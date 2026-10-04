@@ -867,7 +867,7 @@ export default function BizzibuddiAccountPage() {
                 style={workspaceSubnavTray}
               >
                 <div style={workspaceSubnavItems(workspaceNavSection)}>
-                  {(workspaceSubnav[workspaceNavSection] || []).map((item) => (
+                  {(getWorkspaceSubnav(account)[workspaceNavSection] || []).map((item) => (
                     <button
                       key={item[0]}
                       type="button"
@@ -9956,6 +9956,21 @@ const workspaceSubnav = {
     ["account", "Account", "account", "account-details"],
   ],
 };
+function getWorkspaceSubnav(account) {
+  const terminology = account?.terminology || {};
+  const personLabel = terminology.person || "People";
+  const jobLabel = terminology.job || "Jobs";
+  const appointmentLabel = terminology.appointment || "Calendar";
+  return {
+    ...workspaceSubnav,
+    work: [
+      ["people", personLabel, "people"],
+      ["jobs", jobLabel, "jobs"],
+      ["calendar", appointmentLabel, "calendar"],
+      ["production", "Production", "production"],
+    ],
+  };
+}
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
 const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
 const centerStyle = { textAlign: "center" };
