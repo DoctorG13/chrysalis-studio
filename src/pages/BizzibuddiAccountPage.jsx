@@ -924,10 +924,10 @@ export default function BizzibuddiAccountPage() {
             </div>
           )}
 
-        {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
+        {message && !["login", "create"].includes(view) && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
         {view === "demo" && <BizziBuddiDemoWorkspace onExit={() => selectView("login")} onCreateAccount={() => selectView("create", { fromDemo: true })} />}
-        {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
-        {view === "create" && <AuthPanel mode="create" fromDemo={new URLSearchParams(window.location.search).get("from") === "demo"} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
+        {view === "login" && <AuthPanel mode="login" account={account} errorMessage={message} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
+        {view === "create" && <AuthPanel mode="create" fromDemo={new URLSearchParams(window.location.search).get("from") === "demo"} errorMessage={message} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
@@ -1718,8 +1718,48 @@ function bizzibuddiAuthRequest(path, options = {}) {
   });
 }
 
-function AuthPanel({ mode, account, onSubmit, onSwitch, onExploreDemo, fromDemo = false }) {
+function AuthPanel({ mode, account, errorMessage, onSubmit, onSwitch, onExploreDemo, fromDemo = false }) {
   const login = mode === "login";
+  const [validationError, setValidationError] = useState("");
+
+  useEffect(() => {
+    setValidationError("");
+  }, [mode, fromDemo]);
+
+  const visibleError = validationError || errorMessage;
+
+  function handleAuthSubmit(event) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+
+    const name = String(form.get("name") || "").trim();
+    const username = String(form.get("username") || "").trim();
+    const email = String(form.get("email") || "").trim();
+    const identifier = String(form.get("identifier") || "").trim();
+    const password = String(form.get("password") || "");
+
+    let error = "";
+
+    if (!login && !name) error = "Please enter your full name.";
+    else if (!login && !username) error = "Please choose a username.";
+    else if (!login && !email) error = "Please enter your email address.";
+    else if (!login && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) error = "Please enter a valid email address.";
+    else if (login && !identifier) error = "Please enter your email address or username.";
+    else if (!password) error = "Please enter your password.";
+    else if (!login && password.length < 10) error = "Your password must be at least 10 characters.";
+
+    if (error) {
+      setValidationError(error);
+      window.requestAnimationFrame(() => {
+        document.getElementById("bizzibuddi-auth-error")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
+
+    setValidationError("");
+    onSubmit(event);
+  }
+
   return <section style={cardStyle(560)}>
     <div style={centerStyle}>
       <div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div>
@@ -1733,13 +1773,27 @@ function AuthPanel({ mode, account, onSubmit, onSwitch, onExploreDemo, fromDemo 
             : "Create your secure BizziBuddi account and begin your business setup."}
       </p>
     </div>
+
+    {visibleError && (
+      <div
+        id="bizzibuddi-auth-error"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+        style={authErrorStyle}
+      >
+        <strong>{login ? "We couldn't log you in." : "We couldn't create your account."}</strong>
+        <span>{visibleError}</span>
+      </div>
+    )}
+
     {fromDemo && !login && (
       <div style={{ ...businessNote, marginTop: 18 }}>
         <strong>Starting your real workspace</strong>
         <span style={{ display: "block", marginTop: 5 }}>The Harbour & Thread sample business stays in the Demo. Your new account starts clean.</span>
       </div>
     )}
-    <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
+    <form onSubmit={handleAuthSubmit} noValidate style={{ marginTop: 28 }}>
       {!login && <Field name="name" label="Full name" type="text" placeholder="Your name" />}
       {!login && <Field name="username" label="Username" type="text" placeholder="Choose a username" />}
       {!login && <Field name="email" label="Email address" type="email" placeholder="you@example.com" />}
@@ -10050,7 +10104,7 @@ const switchText = { textAlign: "center", color: MUTED, fontSize: 14, margin: "2
 const smallText = { color: MUTED, fontSize: 13 };
 const fieldStyle = { display: "block", marginTop: 17, fontSize: 13, fontWeight: 700 };
 const inputStyle = { display: "block", width: "100%", minHeight: 52, marginTop: 8, padding: "0 15px", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 10, fontSize: 15, color: TEXT, background: SURFACE };
-const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(37,99,235,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };
+const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(37,99,235,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };\nconst authErrorStyle = { position: "sticky", top: 12, zIndex: 20, display: "grid", gap: 5, margin: "22px 0 0", padding: "14px 16px", borderRadius: 12, background: "rgba(255,75,75,.12)", border: "1px solid rgba(255,120,120,.62)", color: TEXT, lineHeight: 1.45, boxShadow: "0 12px 28px rgba(0,0,0,.22)" };
 const plansGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))", gap: 20, alignItems: "stretch" };
 const popularBadge = { display: "inline-block", alignSelf: "flex-start", padding: "7px 10px", borderRadius: 999, background: RED, fontSize: 11, fontWeight: 700 };
 const planTitle = { fontSize: 27, margin: "18px 0 5px" };
