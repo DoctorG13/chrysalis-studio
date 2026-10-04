@@ -3136,7 +3136,15 @@ function BusinessSetupPanel({ account, onAccountUpdate }) {
       <label style={fieldStyle}>
         Business type
         <select value={profile?.businessType || "general"} onChange={chooseIndustry} disabled={saving} style={inputStyle}>
-          {(profile?.industries || []).map((industry) => <option key={industry.key} value={industry.key}>{industry.name}</option>)}
+          {(profile?.industries?.length ? profile.industries : [
+            { key: "general", name: "General business" },
+            { key: "dressmaker", name: "Dressmaker / fashion" },
+            { key: "hairdresser", name: "Hairdresser / salon" },
+            { key: "tattooist", name: "Tattooist / studio" },
+            { key: "school", name: "School / education" },
+            { key: "trades", name: "Trades / field service" },
+            { key: "consultant", name: "Consultant / professional services" },
+          ]).map((industry) => <option key={industry.key} value={industry.key}>{industry.name}</option>)}
         </select>
       </label>
 
