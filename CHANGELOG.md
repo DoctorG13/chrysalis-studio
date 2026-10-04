@@ -1,3 +1,19 @@
+## BizziBuddi Demo Sandbox 2.0
+
+### Added
+
+- Converted Explore BizziBuddi from a read-only sample view into an interactive temporary sandbox.
+- Added temporary demo People creation/removal.
+- Added temporary demo Jobs creation/removal and status cycling.
+- Added temporary demo Appointments.
+- Added temporary Production task interaction.
+- Added temporary Custom Field creation.
+- Added dynamic demo Buddi priorities based on sandbox changes.
+- Added prominent Reset Demo / Restore Original Sample Business controls.
+- Confirmed sandbox actions do not call BizziBuddi APIs or write to the production database.
+
+---
+
 ## BizziBuddi Universal Business Foundation
 
 ### Added
