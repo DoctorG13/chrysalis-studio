@@ -585,3 +585,13 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Restore the active Demo module after refresh
 - [x] Keep Demo state isolated from authenticated account data
 - [x] Clear Demo session explicitly when exiting or creating an account
+
+
+---
+
+## BizziBuddi Demo — Route Persistence Fix
+
+- [x] Keep Demo module routes explicitly inside view=demo
+- [x] Persist the active Demo module in the URL
+- [x] Restore Demo People and other modules correctly after refresh
+- [x] Prevent accidental routing into account-backed workspace modules
