@@ -604,3 +604,14 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Detect active Demo session before restoring authenticated workspace state
 - [x] Keep Demo isolated when a real BizziBuddi login session also exists
 - [x] Prevent refresh from falling into account-backed Reports / People / other modules
+
+
+---
+
+## BizziBuddi Demo → Real Account Handoff
+
+- [x] Create real account from Demo with explicit handoff context
+- [x] Explain that Demo data remains isolated
+- [x] Start new real accounts with a clean workspace
+- [x] Capture business type during initial onboarding
+- [x] Persist business type through BizziBuddi account configuration
