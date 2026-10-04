@@ -310,6 +310,7 @@ export default function BizzibuddiAccountPage() {
     if (target.jobId) params.set("job", target.jobId);
     if (target.appointmentId) params.set("appointment", target.appointmentId);
     if (target.invoiceId) params.set("invoice", target.invoiceId);
+    if (target.fromDemo) params.set("from", "demo");
 
     const query = params.toString();
     const nextUrl = window.location.pathname + (query ? "?" + query : "");
@@ -924,9 +925,9 @@ export default function BizzibuddiAccountPage() {
           )}
 
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
-        {view === "demo" && <BizziBuddiDemoWorkspace onExit={() => selectView("login")} onCreateAccount={() => selectView("create")} />}
+        {view === "demo" && <BizziBuddiDemoWorkspace onExit={() => selectView("login")} onCreateAccount={() => selectView("create", { fromDemo: true })} />}
         {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
-        {view === "create" && <AuthPanel mode="create" fromDemo={initialView === "create" && initialRouteParams.get("from") === "demo"} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
+        {view === "create" && <AuthPanel mode="create" fromDemo={new URLSearchParams(window.location.search).get("from") === "demo"} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
