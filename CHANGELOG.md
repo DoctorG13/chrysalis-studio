@@ -3014,3 +3014,16 @@ All notable changes to Chrysalis are recorded here.
 - Demo mode also hides the authenticated Ask Buddi / Help utility rail.
 - The Demo workspace's own Overview, People, Jobs, Calendar, Finance, Production, Automation, Custom fields and Ask Buddi navigation is now the only navigation presented while exploring the sandbox.
 - Prevents Demo → People from accidentally routing into the real account-backed People workspace.
+
+
+---
+
+## BizziBuddi Demo — Session Persistence
+
+### Added
+
+- Demo workspace state now persists for the current browser session using sessionStorage.
+- Refreshing the Demo no longer discards temporary people, jobs, appointments, production changes or custom fields.
+- The active Demo module is restored after refresh.
+- Demo session data remains completely isolated from authenticated account data and is never written to the BizziBuddi database.
+- **Exit demo** and **Create real account** explicitly clear the temporary Demo session.
