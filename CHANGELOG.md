@@ -1,3 +1,15 @@
+## BizziBuddi Clean Start / Business Reset
+
+### Added
+
+- Added a secure **Account → Start fresh** business-data reset workflow.
+- Requires the explicit confirmation phrase **START FRESH** before deletion.
+- Creates a full database safety backup before clearing account data.
+- Clears account-scoped People, Jobs, Calendar, Finance, Expenses, Production, Production Templates, Production Time, Measurements and Automation data.
+- Preserves the BizziBuddi account, login, membership and business identity.
+- Removed the legacy local-demo reset from the Dashboard.
+- Replaced development-preview wording with production-ready account language.
+
 ## People Client Calendar Snapshot
 
 ### Added
