@@ -26,8 +26,15 @@ function readDemoSession() {
 
 export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
   const initialSession = readDemoSession();
+  const initialDemoRoute = new URLSearchParams(window.location.search).get("demoModule");
+  const validModules = new Set(["overview", "people", "jobs", "calendar", "finance", "production", "automation", "custom", "buddi"]);
+  const initialModule = validModules.has(initialDemoRoute)
+    ? initialDemoRoute
+    : validModules.has(initialSession?.module)
+      ? initialSession.module
+      : "overview";
   const [data, setData] = useState(() => initialSession?.data || cloneSeed());
-  const [module, setModule] = useState(() => initialSession?.module || "overview");
+  const [module, setModule] = useState(initialModule);
   const [notice, setNotice] = useState("");
   const [personForm, setPersonForm] = useState({ name: "", email: "", phone: "" });
   const [jobForm, setJobForm] = useState({ title: "", personId: "", price: "", dueDate: "" });
@@ -43,6 +50,16 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
       // Demo remains fully usable if session storage is unavailable.
     }
   }, [data, module]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    params.set("view", "demo");
+    params.set("demoModule", module);
+    const nextUrl = window.location.pathname + "?" + params.toString();
+    if (window.location.pathname + window.location.search !== nextUrl) {
+      window.history.replaceState({}, "", nextUrl);
+    }
+  }, [module]);
 
   function leaveDemo(callback) {
     try {
@@ -337,7 +354,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
 
       <nav style={nav} aria-label="Demo workspace">
         {modules.map(([key, label]) => (
-          <button key={key} type="button" onClick={() => setModule(key)} style={tab(module === key)}>
+          <button key={key} type="button" onClick={() => setModule(key)} style={tab(module === key)} aria-current={module === key ? "page" : undefined}>
             {label}
           </button>
         ))}
