@@ -1975,8 +1975,9 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           const personBookingCount = appointments.filter((appointment) => appointment.personId === person.id).length;
           const personInvoiceCount = invoices.filter((invoice) => invoice.personId === person.id || invoice.clientId === person.id).length;
           const primaryJob = [...personJobs].sort((a, b) => String(b.createdAt || b.date || "").localeCompare(String(a.createdAt || a.date || "")))[0];
+          const todayDate = new Date().toISOString().slice(0, 10);
           const primaryAppointment = [...appointments]
-            .filter((appointment) => appointment.personId === person.id && appointment.date)
+            .filter((appointment) => appointment.personId === person.id && appointment.date && String(appointment.date) >= todayDate)
             .sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
           const personOutstanding = invoices
             .filter((invoice) => invoice.personId === person.id || invoice.clientId === person.id)
