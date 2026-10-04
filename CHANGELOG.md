@@ -3002,3 +3002,15 @@ All notable changes to Chrysalis are recorded here.
 - Reworked the scroll timing to wait for the People panel to mount before positioning it.
 - Uses the actual module element as the scroll target and offsets it for the sticky authenticated workspace navigation.
 - Keeps the **Add a person** form as the first functional area visible in the People workspace.
+
+
+---
+
+## BizziBuddi Demo — Navigation Isolation
+
+### Changed
+
+- Demo mode now hides the authenticated workspace main navigation.
+- Demo mode also hides the authenticated Ask Buddi / Help utility rail.
+- The Demo workspace's own Overview, People, Jobs, Calendar, Finance, Production, Automation, Custom fields and Ask Buddi navigation is now the only navigation presented while exploring the sandbox.
+- Prevents Demo → People from accidentally routing into the real account-backed People workspace.
