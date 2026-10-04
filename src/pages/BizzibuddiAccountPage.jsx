@@ -1975,6 +1975,16 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           const personBookingCount = appointments.filter((appointment) => appointment.personId === person.id).length;
           const personInvoiceCount = invoices.filter((invoice) => invoice.personId === person.id || invoice.clientId === person.id).length;
           const primaryJob = [...personJobs].sort((a, b) => String(b.createdAt || b.date || "").localeCompare(String(a.createdAt || a.date || "")))[0];
+          const primaryAppointment = [...appointments]
+            .filter((appointment) => appointment.personId === person.id && appointment.date)
+            .sort((a, b) => String(a.date).localeCompare(String(b.date)))[0];
+          const personOutstanding = invoices
+            .filter((invoice) => invoice.personId === person.id || invoice.clientId === person.id)
+            .reduce((total, invoice) => total + Number(invoice.balance || 0), 0);
+          const personJobStatus = primaryJob?.status || "No active job";
+          const nextAppointmentLabel = primaryAppointment
+            ? formatTimelineDate(primaryAppointment.date)
+            : "No upcoming booking";
           return (
             <article key={person.id} style={personCard}>
               <div style={{ minWidth: 0, flex: "1 1 280px" }}>
@@ -1986,6 +1996,20 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                   <span style={personMetaBadge}>{personJobCount} {personJobCount === 1 ? "job" : "jobs"}</span>
                   <span style={personMetaBadge}>{personBookingCount} {personBookingCount === 1 ? "booking" : "bookings"}</span>
                   <span style={personMetaBadge}>{personInvoiceCount} {personInvoiceCount === 1 ? "invoice" : "invoices"}</span>
+                </div>
+                <div style={personRelationshipGrid}>
+                  <div>
+                    <small style={personRelationshipLabel}>JOB STATUS</small>
+                    <strong style={personRelationshipValue}>{personJobStatus}</strong>
+                  </div>
+                  <div>
+                    <small style={personRelationshipLabel}>NEXT BOOKING</small>
+                    <strong style={personRelationshipValue}>{nextAppointmentLabel}</strong>
+                  </div>
+                  <div>
+                    <small style={personRelationshipLabel}>OUTSTANDING</small>
+                    <strong style={personRelationshipValue}>{formatCurrency(personOutstanding)}</strong>
+                  </div>
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -9068,6 +9092,27 @@ const personMetaBadge = {
   fontSize: 10,
   fontWeight: 700,
   lineHeight: 1.2,
+};
+const personRelationshipGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 7,
+  marginTop: 10,
+};
+const personRelationshipLabel = {
+  display: "block",
+  color: MUTED,
+  fontSize: 9,
+  fontWeight: 800,
+  letterSpacing: ".06em",
+  textTransform: "uppercase",
+};
+const personRelationshipValue = {
+  display: "block",
+  marginTop: 3,
+  fontSize: 11,
+  lineHeight: 1.25,
+  fontWeight: 700,
 };
 
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
