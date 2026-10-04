@@ -2007,6 +2007,40 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
               setMeasurements([]);
             }} style={smallActionButton}>View timeline</button>
             <button type="button" onClick={() => toggleMeasurements(selectedPerson)} style={smallActionButton}>Measurements</button>
+            <button type="button" onClick={() => selectView("finance", selectedInvoices[0]?.id ? { invoiceId: selectedInvoices[0].id } : {})} style={smallActionButton}>
+              Open finance
+            </button>
+          </div>
+
+          <div style={{ marginTop: 16, padding: 12, borderRadius: 10, border: "1px solid " + BORDER, background: "rgba(255,255,255,.02)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div>
+                <small style={smallText}>FINANCE</small>
+                <strong style={{ display: "block", marginTop: 3, fontSize: 14 }}>
+                  {selectedInvoices.length} {selectedInvoices.length === 1 ? "invoice" : "invoices"} · {formatCurrency(selectedOutstanding)} outstanding
+                </strong>
+              </div>
+              <button type="button" onClick={() => selectView("finance", selectedInvoices[0]?.id ? { invoiceId: selectedInvoices[0].id } : {})} style={smallActionButton}>
+                {selectedInvoices.length > 0 ? "View invoices" : "Open finance"}
+              </button>
+            </div>
+            {selectedInvoices.length > 0 ? (
+              <div style={{ display: "grid", gap: 6, marginTop: 9 }}>
+                {selectedInvoices.slice(0, 3).map((invoice) => (
+                  <div key={invoice.id} style={personFinanceRow}>
+                    <div style={{ minWidth: 0 }}>
+                      <strong style={{ display: "block", fontSize: 12 }}>{invoice.number || "Invoice"}</strong>
+                      <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 10 }}>
+                        {invoice.status || "Issued"} · {formatCurrency(Number(invoice.amount) || 0)}
+                      </span>
+                    </div>
+                    <strong style={{ fontSize: 12 }}>{formatCurrency(Number(invoice.balance) || 0)} due</strong>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>No invoices linked to this person.</span>
+            )}
           </div>
 
           <div style={{ marginTop: 16 }}>
@@ -9203,6 +9237,16 @@ const personFocusActivityItem = {
   display: "grid",
   gridTemplateColumns: "86px minmax(0,1fr)",
   gap: 9,
+  padding: "8px 9px",
+  borderRadius: 8,
+  border: "1px solid rgba(255,255,255,.07)",
+  background: "rgba(255,255,255,.02)",
+};
+const personFinanceRow = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 10,
   padding: "8px 9px",
   borderRadius: 8,
   border: "1px solid rgba(255,255,255,.07)",
