@@ -1,3 +1,12 @@
+## People Client Production Snapshot
+
+### Added
+
+- Added a Production snapshot to the People Client Overview.
+- Shows the client's current production job, stage and due date.
+- Added direct **Open production** navigation for the linked job.
+- Keeps production data read-only from the People workspace.
+
 ## People Client Payment Snapshot
 
 ### Added
