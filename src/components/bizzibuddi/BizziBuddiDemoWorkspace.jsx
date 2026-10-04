@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { bizzibuddiDemoData, getDemoSummary } from "../data/bizzibuddiDemoData";
+import { bizzibuddiDemoData, getDemoSummary } from "../../data/bizzibuddiDemoData";
 
 const BLUE = "#2563EB";
 const CYAN = "#00B4DB";
