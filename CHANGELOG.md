@@ -1,3 +1,16 @@
+## BizziBuddi Demo Sandbox — Proper Data Entry UX
+
+### Changed
+
+- Replaced browser prompt dialogs with proper inline demo forms.
+- Added a clear **Add a person** form at the top of the Demo People workspace with Name, Email and Phone fields.
+- Added equivalent inline forms for demo Jobs, Appointments and Custom Fields.
+- Added inline remove confirmation instead of browser confirm dialogs.
+- Kept all demo mutations strictly inside the isolated in-memory demo dataset.
+- Made it explicit that demo records never write to the authenticated People, Jobs, Calendar or other account workspaces.
+
+---
+
 ## BizziBuddi Demo Sandbox 2.0
 
 ### Added
