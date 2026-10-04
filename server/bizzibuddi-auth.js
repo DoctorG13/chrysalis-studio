@@ -240,7 +240,7 @@ function toAccount(user) {
   const db = getDatabase();
   const workspace = db
     .prepare(
-      `SELECT id, name, subscription_plan, subscription_status
+      `SELECT id, name, subscription_plan, subscription_status, business_type, terminology_json
        FROM workspaces
        WHERE owner_user_id = ?
        ORDER BY created_at
