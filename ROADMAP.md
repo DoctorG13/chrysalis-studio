@@ -556,3 +556,12 @@ Donna can comfortably run Chrysalis as her primary business application every da
 ## Post-1.0 — Actionable Assistant
 
 - [x] Buddi confirmed production task actions
+
+---
+
+## BizziBuddi Demo — People Workspace Positioning
+
+- [x] Selecting **People** scrolls directly to the Demo People workspace
+- [x] Wait for the People workspace to mount before scrolling
+- [x] Account for the sticky workspace navigation
+- [x] Keep the Add Person form as the first functional area
