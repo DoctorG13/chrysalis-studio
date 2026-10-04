@@ -662,6 +662,52 @@ const MIGRATIONS = [
         ON bizzibuddi_expenses(category);
     `,
   },
+  {
+    version: 20,
+    name: "bizzibuddi-business-configuration",
+    sql: `
+      ALTER TABLE workspaces ADD COLUMN business_type TEXT NOT NULL DEFAULT 'general';
+      ALTER TABLE workspaces ADD COLUMN terminology_json TEXT NOT NULL DEFAULT '{}';
+
+      CREATE TABLE IF NOT EXISTS bizzibuddi_custom_field_definitions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        name TEXT NOT NULL,
+        field_key TEXT NOT NULL,
+        field_type TEXT NOT NULL DEFAULT 'text',
+        options_json TEXT NOT NULL DEFAULT '[]',
+        unit TEXT NOT NULL DEFAULT '',
+        required INTEGER NOT NULL DEFAULT 0,
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        active INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE (user_id, entity_type, field_key)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_custom_fields_user
+        ON bizzibuddi_custom_field_definitions(user_id, entity_type);
+
+      CREATE TABLE IF NOT EXISTS bizzibuddi_custom_field_values (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        definition_id TEXT NOT NULL,
+        entity_type TEXT NOT NULL,
+        entity_id TEXT NOT NULL,
+        value_json TEXT NOT NULL DEFAULT 'null',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (definition_id) REFERENCES bizzibuddi_custom_field_definitions(id) ON DELETE CASCADE,
+        UNIQUE (user_id, definition_id, entity_type, entity_id)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_custom_values_entity
+        ON bizzibuddi_custom_field_values(user_id, entity_type, entity_id);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
