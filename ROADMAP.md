@@ -7,7 +7,8 @@
 - [x] Add persistent custom-field definitions
 - [x] Add persistent custom-field values API
 - [x] Add Account business configuration UI
-- [ ] Render custom fields directly in People, Jobs, Calendar and Finance forms
+- [x] Render custom fields directly in People and Jobs forms
+- [ ] Render custom fields directly in Calendar and Finance forms
 - [ ] Add industry-aware Buddi terminology and prompts
 - [ ] Add interactive demo CRUD sandbox with temporary session data
 
