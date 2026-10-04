@@ -1,3 +1,12 @@
+## People Client Overview
+
+### Added
+
+- Added a focused Client Overview panel from the People workspace.
+- Clicking a person's name now surfaces their contact details, jobs, next booking and outstanding balance.
+- Added quick access to the latest job, timeline, measurements and recent activity.
+- Kept the existing People cards and actions available underneath the overview.
+
 ## BizziBuddi Help Rail Text Direction
 
 ### Changed
