@@ -2,6 +2,7 @@ import { DatabaseSync, backup as sqliteBackup } from "node:sqlite";
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { BIZZI_BUDDI_FIELD_TYPES, BIZZI_BUDDI_INDUSTRY_TEMPLATES } from "./bizzibuddi-business-config.js";
 
 const COOKIE_NAME = "bizzibuddi_session";
 const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
@@ -217,6 +218,24 @@ function validateRegistration(payload) {
   return { name, username, email, password };
 }
 
+function parseJsonObject(value) {
+  try {
+    const parsed = JSON.parse(String(value || "{}"));
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizeBusinessType(value) {
+  const key = String(value || "general").trim().toLowerCase();
+  return BIZZI_BUDDI_INDUSTRY_TEMPLATES[key] ? key : "general";
+}
+
+function getIndustryTemplate(type) {
+  return BIZZI_BUDDI_INDUSTRY_TEMPLATES[normalizeBusinessType(type)];
+}
+
 function toAccount(user) {
   const db = getDatabase();
   const workspace = db
@@ -243,6 +262,8 @@ function toAccount(user) {
           : "Free",
     workspaceId: workspace?.id || null,
     subscriptionStatus: workspace?.subscription_status || "inactive",
+    businessType: workspace?.business_type || "general",
+    terminology: parseJsonObject(workspace?.terminology_json),
   };
 }
 
@@ -338,6 +359,7 @@ function createAccount(payload) {
 function updateAccount(userId, payload) {
   const business = String(payload?.business || "").trim();
   const requestedPlan = payload?.plan == null ? null : String(payload.plan || "").trim();
+  const requestedBusinessType = payload?.businessType == null ? null : normalizeBusinessType(payload.businessType);
 
   if (business.length > 120) {
     throw new Error("Business name must be 120 characters or fewer.");
@@ -356,7 +378,7 @@ function updateAccount(userId, payload) {
   const db = getDatabase();
   const workspace = db
     .prepare(
-      `SELECT id
+      `SELECT id, business_type, terminology_json
        FROM workspaces
        WHERE owner_user_id = ?
        ORDER BY created_at
@@ -367,23 +389,66 @@ function updateAccount(userId, payload) {
   if (!workspace) throw new Error("Business account could not be found.");
 
   const nextPlan = requestedPlan ? planMap.get(requestedPlan) : null;
+  const nextType = requestedBusinessType || workspace.business_type || "general";
+  const template = getIndustryTemplate(nextType);
+  const existingTerminology = parseJsonObject(workspace.terminology_json);
+  const terminology = payload?.terminology && typeof payload.terminology === "object"
+    ? { ...existingTerminology, ...payload.terminology }
+    : (Object.keys(existingTerminology).length ? existingTerminology : template.terminology);
 
-  if (nextPlan) {
-    db.prepare(
-      `UPDATE workspaces
-       SET name = ?, subscription_plan = ?, updated_at = ?
-       WHERE id = ? AND owner_user_id = ?`
-    ).run(business, nextPlan, new Date().toISOString(), workspace.id, userId);
-  } else {
-    db.prepare(
-      `UPDATE workspaces
-       SET name = ?, updated_at = ?
-       WHERE id = ? AND owner_user_id = ?`
-    ).run(business, new Date().toISOString(), workspace.id, userId);
+  const fields = Array.isArray(payload?.customFields) ? payload.customFields : null;
+
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    if (nextPlan) {
+      db.prepare(
+        `UPDATE workspaces
+         SET name = ?, subscription_plan = ?, business_type = ?, terminology_json = ?, updated_at = ?
+         WHERE id = ? AND owner_user_id = ?`
+      ).run(business, nextPlan, nextType, JSON.stringify(terminology), new Date().toISOString(), workspace.id, userId);
+    } else {
+      db.prepare(
+        `UPDATE workspaces
+         SET name = ?, business_type = ?, terminology_json = ?, updated_at = ?
+         WHERE id = ? AND owner_user_id = ?`
+      ).run(business, nextType, JSON.stringify(terminology), new Date().toISOString(), workspace.id, userId);
+    }
+
+    if (requestedBusinessType && fields === null) {
+      const now = new Date().toISOString();
+      const existing = db
+        .prepare(`SELECT COUNT(*) AS count FROM bizzibuddi_custom_field_definitions WHERE user_id = ?`)
+        .get(userId)?.count || 0;
+
+      if (!existing && template.fields.length) {
+        const insert = db.prepare(
+          `INSERT INTO bizzibuddi_custom_field_definitions
+           (id, user_id, entity_type, name, field_key, field_type, options_json, unit, required, sort_order, active, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
+        );
+        template.fields.forEach((field, index) => {
+          insert.run(
+            randomUUID(), userId, "person", field.name, field.key, field.type,
+            JSON.stringify(field.options || []), field.unit || "", 0, index, now, now
+          );
+        });
+      }
+    }
+
+    if (fields) {
+      replaceCustomFieldDefinitions(userId, fields);
+    }
+
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
   }
 
   return toAccount(getUserById(userId));
 }
+
+
 function createSessionCookie(userId, request) {
   const secure =
     process.env.NODE_ENV === "production" ||
@@ -3126,6 +3191,132 @@ function getBizziBuddiReports(userId) {
   };
 }
 
+function validateCustomFieldDefinition(payload) {
+  const name = String(payload?.name || "").trim().slice(0, 120);
+  const fieldKey = String(payload?.fieldKey || payload?.key || name)
+    .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+  const entityType = String(payload?.entityType || "person").trim().toLowerCase();
+  const fieldType = String(payload?.fieldType || payload?.type || "text").trim().toLowerCase();
+  const options = Array.isArray(payload?.options) ? payload.options.map((item) => String(item).trim()).filter(Boolean).slice(0, 50) : [];
+  const unit = String(payload?.unit || "").trim().slice(0, 30);
+  const required = Boolean(payload?.required);
+
+  if (!name) throw new Error("Custom field name is required.");
+  if (!fieldKey) throw new Error("Custom field key is required.");
+  if (!["person", "job", "appointment", "invoice"].includes(entityType)) throw new Error("Unsupported custom field entity.");
+  if (!BIZZI_BUDDI_FIELD_TYPES.includes(fieldType)) throw new Error("Unsupported custom field type.");
+
+  return { name, fieldKey, entityType, fieldType, options, unit, required };
+}
+
+function getCustomFieldDefinitions(userId, entityType = "") {
+  const rows = getDatabase()
+    .prepare(
+      `SELECT id, entity_type, name, field_key, field_type, options_json, unit, required, sort_order, active, created_at, updated_at
+       FROM bizzibuddi_custom_field_definitions
+       WHERE user_id = ? ${entityType ? "AND entity_type = ?" : ""}
+       ORDER BY entity_type, sort_order, name`
+    )
+    .all(...(entityType ? [userId, entityType] : [userId]));
+
+  return rows.map((row) => ({
+    id: row.id,
+    entityType: row.entity_type,
+    name: row.name,
+    fieldKey: row.field_key,
+    fieldType: row.field_type,
+    options: parseJsonArray(row.options_json),
+    unit: row.unit || "",
+    required: Boolean(row.required),
+    sortOrder: Number(row.sort_order || 0),
+    active: Boolean(row.active),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+}
+
+function parseJsonArray(value) {
+  try {
+    const parsed = JSON.parse(String(value || "[]"));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function replaceCustomFieldDefinitions(userId, fields) {
+  const database = getDatabase();
+  const normalized = fields.map(validateCustomFieldDefinition);
+  const now = new Date().toISOString();
+
+  for (const field of normalized) {
+    const existing = database.prepare(
+      `SELECT id FROM bizzibuddi_custom_field_definitions
+       WHERE user_id = ? AND entity_type = ? AND field_key = ?`
+    ).get(userId, field.entityType, field.fieldKey);
+
+    if (existing) {
+      database.prepare(
+        `UPDATE bizzibuddi_custom_field_definitions
+         SET name = ?, field_type = ?, options_json = ?, unit = ?, required = ?, sort_order = ?, active = 1, updated_at = ?
+         WHERE id = ? AND user_id = ?`
+      ).run(field.name, field.fieldType, JSON.stringify(field.options), field.unit, field.required ? 1 : 0, normalized.indexOf(field), now, existing.id, userId);
+    } else {
+      database.prepare(
+        `INSERT INTO bizzibuddi_custom_field_definitions
+         (id, user_id, entity_type, name, field_key, field_type, options_json, unit, required, sort_order, active, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
+      ).run(randomUUID(), userId, field.entityType, field.name, field.fieldKey, field.fieldType, JSON.stringify(field.options), field.unit, field.required ? 1 : 0, normalized.indexOf(field), now, now);
+    }
+  }
+
+  const keepKeys = new Set(normalized.map((field) => field.entityType + ":" + field.fieldKey));
+  const existingRows = database.prepare(
+    `SELECT id, entity_type, field_key FROM bizzibuddi_custom_field_definitions WHERE user_id = ?`
+  ).all(userId);
+
+  for (const row of existingRows) {
+    if (!keepKeys.has(row.entity_type + ":" + row.field_key)) {
+      database.prepare("UPDATE bizzibuddi_custom_field_definitions SET active = 0, updated_at = ? WHERE id = ? AND user_id = ?").run(now, row.id, userId);
+    }
+  }
+}
+
+function getCustomFieldValues(userId, entityType, entityId) {
+  return getDatabase()
+    .prepare(
+      `SELECT definition_id, value_json
+       FROM bizzibuddi_custom_field_values
+       WHERE user_id = ? AND entity_type = ? AND entity_id = ?`
+    )
+    .all(userId, entityType, entityId)
+    .reduce((result, row) => {
+      try { result[row.definition_id] = JSON.parse(row.value_json); }
+      catch { result[row.definition_id] = row.value_json; }
+      return result;
+    }, {});
+}
+
+function saveCustomFieldValues(userId, entityType, entityId, values) {
+  const database = getDatabase();
+  const definitions = getCustomFieldDefinitions(userId, entityType).filter((field) => field.active);
+  const allowed = new Set(definitions.map((field) => field.id));
+  const now = new Date().toISOString();
+
+  for (const [definitionId, value] of Object.entries(values && typeof values === "object" ? values : {})) {
+    if (!allowed.has(definitionId)) continue;
+    database.prepare(
+      `INSERT INTO bizzibuddi_custom_field_values
+       (id, user_id, definition_id, entity_type, entity_id, value_json, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id, definition_id, entity_type, entity_id)
+       DO UPDATE SET value_json = excluded.value_json, updated_at = excluded.updated_at`
+    ).run(randomUUID(), userId, definitionId, entityType, entityId, JSON.stringify(value), now, now);
+  }
+
+  return getCustomFieldValues(userId, entityType, entityId);
+}
+
 async function resetBizziBuddiBusinessData(userId) {
   const db = getDatabase();
 
@@ -3158,6 +3349,8 @@ async function resetBizziBuddiBusinessData(userId) {
     "bizzibuddi_measurements",
     "bizzibuddi_automation_events",
     "bizzibuddi_jobs",
+    "bizzibuddi_custom_field_values",
+    "bizzibuddi_custom_field_definitions",
     "bizzibuddi_people",
   ];
 
@@ -4176,6 +4369,90 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         sendJson(response, 201, { ok: true, authenticated: true, measurement });
         return true;
       }
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/business-profile" && (request.method === "GET" || request.method === "PUT")) {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      if (request.method === "GET") {
+        const account = toAccount(user);
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          profile: {
+            business: account.business,
+            businessType: account.businessType,
+            terminology: account.terminology,
+            industries: Object.entries(BIZZI_BUDDI_INDUSTRY_TEMPLATES).map(([key, template]) => ({
+              key, name: template.name, description: template.description,
+            })),
+          },
+        });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      const account = updateAccount(user.id, payload);
+      sendJson(response, 200, { ok: true, authenticated: true, account });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/custom-fields" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      const entityType = String(url.searchParams.get("entity") || "").trim().toLowerCase();
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        fieldTypes: BIZZI_BUDDI_FIELD_TYPES,
+        fields: getCustomFieldDefinitions(user.id, entityType),
+      });
+      return true;
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/custom-fields" && request.method === "PUT") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      const payload = await readJsonBody(request);
+      if (!Array.isArray(payload?.fields)) {
+        sendJson(response, 400, { ok: false, error: "Custom fields must be supplied as an array." });
+        return true;
+      }
+      replaceCustomFieldDefinitions(user.id, payload.fields);
+      sendJson(response, 200, { ok: true, authenticated: true, fields: getCustomFieldDefinitions(user.id) });
+      return true;
+    }
+
+    if (url.pathname.match(/^\/api\/bizzibuddi\/auth\/custom-fields\/values\/[^/]+\/[^/]+$/) && (request.method === "GET" || request.method === "PUT")) {
+      const match = url.pathname.match(/^\/api\/bizzibuddi\/auth\/custom-fields\/values\/([^/]+)\/([^/]+)$/);
+      const entityType = decodeURIComponent(match[1]).trim().toLowerCase();
+      const entityId = decodeURIComponent(match[2]).trim();
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+      if (!["person", "job", "appointment", "invoice"].includes(entityType) || !entityId) {
+        sendJson(response, 400, { ok: false, error: "Invalid custom-field target." });
+        return true;
+      }
+      if (request.method === "GET") {
+        sendJson(response, 200, { ok: true, authenticated: true, values: getCustomFieldValues(user.id, entityType, entityId) });
+        return true;
+      }
+      const payload = await readJsonBody(request);
+      sendJson(response, 200, { ok: true, authenticated: true, values: saveCustomFieldValues(user.id, entityType, entityId, payload?.values) });
+      return true;
     }
 
     if (url.pathname === "/api/bizzibuddi/auth/reset" && request.method === "DELETE") {
