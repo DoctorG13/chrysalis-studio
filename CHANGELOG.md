@@ -1,3 +1,13 @@
+## BizziBuddi Business Type — Other / Custom
+
+### Added
+
+- Added **Other / custom** as a business-type option for businesses that do not fit the available industry templates.
+- Uses the flexible General terminology without imposing industry-specific starter fields.
+- Available during onboarding and in Account → Business Profile.
+
+---
+
 ## BizziBuddi Business Setup Selector Fix
 
 ### Fixed
