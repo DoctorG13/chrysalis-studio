@@ -1989,6 +1989,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       const selectedProductionStage = selectedProduction?.stage || "Not started";
       const selectedProductionDueDate = selectedProduction?.dueDate || selectedProductionJob?.productionDueDate || null;
       const selectedNextAppointment = selectedAppointments.find((appointment) => appointment.date && String(appointment.date) >= new Date().toISOString().slice(0, 10));
+      const selectedUpcomingAppointments = selectedAppointments.filter((appointment) => appointment.date && String(appointment.date) >= new Date().toISOString().slice(0, 10));
       const selectedTimeline = personTimeline(selectedPerson).slice(0, 5);
       return (
         <section style={personFocusPanel}>
@@ -2113,6 +2114,52 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
               </div>
             ) : (
               <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>No production activity linked to this person yet.</span>
+            )}
+          </div>
+
+          <div style={{ marginTop: 16, padding: 12, borderRadius: 10, border: "1px solid " + BORDER, background: "rgba(255,255,255,.02)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div>
+                <small style={smallText}>CALENDAR</small>
+                <strong style={{ display: "block", marginTop: 3, fontSize: 14 }}>
+                  {selectedUpcomingAppointments.length} upcoming {selectedUpcomingAppointments.length === 1 ? "booking" : "bookings"}
+                </strong>
+              </div>
+              {selectedNextAppointment && (
+                <button
+                  type="button"
+                  onClick={() => selectView("calendar", { appointmentId: selectedNextAppointment.id })}
+                  style={smallActionButton}
+                >
+                  Open calendar
+                </button>
+              )}
+            </div>
+            {selectedUpcomingAppointments.length > 0 ? (
+              <div style={{ display: "grid", gap: 6, marginTop: 9 }}>
+                {selectedUpcomingAppointments.slice(0, 4).map((appointment) => (
+                  <div key={appointment.id} style={personFinanceRow}>
+                    <div style={{ minWidth: 0 }}>
+                      <strong style={{ display: "block", fontSize: 12 }}>{appointment.title || "Appointment"}</strong>
+                      <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 10 }}>
+                        {formatAppointmentDate(appointment.date, appointment.time)}
+                        {appointment.jobTitle ? " · " + appointment.jobTitle : ""}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => selectView("calendar", { appointmentId: appointment.id })}
+                      style={smallActionButton}
+                    >
+                      Open
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>
+                No upcoming bookings. Past calendar history remains available in Recent Activity.
+              </span>
             )}
           </div>
 
