@@ -126,7 +126,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
     setAppointmentForm({ title: "", personId: "", date: "", time: "" });
     setCustomFieldName("");
     setPendingRemove("");
-    notify("Demo restored to the original sample business.");
+    notify("The original Harbour & Thread sample business has been restored. Your real BizziBuddi account has not been changed.");
   }
 
   function addPerson(event) {
@@ -144,7 +144,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
 
     setData((current) => ({ ...current, people: [...current.people, person] }));
     setPersonForm({ name: "", email: "", phone: "" });
-    notify(name + " added to the demo workspace.");
+    notify(name + " was added to the demo workspace. This change is temporary and will not affect your real account.");
   }
 
   function removePerson(id) {
@@ -158,7 +158,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
       appointments: current.appointments.filter((item) => item.personId !== id),
     }));
     setPendingRemove("");
-    notify(person.name + " removed from the demo workspace.");
+    notify(person.name + " was removed from the demo workspace. Your real account was not changed.");
   }
 
   function addJob(event) {
@@ -181,7 +181,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
 
     setData((current) => ({ ...current, jobs: [...current.jobs, job] }));
     setJobForm({ title: "", personId: "", price: "", dueDate: "" });
-    notify(title + " added to the demo workspace.");
+    notify(title + " was added to the demo workspace. This change is temporary and will not affect your real account.");
   }
 
   function removeJob(id) {
@@ -194,7 +194,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
       production: current.production.filter((item) => item.jobId !== id),
     }));
     setPendingRemove("");
-    notify(job.title + " removed from the demo workspace.");
+    notify(job.title + " was removed from the demo workspace. Your real account was not changed.");
   }
 
   function addAppointment(event) {
@@ -215,7 +215,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
 
     setData((current) => ({ ...current, appointments: [...current.appointments, appointment] }));
     setAppointmentForm({ title: "", personId: "", date: "", time: "" });
-    notify(title + " added to the demo workspace.");
+    notify(title + " was added to the demo workspace. This change is temporary and will not affect your real account.");
   }
 
   function updateJobStatus(id) {
@@ -228,7 +228,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
         return { ...job, status: next };
       }),
     }));
-    notify("Job status updated.");
+    notify("Job status updated in the demo. This change is temporary and will not affect your real account.");
   }
 
   function toggleProductionTask(productionId, taskIndex) {
@@ -243,7 +243,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
             ),
           }),
     }));
-    notify("Production task updated.");
+    notify("Production task updated in the demo. This change is temporary and will not affect your real account.");
   }
 
   function addCustomField(event) {
@@ -256,7 +256,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
       customFields: [...current.customFields, [name, "Example value"]],
     }));
     setCustomFieldName("");
-    notify("Custom field added to the demo workspace.");
+    notify("Custom field added to the demo workspace. This change is temporary and will not affect your real account.");
   }
 
   function renderModule() {
@@ -344,7 +344,12 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
         </div>
       </div>
 
-      {notice && <div style={noticeStyle} role="status">{notice}</div>}
+      {notice && (
+        <div style={noticeStyle} role="status" aria-live="polite">
+          <strong style={{ display: "block", fontSize: 13, marginBottom: 3 }}>Demo action</strong>
+          <span>{notice}</span>
+        </div>
+      )}
 
       <div style={header}>
         <small style={eyebrow}>HARBOUR & THREAD STUDIO · DRESSMAKER TEMPLATE</small>
