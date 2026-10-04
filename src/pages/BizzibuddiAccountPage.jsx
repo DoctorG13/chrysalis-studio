@@ -1970,9 +1970,11 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         {filteredPeople.map((person) => {
           const isTimelineOpen = timelinePersonId === person.id;
           const timelineItems = isTimelineOpen ? personTimeline(person) : [];
-          const personJobCount = jobs.filter((job) => job.personId === person.id).length;
+          const personJobs = jobs.filter((job) => job.personId === person.id);
+          const personJobCount = personJobs.length;
           const personBookingCount = appointments.filter((appointment) => appointment.personId === person.id).length;
           const personInvoiceCount = invoices.filter((invoice) => invoice.personId === person.id || invoice.clientId === person.id).length;
+          const primaryJob = [...personJobs].sort((a, b) => String(b.createdAt || b.date || "").localeCompare(String(a.createdAt || a.date || "")))[0];
           return (
             <article key={person.id} style={personCard}>
               <div style={{ minWidth: 0, flex: "1 1 280px" }}>
@@ -1987,19 +1989,40 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTimelinePersonId(isTimelineOpen ? null : person.id);
-                    if (!isTimelineOpen) {
-                      setMeasurementPersonId(null);
-                      setMeasurements([]);
-                    }
-                  }}
-                  style={smallActionButton}
-                >
-                  {isTimelineOpen ? "Hide timeline" : "Timeline"}
-                </button>
+                {primaryJob ? (
+                  <button type="button" onClick={() => handleOpenJob(primaryJob.id)} style={{ ...primaryButton, width: "auto", marginTop: 0, padding: "7px 11px", fontSize: 12 }}>
+                    Open job
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTimelinePersonId(isTimelineOpen ? null : person.id);
+                      if (!isTimelineOpen) {
+                        setMeasurementPersonId(null);
+                        setMeasurements([]);
+                      }
+                    }}
+                    style={{ ...primaryButton, width: "auto", marginTop: 0, padding: "7px 11px", fontSize: 12 }}
+                  >
+                    {isTimelineOpen ? "Hide timeline" : "Timeline"}
+                  </button>
+                )}
+                {primaryJob && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTimelinePersonId(isTimelineOpen ? null : person.id);
+                      if (!isTimelineOpen) {
+                        setMeasurementPersonId(null);
+                        setMeasurements([]);
+                      }
+                    }}
+                    style={smallActionButton}
+                  >
+                    {isTimelineOpen ? "Hide timeline" : "Timeline"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => toggleMeasurements(person)}
