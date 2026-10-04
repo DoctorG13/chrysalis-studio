@@ -24,15 +24,43 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
 
   useEffect(() => {
     if (module !== "people") return;
-    const timer = window.setTimeout(() => {
+
+    let cancelled = false;
+    let attempts = 0;
+    let timer = null;
+
+    const scrollPeopleIntoView = () => {
+      if (cancelled) return;
+
       const target = peopleWorkspaceRef.current;
-      if (!target) return;
+      if (!target) {
+        attempts += 1;
+        if (attempts < 20) timer = window.setTimeout(scrollPeopleIntoView, 50);
+        return;
+      }
+
       const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
       const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-      const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 12;
-      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-    }, 40);
-    return () => window.clearTimeout(timer);
+
+      target.scrollIntoView({ block: "start", behavior: "smooth" });
+
+      window.requestAnimationFrame(() => {
+        if (cancelled) return;
+        const currentTop = target.getBoundingClientRect().top;
+        const desiredOffset = navHeight + 16;
+        if (Math.abs(currentTop - desiredOffset) > 4) {
+          window.scrollBy({ top: currentTop - desiredOffset, behavior: "smooth" });
+        }
+      });
+    };
+
+    const frame = window.requestAnimationFrame(scrollPeopleIntoView);
+
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+      if (timer) window.clearTimeout(timer);
+    };
   }, [module]);
 
   const summary = useMemo(() => getDemoSummary(data), [data]);
