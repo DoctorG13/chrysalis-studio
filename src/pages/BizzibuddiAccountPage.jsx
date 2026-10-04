@@ -916,7 +916,7 @@ export default function BizzibuddiAccountPage() {
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} />}
+        {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} />}
         {view === "finance" && (
           <FinancePanel
@@ -2969,7 +2969,7 @@ function PlansPanel({ onSelectPlan }) {
   return <section id="plans-membership"><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. Your selected membership is saved to your BizziBuddi account in this development preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function BusinessSetupPanel({ account }) {
+function BusinessSetupPanel({ account, onAccountUpdate }) {
   const [profile, setProfile] = useState(null);
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3007,6 +3007,7 @@ function BusinessSetupPanel({ account }) {
         }),
       });
       setProfile((current) => ({ ...(current || {}), businessType: result.account.businessType, terminology: result.account.terminology }));
+      onAccountUpdate?.(result.account);
       const fieldsResult = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/custom-fields");
       setFields(Array.isArray(fieldsResult.fields) ? fieldsResult.fields : []);
       setMessage("Business profile updated.");
@@ -3123,7 +3124,7 @@ function BusinessSetupPanel({ account }) {
   );
 }
 
-function AccountPanel({ account, onBack, onPlans, onResetBusiness }) {
+function AccountPanel({ account, onBack, onPlans, onResetBusiness, onAccountUpdate }) {
   const [resetOpen, setResetOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [resetting, setResetting] = useState(false);
@@ -3180,7 +3181,7 @@ function AccountPanel({ account, onBack, onPlans, onResetBusiness }) {
         </article>
       </div>
 
-      <BusinessSetupPanel account={account} />
+      <BusinessSetupPanel account={account} onAccountUpdate={onAccountUpdate} />
 
       <article style={{ ...reportCard, marginTop: 22, borderColor: "rgba(220,38,38,.38)" }}>
         <div style={reportCardHeading}>
