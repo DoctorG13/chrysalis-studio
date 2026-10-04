@@ -1980,6 +1980,14 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         .sort((a, b) => String(b.date || b.createdAt || "").localeCompare(String(a.date || a.createdAt || "")));
       const selectedPaid = selectedPayments.reduce((total, payment) => total + Number(payment.amount || 0), 0);
       const selectedPrimaryJob = [...selectedJobs].sort((a, b) => String(b.createdAt || b.date || "").localeCompare(String(a.createdAt || a.date || "")))[0];
+      const selectedProduction = (productionRecords || [])
+        .filter((record) => selectedJobs.some((job) => job.id === record.jobId))
+        .sort((a, b) => String(b.updatedAt || b.createdAt || "").localeCompare(String(a.updatedAt || a.createdAt || "")))[0];
+      const selectedProductionJob = selectedProduction
+        ? selectedJobs.find((job) => job.id === selectedProduction.jobId)
+        : null;
+      const selectedProductionStage = selectedProduction?.stage || "Not started";
+      const selectedProductionDueDate = selectedProduction?.dueDate || selectedProductionJob?.productionDueDate || null;
       const selectedNextAppointment = selectedAppointments.find((appointment) => appointment.date && String(appointment.date) >= new Date().toISOString().slice(0, 10));
       const selectedTimeline = personTimeline(selectedPerson).slice(0, 5);
       return (
@@ -2075,6 +2083,36 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
               </div>
             ) : (
               <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>No payments recorded for this person yet.</span>
+            )}
+          </div>
+
+          <div style={{ marginTop: 16, padding: 12, borderRadius: 10, border: "1px solid " + BORDER, background: "rgba(255,255,255,.02)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <div>
+                <small style={smallText}>PRODUCTION</small>
+                <strong style={{ display: "block", marginTop: 3, fontSize: 14 }}>
+                  {selectedProductionJob ? selectedProductionJob.title || "Current job" : "No production job"}
+                </strong>
+              </div>
+              {selectedProductionJob && (
+                <button type="button" onClick={() => selectView("production", { jobId: selectedProductionJob.id })} style={smallActionButton}>
+                  Open production
+                </button>
+              )}
+            </div>
+            {selectedProductionJob ? (
+              <div style={personFocusProductionGrid}>
+                <div>
+                  <small style={personRelationshipLabel}>STAGE</small>
+                  <strong style={personRelationshipValue}>{selectedProductionStage}</strong>
+                </div>
+                <div>
+                  <small style={personRelationshipLabel}>DUE</small>
+                  <strong style={personRelationshipValue}>{selectedProductionDueDate ? formatTimelineDate(selectedProductionDueDate) : "No due date"}</strong>
+                </div>
+              </div>
+            ) : (
+              <span style={{ display: "block", marginTop: 8, color: MUTED, fontSize: 12 }}>No production activity linked to this person yet.</span>
             )}
           </div>
 
@@ -9286,6 +9324,12 @@ const personFinanceRow = {
   borderRadius: 8,
   border: "1px solid rgba(255,255,255,.07)",
   background: "rgba(255,255,255,.02)",
+};
+const personFocusProductionGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+  gap: 8,
+  marginTop: 10,
 };
 
 const personMetaBadge = {
