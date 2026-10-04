@@ -1,3 +1,11 @@
+## People Summary Card Formatting Fix
+
+### Fixed
+
+- Separated People summary labels, counts and descriptions into clear vertical rows.
+- Prevented summary text from running together on desktop layouts.
+- Preserved the existing three-card responsive layout and People metrics.
+
 ## BizziBuddi People Parse Error Hotfix
 
 ### Fixed
