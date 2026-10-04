@@ -1,3 +1,13 @@
+## BizziBuddi Demo Sandbox — Data Entry UX
+
+- [x] Replace browser prompt dialogs with proper inline forms
+- [x] Put the Add Person form at the top of the Demo People workspace
+- [x] Keep demo person details isolated from the authenticated People workspace
+- [x] Replace browser confirm dialogs with inline confirmation controls
+- [x] Add consistent inline forms for demo Jobs, Calendar appointments and Custom Fields
+
+---
+
 ## BizziBuddi Universal Business Foundation
 
 - [x] Add isolated Explore BizziBuddi demo workspace
