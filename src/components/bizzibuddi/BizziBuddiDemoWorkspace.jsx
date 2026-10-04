@@ -6,14 +6,28 @@ const CYAN = "#00B4DB";
 const TEXT = "#FFFFFF";
 const MUTED = "#B8C6D6";
 const BORDER = "rgba(255,255,255,.14)";
+const DEMO_SESSION_KEY = "bizzibuddi-demo-session-v1";
 
 function cloneSeed() {
   return JSON.parse(JSON.stringify(seedData));
 }
 
+function readDemoSession() {
+  try {
+    const raw = window.sessionStorage.getItem(DEMO_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.data || typeof parsed.data !== "object") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
-  const [data, setData] = useState(cloneSeed);
-  const [module, setModule] = useState("overview");
+  const initialSession = readDemoSession();
+  const [data, setData] = useState(() => initialSession?.data || cloneSeed());
+  const [module, setModule] = useState(() => initialSession?.module || "overview");
   const [notice, setNotice] = useState("");
   const [personForm, setPersonForm] = useState({ name: "", email: "", phone: "" });
   const [jobForm, setJobForm] = useState({ title: "", personId: "", price: "", dueDate: "" });
@@ -21,6 +35,23 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
   const [customFieldName, setCustomFieldName] = useState("");
   const [pendingRemove, setPendingRemove] = useState("");
   const peopleWorkspaceRef = useRef(null);
+
+  useEffect(() => {
+    try {
+      window.sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify({ data, module }));
+    } catch {
+      // Demo remains fully usable if session storage is unavailable.
+    }
+  }, [data, module]);
+
+  function leaveDemo(callback) {
+    try {
+      window.sessionStorage.removeItem(DEMO_SESSION_KEY);
+    } catch {
+      // Ignore storage failures; leaving the demo still works normally.
+    }
+    callback();
+  }
 
   useEffect(() => {
     if (module !== "people") return;
@@ -291,8 +322,8 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <button type="button" onClick={resetDemo} style={secondary}>↻ Reset demo</button>
-          <button type="button" onClick={onExit} style={secondary}>Exit demo</button>
-          <button type="button" onClick={onCreateAccount} style={primary}>Create real account →</button>
+          <button type="button" onClick={() => leaveDemo(onExit)} style={secondary}>Exit demo</button>
+          <button type="button" onClick={() => leaveDemo(onCreateAccount)} style={primary}>Create real account →</button>
         </div>
       </div>
 
