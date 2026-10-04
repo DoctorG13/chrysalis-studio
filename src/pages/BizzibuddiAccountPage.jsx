@@ -1358,6 +1358,20 @@ export default function BizzibuddiAccountPage() {
                 }
               }
               @media (max-width: 760px) {
+                .bizzibuddi-account-page .bizzibuddi-people-hero {
+                  align-items: flex-start;
+                  margin-top: 16px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-people-hero h2 {
+                  font-size: 34px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-people-hero button {
+                  width: 100% !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-people-summary {
+                  grid-template-columns: 1fr !important;
+                }
+              }
                 .bizzibuddi-account-page .bizzibuddi-today-overview {
                   margin-top: 16px !important;
                   padding: 16px !important;
