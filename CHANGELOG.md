@@ -1,3 +1,11 @@
+## People Relationship Summary
+
+### Added
+
+- Added compact Jobs, Bookings and Invoices relationship badges to each People card.
+- Made each person's current business relationship easier to scan without opening their timeline.
+- Preserved all existing Timeline, Measurements, Edit and Delete actions.
+
 ## People Summary Card Formatting Fix
 
 ### Fixed
