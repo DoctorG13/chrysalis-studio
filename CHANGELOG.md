@@ -3051,3 +3051,17 @@ All notable changes to Chrysalis are recorded here.
 - An active Demo session cannot be replaced by the authenticated account workspace during page refresh.
 - Existing login sessions no longer cause Demo to fall through to account-backed Reports, People or other workspace views.
 - Demo remains a public, isolated sandbox even when the browser also has an authenticated BizziBuddi session.
+
+
+---
+
+## BizziBuddi Demo → Real Account Handoff
+
+### Added
+
+- Demo **Create real account** now carries explicit handoff context into account creation.
+- Account creation explains that Demo data is not copied into the real workspace.
+- New accounts start with a clean business dataset.
+- Business onboarding now captures the business type during initial setup.
+- Supported starter business types include general business, dressmaker/fashion, hairdresser/salon, tattooist/studio, school/education, trades/field service and consultant/professional services.
+- Business type is persisted through the existing account configuration flow so BizziBuddi can apply the appropriate terminology and starter fields.
