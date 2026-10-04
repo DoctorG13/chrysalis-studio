@@ -1,3 +1,18 @@
+## BizziBuddi Universal Business Foundation
+
+- [x] Add isolated Explore BizziBuddi demo workspace
+- [x] Add sample People, Jobs, Calendar, Finance, Production and Automation data
+- [x] Add business profile / industry template foundation
+- [x] Add configurable business terminology
+- [x] Add persistent custom-field definitions
+- [x] Add persistent custom-field values API
+- [x] Add Account business configuration UI
+- [ ] Render custom fields directly in People, Jobs, Calendar and Finance forms
+- [ ] Add industry-aware Buddi terminology and prompts
+- [ ] Add interactive demo CRUD sandbox with temporary session data
+
+---
+
 ## BizziBuddi Workspace Navigation — Utility Rail Outside Sticky Nav
 
 - [x] Keep Ask Buddi / Help outside the sticky navigation container
