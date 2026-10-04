@@ -1,3 +1,13 @@
+## BizziBuddi People Workspace Landing Polish
+
+### Changed
+
+- Added a clearer People workspace hero with direct Add a person action.
+- Added People, With Jobs and With Bookings summary metrics for quick orientation.
+- Clarified how People connects to jobs, appointments, finance and production.
+- Added narrow-screen responsive treatment for the People header and summary.
+- Preserved existing search, editing, timeline, measurements and deletion workflows.
+
 ## BizziBuddi Today Responsive Polish
 
 ### Changed
