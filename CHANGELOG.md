@@ -3039,3 +3039,15 @@ All notable changes to Chrysalis are recorded here.
 - The active Demo module is stored in the URL as demoModule.
 - Refreshing Demo → People, Jobs, Calendar, Finance or another Demo module now remains inside the isolated Demo workspace.
 - Prevents a Demo module from being interpreted as the authenticated account-backed workspace after refresh.
+
+
+---
+
+## BizziBuddi Demo — Authenticated Refresh Isolation
+
+### Fixed
+
+- Demo mode is now detected before authenticated session restoration.
+- An active Demo session cannot be replaced by the authenticated account workspace during page refresh.
+- Existing login sessions no longer cause Demo to fall through to account-backed Reports, People or other workspace views.
+- Demo remains a public, isolated sandbox even when the browser also has an authenticated BizziBuddi session.
