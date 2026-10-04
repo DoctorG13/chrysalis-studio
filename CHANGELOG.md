@@ -1,3 +1,13 @@
+## People Client Calendar Snapshot
+
+### Added
+
+- Added a Calendar snapshot to the People Client Overview.
+- Shows upcoming appointments and fittings linked to the selected person.
+- Shows appointment date/time, title and linked job where available.
+- Added direct **Open** actions for individual bookings and an **Open calendar** action for the next booking.
+- Keeps calendar changes in the Calendar workspace while the People overview remains read-only.
+
 ## People Client Production Snapshot
 
 ### Added
