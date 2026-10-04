@@ -5309,7 +5309,8 @@ function exportBizziBuddiReportCsv(reportData) {
         })
         .join(",")
     )
-    .join("\n");
+    .join("
+");
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -5420,7 +5421,8 @@ function exportFinanceReportCsv({
         })
         .join(",")
     )
-    .join("\n");
+    .join("
+");
 
   const blob = new Blob(["\\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -10104,7 +10106,8 @@ const switchText = { textAlign: "center", color: MUTED, fontSize: 14, margin: "2
 const smallText = { color: MUTED, fontSize: 13 };
 const fieldStyle = { display: "block", marginTop: 17, fontSize: 13, fontWeight: 700 };
 const inputStyle = { display: "block", width: "100%", minHeight: 52, marginTop: 8, padding: "0 15px", boxSizing: "border-box", border: `1px solid ${BORDER}`, borderRadius: 10, fontSize: 15, color: TEXT, background: SURFACE };
-const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(37,99,235,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };\nconst authErrorStyle = { position: "sticky", top: 12, zIndex: 20, display: "grid", gap: 5, margin: "22px 0 0", padding: "14px 16px", borderRadius: 12, background: "rgba(255,75,75,.12)", border: "1px solid rgba(255,120,120,.62)", color: TEXT, lineHeight: 1.45, boxShadow: "0 12px 28px rgba(0,0,0,.22)" };
+const messageStyle = { maxWidth: 760, margin: "0 auto 24px", padding: 15, borderRadius: 10, background: "rgba(37,99,235,.12)", border: `1px solid ${RED}`, color: TEXT, textAlign: "center", lineHeight: 1.5 };
+const authErrorStyle = { position: "sticky", top: 12, zIndex: 20, display: "grid", gap: 5, margin: "22px 0 0", padding: "14px 16px", borderRadius: 12, background: "rgba(255,75,75,.12)", border: "1px solid rgba(255,120,120,.62)", color: TEXT, lineHeight: 1.45, boxShadow: "0 12px 28px rgba(0,0,0,.22)" };
 const plansGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(225px, 1fr))", gap: 20, alignItems: "stretch" };
 const popularBadge = { display: "inline-block", alignSelf: "flex-start", padding: "7px 10px", borderRadius: 999, background: RED, fontSize: 11, fontWeight: 700 };
 const planTitle = { fontSize: 27, margin: "18px 0 5px" };
