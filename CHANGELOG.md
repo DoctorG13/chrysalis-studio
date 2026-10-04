@@ -1,3 +1,10 @@
+## People Upcoming Booking Accuracy
+
+### Fixed
+
+- People card booking snapshots now ignore past appointments when selecting the next booking.
+- The displayed booking is now the nearest booking from today onward.
+
 ## People Client Relationship Snapshot
 
 ### Added
