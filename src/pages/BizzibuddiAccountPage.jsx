@@ -1910,13 +1910,22 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
 
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
-    <div style={{ marginTop: 22 }}>
-      <p style={eyebrowStyle}>PEOPLE</p>
-      <h2 style={sectionHeading}>Your people.</h2>
-      <p style={copyStyle}>Keep your clients and contacts organised in one simple place.</p>
+    <div className="bizzibuddi-people-hero" style={{ marginTop: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
+      <div style={{ minWidth: 0, flex: "1 1 420px" }}>
+        <p style={eyebrowStyle}>PEOPLE</p>
+        <h2 style={sectionHeading}>Your people.</h2>
+        <p style={{ ...copyStyle, marginBottom: 0 }}>Keep your clients and contacts organised in one simple place. People connect the rest of BizziBuddi — jobs, appointments, finance and production.</p>
+      </div>
+      <button type="button" onClick={startAdd} style={{ ...primaryButton, width: "auto", marginTop: 0 }}>+ Add a person</button>
     </div>
 
-    <div style={{ marginTop: 22, padding: 14, borderRadius: 12, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
+    <div className="bizzibuddi-people-summary" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 9, marginTop: 18 }}>
+      <div style={personSummaryCard}><small style={smallText}>PEOPLE</small><strong>{people.length}</strong><span>{people.length === 1 ? "person" : "people"} in your list</span></div>
+      <div style={personSummaryCard}><small style={smallText}>WITH JOBS</small><strong>{people.filter((person) => jobs.some((job) => job.personId === person.id)).length}</strong><span>people with active work</span></div>
+      <div style={personSummaryCard}><small style={smallText}>WITH BOOKINGS</small><strong>{people.filter((person) => appointments.some((appointment) => appointment.personId === person.id)).length}</strong><span>people linked to calendar</span></div>
+    </div>
+
+    <div style={{ marginTop: 18, padding: 14, borderRadius: 12, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
       <label style={{ ...fieldStyle, marginTop: 0 }}>
         Search people
         <input
@@ -2077,9 +2086,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
 
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
-    {!showForm ? (
-      <button type="button" onClick={startAdd} style={{ ...primaryButton, maxWidth: 240 }}>+ Add a person</button>
-    ) : (
+    {showForm ? (
       <form key={editingPerson?.id || "new-person"} onSubmit={handleSubmit} style={personForm}>
         <strong style={{ fontSize: 18 }}>{editingPerson ? "Edit person" : "Add a person"}</strong>
         <Field
@@ -8989,6 +8996,11 @@ const jobStatus = { padding: "6px 9px", borderRadius: 999, background: "rgba(0,1
 const personCard = { display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: 16, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.035)" };
 const smallDangerButton = { ...smallActionButton, borderColor: "rgba(255,23,79,.45)", color: "#FF6B8A" };
 const emptyPeople = { marginTop: 28, padding: 28, borderRadius: 14, border: `1px dashed ${BORDER}`, background: "rgba(255,255,255,.025)", textAlign: "center" };
+const personSummaryCard = {
+  minWidth: 0, padding: "11px 12px", borderRadius: 11,
+  border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)",
+};
+
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
 const businessNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
 
