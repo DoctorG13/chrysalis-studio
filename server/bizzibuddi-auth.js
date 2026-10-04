@@ -1,4 +1,4 @@
-import { DatabaseSync } from "node:sqlite";
+import { DatabaseSync, backup as sqliteBackup } from "node:sqlite";
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -17,6 +17,7 @@ const DATA_DIR = resolve(
   process.env.CHRYSALIS_DATA_DIR || join(process.cwd(), "data")
 );
 const DB_PATH = join(DATA_DIR, "chrysalis.db");
+const BACKUP_DIR = join(DATA_DIR, "backups");
 
 const loginAttempts = new Map();
 let database = null;
@@ -3125,6 +3126,70 @@ function getBizziBuddiReports(userId) {
   };
 }
 
+async function resetBizziBuddiBusinessData(userId) {
+  const db = getDatabase();
+
+  if (!userId) {
+    throw new Error("Authentication required.");
+  }
+
+  mkdirSync(BACKUP_DIR, { recursive: true });
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupPath = join(
+    BACKUP_DIR,
+    `chrysalis-${timestamp}-before-bizzibuddi-reset.db`
+  );
+
+  if (!existsSync(DB_PATH)) {
+    throw new Error("The BizziBuddi database could not be found.");
+  }
+
+  await sqliteBackup(db, backupPath);
+
+  const tables = [
+    "bizzibuddi_production_time_entries",
+    "bizzibuddi_production",
+    "bizzibuddi_production_task_templates",
+    "bizzibuddi_payments",
+    "bizzibuddi_invoices",
+    "bizzibuddi_expenses",
+    "bizzibuddi_calendar",
+    "bizzibuddi_measurements",
+    "bizzibuddi_automation_events",
+    "bizzibuddi_jobs",
+    "bizzibuddi_people",
+  ];
+
+  const deleted = {};
+
+  db.exec("BEGIN IMMEDIATE");
+
+  try {
+    for (const table of tables) {
+      const count = db
+        .prepare(`SELECT COUNT(*) AS count FROM ${table} WHERE user_id = ?`)
+        .get(userId)?.count || 0;
+
+      db
+        .prepare(`DELETE FROM ${table} WHERE user_id = ?`)
+        .run(userId);
+
+      deleted[table] = Number(count);
+    }
+
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
+
+  return {
+    backupPath,
+    deleted,
+  };
+}
+
 export async function handleBizziBuddiAuthRequest(request, response) {
   const url = new URL(
     request.url || "/",
@@ -4113,6 +4178,40 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       }
     }
 
+    if (url.pathname === "/api/bizzibuddi/auth/reset" && request.method === "DELETE") {
+      const user = getSessionUser(request);
+
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+
+      if (String(payload?.confirmation || "").trim() !== "START FRESH") {
+        sendJson(response, 400, {
+          ok: false,
+          error: 'Confirmation required. Type "START FRESH" to permanently clear this BizziBuddi business data.',
+        });
+        return true;
+      }
+
+      const result = await resetBizziBuddiBusinessData(user.id);
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        reset: true,
+        backupPath: result.backupPath,
+        deleted: result.deleted,
+      });
+      return true;
+    }
+
     if (url.pathname === "/api/bizzibuddi/auth/me" && request.method === "GET") {
       const user = getSessionUser(request);
 
@@ -4170,7 +4269,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   } catch (error) {
     console.error("BizziBuddi authentication request failed:", error);
 
-    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|invoice|payment|Payment|Template|template task|production template/.test(
+    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|invoice|payment|Payment|Template|template task|production template|START FRESH|confirmation|business data/.test(
       error instanceof Error ? error.message : ""
     )
       ? 400
