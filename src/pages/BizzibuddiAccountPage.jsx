@@ -5309,8 +5309,7 @@ function exportBizziBuddiReportCsv(reportData) {
         })
         .join(",")
     )
-    .join("
-");
+    .join("\n");
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -5421,8 +5420,7 @@ function exportFinanceReportCsv({
         })
         .join(",")
     )
-    .join("
-");
+    .join("\n");
 
   const blob = new Blob(["\\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
