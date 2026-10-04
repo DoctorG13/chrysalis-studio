@@ -18,6 +18,13 @@ const plans = bizzibuddiPlans;
 export default function BizzibuddiAccountPage() {
   const initialRouteParams = new URLSearchParams(window.location.search);
   const initialView = initialRouteParams.get("view");
+  let hasDemoSession = false;
+  try {
+    hasDemoSession = Boolean(window.sessionStorage.getItem("bizzibuddi-demo-session-v1"));
+  } catch {
+    hasDemoSession = false;
+  }
+  const initialDemoMode = initialView === "demo" || (hasDemoSession && initialView !== "login" && initialView !== "create");
   const initialDeepLink = {
     personId: initialRouteParams.get("person") || "",
     jobId: initialRouteParams.get("job") || "",
@@ -27,7 +34,7 @@ export default function BizzibuddiAccountPage() {
   const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "account", "help", "demo"]);
   const requestedView = requestedViews.has(initialView) ? initialView : "";
   const [view, setView] = useState(
-    initialView === "create" ? "create" : initialView === "demo" ? "demo" : "login"
+    initialView === "create" ? "create" : initialDemoMode ? "demo" : "login"
   );
   const [deepLink, setDeepLink] = useState(initialDeepLink);
   const [account, setAccount] = useState(null);
@@ -155,6 +162,11 @@ export default function BizzibuddiAccountPage() {
       try {
         const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/me");
         if (!active || !result?.account) return;
+
+        if (initialDemoMode) {
+          // A public Demo session must remain isolated from the authenticated workspace.
+          return;
+        }
 
         await applyAccount(result.account);
         if (result.account.business) {
