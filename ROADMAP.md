@@ -595,3 +595,12 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Persist the active Demo module in the URL
 - [x] Restore Demo People and other modules correctly after refresh
 - [x] Prevent accidental routing into account-backed workspace modules
+
+
+---
+
+## BizziBuddi Demo — Authenticated Refresh Isolation
+
+- [x] Detect active Demo session before restoring authenticated workspace state
+- [x] Keep Demo isolated when a real BizziBuddi login session also exists
+- [x] Prevent refresh from falling into account-backed Reports / People / other modules
