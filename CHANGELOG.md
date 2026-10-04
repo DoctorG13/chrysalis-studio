@@ -1,3 +1,12 @@
+## People Client Finance Snapshot
+
+### Added
+
+- Added a Finance snapshot to the People Client Overview.
+- Shows linked invoice count, invoice totals and outstanding balance.
+- Shows up to three recent linked invoices with status, amount and balance due.
+- Added direct **Open finance** / **View invoices** actions using the existing Finance view.
+
 ## People Client Overview
 
 ### Added
