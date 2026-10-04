@@ -1,3 +1,13 @@
+## BizziBuddi Business Setup Selector Fix
+
+### Fixed
+
+- Restored the Business Setup **Business type** selector options when the business-profile response does not include the industry list.
+- Corrected the authenticated workspace profile query so the saved business type and terminology are returned consistently.
+- Kept the existing industry templates and custom-field workflow unchanged.
+
+---
+
 ## BizziBuddi Demo Sandbox — Proper Data Entry UX
 
 ### Changed
