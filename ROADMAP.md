@@ -615,4 +615,4 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Start new real accounts with a clean workspace
 - [x] Capture business type during initial onboarding
 - [x] Persist business type through BizziBuddi account configuration
-\n\n---\n\n## BizziBuddi Demo — Action Feedback Visibility\n\n- [x] Show visible feedback after Demo actions\n- [x] Keep action feedback visible long enough to read\n- [x] Prevent overlapping feedback timers\n- [x] Keep feedback visible while scrolling the Demo workspace\n
+\n\n---\n\n## BizziBuddi Demo — Action Feedback Visibility\n\n- [x] Show visible feedback after Demo actions\n- [x] Keep action feedback visible long enough to read\n- [x] Prevent overlapping feedback timers\n- [x] Keep feedback visible while scrolling the Demo workspace\n\n\n---\n\n## BizziBuddi Demo — Feedback Parse Fix\n\n- [x] Correct Demo workspace parse error\n- [x] Restore visible action feedback timer\n
