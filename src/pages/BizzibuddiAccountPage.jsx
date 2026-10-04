@@ -3,6 +3,7 @@ import BizziBuddiLogo from "../components/common/BizziBuddiLogo";
 import BizziBuddiAccountBuddi from "../components/common/BizziBuddiAccountBuddi";
 import { bizzibuddiPlans, getBizzibuddiPlan, hasBizzibuddiFeature } from "../data/bizzibuddiPlans";
 import { buildBizziBuddiIntelligence } from "../utils/bizzibuddiIntelligence";
+import BizziBuddiDemoWorkspace from "../components/bizzibuddi/BizziBuddiDemoWorkspace";
 
 const RED = "#2563EB";
 const CYAN = "#00B4DB";
@@ -23,9 +24,11 @@ export default function BizzibuddiAccountPage() {
     appointmentId: initialRouteParams.get("appointment") || "",
     invoiceId: initialRouteParams.get("invoice") || "",
   };
-  const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "account", "help"]);
+  const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "account", "help", "demo"]);
   const requestedView = requestedViews.has(initialView) ? initialView : "";
-  const [view, setView] = useState(initialView === "create" ? "create" : "login");
+  const [view, setView] = useState(
+    initialView === "create" ? "create" : initialView === "demo" ? "demo" : "login"
+  );
   const [deepLink, setDeepLink] = useState(initialDeepLink);
   const [account, setAccount] = useState(null);
   const [message, setMessage] = useState("");
@@ -522,6 +525,14 @@ export default function BizzibuddiAccountPage() {
     }
   }
 
+  function openDemoWorkspace() {
+    writeWorkspaceRoute("demo");
+    setAccount(null);
+    setDeepLink({});
+    setMessage("");
+    setView("demo");
+  }
+
   async function handleLogout() {
     try {
       await bizzibuddiAuthRequest("/api/bizzibuddi/auth/logout", { method: "POST" });
@@ -811,7 +822,7 @@ export default function BizzibuddiAccountPage() {
         <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={workspaceNavShell}>
           {!account ? (
             <div className="bizzibuddi-account-nav-main">
-              {[["login", "Log in"], ["create", "Create account"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
+              {[["login", "Log in"], ["create", "Create account"], ["demo", "Explore demo"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
                 <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
               ))}
             </div>
@@ -900,7 +911,8 @@ export default function BizzibuddiAccountPage() {
           )}
 
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
-        {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} />}
+        {view === "demo" && <BizziBuddiDemoWorkspace onExit={() => selectView("login")} onCreateAccount={() => selectView("create")} />}
+        {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
         {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
@@ -1692,7 +1704,7 @@ function bizzibuddiAuthRequest(path, options = {}) {
   });
 }
 
-function AuthPanel({ mode, account, onSubmit, onSwitch }) {
+function AuthPanel({ mode, account, onSubmit, onSwitch, onExploreDemo }) {
   const login = mode === "login";
   return <section style={cardStyle(560)}>
     <div style={centerStyle}>
@@ -1709,6 +1721,11 @@ function AuthPanel({ mode, account, onSubmit, onSwitch }) {
       <Field name="password" label="Password" type="password" placeholder={login ? "Your password" : "At least 10 characters"} />
       <button type="submit" style={primaryButton}>{login ? "Log in" : "Create account →"}</button>
     </form>
+    {login && onExploreDemo && (
+      <button type="button" onClick={onExploreDemo} style={secondaryButton}>
+        Explore BizziBuddi with sample data
+      </button>
+    )}
     <p style={switchText}>{login ? "New to BizziBuddi?" : "Already have an account?"} <button type="button" onClick={onSwitch} style={textButton}>{login ? "Create an account" : "Log in"}</button></p>
     {login && account && <p style={smallText}>Signed in account available for {account.email} · @{account.username}.</p>}
   </section>;
@@ -2855,6 +2872,160 @@ function PlansPanel({ onSelectPlan }) {
   return <section id="plans-membership"><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. Your selected membership is saved to your BizziBuddi account in this development preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
+function BusinessSetupPanel({ account }) {
+  const [profile, setProfile] = useState(null);
+  const [fields, setFields] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [newField, setNewField] = useState({ entityType: "person", name: "", fieldType: "text", unit: "", options: "" });
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/business-profile"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/custom-fields"),
+    ]).then(([profileResult, fieldsResult]) => {
+      if (!active) return;
+      setProfile(profileResult.profile || null);
+      setFields(Array.isArray(fieldsResult.fields) ? fieldsResult.fields : []);
+    }).catch((error) => {
+      if (active) setMessage(error.message || "Business configuration could not be loaded.");
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [account?.id]);
+
+  async function chooseIndustry(event) {
+    const businessType = event.target.value;
+    setSaving(true);
+    setMessage("");
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/business-profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          business: account?.business || "",
+          businessType,
+        }),
+      });
+      setProfile((current) => ({ ...(current || {}), businessType: result.account.businessType, terminology: result.account.terminology }));
+      const fieldsResult = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/custom-fields");
+      setFields(Array.isArray(fieldsResult.fields) ? fieldsResult.fields : []);
+      setMessage("Business profile updated.");
+    } catch (error) {
+      setMessage(error.message || "Business profile could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function addField() {
+    const name = newField.name.trim();
+    if (!name) return;
+    setSaving(true);
+    setMessage("");
+    try {
+      const next = [...fields, {
+        entityType: newField.entityType,
+        name,
+        fieldKey: name.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""),
+        fieldType: newField.fieldType,
+        unit: newField.unit.trim(),
+        options: newField.options.split(",").map((item) => item.trim()).filter(Boolean),
+        required: false,
+      }];
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/custom-fields", {
+        method: "PUT",
+        body: JSON.stringify({ fields: next }),
+      });
+      setFields(result.fields || []);
+      setNewField({ entityType: "person", name: "", fieldType: "text", unit: "", options: "" });
+      setMessage("Custom field added.");
+    } catch (error) {
+      setMessage(error.message || "Custom field could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function removeField(id) {
+    setSaving(true);
+    try {
+      const next = fields.filter((field) => field.id !== id);
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/custom-fields", {
+        method: "PUT",
+        body: JSON.stringify({ fields: next }),
+      });
+      setFields(result.fields || []);
+      setMessage("Custom field removed.");
+    } catch (error) {
+      setMessage(error.message || "Custom field could not be removed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <article style={{ ...reportCard, marginTop: 22 }}><small style={smallText}>BUSINESS PROFILE</small><p style={copyStyle}>Loading your business configuration…</p></article>;
+
+  const currentTemplate = profile?.industries?.find((item) => item.key === profile?.businessType);
+
+  return (
+    <article id="account-business-setup" style={{ ...reportCard, marginTop: 22 }}>
+      <div style={reportCardHeading}>
+        <div>
+          <small style={smallText}>BUSINESS PROFILE</small>
+          <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Make BizziBuddi fit your business.</strong>
+        </div>
+        {currentTemplate && <span style={advancedBadge}>{currentTemplate.name}</span>}
+      </div>
+      <p style={copyStyle}>Choose an industry starting point, then add your own fields. The core BizziBuddi workflow stays the same.</p>
+
+      <label style={fieldStyle}>
+        Business type
+        <select value={profile?.businessType || "general"} onChange={chooseIndustry} disabled={saving} style={inputStyle}>
+          {(profile?.industries || []).map((industry) => <option key={industry.key} value={industry.key}>{industry.name}</option>)}
+        </select>
+      </label>
+
+      {profile?.terminology && (
+        <div style={{ ...reportRows, marginTop: 18 }}>
+          {Object.entries(profile.terminology).map(([key, value]) => (
+            <div key={key} style={reportRow}><span>{key}</span><strong>{value}</strong></div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid " + BORDER }}>
+        <small style={smallText}>CUSTOM FIELDS</small>
+        <p style={{ ...copyStyle, marginTop: 8 }}>These fields belong to your business profile and can later be used on People, Jobs, Appointments and Invoices.</p>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          {fields.filter((field) => field.active).map((field) => (
+            <div key={field.id} style={reportRow}>
+              <span><strong>{field.name}</strong><small style={{ display: "block", color: MUTED }}>{field.entityType} · {field.fieldType}{field.unit ? " · " + field.unit : ""}</small></span>
+              <button type="button" onClick={() => removeField(field.id)} disabled={saving} style={textButton}>Remove</button>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginTop: 14 }}>
+          <select value={newField.entityType} onChange={(event) => setNewField((current) => ({ ...current, entityType: event.target.value }))} style={inputStyle}>
+            <option value="person">People</option><option value="job">Jobs</option><option value="appointment">Appointments</option><option value="invoice">Invoices</option>
+          </select>
+          <input value={newField.name} onChange={(event) => setNewField((current) => ({ ...current, name: event.target.value }))} placeholder="Field name" style={inputStyle} />
+          <select value={newField.fieldType} onChange={(event) => setNewField((current) => ({ ...current, fieldType: event.target.value }))} style={inputStyle}>
+            {["text","long_text","number","currency","date","yes_no","dropdown","multi_select","phone","email","url","measurement","percentage"].map((type) => <option key={type} value={type}>{type.replace("_"," ")}</option>)}
+          </select>
+          <input value={newField.unit} onChange={(event) => setNewField((current) => ({ ...current, unit: event.target.value }))} placeholder="Unit (optional)" style={inputStyle} />
+          <input value={newField.options} onChange={(event) => setNewField((current) => ({ ...current, options: event.target.value }))} placeholder="Options, comma separated" style={inputStyle} />
+        </div>
+        <button type="button" onClick={addField} disabled={saving || !newField.name.trim()} style={{ ...primaryButton, width: "auto", minHeight: 40 }}>{saving ? "Saving…" : "+ Add custom field"}</button>
+      </div>
+      {message && <p style={{ ...smallText, marginBottom: 0 }}>{message}</p>}
+    </article>
+  );
+}
+
 function AccountPanel({ account, onBack, onPlans, onResetBusiness }) {
   const [resetOpen, setResetOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
@@ -2911,6 +3082,8 @@ function AccountPanel({ account, onBack, onPlans, onResetBusiness }) {
           <button type="button" onClick={onPlans} style={{ ...primaryButton, width: "auto" }}>View plans & membership</button>
         </article>
       </div>
+
+      <BusinessSetupPanel account={account} />
 
       <article style={{ ...reportCard, marginTop: 22, borderColor: "rgba(220,38,38,.38)" }}>
         <div style={reportCardHeading}>
