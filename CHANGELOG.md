@@ -1,3 +1,12 @@
+## People Client Relationship Snapshot
+
+### Added
+
+- Added at-a-glance job status, next booking and outstanding balance information to People cards.
+- Used the nearest upcoming booking for each person.
+- Calculated outstanding balance from linked invoice balances.
+- Preserved existing People actions and responsive card structure.
+
 ## People Primary Action Polish
 
 ### Changed
