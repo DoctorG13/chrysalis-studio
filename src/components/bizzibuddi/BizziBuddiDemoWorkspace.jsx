@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { bizzibuddiDemoData as seedData, getDemoSummary } from "../../data/bizzibuddiDemoData";
 
 const BLUE = "#2563EB";
@@ -20,6 +20,20 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
   const [appointmentForm, setAppointmentForm] = useState({ title: "", personId: "", date: "", time: "" });
   const [customFieldName, setCustomFieldName] = useState("");
   const [pendingRemove, setPendingRemove] = useState("");
+  const peopleWorkspaceRef = useRef(null);
+
+  useEffect(() => {
+    if (module !== "people") return;
+    const timer = window.setTimeout(() => {
+      const target = peopleWorkspaceRef.current;
+      if (!target) return;
+      const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
+      const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+      const top = target.getBoundingClientRect().top + window.scrollY - navHeight - 12;
+      window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+    }, 40);
+    return () => window.clearTimeout(timer);
+  }, [module]);
 
   const summary = useMemo(() => getDemoSummary(data), [data]);
 
