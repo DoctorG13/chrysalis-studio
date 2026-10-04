@@ -574,6 +574,7 @@ export default function BizzibuddiAccountPage() {
         method: "PUT",
         body: JSON.stringify({
           business: String(form.get("business") || account?.business || "").trim(),
+          businessType: String(form.get("businessType") || account?.businessType || "general").trim(),
         }),
       });
 
@@ -925,7 +926,7 @@ export default function BizzibuddiAccountPage() {
         {message && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
         {view === "demo" && <BizziBuddiDemoWorkspace onExit={() => selectView("login")} onCreateAccount={() => selectView("create")} />}
         {view === "login" && <AuthPanel mode="login" account={account} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
-        {view === "create" && <AuthPanel mode="create" onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
+        {view === "create" && <AuthPanel mode="create" fromDemo={initialView === "create" && initialRouteParams.get("from") === "demo"} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
@@ -1716,15 +1717,27 @@ function bizzibuddiAuthRequest(path, options = {}) {
   });
 }
 
-function AuthPanel({ mode, account, onSubmit, onSwitch, onExploreDemo }) {
+function AuthPanel({ mode, account, onSubmit, onSwitch, onExploreDemo, fromDemo = false }) {
   const login = mode === "login";
   return <section style={cardStyle(560)}>
     <div style={centerStyle}>
       <div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div>
       <BizziBuddiLogo size={78} dark showWordmark={false} />
       <h2 style={sectionHeading}>{login ? "Welcome back." : "Let’s get started."}</h2>
-      <p style={copyStyle}>{login ? "Use your email address or username to continue." : "Create your secure BizziBuddi account and begin your business setup."}</p>
+      <p style={copyStyle}>
+        {login
+          ? "Use your email address or username to continue."
+          : fromDemo
+            ? "Create your real BizziBuddi account. Your demo data will not be copied across."
+            : "Create your secure BizziBuddi account and begin your business setup."}
+      </p>
     </div>
+    {fromDemo && !login && (
+      <div style={{ ...businessNote, marginTop: 18 }}>
+        <strong>Starting your real workspace</strong>
+        <span style={{ display: "block", marginTop: 5 }}>The Harbour & Thread sample business stays in the Demo. Your new account starts clean.</span>
+      </div>
+    )}
     <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
       {!login && <Field name="name" label="Full name" type="text" placeholder="Your name" />}
       {!login && <Field name="username" label="Username" type="text" placeholder="Choose a username" />}
@@ -1744,7 +1757,35 @@ function AuthPanel({ mode, account, onSubmit, onSwitch, onExploreDemo }) {
 }
 
 function OnboardingPanel({ account, onSubmit }) {
-  return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your business.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your business a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
+  const businessTypes = [
+    ["general", "General business"],
+    ["dressmaker", "Dressmaker / fashion"],
+    ["hairdresser", "Hairdresser / salon"],
+    ["tattooist", "Tattooist / studio"],
+    ["school", "School / education"],
+    ["trades", "Trades / field service"],
+    ["consultant", "Consultant / professional services"],
+  ];
+
+  return <section style={cardStyle(620)}>
+    <div style={centerStyle}>
+      <div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div>
+      <BizziBuddiLogo size={78} dark showWordmark={false} />
+      <h2 style={sectionHeading}>Set up your business.</h2>
+      <p style={copyStyle}>Welcome {account?.name || "there"}. Give BizziBuddi a little context so it can use the right terminology and starter fields.</p>
+    </div>
+    <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
+      <Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} />
+      <label style={{ ...fieldStyle, marginTop: 16 }}>
+        Business type
+        <select name="businessType" defaultValue={account?.businessType || "general"} style={inputStyle}>
+          {businessTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+      </label>
+      <p style={{ ...copyStyle, marginTop: 10, fontSize: 12 }}>You can refine terminology and custom fields later in Business Setup.</p>
+      <button type="submit" style={primaryButton}>Start my workspace →</button>
+    </form>
+  </section>;
 }
 
 function CustomFieldsEditor({ entityType, entityId, onChange }) {
