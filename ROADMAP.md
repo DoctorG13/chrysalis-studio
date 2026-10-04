@@ -575,3 +575,13 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Hide authenticated Help / Ask Buddi rail while Demo is active
 - [x] Keep Demo module navigation self-contained
 - [x] Prevent Demo People from routing to real account-backed People
+
+
+---
+
+## BizziBuddi Demo — Session Persistence
+
+- [x] Persist temporary Demo data for the current browser session
+- [x] Restore the active Demo module after refresh
+- [x] Keep Demo state isolated from authenticated account data
+- [x] Clear Demo session explicitly when exiting or creating an account
