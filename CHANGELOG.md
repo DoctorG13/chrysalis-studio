@@ -1,3 +1,12 @@
+## People Client Payment Snapshot
+
+### Added
+
+- Added payment activity to the People Client Overview.
+- Shows total payments received and payment count across linked invoices.
+- Shows the latest payment date plus recent payment method, invoice, description and amount.
+- Uses the existing invoice payment data, keeping the People view read-only and Finance as the place for payment changes.
+
 ## People Client Finance Snapshot
 
 ### Added
