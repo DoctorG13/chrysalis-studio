@@ -1735,6 +1735,75 @@ function OnboardingPanel({ account, onSubmit }) {
   return <section style={cardStyle(620)}><div style={centerStyle}><div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div><BizziBuddiLogo size={78} dark showWordmark={false} /><h2 style={sectionHeading}>Set up your business.</h2><p style={copyStyle}>Welcome {account?.name || "there"}. Give your business a name to continue.</p></div><form onSubmit={onSubmit} style={{ marginTop: 28 }}><Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} /><button type="submit" style={primaryButton}>Finish setup →</button></form></section>;
 }
 
+function CustomFieldsEditor({ entityType, entityId, onChange }) {
+  const [fields, setFields] = useState([]);
+  const [values, setValues] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const fieldsRequest = bizzibuddiAuthRequest("/api/bizzibuddi/auth/custom-fields?entity=" + encodeURIComponent(entityType));
+    const valuesRequest = entityId
+      ? bizzibuddiAuthRequest("/api/bizzibuddi/auth/custom-fields/values/" + encodeURIComponent(entityType) + "/" + encodeURIComponent(entityId))
+      : Promise.resolve({ values: {} });
+
+    Promise.all([fieldsRequest, valuesRequest]).then(([fieldResult, valueResult]) => {
+      if (!active) return;
+      const nextFields = (fieldResult.fields || []).filter((field) => field.active);
+      const nextValues = valueResult.values || {};
+      setFields(nextFields);
+      setValues(nextValues);
+      onChange?.(nextValues);
+    }).catch(() => {
+      if (active) setFields([]);
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+
+    return () => { active = false; };
+  }, [entityType, entityId]);
+
+  if (loading) return <div style={{ ...businessNote, marginTop: 16 }}><small style={smallText}>Loading custom fields…</small></div>;
+  if (!fields.length) return null;
+
+  function updateValue(id, value) {
+    const next = { ...values, [id]: value };
+    setValues(next);
+    onChange?.(next);
+  }
+
+  return (
+    <div style={{ ...businessNote, marginTop: 18 }}>
+      <small style={smallText}>CUSTOM BUSINESS FIELDS</small>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 10, marginTop: 8 }}>
+        {fields.map((field) => {
+          const value = values[field.id] ?? "";
+          if (field.fieldType === "long_text") {
+            return <label key={field.id} style={{ ...fieldStyle, marginTop: 0, gridColumn: "1 / -1" }}>{field.name}
+              <textarea value={value} onChange={(event) => updateValue(field.id, event.target.value)} style={{ ...inputStyle, minHeight: 90, padding: "12px 15px", resize: "vertical" }} />
+            </label>;
+          }
+          if (field.fieldType === "yes_no") {
+            return <label key={field.id} style={{ ...fieldStyle, marginTop: 0 }}>{field.name}
+              <select value={String(value)} onChange={(event) => updateValue(field.id, event.target.value)} style={inputStyle}><option value="">Not set</option><option value="true">Yes</option><option value="false">No</option></select>
+            </label>;
+          }
+          if (field.fieldType === "dropdown") {
+            return <label key={field.id} style={{ ...fieldStyle, marginTop: 0 }}>{field.name}
+              <select value={value} onChange={(event) => updateValue(field.id, event.target.value)} style={inputStyle}><option value="">Select…</option>{(field.options || []).map((option) => <option key={option} value={option}>{option}</option>)}</select>
+            </label>;
+          }
+          const inputType = ["number","currency","percentage"].includes(field.fieldType) ? "number" : field.fieldType === "date" ? "date" : field.fieldType === "email" ? "email" : field.fieldType === "phone" ? "tel" : field.fieldType === "url" ? "url" : "text";
+          return <label key={field.id} style={{ ...fieldStyle, marginTop: 0 }}>{field.name}{field.unit ? " (" + field.unit + ")" : ""}
+            <input type={inputType} value={value} onChange={(event) => updateValue(field.id, event.target.value)} style={inputStyle} />
+          </label>;
+        })}
+      </div>
+    </div>
+  );
+}
+
 function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
@@ -1747,6 +1816,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   const [measurementSaving, setMeasurementSaving] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [customFieldValues, setCustomFieldValues] = useState({});
 
   useEffect(() => {
     if (!initialPersonId) return;
@@ -1840,10 +1910,18 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         phone: String(form.get("phone") || "").trim(),
       };
 
+      let savedPerson;
       if (editingPerson) {
-        await onUpdatePerson(editingPerson.id, person);
+        savedPerson = await onUpdatePerson(editingPerson.id, person);
       } else {
-        await onAddPerson(person);
+        savedPerson = await onAddPerson(person);
+      }
+
+      if (savedPerson?.id && Object.keys(customFieldValues).length) {
+        await bizzibuddiAuthRequest(
+          "/api/bizzibuddi/auth/custom-fields/values/person/" + encodeURIComponent(savedPerson.id),
+          { method: "PUT", body: JSON.stringify({ values: customFieldValues }) }
+        );
       }
 
       formElement.reset();
@@ -2440,6 +2518,11 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           placeholder="Phone number"
           defaultValue={editingPerson?.phone || ""}
         />
+        <CustomFieldsEditor
+          entityType="person"
+          entityId={editingPerson?.id || ""}
+          onChange={setCustomFieldValues}
+        />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
           <button type="submit" disabled={saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: saving ? 0.7 : 1 }}>
             {saving ? "Saving…" : editingPerson ? "Save changes" : "Save person"}
@@ -2458,6 +2541,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
   const [editingJob, setEditingJob] = useState(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [customFieldValues, setCustomFieldValues] = useState({});
   const [timelineJobId, setTimelineJobId] = useState(null);
   const [timeline, setTimeline] = useState([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
@@ -2534,10 +2618,18 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
         price: Number(form.get("price") || 0),
       };
 
+      let savedJob;
       if (editingJob) {
-        await onUpdateJob(editingJob.id, job);
+        savedJob = await onUpdateJob(editingJob.id, job);
       } else {
-        await onAddJob(job);
+        savedJob = await onAddJob(job);
+      }
+
+      if (savedJob?.id && Object.keys(customFieldValues).length) {
+        await bizzibuddiAuthRequest(
+          "/api/bizzibuddi/auth/custom-fields/values/job/" + encodeURIComponent(savedJob.id),
+          { method: "PUT", body: JSON.stringify({ values: customFieldValues }) }
+        );
       }
 
       formElement.reset();
@@ -2854,6 +2946,11 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
             <option>Complete</option>
           </select>
         </label>
+        <CustomFieldsEditor
+          entityType="job"
+          entityId={editingJob?.id || ""}
+          onChange={setCustomFieldValues}
+        />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
           <button type="submit" disabled={people.length === 0 || saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}>
             {saving ? "Saving…" : editingJob ? "Save changes" : "Save job"}
