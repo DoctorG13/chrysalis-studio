@@ -5,6 +5,12 @@ export const BIZZI_BUDDI_INDUSTRY_TEMPLATES = {
     terminology: { person: "People", job: "Jobs", appointment: "Appointments" },
     fields: [],
   },
+  other: {
+    name: "Other / custom",
+    description: "A flexible starting point for businesses that do not fit the listed industry templates.",
+    terminology: { person: "People", job: "Jobs", appointment: "Appointments" },
+    fields: [],
+  },
   dressmaker: {
     name: "Dressmaker / Tailor",
     description: "Measurements, fittings and garment-specific client information.",
