@@ -1,3 +1,14 @@
+## BizziBuddi Demo Action Feedback
+
+### Changed
+
+- Improved the Demo action feedback message so actions are clearly acknowledged.
+- Added a consistent **Demo action** status treatment for temporary changes.
+- Reset Demo now explicitly confirms that the original sample business was restored and the real account was untouched.
+- Demo mutations now reinforce that they are temporary and isolated from the real account.
+
+---
+
 ## BizziBuddi Business Type — Other / Custom
 
 ### Added
