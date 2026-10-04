@@ -1743,7 +1743,7 @@ function AuthPanel({ mode, account, errorMessage, onSubmit, onSwitch, onExploreD
     if (!login && !name) error = "Please enter your full name.";
     else if (!login && !username) error = "Please choose a username.";
     else if (!login && !email) error = "Please enter your email address.";
-    else if (!login && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) error = "Please enter a valid email address.";
+    else if (!login && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) error = "Please enter a valid email address.";
     else if (login && !identifier) error = "Please enter your email address or username.";
     else if (!password) error = "Please enter your password.";
     else if (!login && password.length < 10) error = "Your password must be at least 10 characters.";
