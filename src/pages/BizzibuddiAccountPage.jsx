@@ -1766,6 +1766,7 @@ function OnboardingPanel({ account, onSubmit }) {
     ["school", "School / education"],
     ["trades", "Trades / field service"],
     ["consultant", "Consultant / professional services"],
+    ["other", "Other / custom"],
   ];
 
   return <section style={cardStyle(620)}>
@@ -3144,6 +3145,7 @@ function BusinessSetupPanel({ account, onAccountUpdate }) {
             { key: "school", name: "School / education" },
             { key: "trades", name: "Trades / field service" },
             { key: "consultant", name: "Consultant / professional services" },
+            { key: "other", name: "Other / custom" },
           ]).map((industry) => <option key={industry.key} value={industry.key}>{industry.name}</option>)}
         </select>
       </label>
