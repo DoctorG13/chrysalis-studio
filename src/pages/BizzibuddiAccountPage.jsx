@@ -819,8 +819,8 @@ export default function BizzibuddiAccountPage() {
           <div style={previewBadge}>Secure account and login · People, Jobs, Calendar and Finance are account-backed · No live billing</div>
         </section>
 
-        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={workspaceNavShell}>
-          {!account ? (
+        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={view === "demo" ? { ...workspaceNavShell, display: "none" } : workspaceNavShell}>
+          {view === "demo" ? null : !account ? (
             <div className="bizzibuddi-account-nav-main">
               {[["login", "Log in"], ["create", "Create account"], ["demo", "Explore demo"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
                 <button key={key} type="button" onClick={() => selectView(key)} style={tabStyle(view === key)}>{label}</button>
@@ -885,7 +885,7 @@ export default function BizzibuddiAccountPage() {
 
         </nav>
 
-          {account && (
+          {account && view !== "demo" && (
             <div className="bizzibuddi-help-rail" aria-label="Help and support">
               <button
                 type="button"
