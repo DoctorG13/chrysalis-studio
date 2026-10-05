@@ -814,15 +814,26 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     })
     .slice(0, 4);
 
-  const prompts = [
-    "What needs attention today?",
-    "How is my business looking?",
-    "What should I focus on next?",
-    "Who owes me money?",
-    "Which jobs need attention?",
-    "How is my production workload looking?",
-    "What is coming up?",
-  ];
+  const prompts = (() => {
+    const outstandingAmount = invoices.reduce(
+      (sum, invoice) => sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)),
+      0
+    );
+    const overdueCount = invoices.filter(
+      (invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < getLocalDateKey()
+    ).length;
+    const next = [];
+
+    if (people.length === 0) next.push("Help me add my first person");
+    if (jobs.length === 0) next.push("What should I put in my first job?");
+    if (appointments.length === 0) next.push("Help me plan my first appointment");
+    if (invoices.length === 0) next.push("How should I set up my first invoice?");
+    if (overdueCount > 0) next.push("What invoices are overdue?");
+    if (outstandingAmount > 0) next.push("Who owes me money?");
+    if (productionRecords.length > 0) next.push("How is my production workload looking?");
+    next.push("What should I focus on next?");
+    return [...new Set(next)].slice(0, 5);
+  })();
 
   useEffect(() => {
     const prompt = String(initialPrompt || "").trim();
