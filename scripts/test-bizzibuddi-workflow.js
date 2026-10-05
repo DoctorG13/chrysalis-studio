@@ -175,6 +175,8 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onCrea
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onCreateInvoice={async (invoice)", "account page Buddi invoice integration");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), '["logout", "Log out", "logout"]', "logical authenticated logout navigation");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'targetView === "logout"', "workspace logout action");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'successMessage={message === "You have been logged out." ? message : ""}', "logout success message separation");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "bizzibuddi-auth-success", "logout success message UI");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "handleLogout();", "logout handler invocation");
 assertContains(read("server/bizzibuddi-auth.js"), "description", "invoice description persistence");
 assertContains(read("server/index.js"), "bizzibuddi-invoice-descriptions", "invoice description migration");
