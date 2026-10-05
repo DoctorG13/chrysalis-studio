@@ -2354,6 +2354,51 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       <button type="button" onClick={startAdd} style={{ ...primaryButton, width: "auto", marginTop: 0 }}>+ Add a person</button>
     </div>
 
+    {showForm ? (
+      <form key={editingPerson?.id || "new-person"} onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>{editingPerson ? "Edit person" : "Add a person"}</strong>
+        <Field
+          name="name"
+          label="Name"
+          type="text"
+          placeholder="Client or contact name"
+          defaultValue={editingPerson?.name || ""}
+        />
+        <Field
+          name="email"
+          label="Email address"
+          type="email"
+          placeholder="you@example.com"
+          defaultValue={editingPerson?.email || ""}
+        />
+        <Field
+          name="phone"
+          label="Phone"
+          type="tel"
+          placeholder="Phone number"
+          defaultValue={editingPerson?.phone || ""}
+        />
+        <Field
+          name="clientSince"
+          label="Client since"
+          type="date"
+          defaultValue={editingPerson?.clientSince || ""}
+        />
+        <CustomFieldsEditor
+          entityType="person"
+          entityId={editingPerson?.id || ""}
+          onChange={setCustomFieldValues}
+        />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button type="submit" disabled={saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Saving…" : editingPerson ? "Save changes" : "Save person"}
+          </button>
+          <button type="button" onClick={cancelForm} disabled={saving} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    ) : null}
     <div className="bizzibuddi-people-summary" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 9, marginTop: 18 }}>
       <div style={personSummaryCard}>
         <small style={{ ...smallText, display: "block", marginBottom: 4 }}>PEOPLE</small>
@@ -2820,51 +2865,6 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
 
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
-    {showForm ? (
-      <form key={editingPerson?.id || "new-person"} onSubmit={handleSubmit} style={personForm}>
-        <strong style={{ fontSize: 18 }}>{editingPerson ? "Edit person" : "Add a person"}</strong>
-        <Field
-          name="name"
-          label="Name"
-          type="text"
-          placeholder="Client or contact name"
-          defaultValue={editingPerson?.name || ""}
-        />
-        <Field
-          name="email"
-          label="Email address"
-          type="email"
-          placeholder="you@example.com"
-          defaultValue={editingPerson?.email || ""}
-        />
-        <Field
-          name="phone"
-          label="Phone"
-          type="tel"
-          placeholder="Phone number"
-          defaultValue={editingPerson?.phone || ""}
-        />
-        <Field
-          name="clientSince"
-          label="Client since"
-          type="date"
-          defaultValue={editingPerson?.clientSince || ""}
-        />
-        <CustomFieldsEditor
-          entityType="person"
-          entityId={editingPerson?.id || ""}
-          onChange={setCustomFieldValues}
-        />
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
-          <button type="submit" disabled={saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: saving ? 0.7 : 1 }}>
-            {saving ? "Saving…" : editingPerson ? "Save changes" : "Save person"}
-          </button>
-          <button type="button" onClick={cancelForm} disabled={saving} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
-            Cancel
-          </button>
-        </div>
-      </form>
-    ) : null}
   </section>;
 }
 
