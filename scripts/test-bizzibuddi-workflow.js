@@ -173,6 +173,9 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "CONFIR
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Confirm & create invoice", "account Buddi invoice save confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onCreateInvoice", "account Buddi invoice persistence integration");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "onCreateInvoice={async (invoice)", "account page Buddi invoice integration");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), '["logout", "Log out", "logout"]', "logical authenticated logout navigation");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'targetView === "logout"', "workspace logout action");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "handleLogout();", "logout handler invocation");
 assertContains(read("server/bizzibuddi-auth.js"), "description", "invoice description persistence");
 assertContains(read("server/index.js"), "bizzibuddi-invoice-descriptions", "invoice description migration");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "payment received\\s+from", "natural-language payment received phrasing");
