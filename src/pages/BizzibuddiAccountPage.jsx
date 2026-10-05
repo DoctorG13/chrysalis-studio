@@ -931,7 +931,7 @@ export default function BizzibuddiAccountPage() {
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} onGettingStartedBuddi={openBuddi} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onDashboard={() => selectView("dashboard")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} onGettingStartedBuddi={openBuddi} />}
         {view === "finance" && (
           <FinancePanel
             account={account}
@@ -3845,7 +3845,7 @@ function BizziBuddiGettingStarted({ people, jobs, appointments, invoices, onPeop
 function DashboardPanel({
   account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation,
   onProduction, onReports, onBuddi, onAttentionBuddi, onReset, onLogout, people, jobs,
-  appointments, invoices, automationEvents, productionRecords, productionTimeEntries = [], onGettingStartedBuddi,
+  appointments, invoices, automationEvents, productionRecords, productionTimeEntries = [], onGettingStartedBuddi, onDashboard,
 }) {
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const todayKey = new Date().toISOString().slice(0, 10);
