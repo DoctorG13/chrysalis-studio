@@ -179,7 +179,7 @@ assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'successMessage={mes
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "bizzibuddi-auth-success", "logout success message UI");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "handleLogout();", "logout handler invocation");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'name="clientSince"', "client since field");
-assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'name="shoeSize"', "shoe size measurement field");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), '["shoeSize", "Shoe size"]', "shoe size measurement field");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'name="description"', "job description field");
 assertContains(read("server/bizzibuddi-auth.js"), "client_since", "client since persistence");
 assertContains(read("server/bizzibuddi-auth.js"), "shoeSize", "shoe size persistence");
