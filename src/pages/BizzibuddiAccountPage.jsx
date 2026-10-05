@@ -337,6 +337,10 @@ export default function BizzibuddiAccountPage() {
       openBuddi();
       return;
     }
+    if (targetView === "logout") {
+      handleLogout();
+      return;
+    }
     selectView(targetView || "dashboard", { workspaceAnchor: workspaceAnchor || "", workspaceNavItem: key });
   }
 
@@ -10519,6 +10523,7 @@ const workspaceSubnav = {
     ["plans", "Plans", "plans", "plans-membership"],
     ["membership", "Membership", "account", "account-membership"],
     ["account", "Account", "account", "account-details"],
+    ["logout", "Log out", "logout"],
   ],
 };
 function getWorkspaceSubnav(account) {
