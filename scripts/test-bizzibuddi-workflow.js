@@ -178,6 +178,13 @@ assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'targetView === "log
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'successMessage={message === "You have been logged out." ? message : ""}', "logout success message separation");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "bizzibuddi-auth-success", "logout success message UI");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "handleLogout();", "logout handler invocation");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'name="clientSince"', "client since field");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'name="shoeSize"', "shoe size measurement field");
+assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), 'name="description"', "job description field");
+assertContains(read("server/bizzibuddi-auth.js"), "client_since", "client since persistence");
+assertContains(read("server/bizzibuddi-auth.js"), "shoeSize", "shoe size persistence");
+assertContains(read("server/bizzibuddi-auth.js"), "description", "job description persistence");
+assertContains(read("server/bizzibuddi-auth.js"), "VALUES (?, ?, ?, ?, 'Not started', ?, '', '[]', ?, ?)", "job production insert contract");
 assertContains(read("server/bizzibuddi-auth.js"), "description", "invoice description persistence");
 assertContains(read("server/index.js"), "bizzibuddi-invoice-descriptions", "invoice description migration");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "payment received\\s+from", "natural-language payment received phrasing");
