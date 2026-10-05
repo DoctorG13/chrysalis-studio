@@ -3149,6 +3149,104 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
         </div>
       )}
 
+      {!isBrandNewBusiness && (() => {
+        const workflowSteps = [
+          {
+            key: "person",
+            number: "1",
+            title: "Add a person",
+            detail: "Create the person or customer you are doing work for.",
+            complete: people.length > 0,
+            action: onPeople,
+          },
+          {
+            key: "job",
+            number: "2",
+            title: "Create a job",
+            detail: "Connect the work you need to deliver to that person.",
+            complete: jobs.length > 0,
+            action: onJobs,
+          },
+          {
+            key: "appointment",
+            number: "3",
+            title: "Schedule it",
+            detail: "Put the next fitting, meeting, visit or appointment on the calendar.",
+            complete: appointments.length > 0,
+            action: onCalendar,
+          },
+          {
+            key: "finance",
+            number: "4",
+            title: "Invoice & receive",
+            detail: "Create an invoice and record the first payment when money comes in.",
+            complete: invoices.some((invoice) => Number(invoice.amountPaid) > 0),
+            action: onFinance,
+          },
+          {
+            key: "dashboard",
+            number: "5",
+            title: "Run from Today",
+            detail: "Return to the Dashboard and let BizziBuddi bring the business together.",
+            complete: people.length > 0 && jobs.length > 0 && appointments.length > 0 && invoices.length > 0,
+            action: () => onDashboard?.(),
+          },
+        ];
+        const workflowComplete = workflowSteps.every((step) => step.complete);
+        if (workflowComplete) return null;
+        const nextStep = workflowSteps.find((step) => !step.complete);
+
+        return (
+          <div style={{ marginTop: 20, padding: 18, borderRadius: 16, border: "1px solid rgba(0,180,219,.24)", background: "rgba(0,180,219,.035)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+              <div>
+                <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".12em" }}>YOUR FIRST REAL WORKFLOW</small>
+                <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Person → Job → Appointment → Payment → Today</strong>
+                <p style={{ ...copyStyle, margin: "4px 0 0", fontSize: 12 }}>Build one real piece of business from start to finish. Each step uses your real account data.</p>
+              </div>
+              {nextStep && (
+                <button type="button" onClick={nextStep.action} style={nextActionButton}>
+                  Next: {nextStep.title} →
+                </button>
+              )}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 7, marginTop: 14 }}>
+              {workflowSteps.map((step) => (
+                <button
+                  key={step.key}
+                  type="button"
+                  onClick={step.complete ? undefined : step.action}
+                  disabled={step.complete}
+                  style={{
+                    minWidth: 0,
+                    padding: "10px 9px",
+                    borderRadius: 10,
+                    border: "1px solid " + (step.complete ? "rgba(34,197,94,.28)" : "rgba(255,255,255,.09)"),
+                    background: step.complete ? "rgba(34,197,94,.06)" : "rgba(255,255,255,.025)",
+                    color: TEXT,
+                    textAlign: "left",
+                    cursor: step.complete ? "default" : "pointer",
+                    opacity: step.complete ? 0.82 : 1,
+                  }}
+                >
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                    <span style={{ display: "grid", placeItems: "center", width: 22, height: 22, borderRadius: "50%", background: step.complete ? "rgba(34,197,94,.16)" : "rgba(0,180,219,.12)", color: step.complete ? "#86EFAC" : CYAN, fontWeight: 900, fontSize: 10 }}>
+                      {step.complete ? "✓" : step.number}
+                    </span>
+                    <span style={{ ...smallText, fontSize: 9, color: step.complete ? "#86EFAC" : MUTED }}>
+                      {step.complete ? "DONE" : "NEXT"}
+                    </span>
+                  </span>
+                  <strong style={{ display: "block", marginTop: 7, fontSize: 12 }}>{step.title}</strong>
+                  <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 10, lineHeight: 1.35 }}>{step.detail}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       <BizziBuddiGettingStarted
         people={people}
         jobs={jobs}
