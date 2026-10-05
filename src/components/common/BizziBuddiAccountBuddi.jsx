@@ -1703,6 +1703,28 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           </section>
         )}
 
+        <div style={{ marginTop: 18, padding: 16, borderRadius: 14, border: "1px solid rgba(0,180,219,.24)", background: "rgba(0,180,219,.035)" }}>
+          <small style={quickLabelStyle}>YOUR BUSINESS RIGHT NOW</small>
+          <strong style={{ display: "block", marginTop: 5, fontSize: 17 }}>
+            {people.length === 0 && jobs.length === 0 && appointments.length === 0 && invoices.length === 0
+              ? "You’re starting with a clean workspace."
+              : "Here’s what Buddi can see right now."}
+          </strong>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 8, marginTop: 12 }}>
+            {[
+              ["People", people.length],
+              ["Jobs", jobs.length],
+              ["Upcoming", getUpcomingAppointments(appointments).length],
+              ["Outstanding", formatCurrency(invoices.reduce((sum, invoice) => sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0))],
+            ].map(([label, value]) => (
+              <div key={label} style={{ padding: "9px 10px", borderRadius: 10, border: "1px solid rgba(255,255,255,.08)", background: "rgba(255,255,255,.025)" }}>
+                <small style={{ ...quickLabelStyle, fontSize: 9 }}>{label}</small>
+                <strong style={{ display: "block", marginTop: 4, fontSize: 15 }}>{value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div style={quickSectionStyle}>
           <small style={quickLabelStyle}>TRY ASKING</small>
           <div style={quickGridStyle}>
