@@ -600,6 +600,7 @@ function validateJobPayload(payload) {
   const personId = String(payload?.personId || "").trim();
   const status = String(payload?.status || "New").trim();
   const dueDate = String(payload?.dueDate || "").trim();
+  const description = String(payload?.description || "").trim();
   const price = Number(payload?.price ?? 0);
 
   if (!title || title.length > 160) {
@@ -618,6 +619,10 @@ function validateJobPayload(payload) {
     throw new Error("Please enter a valid job due date.");
   }
 
+  if (description.length > 2000) {
+    throw new Error("Job description must be 2000 characters or fewer.");
+  }
+
   if (!Number.isFinite(price) || price < 0 || price > 100000000) {
     throw new Error("Job price must be a valid non-negative amount.");
   }
@@ -627,6 +632,7 @@ function validateJobPayload(payload) {
     personId,
     status,
     dueDate,
+    description,
     price: Math.round(price * 100) / 100,
   };
 }
@@ -638,6 +644,7 @@ function toJob(row) {
     id: row.id,
     personId: row.person_id || null,
     title: row.title,
+    description: row.description || "",
     clientName: row.client_name || "Unassigned",
     status: row.status,
     dueDate: row.due_date || "",
@@ -672,6 +679,7 @@ function getJobs(userId) {
          jobs.id,
          jobs.person_id,
          jobs.title,
+         jobs.description,
          jobs.status,
          jobs.due_date,
          jobs.price,
@@ -716,9 +724,8 @@ function getJobs(userId) {
   });
 }
 
-
 function createJob(userId, payload) {
-  const { title, personId, status, dueDate, price } = validateJobPayload(payload);
+  const { title, personId, status, dueDate, description, price } = validateJobPayload(payload);
   const person = getPersonForUser(userId, personId);
 
   if (!person) {
@@ -732,6 +739,7 @@ function createJob(userId, payload) {
     title,
     status,
     due_date: dueDate,
+    description,
     price,
     created_at: now,
     updated_at: now,
@@ -740,8 +748,8 @@ function createJob(userId, payload) {
   getDatabase()
     .prepare(
       `INSERT INTO bizzibuddi_jobs (
-        id, user_id, person_id, title, status, due_date, price, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        id, user_id, person_id, title, status, due_date, description, price, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       job.id,
@@ -750,6 +758,7 @@ function createJob(userId, payload) {
       job.title,
       job.status,
       job.due_date,
+      job.description,
       job.price,
       job.created_at,
       job.updated_at
@@ -767,7 +776,7 @@ function createJob(userId, payload) {
     .prepare(
       `INSERT INTO bizzibuddi_production (
         id, user_id, job_id, job_title, stage, due_date, notes, tasks_json, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, 'Not started', '', '', '[]', ?, ?)`
+      ) VALUES (?, ?, ?, ?, 'Not started', ?, '', '[]', ?, ?)`
     )
     .run(randomUUID(), userId, job.id, job.title, job.due_date, now, now);
 
@@ -784,7 +793,7 @@ function createJob(userId, payload) {
 }
 
 function updateJob(userId, jobId, payload) {
-  const { title, personId, status, dueDate, price } = validateJobPayload(payload);
+  const { title, personId, status, dueDate, description, price } = validateJobPayload(payload);
   const person = getPersonForUser(userId, personId);
 
   if (!person) {
@@ -792,7 +801,7 @@ function updateJob(userId, jobId, payload) {
   }
 
   const existing = getDatabase()
-    .prepare("SELECT id, title, status, person_id, due_date, price FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?")
+    .prepare("SELECT id, title, status, person_id, due_date, description, price FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?")
     .get(jobId, userId);
 
   if (!existing) return null;
@@ -801,10 +810,10 @@ function updateJob(userId, jobId, payload) {
   const result = getDatabase()
     .prepare(
       `UPDATE bizzibuddi_jobs
-       SET person_id = ?, title = ?, status = ?, due_date = ?, price = ?, updated_at = ?
+       SET person_id = ?, title = ?, status = ?, due_date = ?, description = ?, price = ?, updated_at = ?
        WHERE id = ? AND user_id = ?`
     )
-    .run(person.id, title, status, dueDate, price, now, jobId, userId);
+    .run(person.id, title, status, dueDate, description, price, now, jobId, userId);
 
   if (!result.changes) return null;
 
@@ -828,6 +837,7 @@ function updateJob(userId, jobId, payload) {
     existing.title !== title ||
     existing.person_id !== person.id ||
     existing.due_date !== dueDate ||
+    existing.description !== description ||
     Number(existing.price || 0) !== price
   ) {
     createAutomationEvent(userId, {
