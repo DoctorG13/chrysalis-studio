@@ -648,3 +648,11 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Show live People, Jobs, Upcoming and Outstanding figures
 - [x] Generate context-aware starter questions from real account data
 - [x] Keep actionable creation and payment workflows available from Buddi
+
+
+## BizziBuddi — First Workflow Cross-Linking
+
+- [x] Strengthen Person → Job → Appointment relationships
+- [x] Surface linked job selection during appointment creation
+- [x] Give Buddi structured client workflow chains across jobs, appointments and invoices
+- [x] Preserve invoice → payment integrity through the existing invoice payment model
