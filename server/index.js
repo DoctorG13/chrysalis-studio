@@ -663,6 +663,14 @@ const MIGRATIONS = [
     `,
   },
   {
+    version: 21,
+    name: "bizzibuddi-acceptance-data-fields",
+    sql: `
+      ALTER TABLE bizzibuddi_people ADD COLUMN client_since TEXT NOT NULL DEFAULT '';
+      ALTER TABLE bizzibuddi_jobs ADD COLUMN description TEXT NOT NULL DEFAULT '';
+    `,
+  },
+  {
     version: 20,
     name: "bizzibuddi-business-configuration",
     sql: `
