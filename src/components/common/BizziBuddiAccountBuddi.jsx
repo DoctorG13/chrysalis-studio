@@ -743,6 +743,30 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
         outstandingAmount: outstandingInvoices.reduce((sum, invoice) => sum + Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)), 0),
         overdueCount: overdueInvoices.length,
       },
+      workflow: people.slice(0, 20).map((person) => {
+        const personJobs = jobs.filter((job) => String(job.personId) === String(person.id));
+        const personAppointments = appointments.filter((appointment) => String(appointment.personId) === String(person.id));
+        const personInvoices = invoices.filter((invoice) => String(invoice.personId) === String(person.id));
+        return {
+          person: getPersonName(person),
+          personId: person.id,
+          jobs: personJobs.map((job) => ({ id: job.id, title: job.title, status: job.status })),
+          appointments: personAppointments.slice(0, 5).map((appointment) => ({
+            id: appointment.id,
+            title: appointment.title,
+            date: appointment.date,
+            time: appointment.time,
+            jobId: appointment.jobId || null,
+          })),
+          invoices: personInvoices.slice(0, 5).map((invoice) => ({
+            id: invoice.id,
+            number: invoice.number,
+            amount: invoice.amount,
+            amountPaid: invoice.amountPaid,
+            balance: Math.max(0, (Number(invoice.amount) || 0) - (Number(invoice.amountPaid) || 0)),
+          })),
+        };
+      }),
       jobsByStatus: jobStatus,
       production: productionStatus,
       dashboardAttention: {
