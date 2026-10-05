@@ -1,3 +1,14 @@
+## BizziBuddi — Logical Logout Navigation
+
+### Fixed
+
+- Added a clear **Log out** action to the authenticated Account submenu.
+- Connected the navigation action to the existing server-backed logout flow.
+- Preserved the existing session cleanup and return-to-login behaviour.
+- Added workflow-contract coverage so authenticated logout remains discoverable and wired.
+
+---
+
 ## BizziBuddi First-Day Dashboard
 
 ### Added
