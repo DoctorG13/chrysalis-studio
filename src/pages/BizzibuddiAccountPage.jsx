@@ -566,24 +566,24 @@ export default function BizzibuddiAccountPage() {
     setView("login");
   }
 
-  async function completeOnboarding(event) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-
+  async function completeOnboarding(setup) {
     try {
       const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/account", {
         method: "PUT",
         body: JSON.stringify({
-          business: String(form.get("business") || account?.business || "").trim(),
-          businessType: String(form.get("businessType") || account?.businessType || "general").trim(),
+          business: String(setup?.business || account?.business || "").trim(),
+          businessType: String(setup?.businessType || account?.businessType || "general").trim(),
+          terminology: setup?.terminology || {},
+          customFields: Array.isArray(setup?.customFields) ? setup.customFields : [],
         }),
       });
 
       await applyAccount(result.account);
-      setMessage("Business setup complete. Your account is now ready.");
+      setMessage("Your BizziBuddi workspace is ready.");
       setView("dashboard");
+      setDeepLink({});
     } catch (error) {
-      setMessage(error.message || "We could not save your business details.");
+      setMessage(error.message || "We could not save your business setup.");
     }
   }
 
@@ -1823,25 +1823,212 @@ function OnboardingPanel({ account, onSubmit }) {
     ["other", "Other / custom"],
   ];
 
-  return <section style={cardStyle(620)}>
-    <div style={centerStyle}>
-      <div style={stepBadge}>STEP 2 OF 2 · BUSINESS SETUP</div>
-      <BizziBuddiLogo size={78} dark showWordmark={false} />
-      <h2 style={sectionHeading}>Set up your business.</h2>
-      <p style={copyStyle}>Welcome {account?.name || "there"}. Give BizziBuddi a little context so it can use the right terminology and starter fields.</p>
-    </div>
-    <form onSubmit={onSubmit} style={{ marginTop: 28 }}>
-      <Field name="business" label="Business name" type="text" placeholder={account?.business || "Your business"} defaultValue={account?.business || ""} />
-      <label style={{ ...fieldStyle, marginTop: 16 }}>
-        Business type
-        <select name="businessType" defaultValue={account?.businessType || "general"} style={inputStyle}>
-          {businessTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-        </select>
-      </label>
-      <p style={{ ...copyStyle, marginTop: 10, fontSize: 12 }}>You can refine terminology and custom fields later in Business Setup.</p>
-      <button type="submit" style={primaryButton}>Start my workspace →</button>
-    </form>
-  </section>;
+  const templates = {
+    general: { person: "People", job: "Jobs", appointment: "Appointments", fields: [] },
+    other: { person: "People", job: "Jobs", appointment: "Appointments", fields: [] },
+    dressmaker: { person: "Clients", job: "Garments", appointment: "Fittings", fields: [
+      { name: "Bust", fieldKey: "bust", fieldType: "measurement", unit: "cm" },
+      { name: "Waist", fieldKey: "waist", fieldType: "measurement", unit: "cm" },
+      { name: "Hip", fieldKey: "hip", fieldType: "measurement", unit: "cm" },
+      { name: "Height", fieldKey: "height", fieldType: "measurement", unit: "cm" },
+      { name: "Shoe size", fieldKey: "shoe_size", fieldType: "text", unit: "" },
+    ] },
+    hairdresser: { person: "Clients", job: "Services", appointment: "Appointments", fields: [
+      { name: "Hair type", fieldKey: "hair_type", fieldType: "dropdown", options: ["Straight", "Wavy", "Curly", "Coily"] },
+      { name: "Colour history", fieldKey: "colour_history", fieldType: "long_text", unit: "" },
+      { name: "Preferred stylist", fieldKey: "preferred_stylist", fieldType: "text", unit: "" },
+      { name: "Last colour date", fieldKey: "last_colour_date", fieldType: "date", unit: "" },
+    ] },
+    tattooist: { person: "Clients", job: "Tattoos", appointment: "Sessions", fields: [
+      { name: "Preferred artist", fieldKey: "preferred_artist", fieldType: "text", unit: "" },
+      { name: "Style", fieldKey: "style", fieldType: "text", unit: "" },
+      { name: "Placement", fieldKey: "placement", fieldType: "text", unit: "" },
+      { name: "Design reference", fieldKey: "design_reference", fieldType: "url", unit: "" },
+      { name: "Consent notes", fieldKey: "consent_notes", fieldType: "long_text", unit: "" },
+    ] },
+    school: { person: "Students", job: "Programs", appointment: "Meetings", fields: [
+      { name: "Student ID", fieldKey: "student_id", fieldType: "text", unit: "" },
+      { name: "Year level", fieldKey: "year_level", fieldType: "text", unit: "" },
+      { name: "Parent / guardian", fieldKey: "guardian", fieldType: "text", unit: "" },
+      { name: "Emergency contact", fieldKey: "emergency_contact", fieldType: "text", unit: "" },
+      { name: "Enrolment date", fieldKey: "enrolment_date", fieldType: "date", unit: "" },
+    ] },
+    trades: { person: "Customers", job: "Jobs", appointment: "Site visits", fields: [
+      { name: "Property type", fieldKey: "property_type", fieldType: "dropdown", options: ["Residential", "Commercial", "Industrial", "Other"] },
+      { name: "Site access", fieldKey: "site_access", fieldType: "long_text", unit: "" },
+      { name: "Equipment / asset", fieldKey: "equipment", fieldType: "text", unit: "" },
+      { name: "Warranty status", fieldKey: "warranty_status", fieldType: "text", unit: "" },
+    ] },
+    consultant: { person: "Clients", job: "Projects", appointment: "Meetings", fields: [
+      { name: "Industry", fieldKey: "industry", fieldType: "text", unit: "" },
+      { name: "Engagement type", fieldKey: "engagement_type", fieldType: "text", unit: "" },
+      { name: "Primary contact", fieldKey: "primary_contact", fieldType: "text", unit: "" },
+    ] },
+  };
+
+  const [step, setStep] = useState(1);
+  const [business, setBusiness] = useState(account?.business || "");
+  const [businessType, setBusinessType] = useState(account?.businessType || "general");
+  const [terminology, setTerminology] = useState(
+    account?.terminology || templates[account?.businessType || "general"]
+  );
+  const [customFields, setCustomFields] = useState(
+    (templates[account?.businessType || "general"]?.fields || []).map((field) => ({
+      ...field,
+      entityType: "person",
+      required: false,
+    }))
+  );
+  const [error, setError] = useState("");
+  const template = templates[businessType] || templates.general;
+
+  function chooseBusinessType(value) {
+    setBusinessType(value);
+    setTerminology((current) => ({
+      ...current,
+      person: templates[value].person,
+      job: templates[value].job,
+      appointment: templates[value].appointment,
+    }));
+    setCustomFields((templates[value].fields || []).map((field) => ({
+      ...field,
+      entityType: "person",
+      required: false,
+    })));
+  }
+
+  function next() {
+    setError("");
+    if (step === 1 && !business.trim()) {
+      setError("Please enter your business name.");
+      return;
+    }
+    setStep((current) => Math.min(4, current + 1));
+  }
+
+  function previous() {
+    setError("");
+    setStep((current) => Math.max(1, current - 1));
+  }
+
+  function removeField(index) {
+    setCustomFields((current) => current.filter((_, fieldIndex) => fieldIndex !== index));
+  }
+
+  function submit() {
+    if (!business.trim()) {
+      setStep(1);
+      setError("Please enter your business name.");
+      return;
+    }
+
+    onSubmit({
+      business: business.trim(),
+      businessType,
+      terminology: {
+        person: terminology.person || template.person,
+        job: terminology.job || template.job,
+        appointment: terminology.appointment || template.appointment,
+      },
+      customFields,
+    });
+  }
+
+  return (
+    <section style={cardStyle(700)}>
+      <div style={centerStyle}>
+        <div style={stepBadge}>STEP {step} OF 4 · BUSINESS SETUP</div>
+        <BizziBuddiLogo size={78} dark showWordmark={false} />
+        <h2 style={sectionHeading}>
+          {step === 1 ? "Your business." : step === 2 ? "Your terminology." : step === 3 ? "Your business fields." : "You're ready."}
+        </h2>
+        <p style={copyStyle}>
+          {step === 1
+            ? "Tell BizziBuddi what kind of business you run."
+            : step === 2
+              ? "Choose the words that feel natural for your business."
+              : step === 3
+                ? "Start with useful fields for your industry. You can change these later."
+                : "Your workspace is configured and ready to use."}
+        </p>
+      </div>
+
+      {error && <div role="alert" aria-live="assertive" style={authErrorStyle}><strong>Setup needs your attention.</strong><span>{error}</span></div>}
+
+      {step === 1 && (
+        <div style={{ marginTop: 28 }}>
+          <Field name="business-preview" label="Business name" type="text" placeholder="Your business" defaultValue={business} />
+          <input
+            name="business"
+            value={business}
+            onChange={(event) => setBusiness(event.target.value)}
+            placeholder="Your business"
+            aria-label="Business name"
+            style={{ ...inputStyle, marginTop: 8 }}
+          />
+          <label style={{ ...fieldStyle, marginTop: 18 }}>
+            Business type
+            <select value={businessType} onChange={(event) => chooseBusinessType(event.target.value)} style={inputStyle}>
+              {businessTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {step === 2 && (
+        <div style={{ display: "grid", gap: 14, marginTop: 28 }}>
+          {[
+            ["person", "What should BizziBuddi call your people?"],
+            ["job", "What should BizziBuddi call your work?"],
+            ["appointment", "What should BizziBuddi call your appointments?"],
+          ].map(([key, labelText]) => (
+            <label key={key} style={fieldStyle}>
+              {labelText}
+              <input value={terminology[key] || ""} onChange={(event) => setTerminology((current) => ({ ...current, [key]: event.target.value }))} style={inputStyle} />
+            </label>
+          ))}
+          <div style={{ ...businessNote, marginTop: 4 }}>
+            <strong>{businessTypes.find(([value]) => value === businessType)?.[1]}</strong>
+            <span style={{ display: "block", marginTop: 5, color: MUTED }}>You can use the suggested terminology or make it your own.</span>
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div style={{ marginTop: 28 }}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {customFields.length ? customFields.map((field, index) => (
+              <div key={field.fieldKey + "-" + index} style={reportRow}>
+                <span><strong>{field.name}</strong><small style={{ display: "block", color: MUTED }}>{field.fieldType}{field.unit ? " · " + field.unit : ""}</small></span>
+                <button type="button" onClick={() => removeField(index)} style={textButton}>Remove</button>
+              </div>
+            )) : <div style={emptyPeople}>No starter fields selected. You can add fields later in Business Setup.</div>}
+          </div>
+          <p style={{ ...copyStyle, fontSize: 12, marginTop: 14 }}>These starter fields are attached to People. Additional custom fields can be added later.</p>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div style={{ ...businessNote, marginTop: 28 }}>
+          <strong>{business}</strong>
+          <span style={{ display: "block", marginTop: 6, color: MUTED }}>{businessTypes.find(([value]) => value === businessType)?.[1]}</span>
+          <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
+            <div style={reportRow}><span>People</span><strong>{terminology.person}</strong></div>
+            <div style={reportRow}><span>Work</span><strong>{terminology.job}</strong></div>
+            <div style={reportRow}><span>Appointments</span><strong>{terminology.appointment}</strong></div>
+            <div style={reportRow}><span>Starter fields</span><strong>{customFields.length}</strong></div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 10, marginTop: 26 }}>
+        {step > 1 && <button type="button" onClick={previous} style={secondaryButton}>← Back</button>}
+        {step < 4
+          ? <button type="button" onClick={next} style={primaryButton}>Continue →</button>
+          : <button type="button" onClick={submit} style={primaryButton}>Open my workspace →</button>}
+      </div>
+    </section>
+  );
 }
 
 function CustomFieldsEditor({ entityType, entityId, onChange }) {
