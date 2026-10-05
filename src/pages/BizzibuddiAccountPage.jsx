@@ -1957,7 +1957,6 @@ function OnboardingPanel({ account, onSubmit }) {
 
       {step === 1 && (
         <div style={{ marginTop: 28 }}>
-          <Field name="business-preview" label="Business name" type="text" placeholder="Your business" defaultValue={business} />
           <input
             name="business"
             value={business}
