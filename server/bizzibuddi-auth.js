@@ -1971,6 +1971,7 @@ function validatePersonPayload(payload) {
   const name = String(payload?.name || "").trim();
   const email = normalizeEmail(payload?.email);
   const phone = String(payload?.phone || "").trim();
+  const clientSince = String(payload?.clientSince || "").trim();
 
   if (!name || name.length > 120) {
     throw new Error("Person name is required and must be 120 characters or fewer.");
@@ -1984,7 +1985,11 @@ function validatePersonPayload(payload) {
     throw new Error("Phone number must be 60 characters or fewer.");
   }
 
-  return { name, email, phone };
+  if (clientSince && !isValidDateString(clientSince)) {
+    throw new Error("Please enter a valid client since date.");
+  }
+
+  return { name, email, phone, clientSince };
 }
 
 function toPerson(row) {
@@ -1995,6 +2000,7 @@ function toPerson(row) {
     name: row.name,
     email: row.email,
     phone: row.phone,
+    clientSince: row.client_since || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -2003,7 +2009,7 @@ function toPerson(row) {
 function getPeople(userId) {
   return getDatabase()
     .prepare(
-      `SELECT id, name, email, phone, created_at, updated_at
+      `SELECT id, name, email, phone, client_since, created_at, updated_at
        FROM bizzibuddi_people
        WHERE user_id = ?
        ORDER BY created_at DESC`
@@ -2012,13 +2018,14 @@ function getPeople(userId) {
 }
 
 function createPerson(userId, payload) {
-  const { name, email, phone } = validatePersonPayload(payload);
+  const { name, email, phone, clientSince } = validatePersonPayload(payload);
   const now = new Date().toISOString();
   const person = {
     id: randomUUID(),
     name,
     email,
     phone,
+    client_since: clientSince,
     created_at: now,
     updated_at: now,
   };
@@ -2026,8 +2033,8 @@ function createPerson(userId, payload) {
   getDatabase()
     .prepare(
       `INSERT INTO bizzibuddi_people (
-        id, user_id, name, email, phone, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+        id, user_id, name, email, phone, client_since, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       person.id,
@@ -2035,6 +2042,7 @@ function createPerson(userId, payload) {
       person.name,
       person.email,
       person.phone,
+      person.client_since,
       person.created_at,
       person.updated_at
     );
@@ -2043,23 +2051,23 @@ function createPerson(userId, payload) {
 }
 
 function updatePerson(userId, personId, payload) {
-  const { name, email, phone } = validatePersonPayload(payload);
+  const { name, email, phone, clientSince } = validatePersonPayload(payload);
   const now = new Date().toISOString();
 
   const result = getDatabase()
     .prepare(
       `UPDATE bizzibuddi_people
-       SET name = ?, email = ?, phone = ?, updated_at = ?
+       SET name = ?, email = ?, phone = ?, client_since = ?, updated_at = ?
        WHERE id = ? AND user_id = ?`
     )
-    .run(name, email, phone, now, personId, userId);
+    .run(name, email, phone, clientSince, now, personId, userId);
 
   if (!result.changes) return null;
 
   return toPerson(
     getDatabase()
       .prepare(
-        `SELECT id, name, email, phone, created_at, updated_at
+        `SELECT id, name, email, phone, client_since, created_at, updated_at
          FROM bizzibuddi_people
          WHERE id = ? AND user_id = ?`
       )
