@@ -1,3 +1,12 @@
+## BizziBuddi First-Day Dashboard
+
+### Added
+
+- Added a dedicated empty-business dashboard state for brand-new BizziBuddi accounts.
+- Provides direct first actions for People, Jobs, Calendar and Finance.
+- Keeps the Getting Started guide and Ask Buddi immediately accessible.
+- Automatically gives way to the normal operating dashboard as real business data is added.
+
 ## BizziBuddi Getting Started Wizard
 
 ### Added
