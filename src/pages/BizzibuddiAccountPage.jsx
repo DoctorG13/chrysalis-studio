@@ -931,7 +931,7 @@ export default function BizzibuddiAccountPage() {
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
-        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} />}
+        {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} onGettingStartedBuddi={openBuddi} />}
         {view === "finance" && (
           <FinancePanel
             account={account}
@@ -3121,7 +3121,19 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
                   </span>
                 )}
               </div>
-              {nextAction && (
+              <BizziBuddiGettingStarted
+        people={people}
+        jobs={jobs}
+        appointments={appointments}
+        invoices={invoices}
+        onPeople={onPeople}
+        onJobs={onJobs}
+        onCalendar={onCalendar}
+        onFinance={onFinance}
+        onBuddi={onGettingStartedBuddi}
+      />
+
+      {nextAction && (
                 <div
                   style={{
                     display: "flex",
@@ -3583,10 +3595,131 @@ function AccountPanel({ account, onBack, onPlans, onResetBusiness, onAccountUpda
   );
 }
 
+
+function BizziBuddiGettingStarted({ people, jobs, appointments, invoices, onPeople, onJobs, onCalendar, onFinance, onBuddi }) {
+  const [open, setOpen] = useState(false);
+  const [buddiVisited, setBuddiVisited] = useState(false);
+
+  const steps = [
+    {
+      key: "people",
+      title: "Add your first person",
+      detail: "Start with a customer, client, student or contact.",
+      complete: people.length > 0,
+      action: onPeople,
+      actionLabel: people.length > 0 ? "View people" : "Add a person",
+    },
+    {
+      key: "job",
+      title: "Create your first job",
+      detail: "Give the work a name and keep it connected to the right person.",
+      complete: jobs.length > 0,
+      action: onJobs,
+      actionLabel: jobs.length > 0 ? "View jobs" : "Create a job",
+    },
+    {
+      key: "calendar",
+      title: "Schedule something",
+      detail: "Add an appointment, meeting, fitting or site visit.",
+      complete: appointments.length > 0,
+      action: onCalendar,
+      actionLabel: appointments.length > 0 ? "View calendar" : "Schedule something",
+    },
+    {
+      key: "finance",
+      title: "Record your first invoice",
+      detail: "Keep the money side of your business visible from the beginning.",
+      complete: invoices.length > 0,
+      action: onFinance,
+      actionLabel: invoices.length > 0 ? "View finance" : "Add an invoice",
+    },
+    {
+      key: "buddi",
+      title: "Meet Buddi",
+      detail: "Ask your assistant what needs doing, create work and find information.",
+      complete: buddiVisited,
+      action: () => {
+        setBuddiVisited(true);
+        onBuddi?.("What should I do first in my business?");
+      },
+      actionLabel: "Ask Buddi",
+    },
+  ];
+
+  const completed = steps.filter((step) => step.complete).length;
+  const progress = Math.round((completed / steps.length) * 100);
+
+  function openGuide() {
+    setOpen(true);
+  }
+
+  if (!open) {
+    return (
+      <div style={{ marginTop: 20, padding: 18, borderRadius: 16, border: "1px solid rgba(0,180,219,.28)", background: "linear-gradient(135deg, rgba(0,180,219,.08), rgba(37,99,235,.06))" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 18, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".12em" }}>GETTING STARTED</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 20 }}>Want a quick tour of BizziBuddi?</strong>
+            <p style={{ ...copyStyle, margin: "5px 0 0" }}>Take a short guided path through the essentials. You can skip any step and come back whenever you like.</p>
+          </div>
+          <button type="button" onClick={openGuide} style={nextActionButton}>Start the guide →</button>
+        </div>
+        <div style={{ marginTop: 13, height: 6, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
+          <div style={{ width: progress + "%", height: "100%", background: CYAN, borderRadius: 999, transition: "width .2s ease" }} />
+        </div>
+        <div style={{ marginTop: 7, color: MUTED, fontSize: 11 }}>{completed} of {steps.length} first-day steps complete</div>
+      </div>
+    );
+  }
+
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="bizzibuddi-getting-started-title" style={{ position: "fixed", inset: 0, zIndex: 1200, display: "flex", alignItems: "center", justifyContent: "center", padding: 18, background: "rgba(0,0,0,.72)" }}>
+      <div style={{ width: "min(680px, 100%)", maxHeight: "calc(100vh - 36px)", overflowY: "auto", borderRadius: 20, border: "1px solid " + BORDER, background: BG, color: TEXT, boxShadow: "0 30px 90px rgba(0,0,0,.55)", padding: 22 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
+          <div>
+            <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".12em" }}>YOUR FIRST DAY WITH BIZZIBUDDI</small>
+            <h3 id="bizzibuddi-getting-started-title" style={{ margin: "6px 0 5px", fontSize: 27 }}>Let's get your business moving.</h3>
+            <p style={{ ...copyStyle, margin: 0 }}>You do not have to complete everything now. This guide is here to make the first steps obvious.</p>
+          </div>
+          <button type="button" onClick={() => setOpen(false)} aria-label="Close getting started guide" style={{ ...textButton, flexShrink: 0 }}>Close</button>
+        </div>
+
+        <div style={{ marginTop: 18, padding: 12, borderRadius: 12, background: "rgba(255,255,255,.035)", border: "1px solid rgba(255,255,255,.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 11, color: MUTED }}>
+            <span>{completed} of {steps.length} complete</span>
+            <strong style={{ color: CYAN }}>{progress}%</strong>
+          </div>
+          <div style={{ marginTop: 8, height: 6, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
+            <div style={{ width: progress + "%", height: "100%", background: CYAN, borderRadius: 999 }} />
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gap: 9, marginTop: 18 }}>
+          {steps.map((step, index) => (
+            <div key={step.key} style={{ display: "grid", gridTemplateColumns: "32px minmax(0,1fr) auto", gap: 12, alignItems: "center", padding: 13, borderRadius: 13, border: "1px solid " + (step.complete ? "rgba(34,197,94,.28)" : BORDER), background: step.complete ? "rgba(34,197,94,.055)" : "rgba(255,255,255,.025)" }}>
+              <div aria-hidden="true" style={{ width: 30, height: 30, borderRadius: "50%", display: "grid", placeItems: "center", background: step.complete ? "rgba(34,197,94,.16)" : "rgba(255,255,255,.07)", color: step.complete ? "#86EFAC" : MUTED, fontWeight: 900 }}>{step.complete ? "✓" : index + 1}</div>
+              <div style={{ minWidth: 0 }}>
+                <strong style={{ display: "block", fontSize: 14 }}>{step.title}</strong>
+                <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 11, lineHeight: 1.45 }}>{step.detail}</span>
+              </div>
+              <button type="button" onClick={step.action} style={{ ...todayJumpButton, whiteSpace: "nowrap" }}>{step.actionLabel}</button>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 17, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.08)", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ color: MUTED, fontSize: 11 }}>You can close this guide at any time and return to it from your dashboard.</span>
+          <button type="button" onClick={() => setOpen(false)} style={textButton}>I'll explore on my own</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DashboardPanel({
   account, onPlans, onPeople, onJobs, onCalendar, onFinance, onAutomation,
   onProduction, onReports, onBuddi, onAttentionBuddi, onReset, onLogout, people, jobs,
-  appointments, invoices, automationEvents, productionRecords, productionTimeEntries = [],
+  appointments, invoices, automationEvents, productionRecords, productionTimeEntries = [], onGettingStartedBuddi,
 }) {
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const todayKey = new Date().toISOString().slice(0, 10);
