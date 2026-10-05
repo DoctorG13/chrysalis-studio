@@ -930,7 +930,7 @@ export default function BizzibuddiAccountPage() {
 
         {message && !["login", "create"].includes(view) && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
         {view === "demo" && <BizziBuddiDemoWorkspace onExit={() => selectView("login")} onCreateAccount={() => selectView("create", { fromDemo: true })} />}
-        {view === "login" && <AuthPanel mode="login" account={account} errorMessage={message} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
+        {view === "login" && <AuthPanel mode="login" account={account} errorMessage={message === "You have been logged out." ? "" : message} successMessage={message === "You have been logged out." ? message : ""} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
         {view === "create" && <AuthPanel mode="create" fromDemo={new URLSearchParams(window.location.search).get("from") === "demo"} errorMessage={message} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
@@ -1722,7 +1722,7 @@ function bizzibuddiAuthRequest(path, options = {}) {
   });
 }
 
-function AuthPanel({ mode, account, errorMessage, onSubmit, onSwitch, onExploreDemo, fromDemo = false }) {
+function AuthPanel({ mode, account, errorMessage, successMessage, onSubmit, onSwitch, onExploreDemo, fromDemo = false }) {
   const login = mode === "login";
   const [validationError, setValidationError] = useState("");
 
@@ -1788,6 +1788,18 @@ function AuthPanel({ mode, account, errorMessage, onSubmit, onSwitch, onExploreD
       >
         <strong>{login ? "We couldn't log you in." : "We couldn't create your account."}</strong>
         <span>{visibleError}</span>
+      </div>
+    )}
+
+    {successMessage && (
+      <div
+        id="bizzibuddi-auth-success"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+        style={{ ...authErrorStyle, background: "rgba(37,99,235,.10)", border: `1px solid ${RED}` }}
+      >
+        <span>{successMessage}</span>
       </div>
     )}
 
