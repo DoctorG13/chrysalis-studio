@@ -3132,3 +3132,12 @@ All notable changes to Chrysalis are recorded here.
 - [x] Show a live business snapshot inside Buddi
 - [x] Give empty businesses a clear first-use Buddi experience
 - [x] Keep existing real-account actions and confirmation workflows intact
+
+
+## BizziBuddi — First Workflow Cross-Linking
+
+- [x] Auto-link an appointment to a client’s only job when unambiguous
+- [x] Let appointment review explicitly select the linked job
+- [x] Preserve person → job → appointment relationships in the real account
+- [x] Give Buddi relationship-aware workflow context for real businesses
+- [x] Keep invoice → payment linkage anchored to the selected client invoice
