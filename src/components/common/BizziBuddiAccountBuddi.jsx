@@ -525,7 +525,7 @@ function autoMatchPaymentInvoice(draft, invoices) {
     : draft;
 }
 
-function parseNaturalAppointmentRequest(rawQuestion, people) {
+function parseNaturalAppointmentRequest(rawQuestion, people, jobs = []) {
   const value = String(rawQuestion || "").trim();
   const draft = {
     title: "",
@@ -600,6 +600,12 @@ function parseNaturalAppointmentRequest(rawQuestion, people) {
     .trim();
 
   draft.title = titleCaseJobTitle(draft.title);
+
+  if (draft.personId) {
+    const personJobs = jobs.filter((job) => String(job.personId) === String(draft.personId));
+    if (personJobs.length === 1) draft.jobId = personJobs[0].id;
+  }
+
   return draft;
 }
 
@@ -1145,7 +1151,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     }
 
     if (isAppointmentRequest) {
-      const prefilledAppointment = parseNaturalAppointmentRequest(value, people);
+      const prefilledAppointment = parseNaturalAppointmentRequest(value, people, jobs);
       setAppointmentDraft(prefilledAppointment);
       setJobDraft(null);
       setNewClientDraft(null);
