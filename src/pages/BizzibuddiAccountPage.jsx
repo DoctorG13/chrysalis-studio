@@ -90,9 +90,17 @@ export default function BizzibuddiAccountPage() {
   const [workspaceScrollTarget, setWorkspaceScrollTarget] = useState("");
 
   useEffect(() => {
-    if (!workspaceScrollTarget) return undefined;
-
     let cancelled = false;
+
+    if (!workspaceScrollTarget) {
+      const frame = window.requestAnimationFrame(() => {
+        if (!cancelled) window.scrollTo({ top: 0, behavior: "auto" });
+      });
+      return () => {
+        cancelled = true;
+        window.cancelAnimationFrame(frame);
+      };
+    }
     let attempts = 0;
     let timer = null;
 
@@ -2219,6 +2227,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         name: String(form.get("name") || "").trim(),
         email: String(form.get("email") || "").trim(),
         phone: String(form.get("phone") || "").trim(),
+        clientSince: String(form.get("clientSince") || "").trim(),
       };
 
       let savedPerson;
@@ -2310,6 +2319,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
               backWaist: String(form.get("backWaist") || "").trim(),
               inseam: String(form.get("inseam") || "").trim(),
               height: String(form.get("height") || "").trim(),
+              shoeSize: String(form.get("shoeSize") || "").trim(),
               notes: String(form.get("measurementNotes") || "").trim(),
             },
           }),
@@ -2707,7 +2717,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 9, marginTop: 10 }}>
                       {[
                         ["bust", "Bust"], ["waist", "Waist"], ["hip", "Hip"], ["shoulder", "Shoulder"],
-                        ["sleeve", "Sleeve"], ["neck", "Neck"], ["backWaist", "Back waist"], ["inseam", "Inseam"], ["height", "Height"],
+                        ["sleeve", "Sleeve"], ["neck", "Neck"], ["backWaist", "Back waist"], ["inseam", "Inseam"], ["height", "Height"], ["shoeSize", "Shoe size"],
                       ].map(([name, label]) => (
                         <label key={name} style={{ ...fieldStyle, marginTop: 0 }}>{label}
                           <input name={name} type="text" placeholder="e.g. 92 cm" style={inputStyle} />
@@ -2829,6 +2839,12 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           placeholder="Phone number"
           defaultValue={editingPerson?.phone || ""}
         />
+        <Field
+          name="clientSince"
+          label="Client since"
+          type="date"
+          defaultValue={editingPerson?.clientSince || ""}
+        />
         <CustomFieldsEditor
           entityType="person"
           entityId={editingPerson?.id || ""}
@@ -2926,6 +2942,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
         personId: String(form.get("personId") || ""),
         status: String(form.get("status") || "New"),
         dueDate: String(form.get("dueDate") || ""),
+        description: String(form.get("description") || "").trim(),
         price: Number(form.get("price") || 0),
       };
 
@@ -3383,6 +3400,9 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
         </label>
         <label style={fieldStyle}>Due date
           <input name="dueDate" type="date" defaultValue={editingJob?.dueDate || ""} style={inputStyle} />
+        </label>
+        <label style={fieldStyle}>Description
+          <textarea name="description" rows={4} placeholder="Describe the work, garment or outcome." defaultValue={editingJob?.description || ""} style={{ ...inputStyle, padding: "12px 15px", minHeight: 110, resize: "vertical" }} />
         </label>
         <label style={fieldStyle}>Price (AUD)
           <input name="price" type="number" min="0" step="0.01" defaultValue={editingJob?.price || ""} placeholder="0.00" style={inputStyle} />
