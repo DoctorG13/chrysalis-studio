@@ -640,3 +640,11 @@ Donna can comfortably run Chrysalis as her primary business application every da
 - [x] Use persisted account data to determine workflow progress
 - [x] Provide direct next-step actions from Dashboard
 - [x] Keep the workflow out of the way once the business has completed it
+
+
+## BizziBuddi — Real Business Buddi
+
+- [x] Make Buddi aware of the current real business state before prompting
+- [x] Show live People, Jobs, Upcoming and Outstanding figures
+- [x] Generate context-aware starter questions from real account data
+- [x] Keep actionable creation and payment workflows available from Buddi
