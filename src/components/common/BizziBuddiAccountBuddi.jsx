@@ -533,6 +533,7 @@ function parseNaturalAppointmentRequest(rawQuestion, people) {
     time: "",
     personId: "",
     requestedPersonName: "",
+    jobId: "",
     duration: "60",
     status: "Booked",
     notes: "",
