@@ -3124,3 +3124,11 @@ All notable changes to Chrysalis are recorded here.
 - [x] Show the next incomplete workflow action directly from Dashboard
 - [x] Keep completed steps visibly marked and disable completed actions
 - [x] Return to Today as the final workflow step
+
+
+## BizziBuddi — Real Business Buddi
+
+- [x] Make Buddi quick prompts respond to the current account state
+- [x] Show a live business snapshot inside Buddi
+- [x] Give empty businesses a clear first-use Buddi experience
+- [x] Keep existing real-account actions and confirmation workflows intact
