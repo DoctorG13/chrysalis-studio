@@ -2139,6 +2139,7 @@ function validateMeasurementPayload(payload) {
     "backWaist",
     "inseam",
     "height",
+    "shoeSize",
     "notes",
   ];
   const data = {};
