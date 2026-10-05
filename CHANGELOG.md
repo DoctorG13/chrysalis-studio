@@ -3115,3 +3115,12 @@ All notable changes to Chrysalis are recorded here.
 - Business onboarding now captures the business type during initial setup.
 - Supported starter business types include general business, dressmaker/fashion, hairdresser/salon, tattooist/studio, school/education, trades/field service and consultant/professional services.
 - Business type is persisted through the existing account configuration flow so BizziBuddi can apply the appropriate terminology and starter fields.
+
+
+## BizziBuddi — First Real Business Workflow
+
+- [x] Add a guided Person → Job → Appointment → Payment → Today workflow
+- [x] Reflect real account data in each workflow step
+- [x] Show the next incomplete workflow action directly from Dashboard
+- [x] Keep completed steps visibly marked and disable completed actions
+- [x] Return to Today as the final workflow step
