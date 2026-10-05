@@ -1,3 +1,13 @@
+## BizziBuddi Getting Started Wizard
+
+### Added
+
+- Added an optional first-day Getting Started guide to the authenticated BizziBuddi dashboard.
+- Guides new businesses through adding a person, creating a job, scheduling an appointment, adding an invoice and meeting Buddi.
+- Shows live completion progress based on the real account workspace.
+- Keeps the guide skippable so experienced users can work normally.
+- Keeps the guide available from the dashboard for returning users.
+
 ## BizziBuddi — Business Setup 2.0\n\n### Added\n\n- Reworked first-run Business Setup into a four-step onboarding flow.\n- Step 1 captures business name and business type, including Other / custom.\n- Step 2 lets the business owner review and customise People, Work and Appointment terminology.\n- Step 3 previews industry starter custom fields and allows unwanted fields to be removed before entering the workspace.\n- Step 4 provides a final configuration summary before opening the workspace.\n- Starter configuration is persisted through the existing business profile and custom-field APIs.\n\n---\n\n## BizziBuddi — CSV Export Parse Fix\n\n### Fixed\n\n- Corrected the malformed CSV line-join string in `BizzibuddiAccountPage.jsx`.\n- Restored valid JavaScript syntax for report CSV generation.\n\n---\n\n## BizziBuddi — Authentication Error UX\n\n### Improved\n\n- Login and account-creation errors now appear prominently inside the authentication card.\n- Server errors such as duplicate email/username are shown immediately without requiring the user to scroll back to the top.\n- Missing credentials and invalid email/password input are validated before submission with clear, field-specific messages.\n- Authentication error feedback uses an assertive accessible alert and automatically brings the message into view.\n\n---\n\n## BizziBuddi Demo — Feedback Parse Fix\n\n### Fixed\n\n- Corrected the Demo workspace source formatting introduced during the action-feedback timer fix.\n- Restored the 4-second visible action feedback timer without invalid escaped line breaks.\n\n---\n\n## BizziBuddi Demo — Action Feedback Visibility\n\n### Fixed\n\n- Demo action feedback now remains visible for 4 seconds instead of being cleared immediately.\n- Rapid successive actions replace the previous notice cleanly without stacking timers.\n- The feedback notice remains sticky and visually prominent while navigating the Demo workspace.\n\n\n---\n\n## BizziBuddi Demo Action Feedback
 
 ### Changed
