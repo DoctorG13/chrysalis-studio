@@ -2640,6 +2640,11 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                 <span style={smallText}>
                   {person.email || "No email"}{person.phone ? ` · ${person.phone}` : ""}
                 </span>
+                {person.clientSince && (
+                  <span style={{ ...smallText, display: "block", marginTop: 4 }}>
+                    Client since {new Date(person.clientSince + "T00:00:00").toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                )}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 9 }}>
                   <span style={personMetaBadge}>{personJobCount} {personJobCount === 1 ? "job" : "jobs"}</span>
                   <span style={personMetaBadge}>{personBookingCount} {personBookingCount === 1 ? "booking" : "bookings"}</span>
@@ -3110,6 +3115,9 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
             <div style={{ minWidth: 0, flex: "1 1 240px" }}>
               <strong style={{ display: "block", fontSize: 17 }}>{job.title}</strong>
               <span style={smallText}>{job.clientName || "Unassigned"}</span>
+              {job.description && (
+                <p style={{ ...copyStyle, margin: "6px 0 0", fontSize: 12, lineHeight: 1.4 }}>{job.description}</p>
+              )}
               {(job.dueDate || Number(job.price || 0) > 0) && (
                 <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 8 }}>
                   {job.dueDate && (
