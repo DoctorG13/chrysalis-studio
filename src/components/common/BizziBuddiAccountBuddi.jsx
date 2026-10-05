@@ -1589,6 +1589,26 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
               </label>
 
               <label style={jobFieldStyle}>
+                <span>Job</span>
+                <select
+                  style={jobInputStyle}
+                  value={appointmentDraft.jobId || ""}
+                  onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, jobId: event.target.value }))}
+                  disabled={jobSaving || !appointmentDraft.personId}
+                >
+                  <option value="">No linked job</option>
+                  {jobs
+                    .filter((job) => String(job.personId) === String(appointmentDraft.personId))
+                    .map((job) => (
+                      <option key={job.id} value={job.id}>{job.title}</option>
+                    ))}
+                </select>
+                {appointmentDraft.personId && jobs.filter((job) => String(job.personId) === String(appointmentDraft.personId)).length === 1 && (
+                  <span style={{ ...unmatchedPersonStyle, color: "#86EFAC" }}>Linked to this client’s only job.</span>
+                )}
+              </label>
+
+              <label style={jobFieldStyle}>
                 <span>Appointment title</span>
                 <input style={jobInputStyle} value={appointmentDraft.title} onChange={(event) => setAppointmentDraft((draft) => ({ ...draft, title: event.target.value }))} placeholder="e.g. Fitting" disabled={jobSaving} />
               </label>
