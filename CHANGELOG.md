@@ -1,3 +1,15 @@
+## BizziBuddi — Acceptance Test Form & Navigation Fixes
+
+### Fixed
+
+- Added **Client since** to the person/client form and persisted it in the account database.
+- Added **Shoe size** to the measurement snapshot form and persisted it with measurements.
+- Added a **Description** field to job/garment creation and editing, with database persistence.
+- Fixed the job creation production-record insert that was causing the **column index out of range** error.
+- Reset workspace navigation to the top when opening a workspace view without a specific scroll target.
+
+---
+
 ## BizziBuddi — Logical Logout Navigation
 
 ### Fixed
