@@ -8918,7 +8918,7 @@ function CalendarPanel({
                             <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? TEXT : MUTED }}>{date.getDate()}</div>
                             <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
                               {items.slice(0, 3).map((appointment) => (
-                                <button key={appointment.id} type="button" onClick={() => startEdit(appointment)} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(0,180,219,.35)", borderRadius: 6, padding: "5px 6px", background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer", fontSize: 10, lineHeight: 1.25 }}>
+                                <button key={appointment.id} type="button" onClick={() => { startEdit(appointment); requestAnimationFrame(() => document.getElementById("calendar-appointment-" + appointment.id)?.scrollIntoView({ behavior: "smooth", block: "center" })); }} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(0,180,219,.35)", borderRadius: 6, padding: "5px 6px", background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer", fontSize: 10, lineHeight: 1.25 }}>
                                   <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.time || "All day"}</strong>
                                   <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.title || "Appointment"}</span>
                                 </button>
@@ -8978,6 +8978,7 @@ function CalendarPanel({
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
             {visibleAppointments.map((appointment) => (
           <article
+            id={"calendar-appointment-" + appointment.id}
             key={appointment.id}
             ref={String(initialAppointmentId) === String(appointment.id) ? selectedAppointmentRef : null}
             style={{
