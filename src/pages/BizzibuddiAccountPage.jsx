@@ -8525,6 +8525,46 @@ function formatInvoiceDate(date) {
   return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function calendarDateKey(date) {
+  const value = new Date(date);
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, "0");
+  const day = String(value.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+function calendarDateFromKey(value) {
+  const [year, month, day] = String(value || "").split("-").map(Number);
+  if (!year || !month || !day) return new Date();
+  return new Date(year, month - 1, day);
+}
+
+function calendarStartOfWeek(date) {
+  const value = new Date(date);
+  value.setHours(0, 0, 0, 0);
+  const day = value.getDay();
+  const offset = day === 0 ? -6 : 1 - day;
+  value.setDate(value.getDate() + offset);
+  return value;
+}
+
+function formatCalendarMonth(date) {
+  return new Intl.DateTimeFormat("en-AU", { month: "long", year: "numeric" }).format(date);
+}
+
+function formatCalendarWeek(date) {
+  const start = calendarStartOfWeek(date);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  const startLabel = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short" }).format(start);
+  const endLabel = new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" }).format(end);
+  return startLabel + " – " + endLabel;
+}
+
+function formatCalendarDay(date) {
+  return new Intl.DateTimeFormat("en-AU", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(date);
+}
+
 function CalendarPanel({
   appointments,
   people,
@@ -8546,6 +8586,8 @@ function CalendarPanel({
   const [showCalendarSearch, setShowCalendarSearch] = useState(false);
   const [calendarSearch, setCalendarSearch] = useState("");
   const [calendarType, setCalendarType] = useState("all");
+  const [calendarView, setCalendarView] = useState("month");
+  const [calendarCursor, setCalendarCursor] = useState(() => new Date());
   const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
   const selectedAppointmentRef = useRef(null);
 
@@ -8772,6 +8814,151 @@ function CalendarPanel({
             </div>
           )}
         </div>
+        <div style={{ marginTop: 16, border: "1px solid " + BORDER, borderRadius: 14, background: "rgba(255,255,255,.025)", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: 14, borderBottom: "1px solid " + BORDER }}>
+            <div>
+              <strong style={{ display: "block", fontSize: 17 }}>
+                {calendarView === "month" ? formatCalendarMonth(calendarCursor) : calendarView === "week" ? formatCalendarWeek(calendarCursor) : formatCalendarDay(calendarCursor)}
+              </strong>
+              <span style={{ ...smallText, display: "block", marginTop: 3 }}>Visual scheduling calendar</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              {["month", "week", "day", "agenda"].map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  onClick={() => setCalendarView(view)}
+                  style={calendarView === view ? smallActionButton : secondaryButton}
+                >
+                  {view.charAt(0).toUpperCase() + view.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {calendarView !== "agenda" && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "10px 14px", borderBottom: "1px solid " + BORDER }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = new Date(calendarCursor);
+                    if (calendarView === "month") next.setMonth(next.getMonth() - 1);
+                    else if (calendarView === "week") next.setDate(next.getDate() - 7);
+                    else next.setDate(next.getDate() - 1);
+                    setCalendarCursor(next);
+                  }}
+                  style={smallActionButton}
+                  aria-label="Previous period"
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCalendarCursor(new Date())}
+                  style={secondaryButton}
+                >
+                  Today
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = new Date(calendarCursor);
+                    if (calendarView === "month") next.setMonth(next.getMonth() + 1);
+                    else if (calendarView === "week") next.setDate(next.getDate() + 7);
+                    else next.setDate(next.getDate() + 1);
+                    setCalendarCursor(next);
+                  }}
+                  style={smallActionButton}
+                  aria-label="Next period"
+                >
+                  →
+                </button>
+              </div>
+
+              {(() => {
+                const cellAppointments = (date) => sortedAppointments.filter((appointment) => appointment.date === calendarDateKey(date));
+                const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+                if (calendarView === "month") {
+                  const monthStart = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), 1);
+                  const gridStart = calendarStartOfWeek(monthStart);
+                  const cells = Array.from({ length: 42 }, (_, index) => {
+                    const date = new Date(gridStart);
+                    date.setDate(gridStart.getDate() + index);
+                    return date;
+                  });
+                  return (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}>
+                      {dayNames.map((name) => (
+                        <div key={name} style={{ padding: "9px 7px", borderRight: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER, color: MUTED, fontSize: 11, fontWeight: 700, textAlign: "center" }}>{name}</div>
+                      ))}
+                      {cells.map((date) => {
+                        const key = calendarDateKey(date);
+                        const items = cellAppointments(date);
+                        const inMonth = date.getMonth() === calendarCursor.getMonth();
+                        const isToday = key === calendarDateKey(new Date());
+                        return (
+                          <div key={key} style={{ minHeight: 92, padding: 7, borderRight: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER, background: isToday ? "rgba(0,180,219,.08)" : "transparent", opacity: inMonth ? 1 : 0.42 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? TEXT : MUTED }}>{date.getDate()}</div>
+                            <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
+                              {items.slice(0, 3).map((appointment) => (
+                                <button key={appointment.id} type="button" onClick={() => startEdit(appointment)} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(0,180,219,.35)", borderRadius: 6, padding: "5px 6px", background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer", fontSize: 10, lineHeight: 1.25 }}>
+                                  <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.time ? formatAppointmentDate("", appointment.time).split(" · ")[0] : "All day"}</strong>
+                                  <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.title || "Appointment"}</span>
+                                </button>
+                              ))}
+                              {items.length > 3 && <span style={{ color: MUTED, fontSize: 10 }}>+ {items.length - 3} more</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                const days = calendarView === "week"
+                  ? Array.from({ length: 7 }, (_, index) => {
+                      const date = calendarStartOfWeek(calendarCursor);
+                      date.setDate(date.getDate() + index);
+                      return date;
+                    })
+                  : [new Date(calendarCursor)];
+
+                return (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(" + days.length + ", minmax(0, 1fr))", overflowX: "auto" }}>
+                    {days.map((date) => {
+                      const items = cellAppointments(date);
+                      const key = calendarDateKey(date);
+                      const isToday = key === calendarDateKey(new Date());
+                      return (
+                        <div key={key} style={{ minWidth: calendarView === "week" ? 150 : 260, minHeight: 300, borderRight: "1px solid " + BORDER, background: isToday ? "rgba(0,180,219,.08)" : "transparent" }}>
+                          <div style={{ padding: 10, borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
+                            <strong style={{ display: "block", fontSize: 12 }}>{new Intl.DateTimeFormat("en-AU", { weekday: "short" }).format(date)}</strong>
+                            <span style={{ color: isToday ? TEXT : MUTED, fontSize: 12 }}>{date.getDate()} {new Intl.DateTimeFormat("en-AU", { month: "short" }).format(date)}</span>
+                          </div>
+                          <div style={{ display: "grid", gap: 8, padding: 10 }}>
+                            {items.length > 0 ? items.map((appointment) => (
+                              <button key={appointment.id} type="button" onClick={() => startEdit(appointment)} style={{ textAlign: "left", border: "1px solid rgba(0,180,219,.40)", borderRadius: 8, padding: 9, background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer" }}>
+                                <strong style={{ display: "block", fontSize: 12 }}>{appointment.time || "All day"}</strong>
+                                <span style={{ display: "block", marginTop: 3, fontSize: 12 }}>{appointment.title || "Appointment"}</span>
+                                {appointment.personName && <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 10 }}>{appointment.personName}</span>}
+                                {appointment.jobTitle && <span style={{ display: "block", marginTop: 2, color: MUTED, fontSize: 10 }}>{appointment.jobTitle}</span>}
+                              </button>
+                            )) : (
+                              <span style={{ color: MUTED, fontSize: 11, padding: 8 }}>No appointments</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </>
+          )}
+        </div>
+
         {visibleAppointments.length > 0 ? (
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
             {visibleAppointments.map((appointment) => (
