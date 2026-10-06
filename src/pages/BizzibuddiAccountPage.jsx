@@ -2196,6 +2196,10 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       .sort((a, b) => String(b.date).localeCompare(String(a.date)));
   }
 
+  function scrollToCalendarSection(key) {
+    calendarSectionRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function startAdd() {
     setError("");
     setEditingPerson(null);
@@ -8588,6 +8592,7 @@ function CalendarPanel({
   const [calendarType, setCalendarType] = useState("all");
   const [calendarView, setCalendarView] = useState("month");
   const [calendarCursor, setCalendarCursor] = useState(() => new Date());
+  const calendarSectionRefs = useRef({});
   const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
   const selectedAppointmentRef = useRef(null);
 
@@ -8788,12 +8793,12 @@ function CalendarPanel({
                   key={value}
                   type="button"
                   onClick={() => setCalendarFilter(value)}
-                  style={calendarFilter === value ? smallActionButton : secondaryButton}
+                  style={calendarFilter === value ? smallActionButton : { ...smallActionButton, borderColor: BORDER, color: MUTED }}
                 >
                   {label} · {count}
                 </button>
               ))}
-              <button type="button" onClick={() => setShowCalendarSearch((current) => !current)} style={showCalendarSearch ? smallActionButton : secondaryButton}>
+              <button type="button" onClick={() => setShowCalendarSearch((current) => !current)} style={showCalendarSearch ? smallActionButton : { ...smallActionButton, borderColor: BORDER, color: MUTED }}>
                 🔎 Search
               </button>
             </div>
@@ -8814,8 +8819,8 @@ function CalendarPanel({
             </div>
           )}
         </div>
-        <div style={{ marginTop: 16, border: "1px solid " + BORDER, borderRadius: 14, background: "rgba(255,255,255,.025)", overflow: "hidden" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: 14, borderBottom: "1px solid " + BORDER }}>
+        <div ref={(node) => { calendarSectionRefs.current.calendar = node; }} id="calendar-grid" style={{ scrollMarginTop: 96, marginTop: 16, border: "1px solid " + BORDER, borderRadius: 14, background: "rgba(255,255,255,.025)", overflow: "hidden" }}>
+          <div style={{ position: "sticky", top: 74, zIndex: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "10px 14px", borderBottom: "1px solid " + BORDER, background: "rgba(13,38,60,.97)", backdropFilter: "blur(12px)" }}>
             <div>
               <strong style={{ display: "block", fontSize: 17 }}>
                 {calendarView === "month" ? formatCalendarMonth(calendarCursor) : calendarView === "week" ? formatCalendarWeek(calendarCursor) : formatCalendarDay(calendarCursor)}
@@ -8828,7 +8833,7 @@ function CalendarPanel({
                   key={view}
                   type="button"
                   onClick={() => setCalendarView(view)}
-                  style={calendarView === view ? smallActionButton : secondaryButton}
+                  style={calendarView === view ? { ...smallActionButton, borderRadius: 7, padding: "6px 11px" } : { ...smallActionButton, borderColor: "transparent", color: MUTED, borderRadius: 7, padding: "6px 11px" }}
                 >
                   {view.charAt(0).toUpperCase() + view.slice(1)}
                 </button>
@@ -8856,7 +8861,7 @@ function CalendarPanel({
                 <button
                   type="button"
                   onClick={() => setCalendarCursor(new Date())}
-                  style={secondaryButton}
+                  style={smallActionButton}
                 >
                   Today
                 </button>
@@ -8959,6 +8964,7 @@ function CalendarPanel({
           )}
         </div>
 
+<div style={{ position: "sticky", top: 0, zIndex: 9, marginTop: 16, padding: "8px 10px", border: "1px solid " + BORDER, borderRadius: 12, background: "rgba(13,38,60,.97)", backdropFilter: "blur(12px)" }}><div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}><span style={{ ...smallText, fontWeight: 800, marginRight: 3 }}>FITTINGS</span><button type="button" onClick={() => scrollToCalendarSection("calendar")} style={smallActionButton}>Calendar</button><button type="button" onClick={() => scrollToCalendarSection("appointments")} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>Appointments · {appointments.length}</button><button type="button" onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>+ Add appointment</button></div></div><div ref={(node) => { calendarSectionRefs.current.appointments = node; }} id="calendar-appointments" style={{ scrollMarginTop: 96 }} />
         {visibleAppointments.length > 0 ? (
           <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
             {visibleAppointments.map((appointment) => (
@@ -9019,8 +9025,9 @@ function CalendarPanel({
 
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
+    <div ref={(node) => { calendarSectionRefs.current["appointment-form"] = node; }} id="calendar-appointment-form" style={{ scrollMarginTop: 96 }} />
     {!showForm ? (
-      <button type="button" onClick={startAdd} style={{ ...primaryButton, maxWidth: 260 }}>+ Add an appointment</button>
+      <button type="button" onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }} style={{ ...primaryButton, maxWidth: 260 }}>+ Add an appointment</button>
     ) : (
       <form key={editingAppointment?.id || "new-appointment"} onSubmit={handleSubmit} style={personForm}>
         <strong style={{ fontSize: 18 }}>{editingAppointment ? "Edit appointment" : "Add an appointment"}</strong>
