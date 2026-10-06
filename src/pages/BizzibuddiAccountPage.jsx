@@ -8904,7 +8904,7 @@ function CalendarPanel({
                             <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
                               {items.slice(0, 3).map((appointment) => (
                                 <button key={appointment.id} type="button" onClick={() => startEdit(appointment)} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(0,180,219,.35)", borderRadius: 6, padding: "5px 6px", background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer", fontSize: 10, lineHeight: 1.25 }}>
-                                  <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.time ? formatAppointmentDate("", appointment.time).split(" · ")[0] : "All day"}</strong>
+                                  <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.time || "All day"}</strong>
                                   <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.title || "Appointment"}</span>
                                 </button>
                               ))}
