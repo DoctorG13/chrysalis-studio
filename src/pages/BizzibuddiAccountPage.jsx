@@ -8736,6 +8736,16 @@ function CalendarPanel({
           <span style={advancedBadge}>PROFESSIONAL</span>
         </div>
       )}
+    <div style={{ position: "sticky", top: 70, zIndex: 9, marginTop: 16, padding: "8px 10px", border: "1px solid " + BORDER, borderRadius: 12, background: "rgba(13,38,60,.97)", backdropFilter: "blur(12px)", boxShadow: "0 10px 24px rgba(0,0,0,.18)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
+        <span style={{ ...smallText, fontWeight: 800, marginRight: 3 }}>FITTINGS</span>
+        <button type="button" onClick={() => scrollToCalendarSection("calendar")} style={smallActionButton}>Calendar</button>
+        <button type="button" onClick={() => scrollToCalendarSection("appointments")} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>Appointments · {appointments.length}</button>
+        <button type="button" onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>+ Add appointment</button>
+      </div>
+    </div>
+    <div ref={(node) => { calendarSectionRefs.current.appointments = node; }} id="calendar-appointments" style={{ scrollMarginTop: 110 }} />
+
     </div>
 
     {productionSchedule.length > 0 && (
@@ -8819,15 +8829,6 @@ function CalendarPanel({
             </div>
           )}
         </div>
-    <div style={{ position: "sticky", top: 70, zIndex: 9, marginTop: 16, padding: "8px 10px", border: "1px solid " + BORDER, borderRadius: 12, background: "rgba(13,38,60,.97)", backdropFilter: "blur(12px)", boxShadow: "0 10px 24px rgba(0,0,0,.18)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-        <span style={{ ...smallText, fontWeight: 800, marginRight: 3 }}>FITTINGS</span>
-        <button type="button" onClick={() => scrollToCalendarSection("calendar")} style={smallActionButton}>Calendar</button>
-        <button type="button" onClick={() => scrollToCalendarSection("appointments")} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>Appointments · {appointments.length}</button>
-        <button type="button" onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>+ Add appointment</button>
-      </div>
-    </div>
-    <div ref={(node) => { calendarSectionRefs.current.appointments = node; }} id="calendar-appointments" style={{ scrollMarginTop: 110 }} />
         <div ref={(node) => { calendarSectionRefs.current.calendar = node; }} id="calendar-grid" style={{ scrollMarginTop: 96, marginTop: 16, border: "1px solid " + BORDER, borderRadius: 14, background: "rgba(255,255,255,.025)", overflow: "hidden" }}>
           <div style={{ position: "sticky", top: 60, zIndex: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "10px 14px", borderBottom: "1px solid " + BORDER, background: "rgba(13,38,60,.97)", backdropFilter: "blur(12px)" }}>
             <div>
