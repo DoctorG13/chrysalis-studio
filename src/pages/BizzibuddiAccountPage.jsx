@@ -8829,8 +8829,8 @@ function CalendarPanel({
             </div>
           )}
         </div>
-        <div ref={(node) => { calendarSectionRefs.current.calendar = node; }} id="calendar-grid" style={{ scrollMarginTop: 96, marginTop: 16, border: "1px solid " + BORDER, borderRadius: 14, background: "rgba(255,255,255,.025)", overflow: "hidden" }}>
-          <div style={{ position: "sticky", top: 60, zIndex: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "10px 14px", borderBottom: "1px solid " + BORDER, background: "rgba(13,38,60,.97)", backdropFilter: "blur(12px)" }}>
+        <div ref={(node) => { calendarSectionRefs.current.calendar = node; }} id="calendar-grid" style={{ scrollMarginTop: 96, marginTop: 6, border: "1px solid " + BORDER, borderRadius: 14, background: "rgba(255,255,255,.025)", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", padding: "7px 12px", borderBottom: "1px solid " + BORDER, background: "rgba(13,38,60,.97)" }}>
             <div>
               <strong style={{ display: "block", fontSize: 17 }}>
                 {calendarView === "month" ? formatCalendarMonth(calendarCursor) : calendarView === "week" ? formatCalendarWeek(calendarCursor) : formatCalendarDay(calendarCursor)}
