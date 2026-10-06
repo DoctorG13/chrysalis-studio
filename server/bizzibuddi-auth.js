@@ -1563,11 +1563,6 @@ function deleteInvoicePayment(userId, paymentId) {
     )
     .get(payment.invoice_id, userId);
 
-  const resultInvoice = toInvoice({
-    ...updatedInvoice,
-    payments: getInvoicePayments(userId, payment.invoice_id),
-  });
-
   createAutomationEvent(userId, {
     type: "finance-payment-removed",
     title: "Payment removed",
@@ -1584,7 +1579,13 @@ function deleteInvoicePayment(userId, paymentId) {
     sourceKey: "finance-payment:removed:" + payment.invoice_id + ":" + paymentId + ":" + now,
   });
 
-  return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, payment.invoice_id) };
+  const resultInvoice = toInvoice({
+    ...updatedInvoice,
+    payments: getInvoicePayments(userId, payment.invoice_id),
+    paymentActivity: getInvoicePaymentActivity(userId, payment.invoice_id),
+  });
+
+  return resultInvoice;
 }
 
 
