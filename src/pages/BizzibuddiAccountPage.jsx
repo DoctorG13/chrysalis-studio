@@ -6959,7 +6959,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
   const paymentRemovalDialog = paymentPendingRemoval ? (
 
-    {paymentPendingRemoval && (
+
       <div
         role="dialog"
         aria-modal="true"
@@ -7091,9 +7091,6 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           </div>
         </div>
       </div>
-    )}
-
-
   ) : null;
 
   const outstanding = invoices.reduce(
