@@ -953,6 +953,7 @@ export default function BizzibuddiAccountPage() {
             onPlans={() => selectView("plans")}
             onRecordPayment={recordAccountPayment}
             onUpdatePayment={updateAccountPayment}
+            onDeletePayment={deleteAccountPayment}
             onAddInvoice={async (invoice) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices", {
                 method: "POST",
@@ -6485,7 +6486,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onRecordPayment, onUpdatePayment, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
@@ -6671,7 +6672,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     setSaving(true);
 
     try {
-      await deleteAccountPayment(invoice.id, paymentId);
+      await onDeletePayment(invoice.id, paymentId);
       if (editingPaymentId === paymentId) {
         setEditingPaymentId("");
         setEditingPaymentForm({
