@@ -1,3 +1,13 @@
+## BizziBuddi — Payment Confirmation & Finance Navigation
+
+### Improved
+
+- Replaced the browser-native payment removal confirmation with a BizziBuddi confirmation dialog showing the payment amount, invoice, date and method.
+- Added explicit **Keep payment** and **Remove payment** actions.
+- Preserved the Payment Activity audit trail when a payment is removed.
+- Finance submenu targets continue to use the workspace section scrolling system for Revenue, Invoices, Payments, Expenses & Outgoings and Cashflow Outlook.
+- Fixed the Finance panel render introduced while adding the confirmation dialog.
+
 ## BizziBuddi — Payment Confirmation & Finance Navigation Polish
 
 ### Improved
