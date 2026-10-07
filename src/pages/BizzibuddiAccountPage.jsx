@@ -2344,7 +2344,39 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       )
     : people;
 
+  const firstPaymentInvoiceId = invoices.find((item) => (paymentsByInvoice[item.id] || []).length > 0)?.id || "";
+
   return <section style={cardStyle(940)}>
+    {paymentPendingRemoval && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="remove-payment-title"
+        style={{
+          position: "fixed", inset: 0, zIndex: 1000, display: "flex",
+          alignItems: "center", justifyContent: "center", padding: 20,
+          background: "rgba(3,12,22,.72)", backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+      >
+        <div style={{ width: "min(460px, 100%)", padding: 24, border: "1px solid rgba(0,180,219,.42)", borderRadius: 18, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.48)" }}>
+          <small style={{ ...smallText, color: CYAN }}>REMOVE PAYMENT</small>
+          <h3 id="remove-payment-title" style={{ margin: "7px 0 10px", fontSize: 22 }}>Remove this payment?</h3>
+          <p style={{ ...copyStyle, margin: 0 }}>
+            This will remove <strong style={{ color: TEXT }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong> from <strong style={{ color: TEXT }}>{paymentPendingRemoval.invoice.number || "this invoice"}</strong> and recalculate the outstanding balance.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 18, padding: 12, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+            <div><small style={smallText}>AMOUNT</small><strong style={{ display: "block", marginTop: 4 }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong></div>
+            <div><small style={smallText}>DATE</small><strong style={{ display: "block", marginTop: 4 }}>{formatInvoiceDate(paymentPendingRemoval.payment.date)}</strong></div>
+            <div><small style={smallText}>METHOD</small><strong style={{ display: "block", marginTop: 4 }}>{paymentPendingRemoval.payment.method || "Other"}</strong></div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, flexWrap: "wrap", marginTop: 20 }}>
+            <button type="button" onClick={cancelPaymentRemoval} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep payment</button>
+            <button type="button" onClick={confirmPaymentRemoval} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318" }}>{saving ? "Removing…" : "Remove payment"}</button>
+          </div>
+        </div>
+      </div>
+    )}
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div className="bizzibuddi-people-hero" style={{ marginTop: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0, flex: "1 1 420px" }}>
@@ -8194,7 +8226,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <small id="finance-payments" style={smallText}>PAYMENT HISTORY</small>
+                  <small id={invoice.id === firstPaymentInvoiceId ? "finance-payments" : undefined} style={smallText}>PAYMENT HISTORY</small>
                   {recordedPaymentTotal > 0 && (
                     <small style={{ ...smallText, fontWeight: 700 }}>
                       {formatCurrency(recordedPaymentTotal)} PAID
