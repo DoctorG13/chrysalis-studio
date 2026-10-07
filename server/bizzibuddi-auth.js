@@ -3972,19 +3972,6 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         return true;
       }
 
-      const payment = getDatabase()
-        .prepare(
-          `SELECT id
-           FROM bizzibuddi_payments
-           WHERE id = ? AND invoice_id = ? AND user_id = ?`
-        )
-        .get(paymentId, invoiceId, user.id);
-
-      if (!payment) {
-        sendJson(response, 404, { ok: false, error: "Payment not found." });
-        return true;
-      }
-
       const invoice = deleteInvoicePayment(user.id, paymentId);
 
       if (!invoice) {
