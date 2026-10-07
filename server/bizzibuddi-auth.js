@@ -3953,6 +3953,55 @@ export async function handleBizziBuddiAuthRequest(request, response) {
 
     if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
         url.pathname.includes("/payments/") &&
+        request.method === "DELETE") {
+      const paymentsPrefix = "/api/bizzibuddi/auth/invoices/";
+      const paymentRoute = url.pathname.slice(paymentsPrefix.length);
+      const [rawInvoiceId, rawPaymentId, extra] = paymentRoute.split("/");
+
+      const invoiceId = decodeURIComponent(rawInvoiceId || "").trim();
+      const paymentId = decodeURIComponent(rawPaymentId || "").trim();
+
+      if (!invoiceId || !paymentId || extra || invoiceId.includes("/") || paymentId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const payment = getDatabase()
+        .prepare(
+          `SELECT id
+           FROM bizzibuddi_payments
+           WHERE id = ? AND invoice_id = ? AND user_id = ?`
+        )
+        .get(paymentId, invoiceId, user.id);
+
+      if (!payment) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      const invoice = deleteInvoicePayment(user.id, paymentId);
+
+      if (!invoice) {
+        sendJson(response, 404, { ok: false, error: "Payment not found." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        invoice,
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
+        url.pathname.includes("/payments/") &&
         request.method === "PUT") {
       const paymentsPrefix = "/api/bizzibuddi/auth/invoices/";
       const paymentRoute = url.pathname.slice(paymentsPrefix.length);
