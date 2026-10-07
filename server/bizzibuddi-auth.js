@@ -1505,19 +1505,28 @@ function deleteInvoicePayment(userId, paymentId) {
   const database = getDatabase();
   const payment = database
     .prepare(
-      `SELECT payments.id, payments.invoice_id, payments.amount,
-              payments.date, payments.method, payments.description, invoices.number AS invoice_number,
-              invoices.amount AS invoice_amount,
-              invoices.status AS invoice_status, invoices.due_date
-       FROM bizzibuddi_payments AS payments
-       INNER JOIN bizzibuddi_invoices AS invoices
-         ON invoices.id = payments.invoice_id
-        AND invoices.user_id = payments.user_id
-       WHERE payments.id = ? AND payments.user_id = ?`
+      `SELECT id, invoice_id, amount, date, method, description
+       FROM bizzibuddi_payments
+       WHERE id = ? AND user_id = ?`
     )
     .get(paymentId, userId);
 
   if (!payment) return null;
+
+  const invoice = database
+    .prepare(
+      `SELECT id, number, amount, status, due_date
+       FROM bizzibuddi_invoices
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(payment.invoice_id, userId);
+
+  if (!invoice) return null;
+
+  payment.invoice_number = invoice.number;
+  payment.invoice_amount = invoice.amount;
+  payment.invoice_status = invoice.status;
+  payment.due_date = invoice.due_date;
 
   const currentPaid = getInvoicePaymentTotal(userId, payment.invoice_id);
   const nextPaid = Math.max(0, currentPaid - Number(payment.amount || 0));
