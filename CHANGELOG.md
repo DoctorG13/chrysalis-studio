@@ -1,3 +1,11 @@
+## BizziBuddi — Finance Confirmation & Submenu Navigation
+
+### Fixed
+
+- Replaced the browser-native payment removal confirmation with an in-app confirmation dialog showing the payment amount, invoice, date and method.
+- Added clear **Keep payment** and **Remove payment** actions before deletion.
+- Added a stable Finance → Payments scroll anchor so the Payments submenu navigates directly to payment history.
+
 ## BizziBuddi — Payment Confirmation & Finance Navigation
 
 ### Improved
