@@ -296,7 +296,7 @@ export default function BizzibuddiAccountPage() {
 
   async function deleteAccountPayment(invoiceId, paymentId) {
     const result = await bizzibuddiAuthRequest(
-      "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/payments/" + encodeURIComponent(paymentId),
+      "/api/bizzibuddi/auth/payments/" + encodeURIComponent(paymentId),
       {
         method: "DELETE",
       }
