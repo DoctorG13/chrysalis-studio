@@ -6495,6 +6495,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [paymentActivityByInvoice, setPaymentActivityByInvoice] = useState({});
   const [expandedPaymentActivity, setExpandedPaymentActivity] = useState({});
   const [paymentInvoiceId, setPaymentInvoiceId] = useState("");
+  const [paymentPendingRemoval, setPaymentPendingRemoval] = useState(null);
   const [editingPaymentId, setEditingPaymentId] = useState("");
   const [editingPaymentForm, setEditingPaymentForm] = useState({
     amount: "",
@@ -6651,7 +6652,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     });
   }
 
-  async function handleDeletePayment(invoice, payment) {
+  function handleDeletePayment(invoice, payment) {
     if (saving) return;
 
     const paymentId = String(payment.id || "").trim();
@@ -6660,19 +6661,28 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       return;
     }
 
-    const confirmed = window.confirm(
-      "Remove this payment of " +
-        formatCurrency(payment.amount) +
-        "? This will recalculate the invoice balance."
-    );
+    setError("");
+    setPaymentPendingRemoval({ invoice, payment });
+  }
 
-    if (!confirmed) return;
+  function cancelPaymentRemoval() {
+    if (saving) return;
+    setPaymentPendingRemoval(null);
+  }
+
+  async function confirmPaymentRemoval() {
+    if (!paymentPendingRemoval || saving) return;
+
+    const { invoice, payment } = paymentPendingRemoval;
+    const paymentId = String(payment.id || "").trim();
+    if (!paymentId) return;
 
     setError("");
     setSaving(true);
 
     try {
       await onDeletePayment(invoice.id, paymentId);
+      setPaymentPendingRemoval(null);
       if (editingPaymentId === paymentId) {
         setEditingPaymentId("");
         setEditingPaymentForm({
@@ -6684,6 +6694,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       }
     } catch (requestError) {
       setError(requestError.message || "We could not remove this payment.");
+      setPaymentPendingRemoval(null);
     } finally {
       setSaving(false);
     }
