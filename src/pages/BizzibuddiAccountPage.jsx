@@ -4362,6 +4362,7 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
   }
 
   return <section style={cardStyle(940)}>
+    {paymentRemovalDialog}
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>AUTOMATION</p>
@@ -6938,10 +6939,26 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     }
   }
 
-  if (!available) {
-    const firstPaymentInvoiceId = invoices.find((item) => (paymentsByInvoice[item.id] || []).length > 0)?.id || "";
+  if (!available) { return <section style={cardStyle(760)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ ...centerStyle, marginTop: 34 }}>
+        <div style={stepBadge}>PROFESSIONAL FEATURE</div>
+        <h2 style={sectionHeading}>Finance & invoices.</h2>
+        <p style={copyStyle}>Payments and invoices are included with Professional and Business membership.</p>
+        <div style={lockedFeatureCard}>
+          <span style={{ fontSize: 28 }}>🔒</span>
+          <div>
+            <strong style={{ display: "block", fontSize: 18 }}>Available on Professional</strong>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Upgrade your membership preview to explore invoice and payment management.</p>
+          </div>
+        </div>
+        <button type="button" onClick={onPlans} style={{ ...primaryButton, maxWidth: 260 }}>View membership plans</button>
+      </div>
+    </section>;
+  }
 
-  return <section style={cardStyle(940)}>
+  const paymentRemovalDialog = paymentPendingRemoval ? (
+
     {paymentPendingRemoval && (
       <div
         role="dialog"
@@ -7076,23 +7093,8 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </div>
     )}
 
- return <section style={cardStyle(760)}>
-      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
-      <div style={{ ...centerStyle, marginTop: 34 }}>
-        <div style={stepBadge}>PROFESSIONAL FEATURE</div>
-        <h2 style={sectionHeading}>Finance & invoices.</h2>
-        <p style={copyStyle}>Payments and invoices are included with Professional and Business membership.</p>
-        <div style={lockedFeatureCard}>
-          <span style={{ fontSize: 28 }}>🔒</span>
-          <div>
-            <strong style={{ display: "block", fontSize: 18 }}>Available on Professional</strong>
-            <p style={{ ...copyStyle, marginBottom: 0 }}>Upgrade your membership preview to explore invoice and payment management.</p>
-          </div>
-        </div>
-        <button type="button" onClick={onPlans} style={{ ...primaryButton, maxWidth: 260 }}>View membership plans</button>
-      </div>
-    </section>;
-  }
+
+  ) : null;
 
   const outstanding = invoices.reduce(
     (sum, invoice) => sum + Math.max(0, Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0),
@@ -8319,6 +8321,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
             {hasRecordedPayments && (
               <div
+                id="finance-payments"
                 style={{
                   flexBasis: "100%",
                   width: "calc(100% - 18px)",
