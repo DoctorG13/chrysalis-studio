@@ -2,10 +2,11 @@
 
 ### Improved
 
-- Replaced the browser-native payment removal confirmation with an in-workspace BizziBuddi confirmation modal.
-- Shows the payment amount, date, method and invoice before removal.
-- Provides clear **Keep payment** and **Remove payment** actions.
-- Made the Finance **Payments** submenu target the first recorded payment history section reliably.
+- Replaced the browser-native payment removal prompt with a polished in-workspace confirmation dialog.
+- Added a clear payment summary, invoice, date, method and balance-recalculation warning.
+- Added deliberate **Keep payment** and **Remove payment** actions, with backdrop dismissal.
+- Made Finance payment navigation target the payment history section.
+- Added reliable scroll targets for the People, Jobs, Calendar and Production submenu items.
 - Preserved the existing sticky workspace navigation and smooth section scrolling.
 
 ---
