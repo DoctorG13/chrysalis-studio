@@ -2346,37 +2346,141 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
 
   const firstPaymentInvoiceId = invoices.find((item) => (paymentsByInvoice[item.id] || []).length > 0)?.id || "";
 
-  return <section style={cardStyle(940)}>
+  return <section id="people-overview" style={cardStyle(940)}>
     {paymentPendingRemoval && (
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="remove-payment-title"
+        aria-describedby="remove-payment-description"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget) cancelPaymentRemoval();
+        }}
         style={{
-          position: "fixed", inset: 0, zIndex: 1000, display: "flex",
-          alignItems: "center", justifyContent: "center", padding: 20,
-          background: "rgba(3,12,22,.72)", backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          position: "fixed",
+          inset: 0,
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          background: "rgba(3,12,22,.80)",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
         }}
       >
-        <div style={{ width: "min(460px, 100%)", padding: 24, border: "1px solid rgba(0,180,219,.42)", borderRadius: 18, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.48)" }}>
-          <small style={{ ...smallText, color: CYAN }}>REMOVE PAYMENT</small>
-          <h3 id="remove-payment-title" style={{ margin: "7px 0 10px", fontSize: 22 }}>Remove this payment?</h3>
-          <p style={{ ...copyStyle, margin: 0 }}>
-            This will remove <strong style={{ color: TEXT }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong> from <strong style={{ color: TEXT }}>{paymentPendingRemoval.invoice.number || "this invoice"}</strong> and recalculate the outstanding balance.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 18, padding: 12, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
-            <div><small style={smallText}>AMOUNT</small><strong style={{ display: "block", marginTop: 4 }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong></div>
-            <div><small style={smallText}>DATE</small><strong style={{ display: "block", marginTop: 4 }}>{formatInvoiceDate(paymentPendingRemoval.payment.date)}</strong></div>
-            <div><small style={smallText}>METHOD</small><strong style={{ display: "block", marginTop: 4 }}>{paymentPendingRemoval.payment.method || "Other"}</strong></div>
+        <div
+          onMouseDown={(event) => event.stopPropagation()}
+          style={{
+            width: "min(500px, 100%)",
+            overflow: "hidden",
+            border: "1px solid rgba(0,180,219,.38)",
+            borderRadius: 18,
+            background: "linear-gradient(180deg, #102f4c 0%, #0B243C 100%)",
+            boxShadow: "0 28px 90px rgba(0,0,0,.58)",
+          }}
+        >
+          <div style={{ padding: "20px 22px 16px", borderBottom: "1px solid rgba(255,255,255,.08)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 42,
+                  height: 42,
+                  flex: "0 0 42px",
+                  display: "grid",
+                  placeItems: "center",
+                  borderRadius: 12,
+                  background: "rgba(255,77,77,.12)",
+                  border: "1px solid rgba(255,120,120,.32)",
+                  color: "#ff9d9d",
+                  fontSize: 20,
+                  fontWeight: 800,
+                }}
+              >
+                !
+              </div>
+              <div>
+                <small style={{ ...smallText, color: CYAN, letterSpacing: ".08em" }}>PAYMENT</small>
+                <h3 id="remove-payment-title" style={{ margin: "3px 0 0", fontSize: 22 }}>Remove payment?</h3>
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, flexWrap: "wrap", marginTop: 20 }}>
-            <button type="button" onClick={cancelPaymentRemoval} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep payment</button>
-            <button type="button" onClick={confirmPaymentRemoval} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318" }}>{saving ? "Removing…" : "Remove payment"}</button>
+
+          <div style={{ padding: 22 }}>
+            <p id="remove-payment-description" style={{ ...copyStyle, margin: 0 }}>
+              You are about to remove this payment from the invoice. It will no longer count toward the invoice balance, while the removal will remain recorded in Payment Activity.
+            </p>
+
+            <div
+              style={{
+                marginTop: 18,
+                padding: 16,
+                borderRadius: 14,
+                border: "1px solid rgba(0,180,219,.20)",
+                background: "rgba(255,255,255,.035)",
+                display: "grid",
+                gap: 13,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "baseline" }}>
+                <small style={smallText}>AMOUNT</small>
+                <strong style={{ fontSize: 25 }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 12 }}>
+                <div>
+                  <small style={smallText}>INVOICE</small>
+                  <strong style={{ display: "block", marginTop: 4 }}>{paymentPendingRemoval.invoice.number || "Invoice"}</strong>
+                </div>
+                <div>
+                  <small style={smallText}>METHOD</small>
+                  <strong style={{ display: "block", marginTop: 4 }}>{paymentPendingRemoval.payment.method || "Other"}</strong>
+                </div>
+              </div>
+              <div>
+                <small style={smallText}>DATE</small>
+                <strong style={{ display: "block", marginTop: 4 }}>{formatInvoiceDate(paymentPendingRemoval.payment.date)}</strong>
+              </div>
+            </div>
+
+            <div
+              style={{
+                marginTop: 14,
+                padding: "11px 13px",
+                borderRadius: 10,
+                background: "rgba(255,196,84,.07)",
+                border: "1px solid rgba(255,196,84,.20)",
+                color: MUTED,
+                fontSize: 12,
+                lineHeight: 1.5,
+              }}
+            >
+              The invoice balance will be recalculated immediately.
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, flexWrap: "wrap", marginTop: 20 }}>
+              <button
+                type="button"
+                onClick={cancelPaymentRemoval}
+                disabled={saving}
+                style={{ ...secondaryButton, width: "auto", minHeight: 44, marginTop: 0, padding: "0 18px" }}
+              >
+                Keep payment
+              </button>
+              <button
+                type="button"
+                onClick={confirmPaymentRemoval}
+                disabled={saving}
+                style={{ ...primaryButton, width: "auto", minHeight: 44, marginTop: 0, padding: "0 18px", background: "#b42318" }}
+              >
+                {saving ? "Removing…" : "Remove payment"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
     )}
+
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div className="bizzibuddi-people-hero" style={{ marginTop: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0, flex: "1 1 420px" }}>
@@ -3116,7 +3220,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
     };
   }
 
-  return <section style={cardStyle(940)}>
+  return <section id="jobs-overview" style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>JOBS</p>
@@ -4944,7 +5048,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   );
 
   return (
-    <section style={cardStyle(1040)}>
+    <section id="production-overview" style={cardStyle(1040)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
 
       <div style={{ marginTop: 22 }}>
@@ -8226,7 +8330,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <small id={invoice.id === firstPaymentInvoiceId ? "finance-payments" : undefined} style={smallText}>PAYMENT HISTORY</small>
+                  <small id={invoice.id === firstPaymentInvoiceId ? "finance-payments" : undefined} style={{ ...smallText, scrollMarginTop: 120 }}>PAYMENT HISTORY</small>
                   {recordedPaymentTotal > 0 && (
                     <small style={{ ...smallText, fontWeight: 700 }}>
                       {formatCurrency(recordedPaymentTotal)} PAID
@@ -8765,7 +8869,7 @@ function CalendarPanel({
     }
   }
 
-  return <section style={cardStyle(940)}>
+  return <section id="calendar-overview" style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>CALENDAR</p>
@@ -10651,7 +10755,7 @@ const workspaceSubnav = {
     ["people", "People", "people"],
     ["jobs", "Jobs", "jobs"],
     ["calendar", "Calendar", "calendar"],
-    ["production", "Production", "production"],
+    ["production", "Production", "production", "production-overview"],
   ],
   finance: [
     ["finance-overview", "Revenue", "finance", "finance-revenue"],
@@ -10684,9 +10788,9 @@ function getWorkspaceSubnav(account) {
   return {
     ...workspaceSubnav,
     work: [
-      ["people", personLabel, "people"],
-      ["jobs", jobLabel, "jobs"],
-      ["calendar", appointmentLabel, "calendar"],
+      ["people", personLabel, "people", "people-overview"],
+      ["jobs", jobLabel, "jobs", "jobs-overview"],
+      ["calendar", appointmentLabel, "calendar", "calendar-overview"],
       ["production", "Production", "production"],
     ],
   };
