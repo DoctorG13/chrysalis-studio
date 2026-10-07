@@ -7076,7 +7076,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </div>
     )}
 
- style={cardStyle(760)}>
+ return <section style={cardStyle(760)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
       <div style={{ ...centerStyle, marginTop: 34 }}>
         <div style={stepBadge}>PROFESSIONAL FEATURE</div>
