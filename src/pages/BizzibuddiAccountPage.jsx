@@ -92,7 +92,9 @@ export default function BizzibuddiAccountPage() {
   useEffect(() => {
     let cancelled = false;
 
-    if (!workspaceScrollTarget) {
+    if (!workspaceScrollTarget) return undefined;
+
+    if (workspaceScrollTarget === "__top__") {
       const frame = window.requestAnimationFrame(() => {
         if (!cancelled) window.scrollTo({ top: 0, behavior: "auto" });
       });
@@ -110,7 +112,7 @@ export default function BizzibuddiAccountPage() {
       if (element) {
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 20;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 16;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
         setWorkspaceScrollTarget("");
         return;
@@ -383,7 +385,7 @@ export default function BizzibuddiAccountPage() {
     writeWorkspaceRoute(nextView, nextDeepLink);
     setDeepLink(nextDeepLink);
     setView(nextView);
-    setWorkspaceScrollTarget(target.workspaceAnchor || "");
+    setWorkspaceScrollTarget(target.workspaceAnchor || "__top__");
     setWorkspaceNavItem(
       target.workspaceNavItem ||
         (nextView === "dashboard"
@@ -2344,7 +2346,45 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       )
     : people;
 
-  return <section id="people-overview" style={cardStyle(940)}>
+  return <section style={cardStyle(940)}>
+    {paymentPendingRemoval && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="remove-payment-title"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          background: "rgba(3,12,22,.72)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+      >
+        <div style={{ width: "min(460px, 100%)", padding: 24, border: "1px solid rgba(0,180,219,.42)", borderRadius: 18, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.48)" }}>
+          <small style={{ ...smallText, color: CYAN }}>REMOVE PAYMENT</small>
+          <h3 id="remove-payment-title" style={{ margin: "7px 0 10px", fontSize: 22 }}>Remove this payment?</h3>
+          <p style={{ ...copyStyle, margin: 0 }}>
+            Remove <strong style={{ color: TEXT }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong> from{" "}
+            <strong style={{ color: TEXT }}>{paymentPendingRemoval.invoice.number || "this invoice"}</strong>?
+            The invoice balance will be recalculated and the removal will remain recorded in Payment Activity.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 18, padding: 12, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+            <div><small style={smallText}>AMOUNT</small><strong style={{ display: "block", marginTop: 4 }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong></div>
+            <div><small style={smallText}>DATE</small><strong style={{ display: "block", marginTop: 4 }}>{formatInvoiceDate(paymentPendingRemoval.payment.date)}</strong></div>
+            <div><small style={smallText}>METHOD</small><strong style={{ display: "block", marginTop: 4 }}>{paymentPendingRemoval.payment.method || "Other"}</strong></div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, flexWrap: "wrap", marginTop: 20 }}>
+            <button type="button" onClick={cancelPaymentRemoval} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep payment</button>
+            <button type="button" onClick={confirmPaymentRemoval} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318" }}>{saving ? "Removing…" : "Remove payment"}</button>
+          </div>
+        </div>
+      </div>
+    )}
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div className="bizzibuddi-people-hero" style={{ marginTop: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0, flex: "1 1 420px" }}>
@@ -3084,7 +3124,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
     };
   }
 
-  return <section id="jobs-overview" style={cardStyle(940)}>
+  return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>JOBS</p>
@@ -4362,21 +4402,6 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
   }
 
   return <section style={cardStyle(940)}>
-    {paymentPendingRemoval && (
-      <div role="dialog" aria-modal="true" aria-labelledby="remove-payment-title" style={{ position: "fixed", inset: 0, zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(3,12,22,.72)", backdropFilter: "blur(8px)" }}>
-        <div style={{ width: "min(460px,100%)", padding: 24, border: "1px solid rgba(0,180,219,.42)", borderRadius: 18, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.48)" }}>
-          <small style={{ ...smallText, color: CYAN }}>REMOVE PAYMENT</small>
-          <h3 id="remove-payment-title" style={{ margin: "7px 0 10px", fontSize: 22 }}>Remove this payment?</h3>
-          <p style={{ ...copyStyle, margin: 0 }}>Remove <strong style={{ color: TEXT }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong> from <strong style={{ color: TEXT }}>{paymentPendingRemoval.invoice.number || "this invoice"}</strong>? The invoice balance will be recalculated and the removal will remain recorded in Payment Activity.</p>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, marginTop: 20, flexWrap: "wrap" }}>
-            <button type="button" onClick={cancelPaymentRemoval} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep payment</button>
-            <button type="button" onClick={confirmPaymentRemoval} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318" }}>{saving ? "Removing…" : "Remove payment"}</button>
-          </div>
-        </div>
-      </div>
-    )}
-
-    {paymentRemovalDialog}
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>AUTOMATION</p>
@@ -4927,7 +4952,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   );
 
   return (
-    <section id="production-overview" style={cardStyle(1040)}>
+    <section style={cardStyle(1040)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
 
       <div style={{ marginTop: 22 }}>
@@ -6954,13 +6979,19 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   }
 
   if (!available) {
-    return <section style={cardStyle(940)}>
+    return <section style={cardStyle(760)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
       <div style={{ ...centerStyle, marginTop: 34 }}>
         <div style={stepBadge}>PROFESSIONAL FEATURE</div>
         <h2 style={sectionHeading}>Finance & invoices.</h2>
         <p style={copyStyle}>Payments and invoices are included with Professional and Business membership.</p>
-        <div style={lockedFeatureCard}><span style={{ fontSize: 28 }}>🔒</span><div><strong style={{ display: "block", fontSize: 18 }}>Available on Professional</strong><p style={{ ...copyStyle, marginBottom: 0 }}>Upgrade your membership preview to explore invoice and payment management.</p></div></div>
+        <div style={lockedFeatureCard}>
+          <span style={{ fontSize: 28 }}>🔒</span>
+          <div>
+            <strong style={{ display: "block", fontSize: 18 }}>Available on Professional</strong>
+            <p style={{ ...copyStyle, marginBottom: 0 }}>Upgrade your membership preview to explore invoice and payment management.</p>
+          </div>
+        </div>
         <button type="button" onClick={onPlans} style={{ ...primaryButton, maxWidth: 260 }}>View membership plans</button>
       </div>
     </section>;
@@ -7029,6 +7060,8 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     1,
     ...monthlyRevenue.map((month) => month.amount)
   );
+  const firstPaymentInvoiceId =
+    invoices.find((invoice) => (paymentsByInvoice[invoice.id] || []).length > 0)?.id || "";
 
   const currentMonthExpenses = expenses
     .filter((expense) => String(expense.date || "").slice(0, 7) === currentMonthKey)
@@ -8191,7 +8224,6 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
             {hasRecordedPayments && (
               <div
-                id="finance-payments"
                 style={{
                   flexBasis: "100%",
                   width: "calc(100% - 18px)",
@@ -8204,7 +8236,12 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <small id={invoice.id === firstPaymentInvoiceId ? "finance-payments" : undefined} style={{ ...smallText, scrollMarginTop: 120 }}>PAYMENT HISTORY</small>
+                  <small
+                    id={invoice.id === firstPaymentInvoiceId ? "finance-payments" : undefined}
+                    style={{ ...smallText, scrollMarginTop: 120 }}
+                  >
+                    PAYMENT HISTORY
+                  </small>
                   {recordedPaymentTotal > 0 && (
                     <small style={{ ...smallText, fontWeight: 700 }}>
                       {formatCurrency(recordedPaymentTotal)} PAID
@@ -8743,7 +8780,7 @@ function CalendarPanel({
     }
   }
 
-  return <section id="calendar-overview" style={cardStyle(940)}>
+  return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>CALENDAR</p>
@@ -10629,7 +10666,7 @@ const workspaceSubnav = {
     ["people", "People", "people"],
     ["jobs", "Jobs", "jobs"],
     ["calendar", "Calendar", "calendar"],
-    ["production", "Production", "production", "production-overview"],
+    ["production", "Production", "production"],
   ],
   finance: [
     ["finance-overview", "Revenue", "finance", "finance-revenue"],
@@ -10662,9 +10699,9 @@ function getWorkspaceSubnav(account) {
   return {
     ...workspaceSubnav,
     work: [
-      ["people", personLabel, "people", "people-overview"],
-      ["jobs", jobLabel, "jobs", "jobs-overview"],
-      ["calendar", appointmentLabel, "calendar", "calendar-overview"],
+      ["people", personLabel, "people"],
+      ["jobs", jobLabel, "jobs"],
+      ["calendar", appointmentLabel, "calendar"],
       ["production", "Production", "production"],
     ],
   };
