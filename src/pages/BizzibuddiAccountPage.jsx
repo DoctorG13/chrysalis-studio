@@ -294,9 +294,9 @@ export default function BizzibuddiAccountPage() {
     return result.invoice;
   }
 
-  async function deleteAccountPayment(paymentId) {
+  async function deleteAccountPayment(invoiceId, paymentId) {
     const result = await bizzibuddiAuthRequest(
-      "/api/bizzibuddi/auth/payments/" + encodeURIComponent(paymentId),
+      "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/payments/" + encodeURIComponent(paymentId),
       {
         method: "DELETE",
       }
@@ -6650,7 +6650,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     });
   }
 
-  async function handleDeletePayment(payment) {
+  async function handleDeletePayment(invoice, payment) {
     if (saving) return;
 
     const paymentId = String(payment.id || "").trim();
@@ -6671,7 +6671,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     setSaving(true);
 
     try {
-      await deleteAccountPayment(paymentId);
+      await deleteAccountPayment(invoice.id, paymentId);
       if (editingPaymentId === paymentId) {
         setEditingPaymentId("");
         setEditingPaymentForm({
@@ -8225,7 +8225,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                             </button>
                             <button
                               type="button"
-                              onClick={() => handleDeletePayment(payment)}
+                              onClick={() => handleDeletePayment(invoice, payment)}
                               disabled={saving}
                               style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
                             >
