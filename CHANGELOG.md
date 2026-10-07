@@ -1,3 +1,15 @@
+## BizziBuddi — Finance Confirmation & Navigation Polish
+
+### Improved
+
+- Replaced the browser-native payment removal confirmation with an in-workspace BizziBuddi confirmation modal.
+- Shows the payment amount, date, method and invoice before removal.
+- Provides clear **Keep payment** and **Remove payment** actions.
+- Made the Finance **Payments** submenu target the first recorded payment history section reliably.
+- Preserved the existing sticky workspace navigation and smooth section scrolling.
+
+---
+
 ## BizziBuddi — Acceptance Test Form & Navigation Fixes
 
 ### Fixed
