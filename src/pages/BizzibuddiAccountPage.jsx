@@ -110,7 +110,7 @@ export default function BizzibuddiAccountPage() {
       if (element) {
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 20;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
         setWorkspaceScrollTarget("");
         return;
