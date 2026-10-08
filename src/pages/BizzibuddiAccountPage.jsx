@@ -859,7 +859,7 @@ export default function BizzibuddiAccountPage() {
           <a href="/bizzibuddi" style={backLink}>Back to website ↗</a>
         </header>
 
-        <section style={heroStyle}>
+        <section style={view === "first-run" || view === "onboarding" ? { ...heroStyle, display: "none" } : heroStyle}>
           <div style={eyebrowStyle}>BUSINESS SUPPORT, SIMPLIFIED</div>
           <h1 style={heroHeading}>Your business.<br /><span style={{ color: CYAN }}>Better organised.</span></h1>
           <p style={heroCopy}>Create a secure BizziBuddi account, set up your business and continue into your business workspace.</p>
