@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Logo Geometry Fix
+
+### Fixed
+
+- Corrected the lower gold arc geometry so the gold segments follow the circular construction of the blue arc.
+- Aligned the final gold segment's lower edge with the bottom edge of the white BizziBuddi mark.
+- Preserved the intentional gaps between colour segments.
+
 ## BizziBuddi — Gold Arc Logo
 
 ### Changed
