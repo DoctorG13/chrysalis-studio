@@ -1,3 +1,12 @@
+## BizziBuddi — Gold Arc Logo
+
+### Changed
+
+- Updated the shared BizziBuddi logo component with the new gold lower arc.
+- Added two gold segments that align with the lower edge of the white mark.
+- Added reusable SVG logo artwork to src/assets/.
+- Preserved the existing cyan, blue and white brand colours.
+
 ## BizziBuddi — Flush-Top Landing Alignment
 
 ### Changed
