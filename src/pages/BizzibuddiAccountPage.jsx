@@ -3175,68 +3175,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
                   </span>
                 )}
               </div>
-              {isBrandNewBusiness && (
-        <div
-          style={{
-            marginTop: 20,
-            padding: 22,
-            borderRadius: 18,
-            border: "1px solid rgba(0,180,219,.35)",
-            background: "linear-gradient(135deg, rgba(0,180,219,.10), rgba(37,99,235,.08))",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".12em" }}>YOUR FIRST DAY</small>
-              <h3 style={{ margin: "7px 0 5px", fontSize: 26 }}>Let's get your business moving.</h3>
-              <p style={{ ...copyStyle, margin: 0, maxWidth: 720 }}>
-                Your workspace is ready, but there is nothing to manage yet. Start with one person, then connect your first job, appointment and financial record.
-              </p>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 9, marginTop: 16 }}>
-            {[
-              ["1", "Add a person", "Start your customer or contact list.", onPeople],
-              ["2", "Create a job", "Track the work you need to deliver.", onJobs],
-              ["3", "Schedule something", "Put the next important date on your calendar.", onCalendar],
-              ["4", "Open Finance", "Set up your first invoice or payment.", onFinance],
-            ].map(([number, title, detail, action]) => (
-              <button
-                key={number}
-                type="button"
-                onClick={action}
-                style={{
-                  padding: 13,
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,255,255,.10)",
-                  background: "rgba(255,255,255,.035)",
-                  color: TEXT,
-                  textAlign: "left",
-                  cursor: "pointer",
-                }}
-              >
-                <span style={{ display: "grid", placeItems: "center", width: 24, height: 24, borderRadius: "50%", background: "rgba(0,180,219,.14)", color: CYAN, fontWeight: 900, fontSize: 11 }}>
-                  {number}
-                </span>
-                <strong style={{ display: "block", marginTop: 8, fontSize: 13 }}>{title}</strong>
-                <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 10, lineHeight: 1.4 }}>{detail}</span>
-              </button>
-            ))}
-          </div>
-
-          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <button type="button" onClick={onGettingStartedBuddi} style={nextActionButton}>
-              Open the Getting Started guide →
-            </button>
-            <button type="button" onClick={onBuddi} style={todayJumpButton}>
-              Ask Buddi what to do →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {nextAction && (
+              {nextAction && (
                 <div
                   style={{
                     display: "flex",
@@ -4043,6 +3982,67 @@ function DashboardPanel({
           <span>1</span><span>→</span><span>2</span><span>→</span><span>3</span><span>→</span><span>4</span><span>→</span><span>5</span>
         </div>
       </div>
+
+      {isBrandNewBusiness && (
+        <div
+          style={{
+            marginTop: 20,
+            padding: 22,
+            borderRadius: 18,
+            border: "1px solid rgba(0,180,219,.35)",
+            background: "linear-gradient(135deg, rgba(0,180,219,.10), rgba(37,99,235,.08))",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".12em" }}>YOUR FIRST DAY</small>
+              <h3 style={{ margin: "7px 0 5px", fontSize: 26 }}>Let's get your business moving.</h3>
+              <p style={{ ...copyStyle, margin: 0, maxWidth: 720 }}>
+                Your workspace is ready, but there is nothing to manage yet. Start with one person, then connect your first job, appointment and financial record.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 9, marginTop: 16 }}>
+            {[
+              ["1", "Add a person", "Start your customer or contact list.", onPeople],
+              ["2", "Create a job", "Track the work you need to deliver.", onJobs],
+              ["3", "Schedule something", "Put the next important date on your calendar.", onCalendar],
+              ["4", "Open Finance", "Set up your first invoice or payment.", onFinance],
+            ].map(([number, title, detail, action]) => (
+              <button
+                key={number}
+                type="button"
+                onClick={action}
+                style={{
+                  padding: 13,
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,255,255,.10)",
+                  background: "rgba(255,255,255,.035)",
+                  color: TEXT,
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ display: "grid", placeItems: "center", width: 24, height: 24, borderRadius: "50%", background: "rgba(0,180,219,.14)", color: CYAN, fontWeight: 900, fontSize: 11 }}>
+                  {number}
+                </span>
+                <strong style={{ display: "block", marginTop: 8, fontSize: 13 }}>{title}</strong>
+                <span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 10, lineHeight: 1.4 }}>{detail}</span>
+              </button>
+            ))}
+          </div>
+
+          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <button type="button" onClick={onGettingStartedBuddi} style={nextActionButton}>
+              Open the Getting Started guide →
+            </button>
+            <button type="button" onClick={onBuddi} style={todayJumpButton}>
+              Ask Buddi what to do →
+            </button>
+          </div>
+        </div>
+      )}
 
       {nextAction && (
         <div style={nextActionPanel}>
