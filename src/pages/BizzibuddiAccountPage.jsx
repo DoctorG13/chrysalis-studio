@@ -10802,19 +10802,19 @@ function Field({ name, label, type, placeholder, defaultValue }) {
   return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
 }
 
-const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "28px 20px 70px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "18px 20px 42px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
 const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
-const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 20, flexWrap: "wrap" };
+const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" };
 const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
 const backLink = { color: RED, textDecoration: "none", fontWeight: 600, fontSize: 14 };
-const heroStyle = { maxWidth: 780, margin: "76px auto 38px", textAlign: "center" };
+const heroStyle = { maxWidth: 820, margin: "34px auto 24px", textAlign: "center" };
 const eyebrowStyle = { display: "inline-block", color: RED, fontSize: 12, fontWeight: 700, letterSpacing: "0.16em" };
-const heroHeading = { margin: "24px 0 18px", fontSize: "clamp(42px, 7vw, 76px)", lineHeight: 0.98, letterSpacing: "-0.055em", fontWeight: 600 };
-const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 17, lineHeight: 1.75 };
-const previewBadge = { display: "inline-block", marginTop: 24, padding: "10px 15px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(0,180,219,.08)", color: RED, fontSize: 12, fontWeight: 600 };
-const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 18, flexWrap: "wrap", margin: "34px 0 28px" };
+const heroHeading = { margin: "14px 0 12px", fontSize: "clamp(40px, 5.5vw, 62px)", lineHeight: 0.98, letterSpacing: "-0.055em", fontWeight: 600 };
+const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 15, lineHeight: 1.55 };
+const previewBadge = { display: "inline-block", marginTop: 16, padding: "8px 13px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(0,180,219,.08)", color: RED, fontSize: 11, fontWeight: 600 };
+const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 14, flexWrap: "wrap", margin: "20px 0 18px" };
 const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
-const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "11px 16px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 13, fontWeight: 700, cursor: "pointer" });
+const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "9px 14px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" });
 const workspaceNavShell = {
   position: "sticky",
   top: 8,
