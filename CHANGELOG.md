@@ -1,3 +1,13 @@
+## BizziBuddi — Final Gold Arc Reference Match
+
+### Fixed
+
+- Rebuilt both gold segments directly from the supplied reference geometry.
+- Gold now uses the same circular centre and outer radius as the coloured ring.
+- Matched the reference inner radius and segment angles.
+- The second gold segment ends at the exact bottom datum of the white mark.
+- Removed the previous independently guessed gold geometry.
+
 ## BizziBuddi — Gold Bars Traced From Reference
 
 ### Fixed
