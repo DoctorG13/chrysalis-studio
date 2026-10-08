@@ -1,3 +1,12 @@
+## BizziBuddi — Gold Reference Geometry
+
+### Fixed
+
+- Matched gold bar thickness to the blue ring and the visual weight of the white mark.
+- Positioned the two gold segments using the measured lower-right angles from the approved reference.
+- Kept the same inner and outer ring radii and consistent segment gap.
+- Preserved the lower gold endpoint at the white curve baseline.
+
 ## BizziBuddi — Gold Bar Width Correction
 
 ### Fixed
