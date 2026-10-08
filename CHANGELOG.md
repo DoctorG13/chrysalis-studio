@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Arc Inline Alignment
+
+### Fixed
+
+- Reworked the two gold segments so their inner and outer edges follow the same arc as the blue segments.
+- Matched the gold segment thickness to the existing coloured ring.
+- Kept the white mark unchanged.
+
 ## BizziBuddi — Unified Colour Arc Geometry
 
 ### Fixed
