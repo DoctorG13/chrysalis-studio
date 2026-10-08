@@ -1,3 +1,12 @@
+## BizziBuddi — First-Day Dashboard Empty State
+
+### Added
+
+- Added a dedicated first-day dashboard state for brand-new businesses.
+- Provides direct actions for People, Jobs, Calendar and Finance.
+- Keeps the optional Getting Started guide and Ask Buddi available from the empty state.
+- Automatically gives way to the normal operating dashboard once business data exists.
+
 ## BizziBuddi — Invoice Lifecycle
 
 ### Added
