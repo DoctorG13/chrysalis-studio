@@ -1,3 +1,11 @@
+## BizziBuddi — Compact Landing Hero
+
+### Changed
+
+- Further reduced the account landing page's vertical footprint.
+- Tightened header, hero, headline, supporting copy, status badge and navigation spacing.
+- Reduced typography and padding so the application entry controls appear much sooner in the viewport.
+
 ## BizziBuddi — Account Landing Space Polish
 
 ### Changed
