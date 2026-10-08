@@ -53,6 +53,16 @@ export default function BizziBuddiLogo({
           fill={blue}
         />
 
+        <path
+          d="M164.4 151.2 A65 65 0 0 1 136.8 173.8 L125.8 151.6 A42 42 0 0 0 146.1 135.1 Z"
+          fill="#F4B942"
+        />
+
+        <path
+          d="M130.2 177.9 A65 65 0 0 1 98 169 L98 145.8 A42 42 0 0 0 119.8 151.9 Z"
+          fill="#F4B942"
+        />
+
         {/* Clock hands — deliberately no centre circle. */}
         <path
           d="M104 104 L104 73"
