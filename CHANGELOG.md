@@ -1,3 +1,12 @@
+## BizziBuddi — Reference Logo Integration
+
+### Changed
+
+- Added a dedicated reference-matched BizziBuddi logo asset.
+- Dark-surface logo rendering now uses the new approved artwork.
+- Preserved the existing light-surface logo rendering.
+- The gold sections now follow the supplied reference's visual placement and proportions.
+
 ## BizziBuddi — Final Gold Arc Reference Match
 
 ### Fixed
