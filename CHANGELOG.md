@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Arc Final Geometry
+
+### Fixed
+
+- Rebuilt the gold lower segments using the same circular geometry as the blue arc.
+- Matched the segment thickness, curvature and spacing to the existing blue construction.
+- Balanced the second gold segment so the lower arc reads as one continuous designed system.
+
 ## BizziBuddi — Gold Arc Proportion Polish
 
 ### Changed
