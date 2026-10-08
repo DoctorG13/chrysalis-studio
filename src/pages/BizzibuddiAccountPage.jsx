@@ -6396,8 +6396,6 @@ function ReportsPanel({ account, onPlans, onBack }) {
                 <span>No production records yet</span>
                 <strong>—</strong>
               </div>
-                  </>
-                )}
             )}
           </div>
         </article>
