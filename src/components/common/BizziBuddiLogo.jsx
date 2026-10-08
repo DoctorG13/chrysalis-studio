@@ -1,4 +1,4 @@
-import referenceLogo from "../assets/BizziBuddiLogoReference.svg";
+import referenceLogo from "../../assets/BizziBuddiLogoReference.svg";
 
 export default function BizziBuddiLogo({
   size = 72,
