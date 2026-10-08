@@ -10802,12 +10802,12 @@ function Field({ name, label, type, placeholder, defaultValue }) {
   return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
 }
 
-const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "6px 20px 24px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "0 20px 24px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
 const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" };
 const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
 const backLink = { color: RED, textDecoration: "none", fontWeight: 600, fontSize: 13 };
-const heroStyle = { maxWidth: 820, margin: "10px auto 10px", textAlign: "center" };
+const heroStyle = { maxWidth: 820, margin: "4px auto 8px", textAlign: "center" };
 const eyebrowStyle = { display: "inline-block", color: RED, fontSize: 10, fontWeight: 800, letterSpacing: "0.14em" };
 const heroHeading = { margin: "8px 0 8px", fontSize: "clamp(36px, 4.5vw, 52px)", lineHeight: 0.98, letterSpacing: "-0.055em", fontWeight: 600 };
 const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 14, lineHeight: 1.4 };
