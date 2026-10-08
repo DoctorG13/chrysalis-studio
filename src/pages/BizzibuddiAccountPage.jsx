@@ -8392,6 +8392,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   </div>
                 )}
 
+                  </>
+                )}
+
                 {paymentActivity.length > 0 && (
                   <section
                     style={{
