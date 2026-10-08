@@ -1,3 +1,13 @@
+## BizziBuddi — Payment Activity After Removal
+
+### Fixed
+
+- Kept the live Payment History separate from the audit trail after a payment is removed.
+- PAYMENT ACTIVITY now remains visible when the removed payment is no longer part of the invoice's live payment records.
+- Preserved the existing persisted **Payment Removed** audit event and event count.
+
+---
+
 ## BizziBuddi — Finance Confirmation & Submenu Scrolling
 
 ### Fixed
