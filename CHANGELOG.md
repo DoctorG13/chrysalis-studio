@@ -1,3 +1,12 @@
+## BizziBuddi — Approved Gold Logo Geometry
+
+### Changed
+
+- Updated the BizziBuddi logo to match the approved reference design.
+- The two gold segments now continue the existing rounded blue ring with the intended lower-right placement.
+- Preserved the white mark, clock hands, cyan segment and blue segments.
+- Established this geometry as the current shared BizziBuddi logo component.
+
 ## BizziBuddi — Gold Arc Inline Alignment
 
 ### Fixed
