@@ -968,6 +968,16 @@ export default function BizzibuddiAccountPage() {
               );
               return result.invoice;
             }}
+            onIssueInvoice={async (invoiceId) => {
+              const result = await bizzibuddiAuthRequest(
+                "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/issue",
+                { method: "POST" }
+              );
+              setInvoices((current) =>
+                current.map((invoice) => invoice.id === invoiceId ? result.invoice : invoice)
+              );
+              return result.invoice;
+            }}
             onMarkPaid={async (invoiceId) => {
               const result = await bizzibuddiAuthRequest(
                 "/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId) + "/payments",
@@ -6488,7 +6498,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
@@ -6605,11 +6615,15 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     const amount = Number(form.get("amount") || 0);
 
     try {
+      const submitter = event.nativeEvent?.submitter;
+      const status = submitter?.value === "Issued" ? "Issued" : "Draft";
+
       await onAddInvoice({
         personId,
         amount: Number.isFinite(amount) ? amount : 0,
         issueDate: String(form.get("issueDate") || ""),
         dueDate: String(form.get("dueDate") || ""),
+        status,
       });
 
       formElement.reset();
@@ -8110,7 +8124,16 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             <div style={invoiceMeta}>
               <strong>{formatCurrency(invoice.amount)}</strong>
               <span style={invoiceStatus(invoice.status)}>{invoice.status}</span>
-              {invoice.status !== "Paid" && (
+              {invoice.status === "Draft" ? (
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onIssueInvoice(invoice.id)}
+                  style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                >
+                  Issue invoice
+                </button>
+              ) : invoice.status !== "Paid" ? (
                 <>
                   <button
                     type="button"
@@ -8129,7 +8152,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                     Mark paid
                   </button>
                 </>
-              )}
+              ) : null}
               {balance > 0 && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
             </div>
 
@@ -8531,10 +8554,21 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
           <button
             type="submit"
+            name="invoiceAction"
+            value="Draft"
             disabled={people.length === 0 || saving}
-            style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+            style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
           >
-            {saving ? "Saving…" : "Save invoice"}
+            {saving ? "Saving…" : "Save draft"}
+          </button>
+          <button
+            type="submit"
+            name="invoiceAction"
+            value="Issued"
+            disabled={people.length === 0 || saving}
+            style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+          >
+            {saving ? "Saving…" : "Save & issue"}
           </button>
           <button
             type="button"
