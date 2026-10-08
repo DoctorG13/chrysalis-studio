@@ -1,3 +1,11 @@
+## BizziBuddi — Unified Colour Arc Geometry
+
+### Fixed
+
+- Rebuilt the complete cyan, blue and gold arc as one consistent geometric system.
+- All five coloured segments now share the same centre and inner/outer radii.
+- Gold segments follow the same rounded construction as the blue segments instead of using independent shapes.
+
 ## BizziBuddi — Gold Arc Continuation Fix
 
 ### Fixed
