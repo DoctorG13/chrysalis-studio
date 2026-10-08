@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Bar Width Correction
+
+### Fixed
+
+- Matched the gold bars to the same radial width as the blue/cyan arc.
+- Removed the previous oversized gold geometry.
+- Kept the gold as rounded continuation segments in the lower-right of the circular mark.
+
 ## BizziBuddi — Gold Baseline Alignment
 
 ### Fixed
