@@ -1,3 +1,11 @@
+## BizziBuddi — Top-Aligned Account Landing
+
+### Changed
+
+- Moved the account landing content closer to the top of the viewport.
+- Tightened the header-to-hero spacing so the BizziBuddi brand and primary account message appear immediately.
+- Preserved the compact hero and navigation styling.
+
 ## BizziBuddi — Compact Landing Hero
 
 ### Changed
