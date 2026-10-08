@@ -1,3 +1,11 @@
+## BizziBuddi — Flush-Top Landing Alignment
+
+### Changed
+
+- Removed the remaining top page padding from the account landing screen.
+- Tightened the hero's top margin so the BizziBuddi header begins directly at the top edge.
+- Preserved the compact landing layout while removing the final visible top gap.
+
 ## BizziBuddi — Top-Aligned Account Landing
 
 ### Changed
