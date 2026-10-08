@@ -1,5 +1,6 @@
 ## BizziBuddi Real-World Readiness — First-Day Experience
 
+- [x] Show a dedicated first-run welcome screen immediately after new-business setup
 - [x] Add dedicated first-day dashboard empty states
 - [x] Provide direct first actions for People, Jobs, Calendar and Finance
 - [x] Keep Getting Started and Buddi available from the empty state
