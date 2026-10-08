@@ -1,3 +1,5 @@
+import referenceLogo from "../assets/BizziBuddiLogoReference.svg";
+
 export default function BizziBuddiLogo({
   size = 72,
   dark = false,
@@ -23,6 +25,15 @@ export default function BizziBuddiLogo({
         textAlign: "center",
       }}
     >
+      {dark ? (
+        <img
+          src={referenceLogo}
+          width={size}
+          height={size}
+          alt="BizziBuddi logo"
+          style={{ display: "block", overflow: "visible" }}
+        />
+      ) : (
       <svg
         width={size}
         height={size}
@@ -71,6 +82,7 @@ export default function BizziBuddiLogo({
         />
       </svg>
 
+      )}
       {showWordmark && (
         <div style={{ textAlign: "center" }}>
           <div
