@@ -38,30 +38,12 @@ export default function BizziBuddiLogo({
           fill={navy}
         />
 
-        <path
-          d="M103.4 39.1 A65 65 0 0 1 137.3 50.8 L124.1 69.6 A42 42 0 0 0 102.2 62.1 Z"
-          fill={cyan}
-        />
-
-        <path
-          d="M143.5 55.7 A65 65 0 0 1 162.5 86.1 L140.4 92.4 A42 42 0 0 0 128.1 72.8 Z"
-          fill={blue}
-        />
-
-        <path
-          d="M164.4 95 A65 65 0 0 1 150.5 144.9 L132.6 130.4 A42 42 0 0 0 141.6 98.2 Z"
-          fill={blue}
-        />
-
-        <path
-          d="M147.7 147.5 A65 65 0 0 1 116.2 166.8 L110.3 144.6 A42 42 0 0 0 130.6 132.1 Z"
-          fill="#F4B942"
-        />
-
-        <path
-          d="M110.7 168 A65 65 0 0 1 74 163.8 L83 142.7 A42 42 0 0 0 106.7 145.4 Z"
-          fill="#F4B942"
-        />
+        {/* Segmented circular arc: every segment uses the same centre and radii. */}
+        <path d="M104 39 A65 65 0 0 1 138 48.6 L124.4 68.2 A42 42 0 0 0 104 62 Z" fill={cyan} />
+        <path d="M143.5 55.4 A65 65 0 0 1 166 84.3 L144.1 91.4 A42 42 0 0 0 129.5 72.2 Z" fill={blue} />
+        <path d="M168.7 95 A65 65 0 0 1 152.7 147 L135.5 131.8 A42 42 0 0 0 145.8 98.8 Z" fill={blue} />
+        <path d="M145.1 152.1 A65 65 0 0 1 128 164.9 L117 144.4 A42 42 0 0 0 130.5 134.2 Z" fill="#F4B942" />
+        <path d="M120 167.5 A65 65 0 0 1 98.3 168.9 L100.3 145.8 A42 42 0 0 0 114.2 144.4 Z" fill="#F4B942" />
 
         {/* Clock hands — deliberately no centre circle. */}
         <path
