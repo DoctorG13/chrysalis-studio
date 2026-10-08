@@ -42,9 +42,9 @@ export default function BizziBuddiLogo({
         <path d="M96.08 39.48 A65 65 0 0 1 138.44 48.88 L126.26 68.38 A42 42 0 0 0 98.88 62.31 Z" fill={cyan} />
         <path d="M148.33 56.46 A65 65 0 0 1 166.16 85.00 L144.16 91.72 A42 42 0 0 0 132.64 73.28 Z" fill={blue} />
         <path d="M168.52 96.08 A65 65 0 0 1 160.29 136.50 L140.37 125.00 A42 42 0 0 0 145.69 98.88 Z" fill={blue} />
-        {/* Gold continues the lower arc down to the exact bottom datum of the white mark. */}
-        <path d="M157.2 150.1 A77 77 0 0 1 132.1 179.4 L116.4 148.1 A42 42 0 0 0 130.8 136.4 Z" fill="#F4B942" />
-        <path d="M125.8 180.0 A77 77 0 0 1 97.8 180.9 L99.2 146.0 A42 42 0 0 0 115.8 148.0 Z" fill="#F4B942" />
+        {/* Gold segments: same ring width and curvature as the blue segments. */}
+        <path d="M162.0 133.0 A65 65 0 0 1 138.9 159.7 L124.6 139.5 A42 42 0 0 0 141.5 122.7 Z" fill="#F4B942" />
+        <path d="M136.5 160.3 A65 65 0 0 1 107.4 168.9 L106.2 145.9 A42 42 0 0 0 125.0 140.4 Z" fill="#F4B942" />
 
         {/* Clock hands — deliberately no centre circle. */}
         <path
