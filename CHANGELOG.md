@@ -1,3 +1,12 @@
+## BizziBuddi — Gold Arc Reference Match
+
+### Fixed
+
+- Matched the gold segments to the supplied approved logo reference.
+- Gold now occupies the lower-right continuation of the same circular band as the blue segments.
+- Gold uses the exact same inner radius, outer radius and centre as the rest of the coloured arc.
+- Removed the previous downward/out-of-line gold geometry.
+
 ## BizziBuddi — Approved Gold Logo Geometry
 
 ### Changed
