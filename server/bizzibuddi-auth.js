@@ -1171,13 +1171,18 @@ function createInvoice(userId, payload) {
   if (!person) throw new Error("The selected person could not be found.");
 
   const now = new Date().toISOString();
+  const requestedStatus = String(payload?.status || "Draft").trim();
+  if (!["Draft", "Issued"].includes(requestedStatus)) {
+    throw new Error("New invoices can only be saved as Draft or Issued.");
+  }
+
   const invoice = {
     id: randomUUID(),
     user_id: userId,
     person_id: person.id,
     number: nextInvoiceNumber(userId),
     amount: values.amount,
-    status: "Issued",
+    status: requestedStatus,
     issue_date: values.issueDate,
     due_date: values.dueDate,
     description: values.description,
@@ -1211,6 +1216,49 @@ function createInvoice(userId, payload) {
     person_name: person.name,
     amount_paid: 0,
     payments: [],
+  });
+}
+
+function issueInvoice(userId, invoiceId) {
+  const database = getDatabase();
+  const invoice = database
+    .prepare(
+      `SELECT id, amount, status, due_date
+       FROM bizzibuddi_invoices
+       WHERE id = ? AND user_id = ?`
+    )
+    .get(invoiceId, userId);
+
+  if (!invoice) return null;
+  if (String(invoice.status) !== "Draft") {
+    throw new Error("Only draft invoices can be issued.");
+  }
+
+  const now = new Date().toISOString();
+  const paid = getInvoicePaymentTotal(userId, invoiceId);
+  const nextStatus = getInvoiceStatus(invoice.amount, paid, "Issued", invoice.due_date);
+
+  database
+    .prepare(
+      `UPDATE bizzibuddi_invoices
+       SET status = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    )
+    .run(nextStatus, now, invoiceId, userId);
+
+  return toInvoice({
+    ...database
+      .prepare(
+        `SELECT invoices.*, people.name AS person_name,
+                COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+         FROM bizzibuddi_invoices AS invoices
+         LEFT JOIN bizzibuddi_people AS people
+           ON people.id = invoices.person_id AND people.user_id = invoices.user_id
+         WHERE invoices.id = ? AND invoices.user_id = ?`
+      )
+      .get(invoiceId, userId),
+    payments: getInvoicePayments(userId, invoiceId),
+    paymentActivity: getInvoicePaymentActivity(userId, invoiceId),
   });
 }
 
@@ -3863,6 +3911,38 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         ok: true,
         authenticated: true,
         invoices: getInvoices(user.id).map(toInvoice),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
+        url.pathname.endsWith("/issue") &&
+        request.method === "POST") {
+      const invoiceId = decodeURIComponent(
+        url.pathname.slice("/api/bizzibuddi/auth/invoices/".length, -"/issue".length)
+      ).replace(/\/$/, "").trim();
+
+      if (!invoiceId || invoiceId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Invoice not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const invoice = issueInvoice(user.id, invoiceId);
+      if (!invoice) {
+        sendJson(response, 404, { ok: false, error: "Invoice not found." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        invoice,
       });
       return true;
     }
