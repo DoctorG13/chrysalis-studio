@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="BizziBuddi logo">
+<defs>
+<linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00DDF5"/><stop offset="1" stop-color="#00A8D0"/></linearGradient>
+<linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2E7BFF"/><stop offset="1" stop-color="#1554E8"/></linearGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFD15A"/><stop offset="1" stop-color="#E89A16"/></linearGradient>
+<linearGradient id="white" x1="0" y1="0" x2="0.8" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F5F5F5"/></linearGradient>
+</defs>
+<path d="M 40.06 8.00 L 62.66 34.10 L 62.66 126.90 C 62.66 145.80 69.38 159.24 83.86 164.08 L 83.86 191.74 C 58.16 188.54 40.06 174.68 40.06 133.58 Z" fill="url(#white)"/>
+<path d="M 81.26 69.32 L 81.26 82.76 L 81.26 96.20 L 81.26 109.64 L 81.26 123.08 L 81.26 136.52 L 81.26 150.38 L 91.76 158.78 L 102.26 167.18 L 112.76 175.58 L 123.68 184.82 C 128.72 189.02 136.70 185.66 136.70 179.15 L 136.70 178.73 L 125.78 169.49 L 115.28 161.09 L 104.78 152.69 L 94.28 144.29 L 94.28 130.43 L 94.28 116.99 L 94.28 103.55 L 94.28 90.11 L 94.28 76.67 L 94.28 69.95 C 94.28 64.91 90.92 61.13 86.72 61.13 C 82.52 61.13 81.26 64.49 81.26 69.32 Z" fill="url(#white)"/>
+<path d="M 81.26 33.62 A65 65 0 0 1 138.44 48.88 L 126.26 68.38 A42 42 0 0 0 98.88 62.31 Z" fill="url(#cyan)"/>
+<path d="M 148.33 56.46 A65 65 0 0 1 166.16 85 L 144.16 91.72 A42 42 0 0 0 132.64 73.28 Z" fill="url(#blue)"/>
+<path d="M 168.52 96.08 A65 65 0 0 1 160.29 136.5 L 140.37 125 A42 42 0 0 0 145.69 98.88 Z" fill="url(#blue)"/>
+<path d="M 162.42 132.49 A65 65 0 0 1 139.4 158.51 L 125.79 137.55 A40 40 0 0 0 139.95 121.53 Z" fill="url(#gold)"/>
+<path d="M 135.51 160.85 A65 65 0 0 1 109.67 168.75 L 107.49 143.85 A40 40 0 0 0 123.39 138.98 Z" fill="url(#gold)"/>
+</svg>
