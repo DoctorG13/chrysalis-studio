@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Arc Alignment Correction
+
+### Fixed
+
+- Reconstructed both gold segments from the exact centre and inner/outer radii used by the blue arc.
+- Matched the gold curvature and segment geometry to the existing blue construction.
+- Restored consistent radial alignment through the full coloured arc.
+
 ## BizziBuddi — Gold Arc Final Geometry
 
 ### Fixed
