@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Baseline Alignment
+
+### Fixed
+
+- Extended the gold lower arc to the same bottom datum as the white BizziBuddi mark.
+- Preserved the rounded gold segment construction and lower-right placement.
+- Kept the white mark and upper coloured arc unchanged.
+
 ## BizziBuddi — Gold Arc Reference Match
 
 ### Fixed
