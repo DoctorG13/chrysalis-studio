@@ -42,13 +42,15 @@ export default function BizziBuddiLogo({
         <path d="M96.08 39.48 A65 65 0 0 1 138.44 48.88 L126.26 68.38 A42 42 0 0 0 98.88 62.31 Z" fill={cyan} />
         <path d="M148.33 56.46 A65 65 0 0 1 166.16 85.00 L144.16 91.72 A42 42 0 0 0 132.64 73.28 Z" fill={blue} />
         <path d="M168.52 96.08 A65 65 0 0 1 160.29 136.50 L140.37 125.00 A42 42 0 0 0 145.69 98.88 Z" fill={blue} />
-        {/* Gold segments traced from the approved reference: same ring radius and bar width as the blue arc. */}
+        {/* Gold segments traced from the supplied reference.
+            Same centre/ring as the coloured arc; final endpoint aligns with
+            the exact bottom datum of the white mark. */}
         <path
-          d="M160.85 135.51 A65 65 0 0 1 140.35 157.89 L127.49 138.82 A42 42 0 0 0 140.73 124.36 Z"
+          d="M162.42 132.49 A65 65 0 0 1 139.40 158.51 L125.79 137.55 A40 40 0 0 0 139.95 121.53 Z"
           fill="#F4B942"
         />
         <path
-          d="M134.52 161.39 A65 65 0 0 1 109.67 168.75 L107.66 145.84 A42 42 0 0 0 123.72 141.08 Z"
+          d="M135.51 160.85 A65 65 0 0 1 109.67 168.75 L107.49 143.85 A40 40 0 0 0 123.39 138.98 Z"
           fill="#F4B942"
         />
 
