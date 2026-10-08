@@ -6521,6 +6521,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     method: "Other",
     description: "",
   });
+  const firstPaymentInvoiceId =
+    invoices.find((invoice) => (paymentsByInvoice[invoice.id] || []).length > 0)?.id || "";
+
   const [financeReportMode, setFinanceReportMode] = useState("month");
   const [financeReportMonth, setFinanceReportMonth] = useState(
     getAccountLocalDateKey().slice(0, 7)
@@ -7022,9 +7025,6 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     1,
     ...monthlyRevenue.map((month) => month.amount)
   );
-  const firstPaymentInvoiceId =
-    invoices.find((invoice) => (paymentsByInvoice[invoice.id] || []).length > 0)?.id || "";
-
   const currentMonthExpenses = expenses
     .filter((expense) => String(expense.date || "").slice(0, 7) === currentMonthKey)
     .reduce((sum, expense) => sum + (Number(expense.amount) || 0), 0);
