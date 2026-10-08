@@ -1,3 +1,12 @@
+## BizziBuddi — Account Landing Space Polish
+
+### Changed
+
+- Reduced excessive vertical spacing around the account landing header and hero.
+- Tightened the hero heading, supporting copy and account-status badge.
+- Reduced navigation spacing and button footprint.
+- Preserved the existing branding, hierarchy and functionality while making the first viewport substantially more compact.
+
 ## BizziBuddi — First-Run Welcome
 
 ### Added
