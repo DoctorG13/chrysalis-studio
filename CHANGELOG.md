@@ -1,3 +1,12 @@
+## BizziBuddi — Gold Bars Traced From Reference
+
+### Fixed
+
+- Replaced the gold geometry with traced annular sectors from the supplied reference image.
+- Gold bars now use the same 65/42 outer and inner radii as the coloured ring.
+- Matched the reference's two lower-right segment angles and spacing.
+- Preserved the existing white mark, cyan segment and blue segments.
+
 ## BizziBuddi — Gold Reference Geometry
 
 ### Fixed
