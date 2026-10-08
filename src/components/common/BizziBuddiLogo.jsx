@@ -28,7 +28,7 @@ export default function BizziBuddiLogo({
       {dark ? (
         <img
           src={referenceLogo}
-          width={size}
+          width={size * (355 / 485)}
           height={size}
           alt="BizziBuddi logo"
           style={{ display: "block", overflow: "visible" }}
