@@ -1,3 +1,15 @@
+## BizziBuddi — Invoice Lifecycle
+
+### Added
+
+- Added explicit **Draft → Issued → Part Paid → Paid / Overdue** invoice lifecycle handling.
+- New invoices can now be saved as **Draft** or **Save & issue**.
+- Draft invoices cannot accept payments until they are issued.
+- Added an **Issue invoice** action for draft invoices.
+- Existing payment logic continues to derive **Part Paid**, **Paid** and **Overdue** states from recorded payments and due dates.
+
+---
+
 ## BizziBuddi — Payment Activity After Removal
 
 ### Fixed
