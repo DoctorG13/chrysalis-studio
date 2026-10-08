@@ -12,7 +12,7 @@
 - [x] Introduce Buddi as part of the first-day workflow
 - [x] Show live completion progress from real workspace data
 - [x] Keep onboarding guide optional and skippable
-- [ ] Add dedicated first-day dashboard empty states
+- [x] Add dedicated first-day dashboard empty states
 - [ ] Validate the complete real-world Person → Job → Appointment → Payment workflow
 
 ## BizziBuddi Demo Sandbox — Data Entry UX
