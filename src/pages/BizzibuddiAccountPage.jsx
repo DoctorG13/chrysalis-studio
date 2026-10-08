@@ -6396,6 +6396,8 @@ function ReportsPanel({ account, onPlans, onBack }) {
                 <span>No production records yet</span>
                 <strong>—</strong>
               </div>
+                  </>
+                )}
             )}
           </div>
         </article>
@@ -8075,7 +8077,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             (sum, payment) => sum + (Number(payment.amount) || 0),
             0
           );
-          const hasRecordedPayments =
+          const hasPaymentHistory =
             payments.length > 0 || Number(invoice.amountPaid || 0) > 0;
 
           const selected = String(invoice.id) === String(initialInvoiceId);
@@ -8222,7 +8224,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               </form>
             )}
 
-            {hasRecordedPayments && (
+            {(hasPaymentHistory || paymentActivity.length > 0) && (
               <div
                 style={{
                   flexBasis: "100%",
@@ -8235,21 +8237,23 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   borderLeft: "2px solid rgba(0,180,219,.28)",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
-                  <small
-                    id={invoice.id === firstPaymentInvoiceId ? "finance-payments" : undefined}
-                    style={{ ...smallText, scrollMarginTop: 120 }}
-                  >
-                    PAYMENT HISTORY
-                  </small>
-                  {recordedPaymentTotal > 0 && (
-                    <small style={{ ...smallText, fontWeight: 700 }}>
-                      {formatCurrency(recordedPaymentTotal)} PAID
-                    </small>
-                  )}
-                </div>
+                {hasPaymentHistory && (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+                      <small
+                        id={invoice.id === firstPaymentInvoiceId ? "finance-payments" : undefined}
+                        style={{ ...smallText, scrollMarginTop: 120 }}
+                      >
+                        PAYMENT HISTORY
+                      </small>
+                      {recordedPaymentTotal > 0 && (
+                        <small style={{ ...smallText, fontWeight: 700 }}>
+                          {formatCurrency(recordedPaymentTotal)} PAID
+                        </small>
+                      )}
+                    </div>
 
-                {payments.length > 0 ? (
+                    {payments.length > 0 ? (
                   <div style={{ display: "grid", gap: 2, marginTop: 7 }}>
                     {payments.map((payment) => (
                       <div key={payment.id} style={{ display: "grid", gap: 5 }}>
