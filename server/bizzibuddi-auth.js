@@ -1273,6 +1273,10 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
 
   if (!invoice) return null;
 
+  if (String(invoice.status) === "Draft") {
+    throw new Error("Issue the invoice before recording a payment.");
+  }
+
   const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
   const balance = Math.max(0, Number(invoice.amount || 0) - currentPaid);
 
