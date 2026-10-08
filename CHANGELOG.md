@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Arc Continuation Fix
+
+### Fixed
+
+- Rebuilt the gold segments as direct continuations of the existing blue arc.
+- Matched the blue arc's centre, radii, segment proportions and spacing.
+- Updated the reusable icon artwork to use the same corrected geometry.
+
 ## BizziBuddi — Gold Arc Alignment Correction
 
 ### Fixed
