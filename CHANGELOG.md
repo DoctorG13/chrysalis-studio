@@ -1,3 +1,11 @@
+## BizziBuddi — Gold Arc Proportion Polish
+
+### Changed
+
+- Increased the visual size of the lower gold arc so it carries comparable weight to the blue segments.
+- Preserved the circular alignment, segment gaps and bottom alignment with the white mark.
+- Kept the overall logo proportions unchanged.
+
 ## BizziBuddi — Gold Logo Geometry Fix
 
 ### Fixed
