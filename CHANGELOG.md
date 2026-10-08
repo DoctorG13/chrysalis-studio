@@ -1,3 +1,13 @@
+## BizziBuddi — First-Run Welcome
+
+### Added
+
+- Added a dedicated first-run welcome screen immediately after a new business completes account setup.
+- Presents the four key starting actions: add a person, create a job, schedule something and set up Finance.
+- Added direct **Start with Add a person**, **Getting Started**, **Ask Buddi** and **I'll explore on my own** actions.
+- Focuses the first-run experience by hiding the normal workspace navigation and marketing hero until the user chooses where to go.
+- Keeps the existing Dashboard first-day state as a persistent fallback after the first-run screen is dismissed.
+
 ## BizziBuddi — First-Day Dashboard Empty State
 
 ### Added
