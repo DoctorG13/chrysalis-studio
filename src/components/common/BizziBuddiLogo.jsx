@@ -59,7 +59,7 @@ export default function BizziBuddiLogo({
         />
 
         <path
-          d="M123.9 178.4 A77 77 0 0 1 104 181 L104 146 A42 42 0 0 0 114.9 144.6 Z"
+          d="M123.9 178.4 A77 77 0 0 1 98 181 L98 146 A42 42 0 0 0 114.9 144.6 Z"
           fill="#F4B942"
         />
 
