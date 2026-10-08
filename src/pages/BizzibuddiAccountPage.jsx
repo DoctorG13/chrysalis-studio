@@ -31,10 +31,10 @@ export default function BizzibuddiAccountPage() {
     appointmentId: initialRouteParams.get("appointment") || "",
     invoiceId: initialRouteParams.get("invoice") || "",
   };
-  const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "account", "help", "demo"]);
+  const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "account", "help", "demo", "first-run"]);
   const requestedView = requestedViews.has(initialView) ? initialView : "";
   const [view, setView] = useState(
-    initialView === "create" ? "create" : initialDemoMode ? "demo" : "login"
+    initialView === "create" ? "create" : initialView === "first-run" ? "first-run" : initialDemoMode ? "demo" : "login"
   );
   const [deepLink, setDeepLink] = useState(initialDeepLink);
   const [account, setAccount] = useState(null);
@@ -357,6 +357,7 @@ export default function BizzibuddiAccountPage() {
   function selectView(nextView, target = {}) {
     const protectedViews = new Set([
       "onboarding",
+      "first-run",
       "dashboard",
       "people",
       "jobs",
@@ -593,8 +594,9 @@ export default function BizzibuddiAccountPage() {
       });
 
       await applyAccount(result.account);
-      setMessage("Your BizziBuddi workspace is ready.");
-      setView("dashboard");
+      setMessage("");
+      writeWorkspaceRoute("first-run");
+      setView("first-run");
       setDeepLink({});
     } catch (error) {
       setMessage(error.message || "We could not save your business setup.");
@@ -715,6 +717,23 @@ export default function BizzibuddiAccountPage() {
       current.map((entry) => entry.id === entryId ? result.entry : entry)
     );
     return result.entry;
+  }
+
+  function finishFirstRun(nextView = "dashboard") {
+    if (account?.id) {
+      try {
+        localStorage.setItem(storageKey("firstRunComplete", account.id), "1");
+      } catch {
+        // The first-run flow still works when local storage is unavailable.
+      }
+    }
+
+    if (nextView === "buddi") {
+      openBuddi();
+      return;
+    }
+
+    selectView(nextView);
   }
 
   async function resetBusinessData() {
@@ -847,7 +866,7 @@ export default function BizzibuddiAccountPage() {
           <div style={previewBadge}>Secure account and login · People, Jobs, Calendar and Finance are account-backed · No live billing</div>
         </section>
 
-        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={view === "demo" ? { ...workspaceNavShell, display: "none" } : workspaceNavShell}>
+        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={view === "demo" || view === "first-run" || view === "onboarding" ? { ...workspaceNavShell, display: "none" } : workspaceNavShell}>
           {view === "demo" ? null : !account ? (
             <div className="bizzibuddi-account-nav-main">
               {[["login", "Log in"], ["create", "Create account"], ["demo", "Explore demo"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
@@ -913,7 +932,7 @@ export default function BizzibuddiAccountPage() {
 
         </nav>
 
-          {account && view !== "demo" && (
+          {account && !["demo", "first-run", "onboarding"].includes(view) && (
             <div className="bizzibuddi-help-rail" aria-label="Help and support">
               <button
                 type="button"
@@ -943,6 +962,18 @@ export default function BizzibuddiAccountPage() {
         {view === "login" && <AuthPanel mode="login" account={account} errorMessage={message === "You have been logged out." ? "" : message} successMessage={message === "You have been logged out." ? message : ""} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
         {view === "create" && <AuthPanel mode="create" fromDemo={new URLSearchParams(window.location.search).get("from") === "demo"} errorMessage={message} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
         {view === "onboarding" && <OnboardingPanel account={account} onSubmit={completeOnboarding} />}
+        {view === "first-run" && (
+          <FirstRunPanel
+            account={account}
+            onPeople={() => finishFirstRun("people")}
+            onJobs={() => finishFirstRun("jobs")}
+            onCalendar={() => finishFirstRun("calendar")}
+            onFinance={() => finishFirstRun("finance")}
+            onGettingStarted={() => finishFirstRun("help")}
+            onBuddi={() => finishFirstRun("buddi")}
+            onExplore={() => finishFirstRun("dashboard")}
+          />
+        )}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
         {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onDashboard={() => selectView("dashboard")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} onGettingStartedBuddi={() => selectView("help")} />}
@@ -1846,6 +1877,135 @@ function AuthPanel({ mode, account, errorMessage, successMessage, onSubmit, onSw
     <p style={switchText}>{login ? "New to BizziBuddi?" : "Already have an account?"} <button type="button" onClick={onSwitch} style={textButton}>{login ? "Create an account" : "Log in"}</button></p>
     {login && account && <p style={smallText}>Signed in account available for {account.email} · @{account.username}.</p>}
   </section>;
+}
+
+function FirstRunPanel({
+  account,
+  onPeople,
+  onJobs,
+  onCalendar,
+  onFinance,
+  onGettingStarted,
+  onBuddi,
+  onExplore,
+}) {
+  const steps = [
+    ["1", "Add your first person", "Start your customer, client or contact list.", onPeople],
+    ["2", "Create your first job", "Track the work you need to deliver.", onJobs],
+    ["3", "Schedule something", "Put the next important date on your calendar.", onCalendar],
+    ["4", "Set up Finance", "Create your first invoice or payment.", onFinance],
+  ];
+
+  return (
+    <section
+      aria-labelledby="bizzibuddi-first-run-title"
+      style={{
+        ...cardStyle(900),
+        marginTop: 18,
+        padding: 28,
+        border: "1px solid rgba(0,180,219,.38)",
+        background: "linear-gradient(135deg, rgba(0,180,219,.11), rgba(37,99,235,.08))",
+      }}
+    >
+      <div style={{ maxWidth: 760, margin: "0 auto" }}>
+        <div style={{ textAlign: "center" }}>
+          <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".14em" }}>
+            WELCOME TO BIZZIBUDDI
+          </small>
+          <h2 id="bizzibuddi-first-run-title" style={{ ...sectionHeading, marginTop: 8 }}>
+            Let's get your business set up.
+          </h2>
+          <p style={{ ...copyStyle, maxWidth: 650, margin: "8px auto 0" }}>
+            Your workspace is ready. We'll help you get your first customer, job and appointment into BizziBuddi.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginTop: 26 }}>
+          {steps.map(([number, title, detail, action]) => (
+            <button
+              key={number}
+              type="button"
+              onClick={action}
+              style={{
+                minWidth: 0,
+                padding: 16,
+                borderRadius: 14,
+                border: "1px solid rgba(255,255,255,.12)",
+                background: "rgba(255,255,255,.035)",
+                color: TEXT,
+                textAlign: "left",
+                cursor: "pointer",
+                minHeight: 150,
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  display: "grid",
+                  placeItems: "center",
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  background: "rgba(0,180,219,.16)",
+                  color: CYAN,
+                  fontWeight: 900,
+                  fontSize: 12,
+                }}
+              >
+                {number}
+              </span>
+              <strong style={{ display: "block", marginTop: 12, fontSize: 14, lineHeight: 1.25 }}>
+                {title}
+              </strong>
+              <span style={{ display: "block", marginTop: 6, color: MUTED, fontSize: 11, lineHeight: 1.5 }}>
+                {detail}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 10,
+            flexWrap: "wrap",
+            marginTop: 22,
+          }}
+        >
+          <button type="button" onClick={onPeople} style={nextActionButton}>
+            Start with Add a person →
+          </button>
+          <button type="button" onClick={onGettingStarted} style={todayJumpButton}>
+            Open the Getting Started guide
+          </button>
+          <button type="button" onClick={onBuddi} style={todayJumpButton}>
+            Ask Buddi what to do
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: 20,
+            paddingTop: 15,
+            borderTop: "1px solid rgba(255,255,255,.08)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ color: MUTED, fontSize: 11 }}>
+            You can always come back to the Dashboard and continue at your own pace.
+          </span>
+          <button type="button" onClick={onExplore} style={textButton}>
+            I'll explore on my own
+          </button>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function OnboardingPanel({ account, onSubmit }) {
