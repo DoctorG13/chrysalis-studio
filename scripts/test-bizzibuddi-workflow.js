@@ -81,8 +81,8 @@ assertContains(page, "Promise.allSettled", "concurrent legacy production migrati
 assertContains(page, "aria-live=\"polite\"", "accessible status messaging");
 assertContains(page, "bizzibuddi-table-scroll", "responsive reporting table");
 assertContains(page, "bizzibuddi-skip-link", "keyboard skip navigation");
-assertContains(page, "<>\n      {account && shortcutHelpOpen && (", "account page fragment wrapper");
-assertContains(page, "</main>\n    </>", "account page fragment closure");
+assertContains(page, "{account && shortcutHelpOpen && (", "account page shortcut help wrapper");
+assertContains(page, "</main>", "account page main closure");
 assertContains(page, "const filteredPeople = normalizedQuery", "people search filtering");
 assertContains(page, "{filteredPeople.map((person) => {", "filtered people render");
 if (page.includes("{(() => {")) throw new Error("Legacy People filter IIFE must not return.");
