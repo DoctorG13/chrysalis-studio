@@ -1,3 +1,15 @@
+## BizziBuddi — Branded Expense Removal Confirmation
+
+### Changed
+
+- Replaced the browser-native expense deletion prompt with a branded, accessible confirmation dialog.
+- Show the expense amount, date, category and description before removal.
+- Require an explicit “Yes, remove expense” action; “Keep expense” cancels without changing records.
+- Keep the dialog open during the request and show any removal error in the dialog.
+- Do not dismiss the dialog when clicking the backdrop or pressing Escape.
+
+---
+
 ## BizziBuddi — Expense Recording HTTP 500 Fix
 
 ### Fixed
