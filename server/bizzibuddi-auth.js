@@ -3096,7 +3096,7 @@ function formatBusinessInsightCurrency(value) {
   }).format(Number(value) || 0);
 }
 
-function getMonthlyBizziBuddiStatistics(userId, now = new Date()) {
+function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
   const people = getPeople(userId).map(toPerson);
   const jobs = getJobs(userId).map(toJob);
   const appointments = getCalendar(userId).map(toCalendarEntry);
@@ -3104,8 +3104,16 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date()) {
   const productionRecords = getProductionRecords(userId);
 
   const months = [];
-  const cursor = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-  for (let index = 0; index < 12; index += 1) {
+  const startText = /^\d{4}-\d{2}-\d{2}$/.test(period.start || "") ? period.start : "";
+  const endText = /^\d{4}-\d{2}-\d{2}$/.test(period.end || "") ? period.end : "";
+  const cursor = startText
+    ? new Date(Number(startText.slice(0, 4)), Number(startText.slice(5, 7)) - 1, 1)
+    : new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const lastMonth = endText
+    ? new Date(Number(endText.slice(0, 4)), Number(endText.slice(5, 7)) - 1, 1)
+    : new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthCount = Math.min(120, Math.max(1, (lastMonth.getFullYear() - cursor.getFullYear()) * 12 + lastMonth.getMonth() - cursor.getMonth() + 1));
+  for (let index = 0; index < monthCount; index += 1) {
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
     const key = `${year}-${String(month + 1).padStart(2, "0")}`;
@@ -3276,10 +3284,7 @@ function getBizziBuddiReports(userId, period = {}) {
     totalPaid: Math.round(periodPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) * 100) / 100,
     productionCompleted: periodProductionCompleted,
   };
-  const monthlyStatistics = getMonthlyBizziBuddiStatistics(userId, now).filter((month) =>
-    (!periodStart || month.key >= periodStart.slice(0, 7)) &&
-    (!periodEnd || month.key <= periodEnd.slice(0, 7))
-  );
+  const monthlyStatistics = getMonthlyBizziBuddiStatistics(userId, now, { start: periodStart, end: periodEnd });
   const businessInsights = buildBizziBuddiBusinessInsights(
     monthlyStatistics,
     financeReport,
