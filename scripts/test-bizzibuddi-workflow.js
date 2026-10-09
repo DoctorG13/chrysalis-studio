@@ -47,7 +47,7 @@ const routeContracts = [
   ["DELETE", "url.pathname.startsWith(\"/api/bizzibuddi/auth/jobs/\")"],
   ["GET", "/api/bizzibuddi/auth/people"],
   ["POST", "/api/bizzibuddi/auth/people"],
-  ["PUT", "url.pathname.startsWith(\"/api/bizzibuddi/auth/people/\")"],
+  ["PUT", "url.pathname.match(/^\\/api\\/bizzibuddi\\/auth\\/people\\/[^/]+$/)"],
   ["DELETE", "url.pathname.startsWith(\"/api/bizzibuddi/auth/people/\")"],
   ["GET", "people/[^/]+/measurements"],
   ["POST", "people/[^/]+/measurements"],
