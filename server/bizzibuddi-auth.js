@@ -3175,7 +3175,7 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date()) {
   }));
 }
 
-function getBizziBuddiReports(userId) {
+function getBizziBuddiReports(userId, period = {}) {
   const people = getPeople(userId).map(toPerson);
   const jobs = getJobs(userId).map(toJob);
   const appointments = getCalendar(userId).map(toCalendarEntry);
@@ -3250,7 +3250,36 @@ function getBizziBuddiReports(userId) {
     stageGroups: productionStageGroups,
   };
 
-  const monthlyStatistics = getMonthlyBizziBuddiStatistics(userId, now);
+  const periodStart = /^\d{4}-\d{2}-\d{2}$/.test(period.start || "") ? period.start : "";
+  const periodEnd = /^\d{4}-\d{2}-\d{2}$/.test(period.end || "") ? period.end : "";
+  const withinPeriod = (value) => {
+    const date = String(value || "").slice(0, 10);
+    return Boolean(date && (!periodStart || date >= periodStart) && (!periodEnd || date <= periodEnd));
+  };
+  const periodPeople = people.filter((person) => withinPeriod(person.createdAt)).length;
+  const periodJobs = jobs.filter((job) => withinPeriod(job.createdAt)).length;
+  const periodAppointments = appointments.filter((appointment) => withinPeriod(appointment.date)).length;
+  const periodInvoices = invoices.filter((invoice) => withinPeriod(invoice.issueDate || invoice.createdAt));
+  const periodPayments = getDatabase().prepare(
+    "SELECT amount, date FROM bizzibuddi_payments WHERE user_id = ?"
+  ).all(userId).filter((payment) => withinPeriod(payment.date));
+  const periodProductionCompleted = productionRecords.filter((record) =>
+    record.stage === "Complete" && withinPeriod(record.updatedAt || record.createdAt)
+  ).length;
+  const periodSummary = {
+    startDate: periodStart,
+    endDate: periodEnd,
+    peopleCreated: periodPeople,
+    jobsCreated: periodJobs,
+    appointments: periodAppointments,
+    totalInvoiced: Math.round(periodInvoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0) * 100) / 100,
+    totalPaid: Math.round(periodPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) * 100) / 100,
+    productionCompleted: periodProductionCompleted,
+  };
+  const monthlyStatistics = getMonthlyBizziBuddiStatistics(userId, now).filter((month) =>
+    (!periodStart || month.key >= periodStart.slice(0, 7)) &&
+    (!periodEnd || month.key <= periodEnd.slice(0, 7))
+  );
   const businessInsights = buildBizziBuddiBusinessInsights(
     monthlyStatistics,
     financeReport,
@@ -3261,6 +3290,8 @@ function getBizziBuddiReports(userId) {
 
   return {
     generatedAt: now.toISOString(),
+    period: { startDate: periodStart, endDate: periodEnd },
+    periodSummary,
     people: { total: people.length },
     jobs: jobsReport,
     calendar: calendarReport,
@@ -3577,7 +3608,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
         return true;
       }
-      sendJson(response, 200, { ok: true, authenticated: true, reports: getBizziBuddiReports(user.id) });
+      sendJson(response, 200, { ok: true, authenticated: true, reports: getBizziBuddiReports(user.id, { start: url.searchParams.get("start"), end: url.searchParams.get("end") }) });
       return true;
     }
 
