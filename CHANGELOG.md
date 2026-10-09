@@ -1,3 +1,12 @@
+## BizziBuddi — Reports Navigation Target
+
+### Fixed
+
+- Changed the Insights → Reports submenu target from the lower report-summary cards to the report-period selector at the start of Reports.
+- Kept the existing sticky-navigation offset so the period controls remain visible after navigation.
+
+---
+
 ## BizziBuddi — Reports Period Selection Stability
 
 ### Fixed
