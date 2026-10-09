@@ -3112,7 +3112,7 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
   const lastMonth = endText
     ? new Date(Number(endText.slice(0, 4)), Number(endText.slice(5, 7)) - 1, 1)
     : new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthCount = Math.min(120, Math.max(1, (lastMonth.getFullYear() - cursor.getFullYear()) * 12 + lastMonth.getMonth() - cursor.getMonth() + 1));
+  const monthCount = Math.min(360, Math.max(1, (lastMonth.getFullYear() - cursor.getFullYear()) * 12 + lastMonth.getMonth() - cursor.getMonth() + 1));
   for (let index = 0; index < monthCount; index += 1) {
     const year = cursor.getFullYear();
     const month = cursor.getMonth();
