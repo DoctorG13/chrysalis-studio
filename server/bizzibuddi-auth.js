@@ -3131,28 +3131,33 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
   }
 
   const byMonth = new Map(months.map((month) => [month.key, month]));
+  const withinSelectedDates = (value) => {
+    const date = String(value || "").slice(0, 10);
+    return Boolean(date && (!startText || date >= startText) && (!endText || date <= endText));
+  };
   const monthKey = (value) => {
     const text = String(value || "");
     return /^\d{4}-\d{2}-\d{2}/.test(text) ? text.slice(0, 7) : "";
   };
 
   for (const person of people) {
-    const month = byMonth.get(monthKey(person.createdAt));
+    const month = withinSelectedDates(person.createdAt) ? byMonth.get(monthKey(person.createdAt)) : null;
     if (month) month.newPeople += 1;
   }
 
   for (const job of jobs) {
-    const month = byMonth.get(monthKey(job.createdAt));
+    const month = withinSelectedDates(job.createdAt) ? byMonth.get(monthKey(job.createdAt)) : null;
     if (month) month.jobsCreated += 1;
   }
 
   for (const appointment of appointments) {
-    const month = byMonth.get(monthKey(appointment.date));
+    const month = withinSelectedDates(appointment.date) ? byMonth.get(monthKey(appointment.date)) : null;
     if (month) month.appointments += 1;
   }
 
   for (const invoice of invoices) {
-    const month = byMonth.get(monthKey(invoice.issueDate || invoice.createdAt));
+    const activityDate = invoice.issueDate || invoice.createdAt;
+    const month = withinSelectedDates(activityDate) ? byMonth.get(monthKey(activityDate)) : null;
     if (month) month.invoiced += Number(invoice.amount) || 0;
   }
 
@@ -3166,13 +3171,14 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
     .all(userId);
 
   for (const payment of payments) {
-    const month = byMonth.get(monthKey(payment.date));
+    const month = withinSelectedDates(payment.date) ? byMonth.get(monthKey(payment.date)) : null;
     if (month) month.paid += Number(payment.amount) || 0;
   }
 
   for (const record of productionRecords) {
     if (record.stage !== "Complete") continue;
-    const month = byMonth.get(monthKey(record.updatedAt || record.createdAt));
+    const activityDate = record.updatedAt || record.createdAt;
+    const month = withinSelectedDates(activityDate) ? byMonth.get(monthKey(activityDate)) : null;
     if (month) month.productionCompleted += 1;
   }
 
