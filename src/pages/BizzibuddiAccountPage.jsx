@@ -6359,6 +6359,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
   const currentYear = new Date().getFullYear();
   const currentFinancialYearStart = new Date().getMonth() >= 6 ? currentYear : currentYear - 1;
   const [reportData, setReportData] = useState(null);
+  const [loadedReportUrl, setLoadedReportUrl] = useState("");
   const [reportError, setReportError] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -6382,10 +6383,13 @@ function ReportsPanel({ account, onPlans, onBack }) {
       try {
         const result = await bizzibuddiAuthRequest(reportUrl);
         if (!active) return;
-        setReportData(result?.reports || null);
+        if (!result?.reports) {
+          throw new Error("No report data was returned by the BizziBuddi server.");
+        }
+        setReportData(result.reports);
+        setLoadedReportUrl(reportUrl);
       } catch (error) {
         if (!active) return;
-        setReportData(null);
         setReportError(
           error instanceof Error ? error.message : "Unable to load reports."
         );
@@ -6438,7 +6442,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
     );
   }
 
-  if (loading) {
+  if (loading && !reportData) {
     return (
       <section style={cardStyle(720)}>
         <button type="button" onClick={onBack} style={textButton}>
@@ -6456,7 +6460,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
     );
   }
 
-  if (reportError || !reportData) {
+  if (!reportData) {
     return (
       <section style={cardStyle(720)}>
         <button type="button" onClick={onBack} style={textButton}>
@@ -6535,7 +6539,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
             </select>
           </label>}
           {reportRangeMode === "custom" && <><label style={{ ...fieldStyle, flex: "1 1 170px" }}>From <input type="date" value={customStart} max={customEnd || undefined} onChange={(event) => setCustomStart(event.target.value)} style={inputStyle} /></label><label style={{ ...fieldStyle, flex: "1 1 170px" }}>To <input type="date" value={customEnd} min={customStart || undefined} onChange={(event) => setCustomEnd(event.target.value)} style={inputStyle} /></label></>}
-          <div style={{ ...reportSummaryCard, flex: "2 1 300px" }}><small style={smallText}>SELECTED PERIOD</small><strong style={{ display: "block", marginTop: 5 }}>{reportRange.startDate} – {reportRange.endDate}</strong><span style={smallText}>Period activity is filtered; balances and open workload below are current.</span></div>
+          <div style={{ ...reportSummaryCard, flex: "2 1 300px", border: "1px solid rgba(0,180,219,.55)", background: "rgba(0,180,219,.08)" }}><small style={{ ...smallText, color: CYAN, fontWeight: 800 }}>SELECTED PERIOD</small><strong style={{ display: "block", marginTop: 5 }}>{reportRange.startDate} – {reportRange.endDate}</strong><span style={smallText}>Period activity is filtered; balances and open workload below are current.</span>{reportError ? <span role="alert" style={{ display: "block", marginTop: 7, color: "#FCA5A5", fontSize: 12 }}>{reportError} The previous figures remain visible.</span> : loading || loadedReportUrl !== reportUrl ? <span role="status" aria-live="polite" style={{ display: "block", marginTop: 7, color: CYAN, fontSize: 12 }}>Updating figures for the selected period…</span> : null}</div>
         </div>
         <div style={{ ...reportSummaryGrid, marginTop: 14 }}>
           {[["PEOPLE ADDED", periodSummary.peopleCreated ?? 0], ["JOBS CREATED", periodSummary.jobsCreated ?? 0], ["APPOINTMENTS", periodSummary.appointments ?? 0], ["INVOICED IN PERIOD", formatCurrency(periodSummary.totalInvoiced)], ["PAYMENTS IN PERIOD", formatCurrency(periodSummary.totalPaid)], ["PRODUCTION COMPLETED", periodSummary.productionCompleted ?? 0]].map(([label, value]) => <div key={label} style={reportSummaryCard}><small style={smallText}>{label}</small><strong style={reportSummaryValue}>{value}</strong></div>)}
@@ -6550,15 +6554,19 @@ function ReportsPanel({ account, onPlans, onBack }) {
             <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 13 }}>Exports use the reporting period selected above: {reportRange.startDate} to {reportRange.endDate}.</p>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button type="button" disabled={loading || refreshing || !reportData} onClick={() => exportBizziBuddiReportCsv(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData ? 0.55 : 1 }}>↓ Download CSV</button>
-            <button type="button" disabled={loading || refreshing || !reportData} onClick={() => downloadReportJson(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData ? 0.55 : 1 }}>↓ Download JSON</button>
-            <button type="button" disabled={loading || refreshing || !reportData} onClick={() => exportBizziBuddiReportPdf(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData ? 0.55 : 1 }}>↓ Download PDF</button>
+            <button type="button" disabled={loading || refreshing || !reportData || loadedReportUrl !== reportUrl} onClick={() => exportBizziBuddiReportCsv(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData || loadedReportUrl !== reportUrl ? 0.55 : 1 }}>↓ Download CSV</button>
+            <button type="button" disabled={loading || refreshing || !reportData || loadedReportUrl !== reportUrl} onClick={() => downloadReportJson(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData || loadedReportUrl !== reportUrl ? 0.55 : 1 }}>↓ Download JSON</button>
+            <button type="button" disabled={loading || refreshing || !reportData || loadedReportUrl !== reportUrl} onClick={() => exportBizziBuddiReportPdf(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData || loadedReportUrl !== reportUrl ? 0.55 : 1 }}>↓ Download PDF</button>
             <button type="button" disabled={loading || refreshing} onClick={async () => {
               setRefreshing(true);
               setReportError("");
               try {
                 const result = await bizzibuddiAuthRequest(reportUrl);
-                setReportData(result?.reports || null);
+                if (!result?.reports) {
+                  throw new Error("No report data was returned by the BizziBuddi server.");
+                }
+                setReportData(result.reports);
+                setLoadedReportUrl(reportUrl);
               } catch (error) {
                 setReportError(error instanceof Error ? error.message : "Unable to refresh reports.");
               } finally {
