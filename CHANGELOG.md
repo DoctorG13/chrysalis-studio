@@ -1,3 +1,13 @@
+## BizziBuddi — Expense Recording HTTP 500 Fix
+
+### Fixed
+
+- Registered the expense-recorded, expense-updated and expense-removed event types in the automation event validator.
+- Prevented valid expense actions from failing when their follow-up activity event is written.
+- Kept expense activity in the existing business timeline and audit flow.
+
+---
+
 ## BizziBuddi — Workspace Scroll Target Reliability
 
 ### Fixed
