@@ -1,3 +1,12 @@
+## BizziBuddi — Workspace Scroll Target Reliability
+
+### Fixed
+
+- Extended the anchor-target wait so navigation does not give up while a view is still mounting its content.
+- Used an immediate, sticky-navigation-aware scroll once the requested target exists, avoiding a delayed smooth-scroll landing on the wrong section.
+
+---
+
 ## BizziBuddi — Reports Navigation Target
 
 ### Fixed
