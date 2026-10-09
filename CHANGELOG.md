@@ -3457,3 +3457,10 @@ All notable changes to Chrysalis are recorded here.
 - Added a visible two-step guide: choose the report period first, then download.
 - Highlighted the report-period selector with a numbered step marker and stronger visual treatment.
 - Made the date-range purpose and its effect on report figures and downloads explicit.
+
+## BizziBuddi — Post-login Navigation
+
+- Route successful login and restored sessions away from the stale `?view=login` URL.
+- Send established business accounts to the Dashboard by default when no valid destination view was requested.
+- Update the URL and Today navigation state to match the displayed Dashboard.
+- Send accounts without business setup to onboarding and keep the URL in sync.
