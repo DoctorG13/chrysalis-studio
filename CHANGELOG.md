@@ -1,3 +1,14 @@
+## BizziBuddi — Reports Period Selection Stability
+
+### Fixed
+
+- Kept the full Reports interface mounted while a selected date range reloads, preventing the page height from collapsing and the viewport from jumping.
+- Highlighted the selected reporting period and added an inline loading status while its figures refresh.
+- Preserved the last successfully loaded report if a later period request fails, with a visible error message.
+- Disabled exports until the displayed report matches the currently selected period, preventing downloads of stale figures.
+
+---
+
 ## BizziBuddi — Reports Date Ranges and Export Formats
 
 ### Added
