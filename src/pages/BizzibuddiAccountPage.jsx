@@ -6487,25 +6487,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
             These figures are generated from your account-backed business data.
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" onClick={() => exportBizziBuddiReportCsv(reportData)} style={smallActionButton}>↓ Export CSV</button>
-          <button type="button" onClick={() => downloadReportJson(reportData)} style={smallActionButton}>↓ Export JSON</button>
-          <button type="button" onClick={() => exportBizziBuddiReportPdf(reportData)} style={smallActionButton}>↓ Export PDF</button>
-          <button type="button" disabled={refreshing} onClick={async () => {
-            setRefreshing(true);
-            setReportError("");
-            try {
-              const result = await bizzibuddiAuthRequest(reportUrl);
-              setReportData(result?.reports || null);
-            } catch (error) {
-              setReportError(error instanceof Error ? error.message : "Unable to refresh reports.");
-            } finally {
-              setRefreshing(false);
-            }
-          }} style={{ ...smallActionButton, opacity: refreshing ? 0.6 : 1 }}>
-            {refreshing ? "Refreshing…" : "↻ Refresh report"}
-          </button>
-        </div>
+
       </div>
 
       <article style={{ ...reportCard, marginTop: 18 }}>
@@ -6528,6 +6510,35 @@ function ReportsPanel({ account, onPlans, onBack }) {
         </div>
         <div style={{ ...reportSummaryGrid, marginTop: 14 }}>
           {[["PEOPLE ADDED", periodSummary.peopleCreated ?? 0], ["JOBS CREATED", periodSummary.jobsCreated ?? 0], ["APPOINTMENTS", periodSummary.appointments ?? 0], ["INVOICED IN PERIOD", formatCurrency(periodSummary.totalInvoiced)], ["PAYMENTS IN PERIOD", formatCurrency(periodSummary.totalPaid)], ["PRODUCTION COMPLETED", periodSummary.productionCompleted ?? 0]].map(([label, value]) => <div key={label} style={reportSummaryCard}><small style={smallText}>{label}</small><strong style={reportSummaryValue}>{value}</strong></div>)}
+        </div>
+      </article>
+
+      <article style={{ ...reportCard, marginTop: 14, padding: 18 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ minWidth: 0, flex: "1 1 280px" }}>
+            <small style={{ ...smallText, color: CYAN, fontWeight: 800, letterSpacing: ".08em" }}>STEP 2 · DOWNLOAD</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Download this report</strong>
+            <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 13 }}>Exports use the reporting period selected above: {reportRange.startDate} to {reportRange.endDate}.</p>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" disabled={loading || refreshing || !reportData} onClick={() => exportBizziBuddiReportCsv(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData ? 0.55 : 1 }}>↓ Download CSV</button>
+            <button type="button" disabled={loading || refreshing || !reportData} onClick={() => downloadReportJson(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData ? 0.55 : 1 }}>↓ Download JSON</button>
+            <button type="button" disabled={loading || refreshing || !reportData} onClick={() => exportBizziBuddiReportPdf(reportData)} style={{ ...smallActionButton, opacity: loading || refreshing || !reportData ? 0.55 : 1 }}>↓ Download PDF</button>
+            <button type="button" disabled={loading || refreshing} onClick={async () => {
+              setRefreshing(true);
+              setReportError("");
+              try {
+                const result = await bizzibuddiAuthRequest(reportUrl);
+                setReportData(result?.reports || null);
+              } catch (error) {
+                setReportError(error instanceof Error ? error.message : "Unable to refresh reports.");
+              } finally {
+                setRefreshing(false);
+              }
+            }} style={{ ...smallActionButton, opacity: loading || refreshing ? 0.55 : 1 }}>
+              {refreshing ? "Refreshing…" : "↻ Refresh"}
+            </button>
+          </div>
         </div>
       </article>
 
