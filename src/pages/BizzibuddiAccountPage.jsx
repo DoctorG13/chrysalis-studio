@@ -942,7 +942,7 @@ export default function BizzibuddiAccountPage() {
                       key={item[0]}
                       type="button"
                       onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
-                      style={workspaceSubnavTab(workspaceNavItem === item[0], workspaceNavSection)}
+                      style={workspaceSubnavTab(workspaceNavItem === item[0], workspaceNavSection, item[0])}
                       title={item[1]}
                     >
                       {item[1]}
@@ -11099,7 +11099,7 @@ const workspaceSubnavItems = (section) => {
   const layout = {
     today: { gridColumn: "1 / span 2" },
     work: { gridColumn: "2 / span 2" },
-    finance: { gridColumn: "3 / span 3" },
+    finance: { gridColumn: "2 / span 4" },
     insights: { gridColumn: "4 / span 2" },
     assist: { gridColumn: "5 / span 2" },
     account: { gridColumn: "5 / span 2" },
@@ -11117,12 +11117,12 @@ const workspaceSubnavItems = (section) => {
     overflow: "hidden",
   };
 };
-const workspaceSubnavTab = (active, section = "") => ({
-  flex: ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
+const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
+  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
   minWidth: ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
   boxSizing: "border-box",
-  overflow: ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? "hidden" : undefined,
-  textOverflow: ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? "ellipsis" : undefined,
+  overflow: "visible",
+  textOverflow: "clip",
   border: "1px solid " + (active ? CYAN : "rgba(255,255,255,.10)"),
   borderRadius: 999,
   padding: "4px 9px",
