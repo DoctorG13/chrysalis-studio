@@ -1,3 +1,13 @@
+## BizziBuddi — Finance Submenu Label Visibility
+
+### Changed
+
+- Allocated more horizontal space to the Finance submenu.
+- Gave “Expenses & Outgoings” additional width so the full label is visible instead of being truncated.
+- Preserved the existing compact submenu layout for other sections.
+
+---
+
 ## BizziBuddi — Branded Expense Removal Confirmation
 
 ### Changed
