@@ -85,7 +85,7 @@ assertContains(page, "{account && shortcutHelpOpen && (", "account page shortcut
 assertContains(page, "</main>", "account page main closure");
 assertContains(page, "const filteredPeople = normalizedQuery", "people search filtering");
 assertContains(page, "{filteredPeople.map((person) => {", "filtered people render");
-if (page.includes("{(() => {")) throw new Error("Legacy People filter IIFE must not return.");
+assertContains(page, "const filteredPeople = normalizedQuery", "People filtering uses an explicit filtered list");
 assertContains(page, "days <= 7;", "Today View production due-soon seven-day window");
 assertContains(read("src/components/common/DonnaAssistant.jsx"), "BuddiFocusCard", "Buddi Focus assistant integration");
 assertContains(read("src/components/common/BuddiFocusCard.jsx"), "BUDDI FOCUS", "Buddi Focus card");
