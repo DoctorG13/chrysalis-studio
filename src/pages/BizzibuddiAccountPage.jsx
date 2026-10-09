@@ -180,9 +180,16 @@ export default function BizzibuddiAccountPage() {
 
         await applyAccount(result.account);
         if (result.account.business) {
-          setView(requestedView || "dashboard");
+          const destinationView = requestedView && requestedView !== "login" ? requestedView : "dashboard";
+          writeWorkspaceRoute(destinationView, initialDeepLink);
+          setView(destinationView);
           setDeepLink(initialDeepLink);
+          if (destinationView === "dashboard") {
+            setWorkspaceNavSection("today");
+            setWorkspaceNavItem("overview");
+          }
         } else {
+          writeWorkspaceRoute("onboarding");
           setView("onboarding");
           setDeepLink({});
         }
@@ -542,9 +549,16 @@ export default function BizzibuddiAccountPage() {
       await applyAccount(result.account);
       setMessage("Welcome back, " + result.account.name + ".");
       if (result.account.business) {
-        setView(requestedView || "dashboard");
+        const destinationView = requestedView && requestedView !== "login" ? requestedView : "dashboard";
+        writeWorkspaceRoute(destinationView, initialDeepLink);
+        setView(destinationView);
         setDeepLink(initialDeepLink);
+        if (destinationView === "dashboard") {
+          setWorkspaceNavSection("today");
+          setWorkspaceNavItem("overview");
+        }
       } else {
+        writeWorkspaceRoute("onboarding");
         setView("onboarding");
         setDeepLink({});
       }
