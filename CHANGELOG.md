@@ -3452,3 +3452,8 @@ All notable changes to Chrysalis are recorded here.
 - Disabled download actions while report data is loading or refreshing, preventing export of a stale period.
 - Kept refresh alongside the download actions, using the selected date range.
 
+## BizziBuddi Reports — Clearer Period Selection
+
+- Added a visible two-step guide: choose the report period first, then download.
+- Highlighted the report-period selector with a numbered step marker and stronger visual treatment.
+- Made the date-range purpose and its effect on report figures and downloads explicit.
