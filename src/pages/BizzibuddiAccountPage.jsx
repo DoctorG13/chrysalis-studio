@@ -9398,7 +9398,7 @@ function CalendarPanel({
             </label>
           </div>
         )}
-        <Field name="notes" label="Notes" type="text" placeholder="Optional notes" defaultValue={editingAppointment?.notes || ""} />
+        <Field name="notes" label="Notes" type="text" placeholder="Optional notes" defaultValue={editingAppointment?.notes || ""} required={false} />
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
           <button type="submit" disabled={saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: saving ? 0.7 : 1 }}>
             {saving ? "Saving…" : editingAppointment ? "Save changes" : "Save appointment"}
@@ -10798,8 +10798,8 @@ const personRelationshipValue = {
 const personForm = { marginTop: 24, padding: 22, borderRadius: 14, border: `1px solid ${BORDER}`, background: "rgba(0,180,219,.05)" };
 const businessNote = { marginTop: 22, padding: 18, borderRadius: 12, border: `1px solid ${BORDER}`, background: "rgba(255,255,255,.025)" };
 
-function Field({ name, label, type, placeholder, defaultValue }) {
-  return <label style={fieldStyle}>{label}<input required name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
+function Field({ name, label, type, placeholder, defaultValue, required = true }) {
+  return <label style={fieldStyle}>{label}<input required={required} name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
 }
 
 const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "0 20px 24px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
