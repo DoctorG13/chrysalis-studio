@@ -6899,6 +6899,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [expenses, setExpenses] = useState([]);
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState("");
+  const [pendingExpenseRemoval, setPendingExpenseRemoval] = useState(null);
   const [expenseForm, setExpenseForm] = useState({
     amount: "",
     date: getAccountLocalDateKey(),
@@ -7304,14 +7305,15 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     }
   }
 
-  async function handleDeleteExpense(expense) {
+  function handleDeleteExpense(expense) {
     if (saving) return;
+    setError("");
+    setPendingExpenseRemoval(expense);
+  }
 
-    const confirmed = window.confirm(
-      "Remove this expense of " + formatCurrency(expense.amount) + "?"
-    );
-    if (!confirmed) return;
-
+  async function confirmDeleteExpense() {
+    if (saving || !pendingExpenseRemoval) return;
+    const expense = pendingExpenseRemoval;
     setError("");
     setSaving(true);
 
@@ -7325,6 +7327,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         setShowExpenseForm(false);
         resetExpenseForm();
       }
+      setPendingExpenseRemoval(null);
     } catch (requestError) {
       setError(requestError.message || "We could not remove this expense.");
     } finally {
@@ -8138,6 +8141,68 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         )}
       </div>
     </section>
+
+    {pendingExpenseRemoval && (
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 10000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          background: "rgba(2, 10, 20, .78)",
+          backdropFilter: "blur(5px)",
+        }}
+      >
+        <section
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="expense-removal-title"
+          aria-describedby="expense-removal-description"
+          style={{
+            width: "100%",
+            maxWidth: 480,
+            padding: 24,
+            borderRadius: 16,
+            border: "1px solid rgba(0,180,219,.45)",
+            background: "linear-gradient(145deg, #163751 0%, #0B2238 100%)",
+            boxShadow: "0 24px 80px rgba(0,0,0,.48)",
+            color: TEXT,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div aria-hidden="true" style={{ width: 44, height: 44, flex: "0 0 44px", display: "grid", placeItems: "center", borderRadius: 12, background: "rgba(255,105,105,.12)", border: "1px solid rgba(255,105,105,.28)", color: "#FF9999", fontSize: 23, fontWeight: 800 }}>
+              !
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <h3 id="expense-removal-title" style={{ margin: "1px 0 7px", fontSize: 21 }}>Remove expense?</h3>
+              <p id="expense-removal-description" style={{ margin: 0, color: MUTED, fontSize: 13, lineHeight: 1.6 }}>
+                You’re about to remove this expense from your Finance records.
+              </p>
+            </div>
+          </div>
+          <div style={{ marginTop: 20, padding: 16, borderRadius: 11, border: "1px solid " + BORDER, background: "rgba(255,255,255,.035)" }}>
+            <strong style={{ display: "block", fontSize: 25, letterSpacing: "-.02em" }}>{formatCurrency(pendingExpenseRemoval.amount)}</strong>
+            <div style={{ marginTop: 6, color: MUTED, fontSize: 12 }}>
+              {formatInvoiceDate(pendingExpenseRemoval.date)} · {pendingExpenseRemoval.category || "Other"}
+            </div>
+            {pendingExpenseRemoval.description && (
+              <div style={{ marginTop: 8, fontSize: 13, overflowWrap: "anywhere" }}>{pendingExpenseRemoval.description}</div>
+            )}
+          </div>
+          <p style={{ margin: "15px 0 0", color: "#FFB0B0", fontSize: 12, lineHeight: 1.5 }}>This action cannot be undone.</p>
+          {error && <p role="alert" style={{ margin: "12px 0 0", color: "#FFB0B0", fontSize: 12 }}>{error}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, flexWrap: "wrap", marginTop: 22 }}>
+            <button type="button" onClick={() => setPendingExpenseRemoval(null)} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep expense</button>
+            <button type="button" onClick={confirmDeleteExpense} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#B93838", border: "1px solid #D95757", opacity: saving ? .65 : 1 }}>
+              {saving ? "Removing…" : "Yes, remove expense"}
+            </button>
+          </div>
+        </section>
+      </div>
+    )}
 
     <section
       id="finance-reporting"
