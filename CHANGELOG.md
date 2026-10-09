@@ -3441,3 +3441,14 @@ All notable changes to Chrysalis are recorded here.
 - [x] Preserve person → job → appointment relationships in the real account
 - [x] Give Buddi relationship-aware workflow context for real businesses
 - [x] Keep invoice → payment linkage anchored to the selected client invoice
+
+## BizziBuddi Reports — Selection-First Download Flow
+
+### Improved
+
+- Moved CSV, JSON and PDF downloads below the reporting-period controls so users choose the report range before exporting.
+- Added clear Step 1 (Report Range) and Step 2 (Download) labels.
+- Added explanatory copy showing the exact date range included in downloads.
+- Disabled download actions while report data is loading or refreshing, preventing export of a stale period.
+- Kept refresh alongside the download actions, using the selected date range.
+
