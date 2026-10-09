@@ -109,17 +109,26 @@ export default function BizzibuddiAccountPage() {
     const scrollToTarget = () => {
       if (cancelled) return;
       const element = document.getElementById(workspaceScrollTarget);
+
       if (element) {
+        // Some workspace views (including Reports) mount their target only after
+        // account data has loaded. Wait for the target and the sticky nav layout
+        // instead of giving up after a short, fixed delay.
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
         const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 16;
-        window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: "auto" });
         setWorkspaceScrollTarget("");
         return;
       }
+
       attempts += 1;
-      if (attempts < 20) timer = window.setTimeout(scrollToTarget, 50);
-      else setWorkspaceScrollTarget("");
+      if (attempts < 100) {
+        timer = window.setTimeout(scrollToTarget, 50);
+      } else {
+        setWorkspaceScrollTarget("");
+      }
     };
 
     const frame = window.requestAnimationFrame(scrollToTarget);
