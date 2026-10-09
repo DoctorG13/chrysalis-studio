@@ -6492,7 +6492,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
       <article style={{ ...reportCard, marginTop: 18 }}>
         <div style={reportCardHeading}>
-          <div><small style={smallText}>REPORTING PERIOD</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Choose the dates to analyse</strong></div>
+          <div><small style={{ ...smallText, color: CYAN, fontWeight: 800, letterSpacing: ".08em" }}>STEP 1 · REPORT RANGE</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Choose the dates to analyse</strong><span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 12 }}>The report updates for this period. Then download it in your preferred format below.</span></div>
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end", marginTop: 14 }}>
           <label style={{ ...fieldStyle, flex: "1 1 190px" }}>Date range
