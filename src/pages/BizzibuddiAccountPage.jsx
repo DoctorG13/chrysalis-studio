@@ -5835,10 +5835,76 @@ function formatProductionDate(date) {
   return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 }
 
+function getReportsDateRange(mode, financialYearStart, customStart, customEnd) {
+  const today = new Date();
+  const iso = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  if (mode === "custom") return { startDate: customStart || iso(monthStart), endDate: customEnd || iso(today) };
+  if (mode === "last-month") {
+    const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const end = new Date(today.getFullYear(), today.getMonth(), 0);
+    return { startDate: iso(start), endDate: iso(end) };
+  }
+  if (mode === "last-3-months") return { startDate: iso(new Date(today.getFullYear(), today.getMonth() - 2, 1)), endDate: iso(today) };
+  if (mode === "financial-year") return { startDate: `${financialYearStart}-07-01`, endDate: `${Number(financialYearStart) + 1}-06-30` };
+  if (mode === "this-financial-year") {
+    const startYear = today.getMonth() >= 6 ? today.getFullYear() : today.getFullYear() - 1;
+    return { startDate: `${startYear}-07-01`, endDate: iso(today) };
+  }
+  if (mode === "all-time") return { startDate: "2000-01-01", endDate: iso(today) };
+  return { startDate: iso(monthStart), endDate: iso(today) };
+}
+
+function downloadReportJson(reportData) {
+  const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `bizzibuddi-report-${reportData.period?.startDate || "all"}-to-${reportData.period?.endDate || "today"}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function exportBizziBuddiReportPdf(reportData) {
+  const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1000,height=800");
+  if (!printWindow) {
+    window.alert("Please allow pop-ups for BizziBuddi to create a PDF report.");
+    return;
+  }
+  const rows = [
+    ["Report period", `${reportData.period?.startDate || "—"} to ${reportData.period?.endDate || "—"}`],
+    ["People (current)", reportData.people?.total ?? 0],
+    ["Open jobs (current)", reportData.jobs?.open ?? 0],
+    ["Upcoming appointments (current)", reportData.calendar?.upcoming ?? 0],
+    ["Outstanding balance (current)", `${Number(reportData.finance?.outstanding || 0).toFixed(2)}`],
+    ["People added in period", reportData.periodSummary?.peopleCreated ?? 0],
+    ["Jobs created in period", reportData.periodSummary?.jobsCreated ?? 0],
+    ["Appointments in period", reportData.periodSummary?.appointments ?? 0],
+    ["Invoiced in period", `${Number(reportData.periodSummary?.totalInvoiced || 0).toFixed(2)}`],
+    ["Payments received in period", `${Number(reportData.periodSummary?.totalPaid || 0).toFixed(2)}`],
+  ];
+  const escapeHtml = (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+  printWindow.document.write(`<!doctype html><html><head><title>BizziBuddi Report</title><style>body{font:14px Arial,sans-serif;color:#172b3a;margin:32px}h1{margin-bottom:4px}p{color:#526575}table{border-collapse:collapse;width:100%;margin-top:24px}td,th{text-align:left;padding:10px;border-bottom:1px solid #d7e0e8}th{background:#edf3f7}@media print{button{display:none}}</style></head><body><h1>BizziBuddi Business Report</h1><p>Generated ${escapeHtml(reportData.generatedAt || "")}</p><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${rows.map(([label,value])=>`<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`).join("")}</tbody></table><h2>Monthly activity</h2><table><thead><tr><th>Month</th><th>People</th><th>Jobs</th><th>Appointments</th><th>Invoiced</th><th>Paid</th></tr></thead><tbody>${(reportData.monthlyStatistics || []).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.newPeople}</td><td>${m.jobsCreated}</td><td>${m.appointments}</td><td>${Number(m.invoiced||0).toFixed(2)}</td><td>${Number(m.paid||0).toFixed(2)}</td></tr>`).join("")}</tbody></table><p>Current balances and workload are current snapshot figures; period activity is limited to the selected dates.</p><script>window.onload=()=>window.print()</script></body></html>`);
+  printWindow.document.close();
+}
+
 function exportBizziBuddiReportCsv(reportData) {
   const rows = [
     ["BizziBuddi Report", ""],
     ["Generated", reportData.generatedAt || ""],
+    ["Selected period", `${reportData.period?.startDate || ""} to ${reportData.period?.endDate || ""}`],
+    ["Period activity", "People added", reportData.periodSummary?.peopleCreated ?? 0],
+    ["Period activity", "Jobs created", reportData.periodSummary?.jobsCreated ?? 0],
+    ["Period activity", "Appointments", reportData.periodSummary?.appointments ?? 0],
+    ["Period activity", "Invoiced", reportData.periodSummary?.totalInvoiced ?? 0],
+    ["Period activity", "Payments received", reportData.periodSummary?.totalPaid ?? 0],
     ["" , ""],
     ["People", "Total", reportData.people?.total ?? 0],
     ["Jobs", "Total", reportData.jobs?.total ?? 0],
@@ -6276,10 +6342,18 @@ function getFinancialYearLabel(startYear) {
 
 
 function ReportsPanel({ account, onPlans, onBack }) {
+  const currentYear = new Date().getFullYear();
+  const currentFinancialYearStart = new Date().getMonth() >= 6 ? currentYear : currentYear - 1;
   const [reportData, setReportData] = useState(null);
   const [reportError, setReportError] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [reportRangeMode, setReportRangeMode] = useState("this-financial-year");
+  const [financialYearStart, setFinancialYearStart] = useState(String(currentFinancialYearStart));
+  const [customStart, setCustomStart] = useState(`${currentFinancialYearStart}-07-01`);
+  const [customEnd, setCustomEnd] = useState(new Date().toISOString().slice(0, 10));
+  const reportRange = getReportsDateRange(reportRangeMode, financialYearStart, customStart, customEnd);
+  const reportUrl = `/api/bizzibuddi/auth/reports?start=${encodeURIComponent(reportRange.startDate)}&end=${encodeURIComponent(reportRange.endDate)}`;
   const available = hasBizzibuddiFeature(account?.plan, "reports");
 
   useEffect(() => {
@@ -6292,7 +6366,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
       setReportError("");
 
       try {
-        const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/reports");
+        const result = await bizzibuddiAuthRequest(reportUrl);
         if (!active) return;
         setReportData(result?.reports || null);
       } catch (error) {
@@ -6311,7 +6385,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
     return () => {
       active = false;
     };
-  }, [account?.id, available]);
+  }, [account?.id, available, reportRange.startDate, reportRange.endDate]);
 
   if (!available) {
     return (
@@ -6394,7 +6468,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
     );
   }
 
-  const { jobs, calendar, finance, production, insights, monthlyStatistics = [], businessInsights = [] } = reportData;
+  const { jobs, calendar, finance, production, insights, monthlyStatistics = [], businessInsights = [], periodSummary = {} } = reportData;
   const jobStatusGroups = jobs.statusGroups || [];
   const productionStageGroups = production.stageGroups || [];
 
@@ -6414,14 +6488,14 @@ function ReportsPanel({ account, onPlans, onBack }) {
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button type="button" onClick={() => exportBizziBuddiReportCsv(reportData)} style={smallActionButton}>
-            ↓ Export CSV
-          </button>
+          <button type="button" onClick={() => exportBizziBuddiReportCsv(reportData)} style={smallActionButton}>↓ Export CSV</button>
+          <button type="button" onClick={() => downloadReportJson(reportData)} style={smallActionButton}>↓ Export JSON</button>
+          <button type="button" onClick={() => exportBizziBuddiReportPdf(reportData)} style={smallActionButton}>↓ Export PDF</button>
           <button type="button" disabled={refreshing} onClick={async () => {
             setRefreshing(true);
             setReportError("");
             try {
-              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/reports");
+              const result = await bizzibuddiAuthRequest(reportUrl);
               setReportData(result?.reports || null);
             } catch (error) {
               setReportError(error instanceof Error ? error.message : "Unable to refresh reports.");
@@ -6433,6 +6507,29 @@ function ReportsPanel({ account, onPlans, onBack }) {
           </button>
         </div>
       </div>
+
+      <article style={{ ...reportCard, marginTop: 18 }}>
+        <div style={reportCardHeading}>
+          <div><small style={smallText}>REPORTING PERIOD</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Choose the dates to analyse</strong></div>
+        </div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end", marginTop: 14 }}>
+          <label style={{ ...fieldStyle, flex: "1 1 190px" }}>Date range
+            <select value={reportRangeMode} onChange={(event) => setReportRangeMode(event.target.value)} style={inputStyle}>
+              <option value="this-month">This month</option><option value="last-month">Last month</option><option value="last-3-months">Last 3 months</option><option value="this-financial-year">This financial year</option><option value="financial-year">Select financial year</option><option value="custom">Custom date range</option><option value="all-time">All activity (2000 to today)</option>
+            </select>
+          </label>
+          {reportRangeMode === "financial-year" && <label style={{ ...fieldStyle, flex: "1 1 190px" }}>Australian financial year
+            <select value={financialYearStart} onChange={(event) => setFinancialYearStart(event.target.value)} style={inputStyle}>
+              {Array.from({ length: 16 }, (_, index) => currentFinancialYearStart - index).map((year) => <option key={year} value={String(year)}>{getFinancialYearLabel(year)}</option>)}
+            </select>
+          </label>}
+          {reportRangeMode === "custom" && <><label style={{ ...fieldStyle, flex: "1 1 170px" }}>From <input type="date" value={customStart} max={customEnd || undefined} onChange={(event) => setCustomStart(event.target.value)} style={inputStyle} /></label><label style={{ ...fieldStyle, flex: "1 1 170px" }}>To <input type="date" value={customEnd} min={customStart || undefined} onChange={(event) => setCustomEnd(event.target.value)} style={inputStyle} /></label></>}
+          <div style={{ ...reportSummaryCard, flex: "2 1 300px" }}><small style={smallText}>SELECTED PERIOD</small><strong style={{ display: "block", marginTop: 5 }}>{reportRange.startDate} – {reportRange.endDate}</strong><span style={smallText}>Period activity is filtered; balances and open workload below are current.</span></div>
+        </div>
+        <div style={{ ...reportSummaryGrid, marginTop: 14 }}>
+          {[["PEOPLE ADDED", periodSummary.peopleCreated ?? 0], ["JOBS CREATED", periodSummary.jobsCreated ?? 0], ["APPOINTMENTS", periodSummary.appointments ?? 0], ["INVOICED IN PERIOD", formatCurrency(periodSummary.totalInvoiced)], ["PAYMENTS IN PERIOD", formatCurrency(periodSummary.totalPaid)]].map(([label, value]) => <div key={label} style={reportSummaryCard}><small style={smallText}>{label}</small><strong style={reportSummaryValue}>{value}</strong></div>)}
+        </div>
+      </article>
 
       <div id="reports-summary" style={reportSummaryGrid}>
         <div style={reportSummaryCard}>
