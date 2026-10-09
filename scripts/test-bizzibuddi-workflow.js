@@ -72,10 +72,20 @@ for (const [method, marker] of routeContracts) {
   ["Reports", 'selectView("reports")'],
   ["Buddi", 'setView("buddi")'],
   ["persistent account loading", "/api/bizzibuddi/auth/reports"],
+
+  ["Reports date range selector", "getReportsDateRange"],
+  ["selectable Australian financial years", "financial-year"],
+  ["PDF report export", "exportBizziBuddiReportPdf"],
+  ["JSON report export", "downloadReportJson"],
+  ["CSV report export", "Export CSV"],
   ["production persistence", "/api/bizzibuddi/auth/production"],
   ["job timeline", "/api/bizzibuddi/auth/jobs/"],
   ["measurement history", "/api/bizzibuddi/auth/people/"],
 ].forEach(([name, marker]) => assertContains(page, marker, name));
+
+
+assertContains(read("server/bizzibuddi-auth.js"), "periodSummary", "date-filtered report summary");
+assertContains(read("server/bizzibuddi-auth.js"), "getMonthlyBizziBuddiStatistics(userId, now, { start: periodStart, end: periodEnd })", "monthly statistics follow selected report period");
 
 assertContains(page, "Promise.allSettled", "concurrent legacy production migration");
 assertContains(page, "aria-live=\"polite\"", "accessible status messaging");
