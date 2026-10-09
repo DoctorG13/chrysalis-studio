@@ -56,6 +56,15 @@ const routeContracts = [
   ["POST", "/api/bizzibuddi/auth/logout"],
 ];
 
+
+assertContains(page, "getReportsDateRange", "Reports date range selector");
+assertContains(page, "financial-year", "selectable Australian financial years");
+assertContains(page, "exportBizziBuddiReportPdf", "PDF report export");
+assertContains(page, "downloadReportJson", "JSON report export");
+assertContains(page, "Export CSV", "CSV report export");
+assertContains(auth, "periodSummary", "date-filtered report summary");
+assertContains(auth, "getMonthlyBizziBuddiStatistics(userId, now, { start: periodStart, end: periodEnd })", "monthly statistics follow selected report period");
+
 for (const [method, marker] of routeContracts) {
   assertContains(auth, `request.method === "${method}"`, `${method} route handling`);
   assertContains(auth, marker, `${method} ${marker}`);
@@ -73,11 +82,6 @@ for (const [method, marker] of routeContracts) {
   ["Buddi", 'setView("buddi")'],
   ["persistent account loading", "/api/bizzibuddi/auth/reports"],
 
-  ["Reports date range selector", "getReportsDateRange"],
-  ["selectable Australian financial years", "financial-year"],
-  ["PDF report export", "exportBizziBuddiReportPdf"],
-  ["JSON report export", "downloadReportJson"],
-  ["CSV report export", "Export CSV"],
   ["production persistence", "/api/bizzibuddi/auth/production"],
   ["job timeline", "/api/bizzibuddi/auth/jobs/"],
   ["measurement history", "/api/bizzibuddi/auth/people/"],
