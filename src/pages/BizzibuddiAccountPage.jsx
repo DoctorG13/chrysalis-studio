@@ -6490,9 +6490,24 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
       </div>
 
-      <article style={{ ...reportCard, marginTop: 18 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 20, marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(0,180,219,.65)", background: "rgba(0,180,219,.12)", flex: "1 1 230px" }}>
+          <span style={{ display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: "50%", background: CYAN, color: "#062338", fontWeight: 900, flexShrink: 0 }}>1</span>
+          <span><strong style={{ display: "block", fontSize: 14 }}>Choose report period</strong><small style={{ color: MUTED }}>Select dates or a financial year</small></span>
+        </div>
+        <span aria-hidden="true" style={{ color: MUTED, fontSize: 20, fontWeight: 800 }}>→</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,.15)", background: "rgba(255,255,255,.035)", flex: "1 1 230px" }}>
+          <span style={{ display: "grid", placeItems: "center", width: 30, height: 30, borderRadius: "50%", border: "1px solid rgba(255,255,255,.3)", color: "inherit", fontWeight: 900, flexShrink: 0 }}>2</span>
+          <span><strong style={{ display: "block", fontSize: 14 }}>Download report</strong><small style={{ color: MUTED }}>CSV, PDF or JSON below</small></span>
+        </div>
+      </div>
+
+      <article style={{ ...reportCard, marginTop: 0, border: "1px solid rgba(0,180,219,.55)", background: "linear-gradient(135deg, rgba(0,180,219,.09), rgba(255,255,255,.025))", padding: 20 }}>
         <div style={reportCardHeading}>
-          <div><small style={{ ...smallText, color: CYAN, fontWeight: 800, letterSpacing: ".08em" }}>STEP 1 · REPORT RANGE</small><strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Choose the dates to analyse</strong><span style={{ display: "block", marginTop: 4, color: MUTED, fontSize: 12 }}>The report updates for this period. Then download it in your preferred format below.</span></div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <span style={{ display: "grid", placeItems: "center", width: 38, height: 38, borderRadius: 11, background: CYAN, color: "#062338", fontSize: 18, fontWeight: 900, flexShrink: 0 }}>1</span>
+            <div><strong style={{ display: "block", fontSize: 20 }}>Choose your report period</strong><span style={{ display: "block", marginTop: 5, color: MUTED, fontSize: 13 }}>Start here. Pick a date range or Australian financial year; the figures and downloads will use this selection.</span></div>
+          </div>
         </div>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end", marginTop: 14 }}>
           <label style={{ ...fieldStyle, flex: "1 1 190px" }}>Date range
