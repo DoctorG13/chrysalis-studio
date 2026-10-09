@@ -6527,7 +6527,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
           <div style={{ ...reportSummaryCard, flex: "2 1 300px" }}><small style={smallText}>SELECTED PERIOD</small><strong style={{ display: "block", marginTop: 5 }}>{reportRange.startDate} – {reportRange.endDate}</strong><span style={smallText}>Period activity is filtered; balances and open workload below are current.</span></div>
         </div>
         <div style={{ ...reportSummaryGrid, marginTop: 14 }}>
-          {[["PEOPLE ADDED", periodSummary.peopleCreated ?? 0], ["JOBS CREATED", periodSummary.jobsCreated ?? 0], ["APPOINTMENTS", periodSummary.appointments ?? 0], ["INVOICED IN PERIOD", formatCurrency(periodSummary.totalInvoiced)], ["PAYMENTS IN PERIOD", formatCurrency(periodSummary.totalPaid)]].map(([label, value]) => <div key={label} style={reportSummaryCard}><small style={smallText}>{label}</small><strong style={reportSummaryValue}>{value}</strong></div>)}
+          {[["PEOPLE ADDED", periodSummary.peopleCreated ?? 0], ["JOBS CREATED", periodSummary.jobsCreated ?? 0], ["APPOINTMENTS", periodSummary.appointments ?? 0], ["INVOICED IN PERIOD", formatCurrency(periodSummary.totalInvoiced)], ["PAYMENTS IN PERIOD", formatCurrency(periodSummary.totalPaid)], ["PRODUCTION COMPLETED", periodSummary.productionCompleted ?? 0]].map(([label, value]) => <div key={label} style={reportSummaryCard}><small style={smallText}>{label}</small><strong style={reportSummaryValue}>{value}</strong></div>)}
         </div>
       </article>
 
@@ -6734,7 +6734,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
           <div>
             <small style={smallText}>MONTHLY STATISTICS</small>
             <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>
-              Last 12 months
+              Monthly activity in selected period
             </strong>
           </div>
           <span style={reportMetric}>{monthlyStatistics.length}</span>
