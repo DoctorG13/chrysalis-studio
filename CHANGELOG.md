@@ -1,3 +1,15 @@
+## BizziBuddi — Reports Date Ranges and Export Formats
+
+### Added
+- Added report periods for this month, last month, last three months, current Australian financial year, selectable prior financial years, custom dates, and all-time activity.
+- Added period-based counts and financial activity while keeping current balances and workload clearly identified as current snapshots.
+- Made monthly statistics follow the selected period, including historical financial years.
+- Added PDF (print-to-PDF) and JSON export alongside CSV; exports include selected-period context.
+
+### Notes
+- PDF export uses the browser print dialog; choose “Save as PDF”.
+- No third-party PDF dependency was added.
+
 ## BizziBuddi — Reference Logo Integration
 
 ### Changed
