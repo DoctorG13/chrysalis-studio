@@ -6520,7 +6520,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
         </div>
       </div>
 
-      <article style={{ ...reportCard, marginTop: 0, border: "1px solid rgba(0,180,219,.55)", background: "linear-gradient(135deg, rgba(0,180,219,.09), rgba(255,255,255,.025))", padding: 20 }}>
+      <article id="reports-period-selector" style={{ ...reportCard, marginTop: 0, border: "1px solid rgba(0,180,219,.55)", background: "linear-gradient(135deg, rgba(0,180,219,.09), rgba(255,255,255,.025))", padding: 20 }}>
         <div style={reportCardHeading}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <span style={{ display: "grid", placeItems: "center", width: 38, height: 38, borderRadius: 11, background: CYAN, color: "#062338", fontSize: 18, fontWeight: 900, flexShrink: 0 }}>1</span>
@@ -11081,7 +11081,7 @@ const workspaceSubnav = {
     ["cashflow", "Cashflow Outlook", "finance", "finance-cashflow"],
   ],
   insights: [
-    ["reports", "Reports", "reports", "reports-summary"],
+    ["reports", "Reports", "reports", "reports-period-selector"],
     ["performance", "Performance", "reports", "reports-performance"],
     ["trends", "Trends", "reports", "reports-trends"],
   ],
