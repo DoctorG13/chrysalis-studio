@@ -102,7 +102,7 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "parseN
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "requestedPersonName", "account Buddi requested-person parsing");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Create new client", "account Buddi unmatched-client creation option");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "onAddPerson", "account Buddi new-client persistence integration");
-assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "could not match", "account Buddi unresolved-person save guard");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Please select an existing person or create a new client before saving.", "account Buddi unresolved-person save guard");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "isJobRequest", "account Buddi job command routing");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "confirmCreateJob", "account Buddi job confirmation");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Nothing changes until you confirm.", "account Buddi confirmation guard");
