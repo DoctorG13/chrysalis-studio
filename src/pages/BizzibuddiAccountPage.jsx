@@ -5873,7 +5873,7 @@ function downloadReportJson(reportData) {
 }
 
 function exportBizziBuddiReportPdf(reportData) {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer,width=1000,height=800");
+  const printWindow = window.open("", "_blank", "width=1000,height=800");
   if (!printWindow) {
     window.alert("Please allow pop-ups for BizziBuddi to create a PDF report.");
     return;
