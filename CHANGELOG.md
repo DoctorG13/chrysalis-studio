@@ -1,3 +1,13 @@
+## BizziBuddi — Atomic Payment Audit Events
+
+### Fixed
+
+- Record payment-created, payment-updated, and payment-removed activity events within the same database transaction as the corresponding payment and invoice changes.
+- Roll back the payment/invoice mutation if its audit event cannot be recorded, preventing a failed request from leaving a changed payment without its matching activity entry.
+- Preserve existing payment validation, invoice balance recalculation, and Payment Activity details.
+
+---
+
 ## BizziBuddi — Overdue Invoice Due Signal
 
 ### Fixed
