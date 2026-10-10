@@ -8553,7 +8553,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               </span>
               {invoice.status !== "Paid" && (
                 <span style={invoiceDueSignal(invoice, todayKey)}>
-                  {invoice.status === "Overdue"
+                  {invoice.status === "Overdue" || (invoice.dueDate && invoice.dueDate < todayKey)
                     ? "Payment overdue"
                     : invoice.dueDate === todayKey
                       ? "Due today"
