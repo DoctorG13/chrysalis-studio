@@ -1265,7 +1265,7 @@ function issueInvoice(userId, invoiceId) {
 function recordInvoicePayment(userId, invoiceId, payload = {}) {
   const invoice = getDatabase()
     .prepare(
-      `SELECT id, amount, status, due_date
+      `SELECT id, number, amount, status, due_date
        FROM bizzibuddi_invoices
        WHERE id = ? AND user_id = ?`
     )
@@ -1352,6 +1352,22 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
        WHERE id = ? AND user_id = ?`
     ).run(nextStatus, now, invoiceId, userId);
 
+    createAutomationEvent(userId, {
+      type: "finance-payment-recorded",
+      title: "Payment recorded",
+      detail:
+        formatPaymentAuditCurrency(Number(amount) || 0) +
+        " payment recorded on " +
+        (invoice.number || invoiceId) +
+        " · " +
+        formatPaymentAuditDate(date) +
+        " · " +
+        method +
+        (description ? " · " + description : "") +
+        ".",
+      sourceKey: "finance-payment:recorded:" + payment.id + ":" + invoiceId,
+    });
+
     database.exec("COMMIT");
   } catch (error) {
     database.exec("ROLLBACK");
@@ -1372,22 +1388,6 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
   const resultInvoice = toInvoice({
     ...updatedInvoice,
     payments: getInvoicePayments(userId, invoiceId),
-  });
-
-  createAutomationEvent(userId, {
-    type: "finance-payment-recorded",
-    title: "Payment recorded",
-    detail:
-      formatPaymentAuditCurrency(Number(amount) || 0) +
-      " payment recorded on " +
-      (updatedInvoice.number || invoiceId) +
-      " · " +
-      formatPaymentAuditDate(date) +
-      " · " +
-      method +
-      (description ? " · " + description : "") +
-      ".",
-    sourceKey: "finance-payment:recorded:" + payment.id + ":" + invoiceId,
   });
 
   return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, invoiceId) };
@@ -1476,6 +1476,19 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       )
       .run(nextStatus, now, actualInvoiceId, userId);
 
+    if (paymentChanges.length > 0) {
+      createAutomationEvent(userId, {
+        type: "finance-payment-updated",
+        title: "Payment updated",
+        detail:
+          (payment.invoice_number || actualInvoiceId) +
+          " · " +
+          paymentChanges.join(" · ") +
+          ".",
+        sourceKey: "finance-payment:updated:" + actualInvoiceId + ":" + paymentId + ":" + now,
+      });
+    }
+
     database.exec("COMMIT");
   } catch (error) {
     database.exec("ROLLBACK");
@@ -1536,19 +1549,6 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
     );
   }
 
-  if (paymentChanges.length > 0) {
-    createAutomationEvent(userId, {
-      type: "finance-payment-updated",
-      title: "Payment updated",
-      detail:
-        (payment.invoice_number || actualInvoiceId) +
-        " · " +
-        paymentChanges.join(" · ") +
-        ".",
-      sourceKey: "finance-payment:updated:" + actualInvoiceId + ":" + paymentId + ":" + now,
-    });
-  }
-
   return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, actualInvoiceId) };
 }
 
@@ -1607,6 +1607,22 @@ function deleteInvoicePayment(userId, paymentId) {
       )
       .run(nextStatus, now, payment.invoice_id, userId);
 
+    createAutomationEvent(userId, {
+      type: "finance-payment-removed",
+      title: "Payment removed",
+      detail:
+        formatPaymentAuditCurrency(Number(payment.amount) || 0) +
+        " payment removed from " +
+        (payment.invoice_number || payment.invoice_id) +
+        " · " +
+        formatPaymentAuditDate(payment.date) +
+        " · " +
+        String(payment.method || "Other") +
+        (payment.description ? " · " + payment.description : "") +
+        ".",
+      sourceKey: "finance-payment:removed:" + payment.invoice_id + ":" + paymentId + ":" + now,
+    });
+
     database.exec("COMMIT");
   } catch (error) {
     database.exec("ROLLBACK");
@@ -1623,22 +1639,6 @@ function deleteInvoicePayment(userId, paymentId) {
        WHERE invoices.id = ? AND invoices.user_id = ?`
     )
     .get(payment.invoice_id, userId);
-
-  createAutomationEvent(userId, {
-    type: "finance-payment-removed",
-    title: "Payment removed",
-    detail:
-      formatPaymentAuditCurrency(Number(payment.amount) || 0) +
-      " payment removed from " +
-      (payment.invoice_number || payment.invoice_id) +
-      " · " +
-      formatPaymentAuditDate(payment.date) +
-      " · " +
-      String(payment.method || "Other") +
-      (payment.description ? " · " + payment.description : "") +
-      ".",
-    sourceKey: "finance-payment:removed:" + payment.invoice_id + ":" + paymentId + ":" + now,
-  });
 
   const resultInvoice = toInvoice({
     ...updatedInvoice,
