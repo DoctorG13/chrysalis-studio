@@ -1,3 +1,12 @@
+## BizziBuddi — Overdue Invoice Due Signal
+
+### Fixed
+
+- Display “Payment overdue” for unpaid invoices whose due date has passed, even if their stored status is still “Part Paid” or another non-paid status.
+- Preserve “Due today” and “Due soon” labels for invoices that have not passed their due date.
+
+---
+
 ## BizziBuddi — Finance Submenu Label Visibility
 
 ### Changed
