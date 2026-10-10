@@ -1,3 +1,12 @@
+## BizziBuddi — Payment Edit Initialization Fix
+
+### Fixed
+
+- Calculate payment edit differences before opening the database transaction, preventing a temporal-dead-zone error when saving payment edits.
+- Keep the payment-updated activity event inside the same transaction as the payment and invoice update.
+
+---
+
 ## BizziBuddi — Atomic Payment Audit Events
 
 ### Fixed
