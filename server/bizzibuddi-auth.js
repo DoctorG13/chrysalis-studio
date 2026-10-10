@@ -1440,6 +1440,44 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
     throw new Error("Please enter a valid payment date.");
   }
 
+  const paymentChanges = [];
+
+  if (Number(currentAmount) !== Number(amount)) {
+    paymentChanges.push(
+      "Amount " +
+      formatPaymentAuditCurrency(Number(currentAmount) || 0) +
+      " → " +
+      formatPaymentAuditCurrency(Number(amount) || 0)
+    );
+  }
+
+  if (String(payment.date || "") !== date) {
+    paymentChanges.push(
+      "Date " +
+      formatPaymentAuditDate(payment.date) +
+      " → " +
+      formatPaymentAuditDate(date)
+    );
+  }
+
+  if (String(payment.method || "Other") !== method) {
+    paymentChanges.push(
+      "Method " +
+      String(payment.method || "Other") +
+      " → " +
+      method
+    );
+  }
+
+  if (String(payment.description || "Payment") !== description) {
+    paymentChanges.push(
+      "Description " +
+      String(payment.description || "Payment") +
+      " → " +
+      description
+    );
+  }
+
   const now = new Date().toISOString();
   database.exec("BEGIN");
   try {
@@ -1510,44 +1548,6 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
     ...updatedInvoice,
     payments: getInvoicePayments(userId, actualInvoiceId),
   });
-
-  const paymentChanges = [];
-
-  if (Number(currentAmount) !== Number(amount)) {
-    paymentChanges.push(
-      "Amount " +
-      formatPaymentAuditCurrency(Number(currentAmount) || 0) +
-      " → " +
-      formatPaymentAuditCurrency(Number(amount) || 0)
-    );
-  }
-
-  if (String(payment.date || "") !== date) {
-    paymentChanges.push(
-      "Date " +
-      formatPaymentAuditDate(payment.date) +
-      " → " +
-      formatPaymentAuditDate(date)
-    );
-  }
-
-  if (String(payment.method || "Other") !== method) {
-    paymentChanges.push(
-      "Method " +
-      String(payment.method || "Other") +
-      " → " +
-      method
-    );
-  }
-
-  if (String(payment.description || "Payment") !== description) {
-    paymentChanges.push(
-      "Description " +
-      String(payment.description || "Payment") +
-      " → " +
-      description
-    );
-  }
 
   return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, actualInvoiceId) };
 }
