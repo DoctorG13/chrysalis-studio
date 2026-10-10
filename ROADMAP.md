@@ -1,3 +1,25 @@
+## Finance Acceptance Test — October 2026
+
+- [x] Verify Finance submenu navigation and Expenses & Outgoings visibility
+- [x] Verify expense recording, editing, removal confirmation and clean totals
+- [x] Verify payment editing persists and records a Payment Activity event
+- [x] Verify payment removal recalculates the invoice balance and preserves the audit trail
+- [x] Verify Revenue totals after payment removal
+- [x] Verify Cashflow Outlook totals after payment removal
+- [x] Refresh the application and confirm invoice balance and all three payment activity events persist
+- [x] Confirm the tested Finance figures match the acceptance-test expectations
+
+## Next Acceptance Milestone — Invoice Creation & Lifecycle
+
+- [ ] Create a new acceptance-test invoice through the existing UI
+- [ ] Confirm invoice number, amount, dates and status are correct
+- [ ] Refresh and confirm the invoice persists
+- [ ] Record payment against the invoice and verify its balance and Payment Activity
+- [ ] Mark the invoice paid where appropriate and verify final status and balance
+- [ ] Reconcile the resulting changes in Revenue and Cashflow Outlook
+
+---
+
 ## BizziBuddi Real-World Readiness — First-Day Experience
 
 - [x] Show a dedicated first-run welcome screen immediately after new-business setup
