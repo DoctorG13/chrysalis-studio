@@ -9,14 +9,24 @@
 - [x] Refresh the application and confirm invoice balance and all three payment activity events persist
 - [x] Confirm the tested Finance figures match the acceptance-test expectations
 
-## Next Acceptance Milestone — Invoice Creation & Lifecycle
+## Invoice Creation & Lifecycle Acceptance Test — October 2026
 
-- [ ] Create a new acceptance-test invoice through the existing UI
-- [ ] Confirm invoice number, amount, dates and status are correct
-- [ ] Refresh and confirm the invoice persists
-- [ ] Record payment against the invoice and verify its balance and Payment Activity
-- [ ] Mark the invoice paid where appropriate and verify final status and balance
-- [ ] Reconcile the resulting changes in Revenue and Cashflow Outlook
+- [x] Create an invoice through the existing UI (INV-478174, $40.00)
+- [x] Confirm invoice number, amount, issue date, due date and status
+- [x] Confirm the invoice remains available after navigation/refresh
+- [x] Record partial payments of $15.00 and $25.00
+- [x] Confirm payment activity records both payments
+- [x] Confirm the invoice shows $40.00 paid and a $0.00 balance
+- [x] Reconcile Finance totals: $165.00 received before the temporary $12.00 expense; $153.00 net while the expense existed; $165.00 net after its removal
+
+## Next Acceptance Milestone — Production Workflow
+
+- [ ] Verify the Production queue loads persisted jobs
+- [ ] Verify due-today and overdue filters against job dates
+- [ ] Verify ready and complete views reflect job stage/status
+- [ ] Update a production stage and confirm it persists after refresh
+- [ ] Complete a production task and confirm progress updates
+- [ ] Confirm Dashboard/Today and Buddi reflect the updated production state
 
 ---
 
