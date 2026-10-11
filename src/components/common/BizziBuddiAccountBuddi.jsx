@@ -679,6 +679,7 @@ function ThinkingIndicator() {
 
 export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onRecordPayment, onCreateInvoice, onBack }) {
   const [question, setQuestion] = useState("");
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [actionBusy, setActionBusy] = useState("");
@@ -1309,8 +1310,8 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
         <div style={welcomeCardStyle}>
           <div style={welcomeIconStyle}><BizziBuddiLogo size={26} showWordmark={false} /></div>
           <div>
-            <strong style={{ display: "block", marginBottom: 4 }}>Ask Buddi about your business.</strong>
-            <span>Buddi can use the information currently stored in this BizziBuddi account to explain what is happening, highlight what may need attention and point you to the right part of your workspace.</span>
+            <strong style={{ display: "block", marginBottom: 4 }}>How can I help today?</strong>
+            <span>Ask me anything about your business.</span>
           </div>
         </div>
 
@@ -1776,27 +1777,38 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
           </div>
         </div>
 
-        <div style={quickSectionStyle}>
-          <small style={quickLabelStyle}>TRY ASKING</small>
-          <div style={quickGridStyle}>
-            {prompts.map((prompt) => (
-              <button key={prompt} type="button" onClick={() => askBuddi(prompt)} disabled={isLoading} style={quickButtonStyle}>
-                {prompt}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <form onSubmit={(event) => { event.preventDefault(); askBuddi(question); }} style={composerStyle}>
+        <form onSubmit={(event) => { event.preventDefault(); askBuddi(question); }} style={{ ...composerStyle, marginTop: 16 }}>
           <input
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Ask Buddi something about your business…"
+            placeholder="Type your question here…"
             disabled={isLoading}
             style={inputStyle}
+            aria-label="Your question for Buddi"
           />
-          <button type="submit" disabled={!question.trim() || isLoading} style={sendButtonStyle} aria-label="Ask Buddi">↑</button>
+          <button type="submit" disabled={!question.trim() || isLoading} style={sendButtonStyle} aria-label="Send question to Buddi">↑</button>
         </form>
+
+        <div style={{ ...quickSectionStyle, marginTop: 12 }}>
+          <button
+            type="button"
+            onClick={() => setSuggestionsOpen((open) => !open)}
+            aria-expanded={suggestionsOpen}
+            style={{ ...textButtonStyle, display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12 }}
+          >
+            {suggestionsOpen ? "Hide frequently asked questions" : "Show frequently asked questions"}
+            <span aria-hidden="true">{suggestionsOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {suggestionsOpen && (
+            <div style={quickGridStyle}>
+              {prompts.map((prompt) => (
+                <button key={prompt} type="button" onClick={() => askBuddi(prompt)} disabled={isLoading} style={quickButtonStyle}>
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {isLoading && <ThinkingIndicator />}
 
