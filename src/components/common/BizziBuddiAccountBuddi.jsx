@@ -1794,7 +1794,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
             type="button"
             onClick={() => setSuggestionsOpen((open) => !open)}
             aria-expanded={suggestionsOpen}
-            style={{ ...textButtonStyle, display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 7, border: 0, padding: 0, background: "transparent", color: "#00B4DB", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
           >
             {suggestionsOpen ? "Hide frequently asked questions" : "Show frequently asked questions"}
             <span aria-hidden="true">{suggestionsOpen ? "⌃" : "⌄"}</span>
