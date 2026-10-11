@@ -2,6 +2,22 @@ import { useEffect, useMemo, useState } from "react";
 import BizziBuddiLogo from "./BizziBuddiLogo";
 import { buildBizziBuddiIntelligence } from "../../utils/bizzibuddiIntelligence";
 
+function getLiveInfoRequest(question) {
+  const value = String(question || "").trim();
+  const asksWeather = /\b(weather|forecast|temperature|rain(?:ing)?|windy|chance of rain)\b/i.test(value);
+  const asksTime = /\b(what time|current time|time is it|local time|world clock|time in)\b/i.test(value);
+  if (!asksWeather && !asksTime) return null;
+  const kind = asksWeather ? "weather" : "time";
+  const patterns = [
+    /\b(?:weather|forecast|temperature|rain(?:ing)?|windy|chance of rain)\b\s+(?:today\s+)?(?:in|for|at)\s+(.+?)\??$/i,
+    /\b(?:in|for|at)\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ.\x27 -]*(?:,\s*[A-Z][A-Za-zÀ-ÖØ-öø-ÿ.\x27 -]*)?)\??$/,
+    /\b(?:what time is it|what is the time|current time|local time|world clock)\s+(?:in|for|at)\s+(.+?)\??$/i,
+  ];
+  let location = "";
+  for (const pattern of patterns) { const match = value.match(pattern); if (match?.[1]) { location = match[1].trim().replace(/[?.!]+$/, ""); break; } }
+  return { kind, location };
+}
+
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -1146,6 +1162,21 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     if (!value || isLoading) return;
 
     setQuestion("");
+
+    const liveInfoRequest = getLiveInfoRequest(value);
+    if (liveInfoRequest) {
+      setIsLoading(true);
+      setJobDraft(null); setAppointmentDraft(null); setPaymentDraft(null); setInvoiceDraft(null); setNewClientDraft(null); setJobMessage("");
+      try {
+        const response = await fetch("/api/donna/live-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(liveInfoRequest) });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.error || "Live information is temporarily unavailable.");
+        setConversation((current) => [{ question: value, answer: payload.answer || "I couldn’t retrieve that information.", actions: [] }, ...current].slice(0, 8));
+      } catch (error) {
+        setConversation((current) => [{ question: value, answer: error.message || "I couldn’t retrieve live information right now.", actions: [] }, ...current].slice(0, 8));
+      } finally { setIsLoading(false); }
+      return;
+    }
 
     const isJobRequest = /^(?:please\s+)?(?:create|add|new)\s+(?:a\s+|an\s+)?(?:new\s+)?job\b/i.test(value);
     const isAppointmentRequest =
