@@ -1,3 +1,14 @@
+## BizziBuddi — Ask Buddi Welcome and Optional Suggestions
+
+### Improved
+
+- Simplified the welcome message and placed the question composer immediately beneath it.
+- Moved frequently asked questions below the composer and made them collapsed by default behind “Show frequently asked questions”.
+- Kept normal Ask Buddi opening idle; explicit dashboard prompts and clicked suggestions continue to submit as intended.
+- Preserved conversation history, business-aware responses, and existing navigation actions.
+
+---
+
 ## BizziBuddi — Finance and Invoice Lifecycle Acceptance
 
 ### Verified
