@@ -1,3 +1,20 @@
+## BizziBuddi — Live Information Foundation: World Clock and Weather
+
+### Added
+
+- Added a dedicated live-information endpoint for current local time and weather/short forecasts, separate from business-record actions and general AI responses.
+- Added city lookup with time-zone-aware clock responses and current weather plus a three-day forecast, including temperatures, wind, humidity, and precipitation.
+- Routed clear time and weather questions from Ask Buddi to live data rather than relying on model-generated guesses.
+- Kept the endpoint extensible for additional live-information providers and categories.
+
+### Notes
+
+- Live lookups require a city or town; when the location is missing, Buddi asks the user to specify one.
+- Weather data is provided by Open-Meteo. Internet access is required on the server.
+- This commit has not been locally built or browser-acceptance-tested in this environment.
+
+---
+
 ## BizziBuddi — Ask Buddi Welcome and Optional Suggestions
 
 ### Improved
