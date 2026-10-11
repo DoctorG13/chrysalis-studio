@@ -1,3 +1,14 @@
+## BizziBuddi — Finance and Invoice Lifecycle Acceptance
+
+### Verified
+
+- Completed the Finance acceptance workflow for recording, editing, and removing expenses, including removal confirmation and persistence after refresh.
+- Verified payment activity for recording, editing, and removing payments, including invoice-balance recalculation and audit history.
+- Completed the invoice lifecycle check for INV-478174: created a $40.00 invoice, recorded $15.00 and $25.00 payments, and confirmed the invoice reached Paid with a $0.00 balance.
+- Reconciled cashflow figures during testing: $165.00 received, $12.00 temporary test expense, $153.00 net while the expense existed, and $165.00 net after removal.
+
+---
+
 ## BizziBuddi — Payment Edit Initialization Fix
 
 ### Fixed
