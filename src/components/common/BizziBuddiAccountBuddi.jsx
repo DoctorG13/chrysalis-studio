@@ -14,7 +14,7 @@ function getLiveInfoRequest(question) {
     /\b(?:what time is it|what is the time|current time|local time|world clock)\s+(?:in|for|at)\s+(.+?)\??$/i,
   ];
   let location = "";
-  for (const pattern of patterns) { const match = value.match(pattern); if (match?.[1]) { location = match[1].trim().replace(/[?.!]+$/, ""); break; } }
+  for (const pattern of patterns) { const match = value.match(pattern); if (match?.[1]) { location = match[1].trim().replace(/[?.!]+$/, "").replace(/\\s+(?:today|tomorrow|tonight|right now|this week)$/i, ""); break; } }
   return { kind, location };
 }
 
