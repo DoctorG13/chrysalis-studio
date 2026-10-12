@@ -85,7 +85,7 @@ function formatPlaceTime(date, timeZone) {
 
 const weatherDescriptions = { 0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Depositing rime fog", 51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle", 56: "Light freezing drizzle", 57: "Dense freezing drizzle", 61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain", 66: "Light freezing rain", 67: "Heavy freezing rain", 71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow", 77: "Snow grains", 80: "Slight rain showers", 81: "Moderate rain showers", 82: "Violent rain showers", 85: "Slight snow showers", 86: "Heavy snow showers", 95: "Thunderstorm", 96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail" };
 
-async function getLiveInformation(kind, rawLocation) {
+async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
   const location = cleanLocation(rawLocation);
   if (!location) return { answer: kind === "weather" ? "Which city or town should I check the weather for? For example, “What’s the weather in Brisbane?”" : "Which city should I check the current time for? For example, “What time is it in London?”" };
   const place = await geocodeLocation(location);
@@ -108,7 +108,17 @@ async function getLiveInformation(kind, rawLocation) {
     const rain = weather.daily.precipitation_probability_max?.[i];
     lines.push("- " + day + ": " + desc + ", " + Math.round(weather.daily.temperature_2m_min[i]) + "–" + Math.round(weather.daily.temperature_2m_max[i]) + "°C" + (rain == null ? "" : ", up to " + rain + "% chance of precipitation") + ".");
   }
-  return { answer: lines.join("\n"), source: "Open-Meteo", updatedAt: current.time || now.toISOString(), timezone: timeZone };
+  const question = String(rawQuestion || "");
+  if (/\\b(likely|chance|probability|will it rain|rain likely)\\b/i.test(question) && /\\b(rain|precipitation)\\b/i.test(question)) {
+    const probability = weather.daily?.precipitation_probability_max?.[0];
+    if (probability != null) {
+      const likelihood = probability >= 50 ? "Rain is likely today" : probability >= 20 ? "Rain is possible today" : "Rain is unlikely today";
+      lines.splice(1, 0, likelihood + " in " + placeName + ": up to " + probability + "% chance of precipitation.");
+    } else {
+      lines.splice(1, 0, "I couldn’t determine today’s rain probability from the available forecast.");
+    }
+  }
+  return { answer: lines.join("\\n"), source: "Open-Meteo", updatedAt: current.time || now.toISOString(), timezone: timeZone };
 }
 
 const server = createServer(async (request, response) => {
@@ -122,7 +132,7 @@ const server = createServer(async (request, response) => {
       const body = JSON.parse(await readBody(request));
       const kind = body?.kind === "weather" ? "weather" : body?.kind === "time" ? "time" : "";
       if (!kind) { sendJson(response, 400, { error: "Choose either time or weather." }); return; }
-      sendJson(response, 200, await getLiveInformation(kind, body.location));
+      sendJson(response, 200, await getLiveInformation(kind, body.location, body.question));
     } catch (error) { sendJson(response, 502, { error: error.message || "Live information is temporarily unavailable." }); }
     return;
   }
