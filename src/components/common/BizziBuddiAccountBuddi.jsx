@@ -2,22 +2,38 @@ import { useEffect, useMemo, useState } from "react";
 import BizziBuddiLogo from "./BizziBuddiLogo";
 import { buildBizziBuddiIntelligence } from "../../utils/bizzibuddiIntelligence";
 
-function getLiveInfoRequest(question) {
+function getLiveInfoRequest(question, conversation = []) {
   const value = String(question || "").trim();
-  const asksWeather = /\b(weather|forecast|temperature|rain(?:ing)?|windy|chance of rain)\b/i.test(value);
-  const asksTime = /\b(what time|current time|time is it|local time|world clock|time in)\b/i.test(value);
-  if (!asksWeather && !asksTime) return null;
-  const kind = asksWeather ? "weather" : "time";
+  const asksWeather = /\\b(weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\\b/i.test(value);
+  const asksTime = /\\b(what time|current time|time is it|local time|world clock|time in)\\b/i.test(value);
+  const recentWeather = conversation.find((entry) => /\\b(weather|forecast|temperature|rain|raining|windy)\\b/i.test(String(entry.question || "")));
+  const previousLocationMatch = String(recentWeather?.question || "").match(/\\b(?:in|for|at)\\s+([A-Za-z][A-Za-z .,'-]*?)(?:\\s+(?:today|tomorrow|tonight|right now|this week))?\\??$/i);
+  const previousLocation = previousLocationMatch?.[1]?.trim().replace(/[?.!]+$/, "") || "";
+  const bareLocation = /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) && !/^(today|tomorrow|tonight|weather|forecast|time)$/i.test(value);
+  const currentWeatherFollowup = /^(?:current weather|weather|forecast)\\s*(?:[—-]\\s*)?[A-Za-z][A-Za-z .,'-]*$/i.test(value);
+  const contextualWeather = Boolean(previousLocation && (bareLocation || currentWeatherFollowup));
+  if (!asksWeather && !asksTime && !contextualWeather) return null;
+  const kind = asksTime && !asksWeather ? "time" : "weather";
   const patterns = [
-    /\b(?:weather|forecast|temperature|rain(?:ing)?|windy|chance of rain)\b\s+(?:today\s+)?(?:in|for|at)\s+(.+?)\??$/i,
-    /\b(?:in|for|at)\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ.\x27 -]*(?:,\s*[A-Z][A-Za-zÀ-ÖØ-öø-ÿ.\x27 -]*)?)\??$/,
-    /\b(?:what time is it|what is the time|current time|local time|world clock)\s+(?:in|for|at)\s+(.+?)\??$/i,
+    /\\b(?:weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\\b.*?\\b(?:in|for|at)\\s+(.+?)\\??$/i,
+    /\\b(?:in|for|at)\\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*(?:,\\s*[A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*)?)\\??$/,
+    /\\b(?:what time is it|what is the time|current time|local time|world clock)\\s+(?:in|for|at)\\s+(.+?)\\??$/i,
   ];
   let location = "";
-  for (const pattern of patterns) { const match = value.match(pattern); if (match?.[1]) { location = match[1].trim().replace(/[?.!]+$/, "").replace(/\s+(?:today|tomorrow|tonight|right now|this week)$/i, ""); break; } }
-  return { kind, location };
+  for (const pattern of patterns) {
+    const match = value.match(pattern);
+    if (match?.[1]) {
+      location = match[1].trim().replace(/[?.!]+$/, "").replace(/\\s+(?:today|tomorrow|tonight|right now|this week)$/i, "").trim();
+      break;
+    }
+  }
+  if (contextualWeather) {
+    const explicit = value.match(/^(?:current weather|weather|forecast)\\s*(?:[—-]\\s*)(.+?)\\??$/i);
+    location = explicit?.[1]?.trim() || (bareLocation ? value : previousLocation);
+  }
+  const asksRainLikelihood = /\\b(likely|chance|probability|will it rain|rain likely)\\b/i.test(value) && /\\b(rain|precipitation)\\b/i.test(value);
+  return { kind, location, question: value, asksRainLikelihood };
 }
-
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -1163,7 +1179,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
 
     setQuestion("");
 
-    const liveInfoRequest = getLiveInfoRequest(value);
+    const liveInfoRequest = getLiveInfoRequest(value, conversation);
     if (liveInfoRequest) {
       setIsLoading(true);
       setJobDraft(null); setAppointmentDraft(null); setPaymentDraft(null); setInvoiceDraft(null); setNewClientDraft(null); setJobMessage("");
@@ -1327,24 +1343,26 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     <section style={panelStyle}>
       <div style={panelHeaderStyle}>
         <button type="button" onClick={onBack} style={backButtonStyle}>← Back to business</button>
-        <div style={brandRowStyle}>
-          <BizziBuddiLogo size={48} showWordmark={false} />
-          <div>
-            <div style={eyebrowStyle}>BIZZIBUDDI ASSISTANT</div>
-            <h2 style={headingStyle}>Hi, I’m Buddi<span style={{ color: "#2563EB" }}>.</span></h2>
-            <p style={subheadingStyle}>Your personal assistant for business.</p>
+        <div style={assistantHeaderRowStyle}>
+          <div style={brandRowStyle}>
+            <BizziBuddiLogo size={48} showWordmark={false} />
+            <div>
+              <div style={eyebrowStyle}>BIZZIBUDDI ASSISTANT</div>
+              <h2 style={headingStyle}>Hi, I’m Buddi<span style={{ color: "#2563EB" }}>.</span></h2>
+              <p style={subheadingStyle}>Your personal assistant for business.</p>
+            </div>
+          </div>
+          <div style={welcomeCardStyle}>
+            <div style={welcomeIconStyle}><BizziBuddiLogo size={26} showWordmark={false} /></div>
+            <div>
+              <strong style={{ display: "block", marginBottom: 4 }}>How can I help today?</strong>
+              <span>Ask me anything about your business.</span>
+            </div>
           </div>
         </div>
       </div>
 
       <div style={contentStyle}>
-        <div style={welcomeCardStyle}>
-          <div style={welcomeIconStyle}><BizziBuddiLogo size={26} showWordmark={false} /></div>
-          <div>
-            <strong style={{ display: "block", marginBottom: 4 }}>How can I help today?</strong>
-            <span>Ask me anything about your business.</span>
-          </div>
-        </div>
 
         {productionAttentionJobs.length > 0 && (
           <div style={attentionCardStyle}>
@@ -2018,11 +2036,21 @@ const backButtonStyle = {
   cursor: "pointer",
 };
 
+const assistantHeaderRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 22,
+  flexWrap: "wrap",
+  marginTop: 20,
+};
+
 const brandRowStyle = {
   display: "flex",
   alignItems: "center",
   gap: 14,
-  marginTop: 22,
+  flex: "1 1 340px",
+  minWidth: 0,
 };
 
 const eyebrowStyle = {
@@ -2060,6 +2088,9 @@ const welcomeCardStyle = {
   color: "#B8C6D6",
   fontSize: 13,
   lineHeight: 1.55,
+  flex: "1 1 280px",
+  minWidth: 0,
+  boxSizing: "border-box",
 };
 
 const welcomeIconStyle = {
