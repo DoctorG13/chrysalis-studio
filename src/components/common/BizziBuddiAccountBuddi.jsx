@@ -4,34 +4,34 @@ import { buildBizziBuddiIntelligence } from "../../utils/bizzibuddiIntelligence"
 
 function getLiveInfoRequest(question, conversation = []) {
   const value = String(question || "").trim();
-  const asksWeather = /\\b(weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\\b/i.test(value);
-  const asksTime = /\\b(what time|current time|time is it|local time|world clock|time in)\\b/i.test(value);
-  const recentWeather = conversation.find((entry) => /\\b(weather|forecast|temperature|rain|raining|windy)\\b/i.test(String(entry.question || "")));
-  const previousLocationMatch = String(recentWeather?.question || "").match(/\\b(?:in|for|at)\\s+([A-Za-z][A-Za-z .,'-]*?)(?:\\s+(?:today|tomorrow|tonight|right now|this week))?\\??$/i);
+  const asksWeather = /\b(weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\b/i.test(value);
+  const asksTime = /\b(what time|current time|time is it|local time|world clock|time in)\b/i.test(value);
+  const recentWeather = conversation.find((entry) => /\b(weather|forecast|temperature|rain|raining|windy)\b/i.test(String(entry.question || "")));
+  const previousLocationMatch = String(recentWeather?.question || "").match(/\b(?:in|for|at)\s+([A-Za-z][A-Za-z .,'-]*?)(?:\s+(?:today|tomorrow|tonight|right now|this week))?\??$/i);
   const previousLocation = previousLocationMatch?.[1]?.trim().replace(/[?.!]+$/, "") || "";
   const bareLocation = /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) && !/^(today|tomorrow|tonight|weather|forecast|time)$/i.test(value);
-  const currentWeatherFollowup = /^(?:current weather|weather|forecast)\\s*(?:[—-]\\s*)?[A-Za-z][A-Za-z .,'-]*$/i.test(value);
+  const currentWeatherFollowup = /^(?:current weather|weather|forecast)\s*(?:[—-]\s*)?[A-Za-z][A-Za-z .,'-]*$/i.test(value);
   const contextualWeather = Boolean(previousLocation && (bareLocation || currentWeatherFollowup));
   if (!asksWeather && !asksTime && !contextualWeather) return null;
   const kind = asksTime && !asksWeather ? "time" : "weather";
   const patterns = [
-    /\\b(?:weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\\b.*?\\b(?:in|for|at)\\s+(.+?)\\??$/i,
-    /\\b(?:in|for|at)\\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*(?:,\\s*[A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*)?)\\??$/,
-    /\\b(?:what time is it|what is the time|current time|local time|world clock)\\s+(?:in|for|at)\\s+(.+?)\\??$/i,
+    /\b(?:weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\b.*?\b(?:in|for|at)\s+(.+?)\??$/i,
+    /\b(?:in|for|at)\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*(?:,\s*[A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*)?)\??$/,
+    /\b(?:what time is it|what is the time|current time|local time|world clock)\s+(?:in|for|at)\s+(.+?)\??$/i,
   ];
   let location = "";
   for (const pattern of patterns) {
     const match = value.match(pattern);
     if (match?.[1]) {
-      location = match[1].trim().replace(/[?.!]+$/, "").replace(/\\s+(?:today|tomorrow|tonight|right now|this week)$/i, "").trim();
+      location = match[1].trim().replace(/[?.!]+$/, "").replace(/\s+(?:today|tomorrow|tonight|right now|this week)$/i, "").trim();
       break;
     }
   }
   if (contextualWeather) {
-    const explicit = value.match(/^(?:current weather|weather|forecast)\\s*(?:[—-]\\s*)(.+?)\\??$/i);
+    const explicit = value.match(/^(?:current weather|weather|forecast)\s*(?:[—-]\s*)(.+?)\??$/i);
     location = explicit?.[1]?.trim() || (bareLocation ? value : previousLocation);
   }
-  const asksRainLikelihood = /\\b(likely|chance|probability|will it rain|rain likely)\\b/i.test(value) && /\\b(rain|precipitation)\\b/i.test(value);
+  const asksRainLikelihood = /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(value) && /\b(rain|precipitation)\b/i.test(value);
   return { kind, location, question: value, asksRainLikelihood };
 }
 function normalise(value) {
