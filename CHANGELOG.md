@@ -1,3 +1,19 @@
+## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
+
+### Fixed
+- Preserve live-information intent for short follow-ups such as a city name or “Current weather — Brisbane” when weather is already being discussed.
+- Carry the original question to the weather service so rain-likelihood questions can be answered directly using the forecast's daily precipitation probability.
+- Keep live-information lookup failures visible rather than silently falling back to business-only answers.
+
+### Improved
+- Placed “Hi, I’m Buddi” and “How can I help today?” in a shared responsive header row on wider screens, stacking naturally on narrow screens.
+- Kept the question composer directly beneath the header and the conversation below it.
+
+### Testing
+- Changes committed to GitHub; local build and browser acceptance tests still need to run in the project environment.
+
+---
+
 ## BizziBuddi — Live Information Foundation: World Clock and Weather
 
 ### Added
