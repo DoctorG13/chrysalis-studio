@@ -6,9 +6,15 @@ function getLiveInfoRequest(question, conversation = []) {
   const value = String(question || "").trim();
   const asksWeather = /\b(weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\b/i.test(value);
   const asksTime = /\b(what time|current time|time is it|local time|world clock|time in)\b/i.test(value);
-  const recentWeather = conversation.find((entry) => /\b(weather|forecast|temperature|rain|raining|windy)\b/i.test(String(entry.question || "")));
-  const previousLocationMatch = String(recentWeather?.question || "").match(/\b(?:in|for|at)\s+([A-Za-z][A-Za-z .,'-]*?)(?:\s+(?:today|tomorrow|tonight|right now|this week))?\??$/i);
-  const previousLocation = previousLocationMatch?.[1]?.trim().replace(/[?.!]+$/, "") || "";
+  const recentWeather = conversation.find((entry) => {
+    const priorQuestion = String(entry.question || "");
+    return /\b(weather|forecast|temperature|rain|raining|windy)\b/i.test(priorQuestion) &&
+      (/\b(?:in|for|at)\s+[A-Za-z]/i.test(priorQuestion) || /(?:weather|forecast)\s*[—-]\s*[A-Za-z]/i.test(priorQuestion));
+  });
+  const priorQuestion = String(recentWeather?.question || "");
+  const previousLocationMatch = priorQuestion.match(/(?:weather|forecast)\s*[—-]\s*(.+?)\??$/i) ||
+    priorQuestion.match(/\b(?:in|for|at)\s+([A-Za-z][A-Za-z .,'-]*?)(?:\s+(?:today|tomorrow|tonight|right now|this week))?\??$/i);
+  const previousLocation = previousLocationMatch?.[1]?.trim().replace(/[?.!]+$/, "").replace(/\s+(?:today|tomorrow|tonight|right now|this week)$/i, "").trim() || "";
   const bareLocation = /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) && !/^(today|tomorrow|tonight|weather|forecast|time)$/i.test(value);
   const currentWeatherFollowup = /^(?:current weather|weather|forecast)\s*(?:[—-]\s*)?[A-Za-z][A-Za-z .,'-]*$/i.test(value);
   const contextualWeather = Boolean(previousLocation && (bareLocation || currentWeatherFollowup));
