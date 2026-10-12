@@ -109,7 +109,7 @@ async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
     lines.push("- " + day + ": " + desc + ", " + Math.round(weather.daily.temperature_2m_min[i]) + "–" + Math.round(weather.daily.temperature_2m_max[i]) + "°C" + (rain == null ? "" : ", up to " + rain + "% chance of precipitation") + ".");
   }
   const question = String(rawQuestion || "");
-  if (/\\b(likely|chance|probability|will it rain|rain likely)\\b/i.test(question) && /\\b(rain|precipitation)\\b/i.test(question)) {
+  if (/\b(likely|chance|probability|will it rain|rain likely)\b/i.test(question) && /\b(rain|precipitation)\b/i.test(question)) {
     const probability = weather.daily?.precipitation_probability_max?.[0];
     if (probability != null) {
       const likelihood = probability >= 50 ? "Rain is likely today" : probability >= 20 ? "Rain is possible today" : "Rain is unlikely today";
@@ -118,7 +118,7 @@ async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
       lines.splice(1, 0, "I couldn’t determine today’s rain probability from the available forecast.");
     }
   }
-  return { answer: lines.join("\\n"), source: "Open-Meteo", updatedAt: current.time || now.toISOString(), timezone: timeZone };
+  return { answer: lines.join("\n"), source: "Open-Meteo", updatedAt: current.time || now.toISOString(), timezone: timeZone };
 }
 
 const server = createServer(async (request, response) => {
