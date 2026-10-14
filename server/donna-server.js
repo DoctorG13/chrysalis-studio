@@ -1,4 +1,4 @@
-import { createServer } from "node:http";
+﻿import { createServer } from "node:http";
 
 const PORT = 4184;
 const API_KEY = process.env.OPENAI_API_KEY;
@@ -69,15 +69,127 @@ function cleanLocation(value) {
   return String(value || "").trim().replace(/\s+/g, " ").slice(0, 120);
 }
 
+
 async function geocodeLocation(location) {
-  const query = new URLSearchParams({ name: location, count: "1", language: "en", format: "json" });
-  const response = await fetch("https://geocoding-api.open-meteo.com/v1/search?" + query);
-  if (!response.ok) throw new Error("The location service is temporarily unavailable.");
+  const input = cleanLocation(location);
+  const countryNames = [
+    "United Kingdom", "United States", "New Zealand", "South Africa",
+    "United Arab Emirates", "Saudi Arabia", "Netherlands", "Sri Lanka",
+    "Bangladesh", "Philippines", "Australia", "Canada", "Ireland",
+    "France", "Germany", "Italy", "Spain", "India", "Japan", "Singapore",
+    "Brazil", "Mexico", "Belgium", "Switzerland", "Austria", "Portugal",
+    "Indonesia", "Malaysia", "Thailand", "Vietnam", "Pakistan", "Egypt",
+    "Kenya", "Nigeria", "Greece", "Sweden", "Norway", "Denmark", "Finland",
+    "Poland", "Ukraine", "Turkey", "Argentina", "Chile", "Colombia", "Peru",
+    "Fiji", "UK", "USA", "US"
+  ];
+
+  let searchName = input;
+  let requestedCountry = "";
+
+  const countryPattern = new RegExp(
+    "(?:,\\s*|\\s+)(" +
+      countryNames
+        .slice()
+        .sort((a, b) => b.length - a.length)
+        .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .join("|") +
+      ")\\s*$",
+    "i"
+  );
+
+  const countryMatch = input.match(countryPattern);
+
+  if (countryMatch) {
+    requestedCountry = countryMatch[1].toLowerCase();
+    searchName = input.slice(0, countryMatch.index).replace(/[, ]+$/, "").trim();
+  }
+
+  const query = new URLSearchParams({
+    name: searchName || input,
+    count: "10",
+    language: "en",
+    format: "json"
+  });
+
+  const response = await fetch(
+    "https://geocoding-api.open-meteo.com/v1/search?" + query
+  );
+
+  if (!response.ok) {
+    throw new Error("The location service is temporarily unavailable.");
+  }
+
   const payload = await response.json();
-  const place = payload?.results?.[0];
-  if (!place) throw new Error("I couldn’t find “" + location + "”. Try a city and country, such as “Paris, France”.");
-  return place;
+  const results = payload?.results || [];
+
+  if (!results.length) {
+    throw new Error(
+      "I couldn't find '" + input +
+      "'. Try a city and country, such as 'Ipswich, Australia'."
+    );
+  }
+
+  const aliases = {
+    "united states": ["united states", "united states of america"],
+    "united kingdom": ["united kingdom", "uk", "great britain"],
+    "uk": ["united kingdom", "uk", "great britain"],
+    "usa": ["united states", "united states of america"],
+    "us": ["united states", "united states of america"]
+  };
+
+  if (requestedCountry) {
+    const acceptableCountries = aliases[requestedCountry] || [requestedCountry];
+    const place = results.find((result) =>
+      acceptableCountries.includes(String(result.country || "").trim().toLowerCase())
+    );
+
+    if (!place) {
+      throw new Error(
+        "I couldn't find '" + searchName + "' in " +
+        countryMatch[1] + ". Please check the location and country."
+      );
+    }
+
+    return place;
+  }
+
+  const exactMatches = results.filter(
+    (result) => String(result.name || "").toLowerCase() === searchName.toLowerCase()
+  );
+
+  const uniquePlaces = [];
+  const seenPlaces = new Set();
+
+  for (const result of exactMatches) {
+    const key = [
+      result.name,
+      result.admin1,
+      result.country
+    ].filter(Boolean).join("|").toLowerCase();
+
+    if (!seenPlaces.has(key)) {
+      seenPlaces.add(key);
+      uniquePlaces.push(result);
+    }
+  }
+
+  if (uniquePlaces.length > 1) {
+    const error = new Error("Please choose which location you mean.");
+    error.code = "AMBIGUOUS_LOCATION";
+    error.locations = uniquePlaces.slice(0, 5).map((result) => ({
+      name: result.name,
+      region: result.admin1 || "",
+      country: result.country || "",
+      location: [result.name, result.admin1, result.country]
+        .filter(Boolean).join(", ")
+    }));
+    throw error;
+  }
+
+  return exactMatches[0] || results[0];
 }
+
 
 function formatPlaceTime(date, timeZone) {
   return new Intl.DateTimeFormat("en-AU", { timeZone, weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit", timeZoneName: "long" }).format(date);
@@ -87,7 +199,9 @@ const weatherDescriptions = { 0: "Clear sky", 1: "Mainly clear", 2: "Partly clou
 
 async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
   const location = cleanLocation(rawLocation);
-  if (!location) return { answer: kind === "weather" ? "Which city or town should I check the weather for? For example, “What’s the weather in Brisbane?”" : "Which city should I check the current time for? For example, “What time is it in London?”" };
+  
+  if (!location) return { answer: kind === "weather" ? "Which city or town should I check the weather for? For example, Brisbane." : "Which city should I check the current time for? For example, London." };
+
   const place = await geocodeLocation(location);
   const placeName = [place.name, place.admin1, place.country].filter(Boolean).filter((part, index, all) => all.indexOf(part) === index).join(", ");
   const timeZone = place.timezone || "UTC";
@@ -100,28 +214,56 @@ async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
   const weather = await response.json();
   const current = weather.current;
   if (!current) throw new Error("The weather service did not return current conditions.");
-  const lines = ["**Weather in " + placeName + "**", "Now: " + (weatherDescriptions[current.weather_code] || "Conditions unavailable") + ", " + Math.round(current.temperature_2m) + "°C (feels like " + Math.round(current.apparent_temperature) + "°C).", "Humidity: " + Math.round(current.relative_humidity_2m) + "% · Wind: " + Math.round(current.wind_speed_10m) + " km/h · Precipitation: " + Number(current.precipitation || 0).toFixed(1) + " mm.", "", "**Next 3 days**"];
+  
+  const lines = [
+    "**Weather in " + placeName + "**",
+    "Now: " + (weatherDescriptions[current.weather_code] || "Conditions unavailable") + ", " + Math.round(current.temperature_2m) + "°C (feels like " + Math.round(current.apparent_temperature) + "°C).",
+    "Humidity: " + Math.round(current.relative_humidity_2m) + "% | Wind: " + Math.round(current.wind_speed_10m) + " km/h | Precipitation: " + Number(current.precipitation || 0).toFixed(1) + " mm.",
+    "",
+    "**Next 3 days**"
+  ];
+
   for (let i = 0; i < (weather.daily?.time || []).length; i += 1) {
     const date = new Date(weather.daily.time[i] + "T12:00:00Z");
     const day = new Intl.DateTimeFormat("en-AU", { timeZone, weekday: "short", day: "numeric", month: "short" }).format(date);
     const desc = weatherDescriptions[weather.daily.weather_code[i]] || "Conditions unavailable";
     const rain = weather.daily.precipitation_probability_max?.[i];
+    
     lines.push("- " + day + ": " + desc + ", " + Math.round(weather.daily.temperature_2m_min[i]) + "–" + Math.round(weather.daily.temperature_2m_max[i]) + "°C" + (rain == null ? "" : ", up to " + rain + "% chance of precipitation") + ".");
+
   }
+
   const question = String(rawQuestion || "");
   if (/\b(likely|chance|probability|will it rain|rain likely)\b/i.test(question) && /\b(rain|precipitation)\b/i.test(question)) {
-    const probability = weather.daily?.precipitation_probability_max?.[0];
+    const asksTomorrow = /\b(tomorrow|next day)\b/i.test(question);
+    const forecastIndex = asksTomorrow ? 1 : 0;
+    const probability = weather.daily?.precipitation_probability_max?.[forecastIndex];
+    const dayLabel = asksTomorrow ? "tomorrow" : "today";
+
     if (probability != null) {
-      const likelihood = probability >= 50 ? "Rain is likely today" : probability >= 20 ? "Rain is possible today" : "Rain is unlikely today";
+      const likelihood = probability >= 50
+        ? "Rain is likely " + dayLabel
+        : probability >= 20
+          ? "Rain is possible " + dayLabel
+          : "Rain is unlikely " + dayLabel;
+
       lines.splice(1, 0, likelihood + " in " + placeName + ": up to " + probability + "% chance of precipitation.");
     } else {
-      lines.splice(1, 0, "I couldn’t determine today’s rain probability from the available forecast.");
+      lines.splice(1, 0, "I couldn't determine the rain probability for " + dayLabel + " from the available forecast.");
+  
     }
   }
-  return { answer: lines.join("\n"), source: "Open-Meteo", updatedAt: current.time || now.toISOString(), timezone: timeZone };
+
+  return {
+    answer: lines.join("\n"),
+    source: "Open-Meteo",
+    updatedAt: current.time || now.toISOString(),
+    timezone: timeZone
+  };
 }
 
 const server = createServer(async (request, response) => {
+
   if (request.method === "GET" && request.url === "/api/health") {
     sendJson(response, 200, { ok: true, service: "donna", configured: Boolean(API_KEY), provider: "openai", model: MODEL });
     return;
@@ -133,13 +275,24 @@ const server = createServer(async (request, response) => {
       const kind = body?.kind === "weather" ? "weather" : body?.kind === "time" ? "time" : "";
       if (!kind) { sendJson(response, 400, { error: "Choose either time or weather." }); return; }
       sendJson(response, 200, await getLiveInformation(kind, body.location, body.question));
-    } catch (error) { sendJson(response, 502, { error: error.message || "Live information is temporarily unavailable." }); }
+    
+    } catch (error) {
+      if (error.code === "AMBIGUOUS_LOCATION") {
+        sendJson(response, 200, {
+          needsLocationChoice: true,
+          answer: "I found several places with that name. Which one do you mean?",
+          locations: error.locations || []
+        });
+      
+      } else {
+        sendJson(response, 502, {
+          error: error.message || "Live information is temporarily unavailable."
+        });
+      }
+    }
     return;
   }
-  if (request.method !== "POST" || request.url !== "/api/donna/chat") {
-    sendJson(response, 404, { error: "Not found." });
-    return;
-  }
+
 
   if (!API_KEY) {
     sendJson(response, 503, { error: "The assistant is not configured. Add OPENAI_API_KEY to the server environment." });

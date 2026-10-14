@@ -3608,3 +3608,15 @@ All notable changes to Chrysalis are recorded here.
 - Send established business accounts to the Dashboard by default when no valid destination view was requested.
 - Update the URL and Today navigation state to match the displayed Dashboard.
 - Send accounts without business setup to onboarding and keep the URL in sync.
+
+
+## Unreleased
+
+### BizziBuddi — Live Weather Improvements
+- Improved location matching and disambiguation for places sharing the same name.
+- Added clickable location choices for ambiguous weather and time requests.
+- Improved contextual weather follow-ups, including tomorrow's rain probability.
+- Corrected weather response formatting.
+- Verified backend syntax, production build, and weather follow-ups after backend restart.
+
+**Testing:** Passed.

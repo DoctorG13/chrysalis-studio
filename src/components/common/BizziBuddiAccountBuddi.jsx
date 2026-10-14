@@ -11,12 +11,17 @@ function getLiveInfoRequest(question, conversation = []) {
     return /\b(weather|forecast|temperature|rain|raining|windy)\b/i.test(priorQuestion) &&
       (/\b(?:in|for|at)\s+[A-Za-z]/i.test(priorQuestion) || /(?:weather|forecast)\s*[—-]\s*[A-Za-z]/i.test(priorQuestion));
   });
+  
   const priorQuestion = String(recentWeather?.question || "");
-  const previousLocationMatch = priorQuestion.match(/(?:weather|forecast)\s*[—-]\s*(.+?)\??$/i) ||
+  const previousLocationMatch =
+    priorQuestion.match(/(?:weather|forecast)\s*[—-]\s*(.+?)\??$/i) ||
     priorQuestion.match(/\b(?:in|for|at)\s+([A-Za-z][A-Za-z .,'-]*?)(?:\s+(?:today|tomorrow|tonight|right now|this week))?\??$/i);
   const previousLocation = previousLocationMatch?.[1]?.trim().replace(/[?.!]+$/, "").replace(/\s+(?:today|tomorrow|tonight|right now|this week)$/i, "").trim() || "";
   const bareLocation = /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) && !/^(today|tomorrow|tonight|weather|forecast|time)$/i.test(value);
-  const currentWeatherFollowup = /^(?:current weather|weather|forecast)\s*(?:[—-]\s*)?[A-Za-z][A-Za-z .,'-]*$/i.test(value);
+
+  const currentWeatherFollowup = /^(?:current weather|weather|forecast)\b/i.test(value) ||
+    /\b(there|that location|that city|that town|same place)\b/i.test(value);
+
   const contextualWeather = Boolean(previousLocation && (bareLocation || currentWeatherFollowup));
   if (!asksWeather && !asksTime && !contextualWeather) return null;
   const kind = asksTime && !asksWeather ? "time" : "weather";
@@ -1192,8 +1197,31 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       try {
         const response = await fetch("/api/donna/live-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(liveInfoRequest) });
         const payload = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(payload?.error || "Live information is temporarily unavailable.");
-        setConversation((current) => [{ question: value, answer: payload.answer || "I couldn’t retrieve that information.", actions: [] }, ...current].slice(0, 8));
+        
+if (!response.ok) throw new Error(payload?.error || "Live information is temporarily unavailable.");
+
+if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.locations.length > 0) {
+  const choices = payload.locations.map((place, index) => ({
+    key: `location-${index}`,
+    label: place.location,
+    onClick: () => askBuddi(
+      `${liveInfoRequest.kind === "time" ? "What time is it in" : "What's the weather in"} ${place.location}?`
+    ),
+  }));
+
+  setConversation((current) => [{
+    question: value,
+    answer: payload.answer || "Which location do you mean?",
+    actions: choices,
+  }, ...current].slice(0, 8));
+} else {
+  setConversation((current) => [{
+    question: value,
+    answer: payload.answer || "I couldn’t retrieve that information.",
+    actions: [],
+  }, ...current].slice(0, 8));
+}
+
       } catch (error) {
         setConversation((current) => [{ question: value, answer: error.message || "I couldn’t retrieve live information right now.", actions: [] }, ...current].slice(0, 8));
       } finally { setIsLoading(false); }
