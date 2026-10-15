@@ -1,50 +1,100 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState,  } from "react";
 import BizziBuddiLogo from "./BizziBuddiLogo";
 import { buildBizziBuddiIntelligence } from "../../utils/bizzibuddiIntelligence";
 
+
+
 function getLiveInfoRequest(question, conversation = []) {
   const value = String(question || "").trim();
-  const asksWeather = /\b(weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\b/i.test(value);
-  const asksTime = /\b(what time|current time|time is it|local time|world clock|time in)\b/i.test(value);
-  const recentWeather = conversation.find((entry) => {
+  const normalisedValue = value
+    .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(/\s+/g, " ");
+
+  const weatherTerm =
+    /\b(weather|wheather|weahter|forecast|temperature|temp|rain|raining|rainy|windy|precipitation)\b/i;
+  const timeTerm =
+    /\b(what time|current time|time is it|local time|world clock|time in)\b/i;
+
+  const asksWeather = weatherTerm.test(normalisedValue);
+  const asksTime = timeTerm.test(normalisedValue);
+
+  const locationPattern =
+    /\b(?:weather|wheather|weahter|forecast|temperature|temp|rain|raining|rainy|windy|precipitation)\b.*?\b(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+  const timeLocationPattern =
+    /\b(?:what time is it|what is the time|current time|local time|world clock)\s+(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+
+  function extractLocation(text) {
+    const source = String(text || "").trim();
+    const match = source.match(locationPattern) || source.match(timeLocationPattern);
+    if (!match?.[1]) return "";
+
+    return match[1]
+      .trim()
+      .replace(/[?.!]+$/, "")
+      .replace(/\s+(?:today|tomorrow|tonight|right now|this week|on (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))$/i, "")
+      .trim();
+  }
+
+  const recentContext = conversation.find((entry) => {
     const priorQuestion = String(entry.question || "");
-    return /\b(weather|forecast|temperature|rain|raining|windy)\b/i.test(priorQuestion) &&
-      (/\b(?:in|for|at)\s+[A-Za-z]/i.test(priorQuestion) || /(?:weather|forecast)\s*[—-]\s*[A-Za-z]/i.test(priorQuestion));
+    const priorAnswer = String(entry.answer || "");
+
+    return (
+      Boolean(extractLocation(priorQuestion)) ||
+      weatherTerm.test(priorQuestion) ||
+      timeTerm.test(priorQuestion) ||
+      /\b(weather|forecast|rain|temperature|time in|local time)\b/i.test(priorAnswer) ||
+      /\b(which city|which location|what city|what location|city or town)\b/i.test(priorAnswer)
+    );
   });
-  
-  const priorQuestion = String(recentWeather?.question || "");
-  const previousLocationMatch =
-    priorQuestion.match(/(?:weather|forecast)\s*[—-]\s*(.+?)\??$/i) ||
-    priorQuestion.match(/\b(?:in|for|at)\s+([A-Za-z][A-Za-z .,'-]*?)(?:\s+(?:today|tomorrow|tonight|right now|this week))?\??$/i);
-  const previousLocation = previousLocationMatch?.[1]?.trim().replace(/[?.!]+$/, "").replace(/\s+(?:today|tomorrow|tonight|right now|this week)$/i, "").trim() || "";
-  const bareLocation = /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) && !/^(today|tomorrow|tonight|weather|forecast|time)$/i.test(value);
 
-  const currentWeatherFollowup = /^(?:current weather|weather|forecast)\b/i.test(value) ||
-    /\b(there|that location|that city|that town|same place)\b/i.test(value);
+  const priorQuestion = String(recentContext?.question || "");
+  const priorAnswer = String(recentContext?.answer || "");
+  const previousLocation = extractLocation(priorQuestion);
 
-  const contextualWeather = Boolean(previousLocation && (bareLocation || currentWeatherFollowup));
-  if (!asksWeather && !asksTime && !contextualWeather) return null;
+  const isLocationPrompt =
+    /\b(which city|which location|what city|what location|city or town)\b/i.test(priorAnswer);
+
+  const bareLocation =
+    /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) &&
+    !/^(today|tomorrow|tonight|weather|wheather|forecast|time|rain|here|there|friday|saturday|sunday|monday|tuesday|wednesday|thursday)$/i.test(value);
+
+  const refersToPreviousLocation =
+    /\b(here|there|that location|that city|that town|same place|that area)\b/i.test(value);
+
+  const asksAboutAnotherDay =
+    /\b(today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(value);
+
+  const soundsLikeFollowUp =
+    /^(?:(?:and\s+)?(?:what|how) about|will it|is it|what's it like|weather|forecast|rain|raining)\b/i.test(normalisedValue);
+
+  const isFollowUp =
+    Boolean(recentContext) &&
+    (refersToPreviousLocation || asksAboutAnotherDay || soundsLikeFollowUp || (isLocationPrompt && bareLocation));
+
+  if (!asksWeather && !asksTime && !isFollowUp) return null;
+
   const kind = asksTime && !asksWeather ? "time" : "weather";
-  const patterns = [
-    /\b(?:weather|forecast|temperature|rain|raining|windy|chance of rain|precipitation)\b.*?\b(?:in|for|at)\s+(.+?)\??$/i,
-    /\b(?:in|for|at)\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*(?:,\s*[A-Z][A-Za-zÀ-ÖØ-öø-ÿ.' -]*)?)\??$/,
-    /\b(?:what time is it|what is the time|current time|local time|world clock)\s+(?:in|for|at)\s+(.+?)\??$/i,
-  ];
-  let location = "";
-  for (const pattern of patterns) {
-    const match = value.match(pattern);
-    if (match?.[1]) {
-      location = match[1].trim().replace(/[?.!]+$/, "").replace(/\s+(?:today|tomorrow|tonight|right now|this week)$/i, "").trim();
-      break;
-    }
+  let location = extractLocation(value);
+
+  if (isLocationPrompt && bareLocation) {
+    location = value;
+  } else if (isFollowUp && (refersToPreviousLocation || !location || /^(today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i.test(location))) {
+    location = previousLocation;
   }
-  if (contextualWeather) {
-    const explicit = value.match(/^(?:current weather|weather|forecast)\s*(?:[—-]\s*)(.+?)\??$/i);
-    location = explicit?.[1]?.trim() || (bareLocation ? value : previousLocation);
-  }
-  const asksRainLikelihood = /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(value) && /\b(rain|precipitation)\b/i.test(value);
+
+  const asksRainLikelihood =
+    /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(normalisedValue) &&
+    /\b(rain|precipitation)\b/i.test(normalisedValue);
+
+    if (/\bhere\b/i.test(value)) {
+  location = "here";
+}
   return { kind, location, question: value, asksRainLikelihood };
 }
+
+
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -721,6 +771,7 @@ function ThinkingIndicator() {
 }
 
 export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onRecordPayment, onCreateInvoice, onBack }) {
+  const questionInputRef = useRef(null);
   const [question, setQuestion] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [conversation, setConversation] = useState([]);
@@ -734,6 +785,12 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
   const [newClientDraft, setNewClientDraft] = useState(null);
   const [jobSaving, setJobSaving] = useState(false);
   const [jobMessage, setJobMessage] = useState("");
+
+  useEffect(() => {
+  if (!isLoading) {
+    questionInputRef.current?.focus();
+  }
+}, [isLoading]);
 
   const businessContext = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -1398,6 +1455,68 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
 
       <div style={contentStyle}>
 
+      <form onSubmit={(event) => { event.preventDefault(); askBuddi(question); }} style={{ ...composerStyle, marginTop: 16 }}>
+          <input
+            ref={questionInputRef}
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="Type your question here…"
+            disabled={isLoading}
+            style={inputStyle}
+            aria-label="Your question for Buddi"
+          />
+          <button type="submit" disabled={!question.trim() || isLoading} style={sendButtonStyle} aria-label="Send question to Buddi">↑</button>
+        </form>
+
+        <div style={{ ...quickSectionStyle, marginTop: 12 }}>
+          <button
+            type="button"
+            onClick={() => setSuggestionsOpen((open) => !open)}
+            aria-expanded={suggestionsOpen}
+            style={{ display: "inline-flex", alignItems: "center", gap: 7, border: 0, padding: 0, background: "transparent", color: "#00B4DB", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
+          >
+            {suggestionsOpen ? "Hide frequently asked questions" : "Show frequently asked questions"}
+            <span aria-hidden="true">{suggestionsOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {suggestionsOpen && (
+            <div style={quickGridStyle}>
+              {prompts.map((prompt) => (
+                <button key={prompt} type="button" onClick={() => askBuddi(prompt)} disabled={isLoading} style={quickButtonStyle}>
+                  {prompt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+{isLoading && <ThinkingIndicator />}
+
+        {conversation.length > 0 && (
+          <div style={conversationStyle}>
+            {conversation.map((entry, index) => (
+              <article key={`${entry.question}-${index}`} style={conversationCardStyle}>
+                <div style={questionStyle}><span style={youBadgeStyle}>You</span><span>{entry.question}</span></div>
+                <div style={answerStyle}>
+                  <span style={buddiBadgeStyle}><BizziBuddiLogo size={24} showWordmark={false} /></span>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <strong style={{ display: "block", marginBottom: 6 }}>Buddi</strong>
+                    <div>{renderAnswer(entry.answer)}</div>
+                    {entry.actions?.length > 0 && (
+                      <div style={actionRowStyle}>
+                        {entry.actions.map((action) => (
+                          <button key={action.key} type="button" onClick={action.onClick} style={actionButtonStyle}>
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      
+        
         {productionAttentionJobs.length > 0 && (
           <div style={attentionCardStyle}>
             <small style={quickLabelStyle}>PRODUCTION ATTENTION</small>
@@ -1860,67 +1979,6 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
           </div>
         </div>
 
-        <form onSubmit={(event) => { event.preventDefault(); askBuddi(question); }} style={{ ...composerStyle, marginTop: 16 }}>
-          <input
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Type your question here…"
-            disabled={isLoading}
-            style={inputStyle}
-            aria-label="Your question for Buddi"
-          />
-          <button type="submit" disabled={!question.trim() || isLoading} style={sendButtonStyle} aria-label="Send question to Buddi">↑</button>
-        </form>
-
-        <div style={{ ...quickSectionStyle, marginTop: 12 }}>
-          <button
-            type="button"
-            onClick={() => setSuggestionsOpen((open) => !open)}
-            aria-expanded={suggestionsOpen}
-            style={{ display: "inline-flex", alignItems: "center", gap: 7, border: 0, padding: 0, background: "transparent", color: "#00B4DB", fontSize: 12, fontWeight: 700, cursor: "pointer" }}
-          >
-            {suggestionsOpen ? "Hide frequently asked questions" : "Show frequently asked questions"}
-            <span aria-hidden="true">{suggestionsOpen ? "⌃" : "⌄"}</span>
-          </button>
-          {suggestionsOpen && (
-            <div style={quickGridStyle}>
-              {prompts.map((prompt) => (
-                <button key={prompt} type="button" onClick={() => askBuddi(prompt)} disabled={isLoading} style={quickButtonStyle}>
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {isLoading && <ThinkingIndicator />}
-
-        {conversation.length > 0 && (
-          <div style={conversationStyle}>
-            {conversation.map((entry, index) => (
-              <article key={`${entry.question}-${index}`} style={conversationCardStyle}>
-                <div style={questionStyle}><span style={youBadgeStyle}>You</span><span>{entry.question}</span></div>
-                <div style={answerStyle}>
-                  <span style={buddiBadgeStyle}><BizziBuddiLogo size={24} showWordmark={false} /></span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <strong style={{ display: "block", marginBottom: 6 }}>Buddi</strong>
-                    <div>{renderAnswer(entry.answer)}</div>
-                    {entry.actions?.length > 0 && (
-                      <div style={actionRowStyle}>
-                        {entry.actions.map((action) => (
-                          <button key={action.key} type="button" onClick={action.onClick} style={actionButtonStyle}>
-                            {action.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-
         <div style={privacyNoteStyle}>
           <span>🛡</span>
           <span>Buddi uses the current BizziBuddi account data supplied to this session. It does not create or change records from this screen.</span>
@@ -2108,7 +2166,7 @@ const subheadingStyle = {
 };
 
 const contentStyle = {
-  padding: 22,
+  padding: 10,
 };
 
 const welcomeCardStyle = {
@@ -2138,7 +2196,7 @@ const welcomeIconStyle = {
 };
 
 const quickSectionStyle = {
-  marginTop: 22,
+  marginTop: 10,
 };
 
 const quickLabelStyle = {
@@ -2170,7 +2228,7 @@ const quickButtonStyle = {
 const composerStyle = {
   display: "flex",
   gap: 10,
-  marginTop: 20,
+  marginTop: 0,
 };
 
 const inputStyle = {
@@ -2312,21 +2370,23 @@ const actionButtonStyle = {
   cursor: "pointer",
 };
 
+
+const attentionCardStyle = {
+  marginTop: 10,
+  padding: 14,
+  borderRadius: 14,
+  border: "1px solid rgba(246,196,83,.34)",
+  background: "rgba(245,158,11,.045)",
+};
+
 const financeAttentionCardStyle = {
-  marginTop: 20,
-  padding: 16,
+  marginTop: 10,
+  padding: 14,
   borderRadius: 14,
   border: "1px solid rgba(248,113,113,.34)",
   background: "rgba(220,50,50,.045)",
 };
 
-const attentionCardStyle = {
-  marginTop: 20,
-  padding: 16,
-  borderRadius: 14,
-  border: "1px solid rgba(246,196,83,.34)",
-  background: "rgba(245,158,11,.045)",
-};
 
 const proposalCardStyle = {
   marginTop: 20,

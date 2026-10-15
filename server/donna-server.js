@@ -197,8 +197,18 @@ function formatPlaceTime(date, timeZone) {
 
 const weatherDescriptions = { 0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast", 45: "Fog", 48: "Depositing rime fog", 51: "Light drizzle", 53: "Moderate drizzle", 55: "Dense drizzle", 56: "Light freezing drizzle", 57: "Dense freezing drizzle", 61: "Slight rain", 63: "Moderate rain", 65: "Heavy rain", 66: "Light freezing rain", 67: "Heavy freezing rain", 71: "Slight snow", 73: "Moderate snow", 75: "Heavy snow", 77: "Snow grains", 80: "Slight rain showers", 81: "Moderate rain showers", 82: "Violent rain showers", 85: "Slight snow showers", 86: "Heavy snow showers", 95: "Thunderstorm", 96: "Thunderstorm with slight hail", 99: "Thunderstorm with heavy hail" };
 
+function resolveLiveInfoLocation(location) {
+  const value = cleanLocation(location);
+
+  if (/^(here|my current location|where i am)$/i.test(value)) {
+    return "Brisbane, Queensland, Australia";
+  }
+
+  return value;
+}
+
 async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
-  const location = cleanLocation(rawLocation);
+  const location = resolveLiveInfoLocation(rawLocation);
   
   if (!location) return { answer: kind === "weather" ? "Which city or town should I check the weather for? For example, Brisbane." : "Which city should I check the current time for? For example, London." };
 
@@ -223,76 +233,177 @@ async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
     "**Next 3 days**"
   ];
 
-  for (let i = 0; i < (weather.daily?.time || []).length; i += 1) {
-    const date = new Date(weather.daily.time[i] + "T12:00:00Z");
-    const day = new Intl.DateTimeFormat("en-AU", { timeZone, weekday: "short", day: "numeric", month: "short" }).format(date);
-    const desc = weatherDescriptions[weather.daily.weather_code[i]] || "Conditions unavailable";
-    const rain = weather.daily.precipitation_probability_max?.[i];
-    
-    lines.push("- " + day + ": " + desc + ", " + Math.round(weather.daily.temperature_2m_min[i]) + "–" + Math.round(weather.daily.temperature_2m_max[i]) + "°C" + (rain == null ? "" : ", up to " + rain + "% chance of precipitation") + ".");
 
+for (let i = 0; i < (weather.daily?.time || []).length; i += 1) {
+  const date = new Date(weather.daily.time[i] + "T12:00:00Z");
+  const day = new Intl.DateTimeFormat("en-AU", {
+    timeZone,
+    weekday: "short",
+    day: "numeric",
+    month: "short"
+  }).format(date);
+  const desc =
+    weatherDescriptions[weather.daily.weather_code[i]] ||
+    "Conditions unavailable";
+  const rain = weather.daily.precipitation_probability_max?.[i];
+
+  lines.push(
+    "- " + day + ": " + desc + ", " +
+    Math.round(weather.daily.temperature_2m_min[i]) + "–" +
+    Math.round(weather.daily.temperature_2m_max[i]) + "°C" +
+    (rain == null ? "" : ", up to " + rain + "% chance of precipitation") +
+    "."
+  );
+}
+
+const question = String(rawQuestion || "");
+
+const asksTomorrow = /\b(tomorrow|next day)\b/i.test(question);
+const dayMatch = question.match(
+  /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i
+);
+const asksAnotherDay = Boolean(dayMatch);
+
+if (asksTomorrow || asksAnotherDay) {
+  const requestedDay = asksTomorrow ? "tomorrow" : dayMatch[1];
+
+  const forecastIndex = asksTomorrow
+    ? 1
+    : (weather.daily?.time || []).findIndex((date) => {
+        const forecastDate = new Date(date + "T12:00:00Z");
+        const forecastDay = new Intl.DateTimeFormat("en-AU", {
+          timeZone,
+          weekday: "long"
+        }).format(forecastDate);
+
+        return forecastDay.toLowerCase() === requestedDay.toLowerCase();
+      });
+
+  if (forecastIndex >= 0 && weather.daily?.time?.[forecastIndex]) {
+    const date = new Date(weather.daily.time[forecastIndex] + "T12:00:00Z");
+    const dayLabel = new Intl.DateTimeFormat("en-AU", {
+      timeZone,
+      weekday: "long",
+      day: "numeric",
+      month: "short"
+    }).format(date);
+
+    const description =
+      weatherDescriptions[weather.daily.weather_code[forecastIndex]] ||
+      "Conditions unavailable";
+    const min = Math.round(weather.daily.temperature_2m_min[forecastIndex]);
+    const max = Math.round(weather.daily.temperature_2m_max[forecastIndex]);
+    const probability =
+      weather.daily.precipitation_probability_max?.[forecastIndex];
+
+    lines.splice(
+      1,
+      0,
+      "**Forecast for " + dayLabel + " in " + placeName + "**",
+      description + ", " + min + "–" + max + "°C" +
+        (probability == null
+          ? "."
+          : ", up to " + probability + "% chance of precipitation.")
+    );
+  } else {
+    lines.splice(
+      1,
+      0,
+      "I couldn't find that day's forecast in the available forecast data."
+    );
   }
+}
 
-  const question = String(rawQuestion || "");
-  if (/\b(likely|chance|probability|will it rain|rain likely)\b/i.test(question) && /\b(rain|precipitation)\b/i.test(question)) {
-    const asksTomorrow = /\b(tomorrow|next day)\b/i.test(question);
-    const forecastIndex = asksTomorrow ? 1 : 0;
-    const probability = weather.daily?.precipitation_probability_max?.[forecastIndex];
-    const dayLabel = asksTomorrow ? "tomorrow" : "today";
+if (
+  /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(question) &&
+  /\b(rain|precipitation)\b/i.test(question)
+) {
+  const forecastIndex = asksTomorrow ? 1 : 0;
+  const probability =
+    weather.daily?.precipitation_probability_max?.[forecastIndex];
+  const dayLabel = asksTomorrow ? "tomorrow" : "today";
 
-    if (probability != null) {
-      const likelihood = probability >= 50
+  if (probability != null) {
+    const likelihood =
+      probability >= 50
         ? "Rain is likely " + dayLabel
         : probability >= 20
           ? "Rain is possible " + dayLabel
           : "Rain is unlikely " + dayLabel;
 
-      lines.splice(1, 0, likelihood + " in " + placeName + ": up to " + probability + "% chance of precipitation.");
-    } else {
-      lines.splice(1, 0, "I couldn't determine the rain probability for " + dayLabel + " from the available forecast.");
-  
-    }
+    lines.splice(
+      1,
+      0,
+      likelihood + " in " + placeName + ": up to " +
+        probability + "% chance of precipitation."
+    );
+  } else {
+    lines.splice(
+      1,
+      0,
+      "I couldn't determine the rain probability for " + dayLabel +
+        " from the available forecast."
+    );
   }
+}
 
-  return {
-    answer: lines.join("\n"),
-    source: "Open-Meteo",
-    updatedAt: current.time || now.toISOString(),
-    timezone: timeZone
-  };
+return {
+  answer: lines.join("\n"),
+  source: "Open-Meteo",
+  updatedAt: current.time || now.toISOString(),
+  timezone: timeZone
+};
 }
 
 const server = createServer(async (request, response) => {
 
-  if (request.method === "GET" && request.url === "/api/health") {
-    sendJson(response, 200, { ok: true, service: "donna", configured: Boolean(API_KEY), provider: "openai", model: MODEL });
-    return;
-  }
+if (request.method === "GET" && request.url === "/api/health") {
+sendJson(response, 200, {
+ok: true,
+service: "donna",
+configured: Boolean(API_KEY),
+provider: "openai",
+model: MODEL
+});
+return;
+}
 
-  if (request.method === "POST" && request.url === "/api/donna/live-info") {
-    try {
-      const body = JSON.parse(await readBody(request));
-      const kind = body?.kind === "weather" ? "weather" : body?.kind === "time" ? "time" : "";
-      if (!kind) { sendJson(response, 400, { error: "Choose either time or weather." }); return; }
-      sendJson(response, 200, await getLiveInformation(kind, body.location, body.question));
-    
-    } catch (error) {
-      if (error.code === "AMBIGUOUS_LOCATION") {
-        sendJson(response, 200, {
-          needsLocationChoice: true,
-          answer: "I found several places with that name. Which one do you mean?",
-          locations: error.locations || []
-        });
-      
-      } else {
-        sendJson(response, 502, {
-          error: error.message || "Live information is temporarily unavailable."
-        });
-      }
+if (request.method === "POST" && request.url === "/api/donna/live-info") {
+  try {
+    const body = JSON.parse(await readBody(request));
+    const kind =
+      body?.kind === "weather"
+        ? "weather"
+        : body?.kind === "time"
+          ? "time"
+          : "";
+
+    if (!kind) {
+      sendJson(response, 400, { error: "Choose either time or weather." });
+      return;
     }
-    return;
+
+    sendJson(
+      response,
+      200,
+      await getLiveInformation(kind, body.location, body.question)
+    );
+  } catch (error) {
+    if (error.code === "AMBIGUOUS_LOCATION") {
+      sendJson(response, 200, {
+        needsLocationChoice: true,
+        answer: "I found several places with that name. Which one do you mean?",
+        locations: error.locations || []
+      });
+    } else {
+      sendJson(response, 502, {
+        error: error.message || "Live information is temporarily unavailable."
+      });
+    }
   }
 
+  return;
+}
 
   if (!API_KEY) {
     sendJson(response, 503, { error: "The assistant is not configured. Add OPENAI_API_KEY to the server environment." });
