@@ -20,10 +20,16 @@ function getLiveInfoRequest(question, conversation = []) {
     /\b(?:weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation)\b.*?\b(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
   const timeLocationPattern =
     /\b(?:what time is it|what is the time|current time|local time|world clock|time in)\s+(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+  const generalLocationPattern =
+    /\b(?:how is it|how's it|hows it|what is it like|what's it like|whats it like|how is the weather|how's the weather|hows the weather)\s+(?:like\s+)?(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+
 
   function extractLocation(text) {
     const source = String(text || "").trim();
-    const match = source.match(locationPattern) || source.match(timeLocationPattern);
+        const match =
+      source.match(locationPattern) ||
+      source.match(timeLocationPattern) ||
+      source.match(generalLocationPattern);
     if (!match?.[1]) return "";
 
     return match[1]
@@ -71,7 +77,7 @@ function getLiveInfoRequest(question, conversation = []) {
     /\b(today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(value);
 
   const soundsLikeFollowUp =
-    /^(?:(?:and\s+)?(?:what|how) about|will it|is it|what's it like|weather|forecast|rain|raining)\b/i.test(normalisedValue);
+    /^(?:(?:and\s+)?(?:what|how) about|(?:what's|whats|what is|how's|hows|how is)(?:\s+(?:the\s+)?(?:weather|forecast)|\s+it)?\b|will it|is it|weather|forecast|rain|raining)\b/i.test(normalisedValue);
 
   const isFollowUp =
     Boolean(contextEntry) &&
