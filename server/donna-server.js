@@ -174,7 +174,20 @@ async function geocodeLocation(location) {
     }
   }
 
-  if (uniquePlaces.length > 1) {
+    if (uniquePlaces.length > 1) {
+    // Prefer the Australian city when "Brisbane" is entered without a country.
+    // Explicit country-qualified requests are handled above and remain unchanged.
+    if (searchName.toLowerCase() === "brisbane") {
+      const australianBrisbane = uniquePlaces.find((result) =>
+        String(result.country || "").trim().toLowerCase() === "australia" &&
+        String(result.admin1 || "").trim().toLowerCase() === "queensland"
+      );
+
+      if (australianBrisbane) {
+        return australianBrisbane;
+      }
+    }
+
     const error = new Error("Please choose which location you mean.");
     error.code = "AMBIGUOUS_LOCATION";
     error.locations = uniquePlaces.slice(0, 5).map((result) => ({
@@ -189,7 +202,6 @@ async function geocodeLocation(location) {
 
   return exactMatches[0] || results[0];
 }
-
 
 function formatPlaceTime(date, timeZone) {
   return new Intl.DateTimeFormat("en-AU", { timeZone, weekday: "long", day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit", timeZoneName: "long" }).format(date);
