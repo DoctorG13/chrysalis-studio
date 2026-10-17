@@ -12,12 +12,12 @@ function getLiveInfoRequest(question, conversation = []) {
     .replace(/\s+/g, " ");
 
   const weatherTerm =
-    /\b(weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation)\b/i;
+  /\b(weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b/i;
   const timeTerm =
     /\b(what time|current time|time is it|local time|world clock|time in|what is the time)\b/i;
 
   const locationPattern =
-    /\b(?:weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation)\b.*?\b(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+  /\b(?:weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b.*?\b(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
   const timeLocationPattern =
     /\b(?:what time is it|what is the time|current time|local time|world clock|time in)\s+(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
   const generalLocationPattern =

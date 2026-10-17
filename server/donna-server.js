@@ -230,7 +230,7 @@ async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
   const now = new Date();
   if (kind === "time") return { answer: "**Current time in " + placeName + "**\n" + formatPlaceTime(now, timeZone) + "\n\nTime zone: " + timeZone + ".", source: "Open-Meteo geocoding and IANA time-zone data", updatedAt: now.toISOString() };
   if (kind !== "weather") throw new Error("Unsupported live information request.");
-  const query = new URLSearchParams({ latitude: String(place.latitude), longitude: String(place.longitude), current: "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m", daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max", forecast_days: "3", timezone: timeZone, temperature_unit: "celsius", wind_speed_unit: "kmh" });
+  const query = new URLSearchParams({ latitude: String(place.latitude), longitude: String(place.longitude), current: "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m", daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max", forecast_days: "7", timezone: timeZone, temperature_unit: "celsius", wind_speed_unit: "kmh" });
   const response = await fetch("https://api.open-meteo.com/v1/forecast?" + query);
   if (!response.ok) throw new Error("The weather service is temporarily unavailable. Please try again shortly.");
   const weather = await response.json();
@@ -242,7 +242,7 @@ async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
     "Now: " + (weatherDescriptions[current.weather_code] || "Conditions unavailable") + ", " + Math.round(current.temperature_2m) + "°C (feels like " + Math.round(current.apparent_temperature) + "°C).",
     "Humidity: " + Math.round(current.relative_humidity_2m) + "% | Wind: " + Math.round(current.wind_speed_10m) + " km/h | Precipitation: " + Number(current.precipitation || 0).toFixed(1) + " mm.",
     "",
-    "**Next 3 days**"
+    "**Next 7 days**"
   ];
 
 
@@ -271,90 +271,136 @@ for (let i = 0; i < (weather.daily?.time || []).length; i += 1) {
 const question = String(rawQuestion || "");
 
 const asksTomorrow = /\b(tomorrow|next day)\b/i.test(question);
+
+const asksWeekend = /\b(this weekend|the weekend|weekend)\b/i.test(question);
+const asksTemperature =
+  /\b(how warm|how hot|temperature|temperatures|warm|hot)\b/i.test(question);
+
 const dayMatch = question.match(
   /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i
 );
 const asksAnotherDay = Boolean(dayMatch);
 
-if (asksTomorrow || asksAnotherDay) {
-  const requestedDay = asksTomorrow ? "tomorrow" : dayMatch[1];
+if (asksTomorrow || asksAnotherDay || asksWeekend) {
+  const requestedDay = asksWeekend
+  ? "weekend"
+  : asksTomorrow
+    ? "tomorrow"
+    : dayMatch[1];
 
   const forecastIndex = asksTomorrow
-    ? 1
-    : (weather.daily?.time || []).findIndex((date) => {
+  ? 1
+  : (weather.daily?.time || []).findIndex((date) => {
+      const forecastDate = new Date(date + "T12:00:00Z");
+      const forecastDay = new Intl.DateTimeFormat("en-AU", {
+        timeZone,
+        weekday: "long"
+      }).format(forecastDate);
+
+      return forecastDay.toLowerCase() === requestedDay.toLowerCase();
+    });
+
+const weekendIndices = asksWeekend
+  ? (weather.daily?.time || [])
+      .map((date, index) => {
         const forecastDate = new Date(date + "T12:00:00Z");
         const forecastDay = new Intl.DateTimeFormat("en-AU", {
           timeZone,
           weekday: "long"
-        }).format(forecastDate);
+        }).format(forecastDate).toLowerCase();
 
-        return forecastDay.toLowerCase() === requestedDay.toLowerCase();
-      });
+        return ["saturday", "sunday"].includes(forecastDay)
+          ? index
+          : -1;
+      })
+      .filter((index) => index >= 0)
+  : [];
 
-  if (forecastIndex >= 0 && weather.daily?.time?.[forecastIndex]) {
-    const date = new Date(weather.daily.time[forecastIndex] + "T12:00:00Z");
-    const dayLabel = new Intl.DateTimeFormat("en-AU", {
-      timeZone,
-      weekday: "long",
-      day: "numeric",
-      month: "short"
-    }).format(date);
+if (asksWeekend && asksTemperature) {
+  if (weekendIndices.length) {
+    const weekendLines = weekendIndices.map((index) => {
+      const date = new Date(weather.daily.time[index] + "T12:00:00Z");
+      const dayLabel = new Intl.DateTimeFormat("en-AU", {
+        timeZone,
+        weekday: "long",
+        day: "numeric",
+        month: "short"
+      }).format(date);
 
-    const description =
-      weatherDescriptions[weather.daily.weather_code[forecastIndex]] ||
-      "Conditions unavailable";
-    const min = Math.round(weather.daily.temperature_2m_min[forecastIndex]);
-    const max = Math.round(weather.daily.temperature_2m_max[forecastIndex]);
-    const probability =
-      weather.daily.precipitation_probability_max?.[forecastIndex];
+      return dayLabel + ": " +
+        Math.round(weather.daily.temperature_2m_min[index]) + "–" +
+        Math.round(weather.daily.temperature_2m_max[index]) + "°C";
+    });
 
     lines.splice(
       1,
       0,
-      "**Forecast for " + dayLabel + " in " + placeName + "**",
-      description + ", " + min + "–" + max + "°C" +
-        (probability == null
-          ? "."
-          : ", up to " + probability + "% chance of precipitation.")
+      "**Weekend temperatures in " + placeName + "**",
+      ...weekendLines
     );
   } else {
     lines.splice(
       1,
       0,
-      "I couldn't find that day's forecast in the available forecast data."
+      "I couldn't find the weekend temperatures in the available forecast data."
     );
   }
+}
 }
 
 if (
   /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(question) &&
   /\b(rain|precipitation)\b/i.test(question)
 ) {
-  const forecastIndex = asksTomorrow ? 1 : 0;
-  const probability =
-    weather.daily?.precipitation_probability_max?.[forecastIndex];
-  const dayLabel = asksTomorrow ? "tomorrow" : "today";
+  let forecastIndex = asksTomorrow ? 1 : 0;
+  let dayLabel = asksTomorrow ? "tomorrow" : "today";
 
-  if (probability != null) {
-    const likelihood =
-      probability >= 50
-        ? "Rain is likely " + dayLabel
-        : probability >= 20
-          ? "Rain is possible " + dayLabel
-          : "Rain is unlikely " + dayLabel;
+  if (asksAnotherDay && dayMatch) {
+    forecastIndex = (weather.daily?.time || []).findIndex((date) => {
+      const forecastDate = new Date(date + "T12:00:00Z");
+      const forecastDay = new Intl.DateTimeFormat("en-AU", {
+        timeZone,
+        weekday: "long"
+      }).format(forecastDate);
 
-    lines.splice(
-      1,
-      0,
-      likelihood + " in " + placeName + ": up to " +
-        probability + "% chance of precipitation."
-    );
+      return forecastDay.toLowerCase() === dayMatch[1].toLowerCase();
+    });
+
+    dayLabel = dayMatch[1];
+  }
+
+  if (forecastIndex >= 0) {
+    const probability =
+      weather.daily?.precipitation_probability_max?.[forecastIndex];
+
+    if (probability != null) {
+      const likelihood =
+        probability >= 50
+          ? "Rain is likely "
+          : probability >= 20
+            ? "Rain is possible "
+            : "Rain is unlikely ";
+
+      lines.splice(
+        1,
+        0,
+        likelihood + dayLabel + " in " + placeName + ": up to " +
+          probability + "% chance of precipitation."
+      );
+    } else {
+      lines.splice(
+        1,
+        0,
+        "I couldn't determine the rain probability for " + dayLabel +
+          " from the available forecast."
+      );
+    }
   } else {
     lines.splice(
       1,
       0,
-      "I couldn't determine the rain probability for " + dayLabel +
-        " from the available forecast."
+      "I couldn't find the forecast for " + dayLabel +
+        " in the available forecast data."
     );
   }
 }
