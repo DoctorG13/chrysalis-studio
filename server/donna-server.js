@@ -268,10 +268,10 @@ for (let i = 0; i < (weather.daily?.time || []).length; i += 1) {
   );
 }
 
+
 const question = String(rawQuestion || "");
 
 const asksTomorrow = /\b(tomorrow|next day)\b/i.test(question);
-
 const asksWeekend = /\b(this weekend|the weekend|weekend)\b/i.test(question);
 const asksTemperature =
   /\b(how warm|how hot|temperature|temperatures|warm|hot)\b/i.test(question);
@@ -281,56 +281,62 @@ const dayMatch = question.match(
 );
 const asksAnotherDay = Boolean(dayMatch);
 
-if (asksTomorrow || asksAnotherDay || asksWeekend) {
-  const requestedDay = asksWeekend
-  ? "weekend"
-  : asksTomorrow
-    ? "tomorrow"
-    : dayMatch[1];
+const asksRainLikelihood =
+  /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(question) &&
+  /\b(rain|precipitation)\b/i.test(question);
 
-  const forecastIndex = asksTomorrow
+const dailyDates = weather.daily?.time || [];
+
+function getDayLabel(date) {
+  return new Intl.DateTimeFormat("en-AU", {
+    timeZone,
+    weekday: "long",
+    day: "numeric",
+    month: "short"
+  }).format(new Date(date + "T12:00:00Z"));
+}
+
+function findDayIndex(dayName) {
+  return dailyDates.findIndex((date) => {
+    const weekday = new Intl.DateTimeFormat("en-AU", {
+      timeZone,
+      weekday: "long"
+    }).format(new Date(date + "T12:00:00Z"));
+
+    return weekday.toLowerCase() === dayName.toLowerCase();
+  });
+}
+
+const weekendIndices = dailyDates
+  .map((date, index) => {
+    const weekday = new Intl.DateTimeFormat("en-AU", {
+      timeZone,
+      weekday: "long"
+    }).format(new Date(date + "T12:00:00Z")).toLowerCase();
+
+    return ["saturday", "sunday"].includes(weekday) ? index : -1;
+  })
+  .filter((index) => index >= 0);
+
+let forecastIndex = asksTomorrow
   ? 1
-  : (weather.daily?.time || []).findIndex((date) => {
-      const forecastDate = new Date(date + "T12:00:00Z");
-      const forecastDay = new Intl.DateTimeFormat("en-AU", {
-        timeZone,
-        weekday: "long"
-      }).format(forecastDate);
+  : asksAnotherDay
+    ? findDayIndex(dayMatch[1])
+    : 0;
 
-      return forecastDay.toLowerCase() === requestedDay.toLowerCase();
-    });
-
-const weekendIndices = asksWeekend
-  ? (weather.daily?.time || [])
-      .map((date, index) => {
-        const forecastDate = new Date(date + "T12:00:00Z");
-        const forecastDay = new Intl.DateTimeFormat("en-AU", {
-          timeZone,
-          weekday: "long"
-        }).format(forecastDate).toLowerCase();
-
-        return ["saturday", "sunday"].includes(forecastDay)
-          ? index
-          : -1;
-      })
-      .filter((index) => index >= 0)
-  : [];
+let dayLabel = asksTomorrow
+  ? "tomorrow"
+  : asksAnotherDay
+    ? dayMatch[1]
+    : "today";
 
 if (asksWeekend && asksTemperature) {
   if (weekendIndices.length) {
-    const weekendLines = weekendIndices.map((index) => {
-      const date = new Date(weather.daily.time[index] + "T12:00:00Z");
-      const dayLabel = new Intl.DateTimeFormat("en-AU", {
-        timeZone,
-        weekday: "long",
-        day: "numeric",
-        month: "short"
-      }).format(date);
-
-      return dayLabel + ": " +
-        Math.round(weather.daily.temperature_2m_min[index]) + "–" +
-        Math.round(weather.daily.temperature_2m_max[index]) + "°C";
-    });
+    const weekendLines = weekendIndices.map((index) =>
+      getDayLabel(dailyDates[index]) + ": " +
+      Math.round(weather.daily.temperature_2m_min[index]) + "–" +
+      Math.round(weather.daily.temperature_2m_max[index]) + "°C"
+    );
 
     lines.splice(
       1,
@@ -345,31 +351,51 @@ if (asksWeekend && asksTemperature) {
       "I couldn't find the weekend temperatures in the available forecast data."
     );
   }
-}
-}
-
-if (
-  /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(question) &&
-  /\b(rain|precipitation)\b/i.test(question)
-) {
-  let forecastIndex = asksTomorrow ? 1 : 0;
-  let dayLabel = asksTomorrow ? "tomorrow" : "today";
-
-  if (asksAnotherDay && dayMatch) {
-    forecastIndex = (weather.daily?.time || []).findIndex((date) => {
-      const forecastDate = new Date(date + "T12:00:00Z");
-      const forecastDay = new Intl.DateTimeFormat("en-AU", {
-        timeZone,
-        weekday: "long"
-      }).format(forecastDate);
-
-      return forecastDay.toLowerCase() === dayMatch[1].toLowerCase();
-    });
-
-    dayLabel = dayMatch[1];
+} else if (asksTemperature && (asksTomorrow || asksAnotherDay)) {
+  if (forecastIndex >= 0 && dailyDates[forecastIndex]) {
+    lines.splice(
+      1,
+      0,
+      "**Temperatures for " + getDayLabel(dailyDates[forecastIndex]) +
+        " in " + placeName + "**",
+      "Expected temperature: " +
+        Math.round(weather.daily.temperature_2m_min[forecastIndex]) + "–" +
+        Math.round(weather.daily.temperature_2m_max[forecastIndex]) + "°C."
+    );
+  } else {
+    lines.splice(
+      1,
+      0,
+      "I couldn't find that day's temperature forecast in the available data."
+    );
   }
+} else if (asksRainLikelihood) {
+  if (asksWeekend) {
+    if (weekendIndices.length) {
+      const weekendRainLines = weekendIndices.map((index) => {
+        const probability =
+          weather.daily.precipitation_probability_max?.[index];
 
-  if (forecastIndex >= 0) {
+        return getDayLabel(dailyDates[index]) + ": " +
+          (probability == null
+            ? "rain probability unavailable"
+            : "up to " + probability + "% chance of precipitation");
+      });
+
+      lines.splice(
+        1,
+        0,
+        "**Weekend rain forecast in " + placeName + "**",
+        ...weekendRainLines
+      );
+    } else {
+      lines.splice(
+        1,
+        0,
+        "I couldn't find the weekend rain forecast in the available data."
+      );
+    }
+  } else if (forecastIndex >= 0 && dailyDates[forecastIndex]) {
     const probability =
       weather.daily?.precipitation_probability_max?.[forecastIndex];
 
@@ -391,19 +417,46 @@ if (
       lines.splice(
         1,
         0,
-        "I couldn't determine the rain probability for " + dayLabel +
-          " from the available forecast."
+        "I couldn't determine the rain probability for " + dayLabel + "."
       );
     }
   } else {
     lines.splice(
       1,
       0,
-      "I couldn't find the forecast for " + dayLabel +
-        " in the available forecast data."
+      "I couldn't find the rain forecast for " + dayLabel + "."
+    );
+  }
+} else if (asksTomorrow || asksAnotherDay) {
+  if (forecastIndex >= 0 && dailyDates[forecastIndex]) {
+    const index = forecastIndex;
+    const description =
+      weatherDescriptions[weather.daily.weather_code[index]] ||
+      "Conditions unavailable";
+    const probability =
+      weather.daily.precipitation_probability_max?.[index];
+
+    lines.splice(
+      1,
+      0,
+      "**Forecast for " + getDayLabel(dailyDates[index]) +
+        " in " + placeName + "**",
+      description + ", " +
+        Math.round(weather.daily.temperature_2m_min[index]) + "–" +
+        Math.round(weather.daily.temperature_2m_max[index]) + "°C" +
+        (probability == null
+          ? "."
+          : ", up to " + probability + "% chance of precipitation.")
+    );
+  } else {
+    lines.splice(
+      1,
+      0,
+      "I couldn't find that day's forecast in the available forecast data."
     );
   }
 }
+
 
 return {
   answer: lines.join("\n"),

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useState,  } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import BizziBuddiLogo from "./BizziBuddiLogo";
 import { buildBizziBuddiIntelligence } from "../../utils/bizzibuddiIntelligence";
 
@@ -12,38 +12,44 @@ function getLiveInfoRequest(question, conversation = []) {
     .replace(/\s+/g, " ");
 
   const weatherTerm =
-  /\b(weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b/i;
+    /\b(weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b/i;
   const timeTerm =
     /\b(what time|current time|time is it|local time|world clock|time in|what is the time)\b/i;
 
   const locationPattern =
-  /\b(?:weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b.*?\b(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+    /\b(?:weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b.*?\b(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
   const timeLocationPattern =
     /\b(?:what time is it|what is the time|current time|local time|world clock|time in)\s+(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
   const generalLocationPattern =
     /\b(?:how is it|how's it|hows it|what is it like|what's it like|whats it like|how is the weather|how's the weather|hows the weather)\s+(?:like\s+)?(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
 
-
   function extractLocation(text) {
-    const source = String(text || "").trim();
-        const match =
-      source.match(locationPattern) ||
-      source.match(timeLocationPattern) ||
-      source.match(generalLocationPattern);
-    if (!match?.[1]) return "";
+    const sources = String(text || "").split(/\r?\n/);
 
-    return match[1]
-      .trim()
-      .replace(/[?.!]+$/, "")
-      .replace(/\s+(?:today|tomorrow|tonight|right now|this week|on (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))$/i, "")
-      .trim();
+    for (const source of sources) {
+      const match =
+        source.match(locationPattern) ||
+        source.match(timeLocationPattern) ||
+        source.match(generalLocationPattern);
+      if (!match?.[1]) continue;
+
+      const location = match[1]
+        .replace(/\*+/g, "")
+        .trim()
+        .replace(/[?.!]+$/, "")
+        .replace(/\s+(?:today|tomorrow|tonight|right now|this week|on (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday))$/i, "")
+        .trim();
+
+      if (location) return location;
+    }
+
+    return "";
   }
 
   const locationPromptPattern =
     /\b(which city|which location|what city|what location|city or town)\b/i;
 
   const latestEntry = conversation[0] || {};
-  const latestQuestion = String(latestEntry.question || "");
   const latestAnswer = String(latestEntry.answer || "");
 
   const contextEntry = conversation.find((entry) => {
@@ -51,33 +57,33 @@ function getLiveInfoRequest(question, conversation = []) {
     const priorAnswer = String(entry.answer || "");
 
     return Boolean(extractLocation(priorQuestion)) ||
-      weatherTerm.test(priorQuestion) ||
-      timeTerm.test(priorQuestion) ||
-      /\b(weather|forecast|rain|temperature|time in|local time|current time)\b/i.test(priorAnswer) ||
+      /\b(weather|forecast|rain|temperature|warm|hot|weekend|sunday|saturday|tomorrow|monday|tuesday|wednesday|thursday|friday)\b/i.test(priorQuestion) ||
+      /\b(weather in|weekend temperatures|chance of precipitation|current time in|time zone:)\b/i.test(priorAnswer) ||
       locationPromptPattern.test(priorAnswer);
   });
 
   const previousQuestion = String(contextEntry?.question || "");
   const previousAnswer = String(contextEntry?.answer || "");
-  const previousLocation = extractLocation(previousQuestion);
+  const previousLocation =
+    extractLocation(previousQuestion) ||
+    extractLocation(previousAnswer);
 
   const asksWeather = weatherTerm.test(normalisedValue);
   const asksTime = timeTerm.test(normalisedValue);
-
   const isLocationPrompt = locationPromptPattern.test(latestAnswer);
 
   const bareLocation =
     /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) &&
-    !/^(today|tomorrow|tonight|weather|wheather|forecast|time|rain|here|there|friday|saturday|sunday|monday|tuesday|wednesday|thursday)$/i.test(value);
+    !/^(today|tomorrow|tonight|weather|wheather|forecast|time|rain|here|there|friday|saturday|sunday|monday|tuesday|wednesday|thursday|warm|hot|weekend|weekends)$/i.test(value);
 
   const refersToPreviousLocation =
     /\b(here|there|that location|that city|that town|same place|that area)\b/i.test(value);
 
+  const soundsLikeFollowUp =
+    /^(?:(?:and\s+)?(?:what|how) about|(?:what's|whats|what is|how's|hows|how is)(?:\s+(?:the\s+)?(?:weather|forecast|temperature|temperatures|warm|hot)|\s+it)?\b|will it|is it|weather|forecast|rain|raining)\b/i.test(normalisedValue);
+
   const asksAboutAnotherDay =
     /\b(today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(value);
-
-  const soundsLikeFollowUp =
-    /^(?:(?:and\s+)?(?:what|how) about|(?:what's|whats|what is|how's|hows|how is)(?:\s+(?:the\s+)?(?:weather|forecast)|\s+it)?\b|will it|is it|weather|forecast|rain|raining)\b/i.test(normalisedValue);
 
   const isFollowUp =
     Boolean(contextEntry) &&
@@ -102,18 +108,12 @@ function getLiveInfoRequest(question, conversation = []) {
 
   let location = extractLocation(value);
 
-  if (
-  !location &&
-  /^(?:and\s+)?what about\s+(.+?)[?.!]*$/i.test(value)
-) {
-  location = value
-    .replace(/^(?:and\s+)?what about\s+/i, "")
-    .replace(/[?.!]+$/, "")
-    .trim();
-}
+  const isDayOnlyFollowUp =
+    /^(?:and\s+)?(?:what about\s+)?(?:today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)[?.!]*$/i.test(value);
 
-
-  if (isLocationPrompt && bareLocation) {
+  if (isDayOnlyFollowUp) {
+    location = previousLocation;
+  } else if (isLocationPrompt && bareLocation) {
     location = value;
   } else if (bareLocation && soundsLikeFollowUp) {
     location = value;
@@ -129,7 +129,37 @@ function getLiveInfoRequest(question, conversation = []) {
     /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(normalisedValue) &&
     /\b(rain|precipitation)\b/i.test(normalisedValue);
 
-  return { kind, location, question: value, asksRainLikelihood };
+  // Carry the last explicitly requested forecast day into short follow-ups such
+  // as "And how warm will it be?" without changing the wording shown in chat.
+  let requestQuestion = value;
+  const asksTemperature =
+    /\b(how warm|how hot|temperature|temperatures|warm|hot)\b/i.test(normalisedValue);
+  const alreadyHasForecastPeriod =
+    /\b(today|tomorrow|tonight|this weekend|the weekend|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(normalisedValue);
+
+  if (kind === "weather" && asksTemperature && !alreadyHasForecastPeriod) {
+    const priorDayEntry = conversation.find((entry) =>
+      /\b(today|tomorrow|tonight|this weekend|the weekend|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i.test(String(entry.question || ""))
+    );
+    const priorDayMatch = String(priorDayEntry?.question || "").match(
+      /\b(today|tomorrow|tonight|this weekend|the weekend|weekend|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i
+    );
+
+    if (priorDayMatch) {
+      const priorDay = priorDayMatch[1].toLowerCase();
+      const dayPhrase = priorDay === "this weekend" || priorDay === "the weekend"
+        ? "this weekend"
+        : priorDay;
+      requestQuestion = value.replace(/[?.!]*$/, "") + " on " + dayPhrase + "?";
+    }
+  }
+
+  return {
+    kind,
+    location,
+    question: requestQuestion,
+    asksRainLikelihood,
+  };
 }
 
 function normalise(value) {
