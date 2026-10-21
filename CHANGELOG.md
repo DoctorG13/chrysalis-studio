@@ -1,5 +1,23 @@
 ## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
 
+## BizziBuddi — Weather and Time Follow-up Improvements
+
+### Improved
+- Retain resolved city and region context across weather and time follow-up questions.
+- Recognise seven-day forecast requests and preserve forecast intent.
+- Route day-only follow-ups after time questions to weather forecasts.
+- Recognise local date and day questions in live-information requests.
+
+### Testing
+- Production build passed with Vite 8.1.0.
+- Verified the live weather endpoint returns current conditions for Brisbane.
+- Verified the live time endpoint returns local-time information for Sydney.
+- Browser follow-up tests previously confirmed location retention, rain probabilities, specific-day temperatures, weekly forecasts, and time follow-ups.
+- Deployment readiness and final release acceptance remain outstanding.
+
+---
+
+
 ### Fixed
 - Preserve live-information intent for short follow-ups such as a city name or “Current weather — Brisbane” when weather is already being discussed.
 - Carry the original question to the weather service so rain-likelihood questions can be answered directly using the forecast's daily precipitation probability.
