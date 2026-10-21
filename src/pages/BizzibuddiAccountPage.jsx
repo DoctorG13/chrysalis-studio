@@ -814,9 +814,7 @@ export default function BizzibuddiAccountPage() {
               ? "Tasks outstanding"
               : stage === "Ready"
                 ? "Ready"
-                : tasks.length > 0 && completedTasks === tasks.length
-                  ? "Stage update needed"
-                  : stage === "Not started"
+                : stage === "Not started"
                     ? "Not started"
                     : "In progress";
 
@@ -1367,6 +1365,21 @@ export default function BizzibuddiAccountPage() {
               .bizzibuddi-account-page img {
                 max-width: 100%;
                 height: auto;
+              }
+              .bizzibuddi-production-subnav button:hover {
+                border-color: rgba(0,180,219,.65) !important;
+                background: rgba(0,180,219,.10) !important;
+              }
+              @media (max-width: 560px) {
+                .bizzibuddi-account-page .bizzibuddi-production-subnav {
+                  top: 112px !important;
+                  gap: 5px !important;
+                  padding: 7px !important;
+                }
+                .bizzibuddi-account-page .bizzibuddi-production-subnav button {
+                  padding: 6px 8px !important;
+                  font-size: 10px !important;
+                }
               }
               .bizzibuddi-table-scroll {
                 width: 100%;
@@ -3246,12 +3259,10 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
       };
     }
 
-    if (job.productionReadiness === "Stage update needed" || job.productionReadiness === "Ready") {
+    if (job.productionReadiness === "Ready") {
       return {
         label: "Open production",
-        detail: job.productionReadiness === "Ready"
-          ? "Production is ready for the next workflow step."
-          : "All production tasks are complete. Update the production stage.",
+        detail: "Production is ready for the next workflow step.",
         action: () => onOpenProduction?.(job.id),
       };
     }
@@ -4689,6 +4700,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   const [saving, setSaving] = useState(false);
   const [quickSavingJobId, setQuickSavingJobId] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [queueFilter, setQueueFilter] = useState("active");
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [templateName, setTemplateName] = useState("");
@@ -4699,7 +4711,16 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   const [templateError, setTemplateError] = useState("");
   const [timerBusy, setTimerBusy] = useState(false);
   const [timerNow, setTimerNow] = useState(Date.now());
-  const selectedWorkItemRef = useRef(null);
+  const productionEditorRef = useRef(null);
+
+  function scrollToProductionEditor() {
+    const editor = productionEditorRef.current || document.getElementById("bizzibuddi-production-editor");
+    if (!editor) return;
+    const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
+    const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+    const targetTop = editor.getBoundingClientRect().top + window.scrollY - navHeight - 20;
+    window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  }
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const today = new Date(todayKey + "T00:00:00");
@@ -4733,9 +4754,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
           ? "Tasks outstanding"
           : ready
             ? "Ready"
-            : tasks.length > 0 && completedTasks === tasks.length
-              ? "Stage update needed"
-              : stage === "Not started"
+            : stage === "Not started"
                 ? "Not started"
                 : "In progress";
 
@@ -4848,19 +4867,6 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   }, [jobs, initialJobId]);
 
   useEffect(() => {
-    if (!selectedJobId || !selectedWorkItemRef.current) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      selectedWorkItemRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [selectedJobId]);
-
-  useEffect(() => {
     if (!jobs.some((job) => job.id === selectedJobId)) {
       setSelectedJobId(jobs[0]?.id || "");
     }
@@ -4899,13 +4905,15 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
     );
   }
 
-  async function saveRecord(record, jobId = record.jobId) {
+  async function saveRecord(record, jobId = record.jobId, confirmation = "") {
     setError("");
+    setSuccessMessage("");
     setSaving(true);
 
     try {
       await onSave(record);
       setSelectedJobId(jobId);
+      setSuccessMessage(confirmation || `Production updated: ${record.jobTitle || "Selected job"} is now ${record.stage || "saved"}.`);
     } catch (requestError) {
       setError(requestError.message || "We could not save production progress.");
       throw requestError;
@@ -4955,6 +4963,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
         updatedAt: new Date().toISOString(),
       });
       setSelectedJobId(job.id);
+      setSuccessMessage(`Production updated: ${job.title || "Selected job"} is now Complete.`);
     } catch (requestError) {
       setError(requestError.message || "We could not mark production complete.");
     } finally {
@@ -5118,28 +5127,61 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
     }
   }
 
-  function addTask(event) {
+  async function persistTaskDrafts(nextTasks) {
+    if (!selectedJob) return;
+
+    const form = document.getElementById("bizzibuddi-production-editor");
+    const formData = form ? new FormData(form) : null;
+    const record = {
+      id: existing?.id || "production-" + Date.now(),
+      jobId: selectedJob.id,
+      jobTitle: selectedJob.title || "Untitled job",
+      stage: String(formData?.get("stage") || existing?.stage || selectedJob.productionStage || "Not started"),
+      dueDate: String(formData?.get("dueDate") ?? existing?.dueDate ?? ""),
+      notes: String(formData?.get("notes") ?? existing?.notes ?? "").trim(),
+      tasks: nextTasks.map((task) => ({
+        id: String(task.id),
+        title: String(task.title || "").trim(),
+        complete: Boolean(task.complete),
+      })).filter((task) => task.title),
+      updatedAt: new Date().toISOString(),
+    };
+
+    try {
+      await saveRecord(record, selectedJob.id, `Production tasks saved for ${selectedJob.title || "this job"}.`);
+    } catch {
+      // saveRecord displays the error; keep the current draft visible for retry.
+    }
+  }
+
+  async function addTask(event) {
     event.preventDefault();
     const title = newTaskTitle.trim();
-    if (!title || taskDrafts.length >= 100) return;
+    if (!title || taskDrafts.length >= 100 || saving) return;
 
-    setTaskDrafts((current) => [
-      ...current,
-      { id: "task-" + Date.now() + "-" + current.length, title, complete: false },
-    ]);
+    const nextTasks = [
+      ...taskDrafts,
+      { id: "task-" + Date.now() + "-" + taskDrafts.length, title, complete: false },
+    ];
+    setTaskDrafts(nextTasks);
     setNewTaskTitle("");
+    await persistTaskDrafts(nextTasks);
   }
 
-  function toggleTask(taskId) {
-    setTaskDrafts((current) =>
-      current.map((task) =>
-        task.id === taskId ? { ...task, complete: !task.complete } : task
-      )
+  async function toggleTask(taskId) {
+    if (saving) return;
+    const nextTasks = taskDrafts.map((task) =>
+      task.id === taskId ? { ...task, complete: !task.complete } : task
     );
+    setTaskDrafts(nextTasks);
+    await persistTaskDrafts(nextTasks);
   }
 
-  function removeTask(taskId) {
-    setTaskDrafts((current) => current.filter((task) => task.id !== taskId));
+  async function removeTask(taskId) {
+    if (saving) return;
+    const nextTasks = taskDrafts.filter((task) => task.id !== taskId);
+    setTaskDrafts(nextTasks);
+    await persistTaskDrafts(nextTasks);
   }
 
   const completedDraftTasks = taskDrafts.filter((task) => task.complete).length;
@@ -5177,12 +5219,20 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
         <p style={copyStyle}>One place to see what is on the workroom floor, what is due, what is ready and what needs to move next.</p>
       </div>
 
-      <div style={{
+      <nav aria-label="Production section shortcuts" className="bizzibuddi-production-subnav" style={{ position: "sticky", top: 96, zIndex: 30, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginTop: 14, padding: 9, border: "1px solid rgba(0,180,219,.25)", borderRadius: 12, background: "rgba(6,26,43,.96)", boxShadow: "0 8px 20px rgba(0,0,0,.18)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+        <span style={{ color: CYAN, fontSize: 10, fontWeight: 900, letterSpacing: ".06em", padding: "0 5px" }}>JUMP TO</span>
+        {[["queue", "Job queue", "bizzibuddi-production-queue"], ["workload", "Workload", "bizzibuddi-production-workload"], ["work-item", "Work item", "bizzibuddi-production-work-item"], ["tasks", "Tasks", "bizzibuddi-production-tasks"], ["update", "Update production", "bizzibuddi-production-editor"], ["templates", "Templates", "bizzibuddi-production-templates"], ["time", "Time tracking", "bizzibuddi-production-time"]].map(([key, label, targetId]) => (
+          <button key={key} type="button" onClick={() => { const target = document.getElementById(targetId); if (!target) return; const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav"); const subnav = document.querySelector(".bizzibuddi-production-subnav"); const offset = (nav?.getBoundingClientRect().height || 0) + (subnav?.getBoundingClientRect().height || 0) + 18; window.scrollTo({ top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset), behavior: "smooth" }); }} style={{ border: "1px solid " + BORDER, borderRadius: 999, padding: "7px 10px", background: "rgba(255,255,255,.045)", color: TEXT, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "normal" }}>{label}</button>
+        ))}
+      </nav>
+
+      <div id="bizzibuddi-production-templates" style={{
         marginTop: 22,
         padding: 16,
         borderRadius: 14,
         border: "1px solid " + BORDER,
         background: "rgba(255,255,255,.025)",
+        scrollMarginTop: 180,
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
@@ -5295,12 +5345,13 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
         {templateError && <div role="alert" style={{ ...messageStyle, maxWidth: "none", margin: "12px 0 0", textAlign: "left" }}>{templateError}</div>}
       </div>
 
-      <div style={{
+      <div id="bizzibuddi-production-time" style={{
         marginTop: 18,
         padding: 16,
         borderRadius: 14,
         border: "1px solid " + BORDER,
         background: activeTimer ? "rgba(0,180,219,.07)" : "rgba(255,255,255,.025)",
+        scrollMarginTop: 180,
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
           <div>
@@ -5408,7 +5459,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
         border: "1px solid " + BORDER,
         background: "rgba(255,255,255,.025)",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div id="bizzibuddi-production-workload" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
             <small style={smallText}>WORKLOAD BALANCING</small>
             <strong style={{ display: "block", marginTop: 4, fontSize: 17 }}>
@@ -5488,7 +5539,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
         border: "1px solid " + BORDER,
         background: "rgba(255,255,255,.025)",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <div id="bizzibuddi-production-queue" style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <div>
             <small style={smallText}>PRODUCTION QUEUE</small>
             <strong style={{ display: "block", marginTop: 4, fontSize: 17 }}>
@@ -5610,7 +5661,12 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
                   <div style={{ display: "flex", gap: 7, marginTop: 12, flexWrap: "wrap" }}>
                     <button
                       type="button"
-                      onClick={() => setSelectedJobId(job.id)}
+                      onClick={() => {
+                        setSelectedJobId(job.id);
+                        setError("");
+                        setSuccessMessage("");
+                        window.requestAnimationFrame(() => window.requestAnimationFrame(scrollToProductionEditor));
+                      }}
                       style={{ ...smallActionButton, borderColor: "rgba(0,180,219,.45)" }}
                     >
                       {isSelected ? "Editing" : "Manage"}
@@ -5644,7 +5700,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
           <p style={copyStyle}>Production tracking is connected directly to your BizziBuddi jobs.</p>
         </div>
       ) : (
-        <div ref={selectedWorkItemRef} style={{ marginTop: 20, scrollMarginTop: 24 }}>
+        <div id="bizzibuddi-production-work-item" style={{ marginTop: 20, scrollMarginTop: 180 }}>
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -5686,6 +5742,8 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
                           const select = form.elements.namedItem("stage");
                           if (select) select.value = stage;
                         }
+                        setSuccessMessage("");
+                        window.requestAnimationFrame(() => window.requestAnimationFrame(scrollToProductionEditor));
                       }}
                       style={{
                         border: 0,
@@ -5706,7 +5764,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
                 })}
               </div>
 
-              <div style={productionTaskPanel}>
+              <div id="bizzibuddi-production-tasks" style={{ ...productionTaskPanel, scrollMarginTop: 180 }}>
                 <div style={productionTaskHeader}>
                   <div>
                     <small style={smallText}>TASK PROGRESS</small>
@@ -5725,14 +5783,23 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
                   <div style={productionTaskList}>
                     {taskDrafts.map((task) => (
                       <div key={task.id} style={productionTaskRow(task.complete)}>
-                        <label style={productionTaskLabel}>
+                        <label style={{ ...productionTaskLabel, cursor: saving ? "wait" : "pointer", flex: 1, minWidth: 0, gap: 12 }}>
                           <input
                             type="checkbox"
                             checked={task.complete}
+                            disabled={saving}
+                            aria-label={(task.complete ? "Mark task incomplete: " : "Mark task complete: ") + task.title}
+                            title={task.complete ? "Mark task incomplete" : "Mark task complete"}
                             onChange={() => toggleTask(task.id)}
+                            style={{ width: 24, height: 24, flex: "0 0 auto", cursor: saving ? "wait" : "pointer", accentColor: CYAN }}
                           />
-                          <span style={{ textDecoration: task.complete ? "line-through" : "none", opacity: task.complete ? 0.65 : 1 }}>
-                            {task.title}
+                          <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", minWidth: 0, flex: 1 }}>
+                            <span style={{ textDecoration: task.complete ? "line-through" : "none", opacity: task.complete ? 0.7 : 1 }}>
+                              {task.title}
+                            </span>
+                            <span style={{ color: task.complete ? "#58E0B1" : MUTED, border: "1px solid " + (task.complete ? "rgba(88,224,177,.4)" : BORDER), borderRadius: 999, padding: "4px 8px", fontSize: 11, fontWeight: 800, whiteSpace: "nowrap" }}>
+                              {task.complete ? "Completed · click to reopen" : "Click to mark complete"}
+                            </span>
                           </span>
                         </label>
                         <button type="button" onClick={() => removeTask(task.id)} style={smallDangerButton} disabled={saving}>
@@ -5759,8 +5826,10 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
                 </form>
               </div>
 
-              <form key={selectedJobId + "-" + (existing?.updatedAt || "new")} id="bizzibuddi-production-editor" onSubmit={handleSave} style={personForm}>
+              <form ref={productionEditorRef} key={selectedJobId + "-" + (existing?.updatedAt || "new")} id="bizzibuddi-production-editor" onSubmit={handleSave} style={{ ...personForm, scrollMarginTop: 150 }}>
                 <strong style={{ fontSize: 18 }}>Update production</strong>
+                <p style={{ ...smallText, margin: "6px 0 0" }}>Editing: {selectedJob?.title || "Selected job"}</p>
+                {successMessage && <div role="status" aria-live="polite" style={{ ...messageStyle, marginTop: 12, borderColor: "rgba(0,200,140,.45)", color: "#58E0B1" }}>{successMessage}</div>}
 
                 <label style={fieldStyle}>
                   Production stage
@@ -5787,8 +5856,8 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
                   <button type="submit" disabled={saving} style={{ ...primaryButton, maxWidth: 260, marginTop: 20, opacity: saving ? 0.65 : 1 }}>
                     {saving ? "Saving…" : "Save production progress"}
                   </button>
-                  {selectedJob.productionReadiness === "Stage update needed" && (
-                    <span style={{ ...smallText, color: "#F6C453" }}>All tasks are complete — move the stage forward when ready.</span>
+                  {selectedJob.productionReadiness === "Ready" && (
+                    <span style={{ ...smallText, color: "#58E0B1" }}>Production is ready for the next workflow step.</span>
                   )}
                 </div>
                 {error && <div role="alert" style={{ ...messageStyle, marginTop: 16 }}>{error}</div>}

@@ -2320,10 +2320,6 @@ function productionReadiness(stage, dueDate, tasks) {
     return { status: "Ready", detail: "Production is ready for completion." };
   }
 
-  if (totalTasks > 0 && completedTasks === totalTasks) {
-    return { status: "Stage update needed", detail: "All production tasks are complete." };
-  }
-
   if (normalizedStage === "Not started") {
     return { status: "Not started", detail: "Production has not started." };
   }

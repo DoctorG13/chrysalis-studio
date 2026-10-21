@@ -1,3 +1,18 @@
+
+## BizziBuddi — Production Task Persistence and Readiness Fix
+
+### Fixed
+- Persist production task creation, completion, and removal.
+- Prevent completed task lists from incorrectly changing a job's status to Ready.
+- Improve Production section navigation and work-item access.
+
+### Testing
+- Production build passed with Vite 8.1.0.
+- Acceptance tests passed for task creation, completion, and removal after browser refresh.
+- Production navigation, stage and due-date display, and readiness behaviour passed manual acceptance testing.
+
+---
+
 ## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
 
 ## BizziBuddi — Weather and Time Follow-up Improvements
