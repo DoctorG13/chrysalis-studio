@@ -35,9 +35,9 @@ const DEFAULT_BRANDING = {
   ownerName: "Your Name",
   logo: "",
   slogan: "",
-  primaryColour: "#0F2D4A",
-  secondaryColour: "#142B3D",
-  accentColour: "#2563EB",
+  primaryColour: "#8B1E3F",
+  secondaryColour: "#2F3A3F",
+  accentColour: "#C96A83",
 };
 
 const DEMO_BRANDING = {
@@ -122,7 +122,7 @@ function AuthenticationGate({ children }) {
 
   if (status === "checking") {
     return (
-      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F1F6FB", color: "#142B3D", fontSize: 14 }}>
+      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F7F5F2", color: "#2F3A3F", fontSize: 14 }}>
         Checking secure access...
       </main>
     );
@@ -131,13 +131,13 @@ function AuthenticationGate({ children }) {
   if (status === "error") {
     return (
       <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, boxSizing: "border-box", background: "#F7F5F2", color: "#2F3A3F" }}>
-        <div style={{ width: "100%", maxWidth: 430, padding: 28, background: "#FFFFFF", border: "1px solid #C8D5E2", borderRadius: 16, textAlign: "center", boxShadow: "0 18px 50px rgba(47,58,63,.08)" }}>
+        <div style={{ width: "100%", maxWidth: 430, padding: 28, background: "#FFFFFF", border: "1px solid #E8E8E8", borderRadius: 16, textAlign: "center", boxShadow: "0 18px 50px rgba(47,58,63,.08)" }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>🦋</div>
           <h1 style={{ margin: 0, fontSize: 22 }}>Chrysalis Studio</h1>
           <p style={{ color: "#6B7478", lineHeight: 1.5 }}>
             Secure access could not be verified. Please refresh the page and try again.
           </p>
-          <button type="button" onClick={() => window.location.reload()} style={{ marginTop: 8, minHeight: 44, padding: "0 18px", border: "none", borderRadius: 10, background: "#2563EB", color: "#FFFFFF", fontWeight: 700, cursor: "pointer" }}>
+          <button type="button" onClick={() => window.location.reload()} style={{ marginTop: 8, minHeight: 44, padding: "0 18px", border: "none", borderRadius: 10, background: "#8B1E3F", color: "#FFFFFF", fontWeight: 700, cursor: "pointer" }}>
             Try Again
           </button>
         </div>
