@@ -270,31 +270,22 @@ body:has(.bizzibuddi-footer-grid) .bizzibuddi-card :is(.bizzibuddi-eyebrow, .biz
 }
 
 
-/* Final contrast correction for the actual inline-styled account workspace cards. */
+/* Workspace card colours are defined by the page's shared style tokens.
+   Avoid broad descendant selectors that can override component-specific states. */
 .bizzibuddi-account-page .bizzibuddi-light-workspace-card {
   background: #F5F9FF !important;
   color: #102D4A !important;
   border: 1px solid #168BFF !important;
   box-shadow: 0 18px 46px rgba(0, 28, 65, .18) !important;
 }
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(h1, h2, h3, h4, p, small, label, strong, em, li, dt, dd) {
-  color: #183B5B;
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(h1, h2, h3, h4) {
+  color: #102D4A;
 }
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card > p:first-child,
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card p:first-child {
-  color: #0879F9 !important;
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong, em, li, dt, dd) {
+  color: #425A70;
 }
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong)[style*="color: rgb(184, 198, 214)"],
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong)[style*="#B8C6D6"] {
-  color: #425A70 !important;
-}
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card button {
-  color: #12395D;
-}
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card button[style*="background: rgb(0, 180, 219)"],
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card button[style*="background: #00B4DB"],
-.bizzibuddi-account-page .bizzibuddi-light-workspace-card button[style*="background: rgb(0, 180, 219, 0.13)"] {
-  color: #07315F !important;
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(button, input, select, textarea) {
+  font-size: revert;
 }
 .bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(input, select, textarea) {
   color: #102D4A !important;
