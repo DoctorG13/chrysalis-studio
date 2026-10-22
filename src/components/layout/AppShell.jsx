@@ -6,9 +6,17 @@ export default function AppShell({
   children,
   branding,
 }) {
-  const primary = branding?.primaryColour || "#0F2D4A";
-  const secondary = branding?.secondaryColour || "#142B3D";
-  const accent = branding?.accentColour || "#2563EB";
+  const primary =
+    branding?.primaryColour ||
+    "#8B1E3F";
+
+  const secondary =
+    branding?.secondaryColour ||
+    "#2F3A3F";
+
+  const accent =
+    branding?.accentColour ||
+    "#C96A83";
 
   return (
     <div
@@ -16,36 +24,31 @@ export default function AppShell({
         "--brand-primary": primary,
         "--brand-secondary": secondary,
         "--brand-accent": accent,
-        "--bb-navy": "#0F2D4A",
-        "--bb-blue": "#2563EB",
-        "--bb-cyan": "#00A9D2",
-        "--bb-ink": "#142B3D",
-        "--bb-muted": "#526779",
-        "--bb-border": "#C8D5E2",
+
         display: "flex",
         height: "100vh",
-        background: "#F1F6FB",
+        background: "#FAF9F6",
         color: secondary,
         overflow: "hidden",
       }}
     >
       {sidebar}
+
       <div
         style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           minWidth: 0,
-          background: "#F1F6FB",
         }}
       >
         {header}
+
         <main
           style={{
             flex: 1,
             overflowY: "auto",
             padding: 30,
-            background: "#F1F6FB",
           }}
         >
           {children}
