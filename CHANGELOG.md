@@ -3625,3 +3625,15 @@ All notable changes to Chrysalis are recorded here.
 - Send established business accounts to the Dashboard by default when no valid destination view was requested.
 - Update the URL and Today navigation state to match the displayed Dashboard.
 - Send accounts without business setup to onboarding and keep the URL in sync.
+
+
+## BizziBuddy — Blue Reference Visual Polish
+
+### Changed
+
+- Brightened the workspace background with layered blue gradients inspired by the approved visual reference.
+- Increased contrast for hero eyebrow text, account-security notices and back-navigation links.
+- Refined navigation into dark-glass panels with brighter blue active states and cyan accents.
+- Applied a pale content-card surface with dark readable typography.
+- Added small-screen wrapping safeguards for informational labels and links.
+- Preserved application routes, navigation behaviour and business workflows; visual verification remains pending in the local app.
