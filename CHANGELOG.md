@@ -4,8 +4,10 @@
 - Replaced the purple lightning favicon with a compact BizziBuddy clock-inspired mark using the approved navy, blue, cyan and gold palette.
 - Updated the browser title, theme colour and description to use the BizziBuddy product identity.
 - Shifted the main workspace canvas to a cool, pale blue surface with stronger ink and border contrast.
-- Added shared focus-visible treatments for keyboard navigation and clearer disabled-control states.
-- Replaced older crimson hover highlights in the BizziBuddy account navigation with the core blue/cyan identity.
+- Centralised shared navy, blue, cyan, text, border and surface colour tokens in the global stylesheet.
+- Aligned default and demo workspace branding with the BizziBuddy navy/blue palette.
+- Added shared focus-visible treatments, readable form placeholders, clearer disabled-control states and reduced-motion support.
+- Improved account workspace form, card and active-navigation contrast; replaced older crimson hover highlights with the core blue/cyan identity.
 
 ### Testing
 - Automated build, workflow and production release checks still need to run in the local project environment.
