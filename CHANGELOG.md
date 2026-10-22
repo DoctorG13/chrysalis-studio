@@ -3649,3 +3649,13 @@ All notable changes to Chrysalis are recorded here.
 - Updated shared workspace content cards to use a pale surface, dark heading/copy colours and a clear blue border.
 - Kept authentication forms and modal surfaces on their existing dark palette to avoid reducing form readability.
 - Visual verification and build/workflow checks are still required locally before merge; this change is not deployed.
+
+
+## BizziBuddy — Light Card Contrast Correction
+
+### Fixed
+
+- Added an explicit light-workspace-card class to the shared account workspace panels so styling targets actual rendered components rather than guessed selectors.
+- Corrected muted labels, supporting copy, form controls and heading contrast inside pale panels.
+- Kept the bright blue gradient and dark-glass navigation while improving readability inside the workspace.
+- Requires local build and visual verification before merge; not deployed.
