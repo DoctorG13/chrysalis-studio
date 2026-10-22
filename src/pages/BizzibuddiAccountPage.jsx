@@ -1839,7 +1839,7 @@ function AuthPanel({ mode, account, errorMessage, successMessage, onSubmit, onSw
     onSubmit(event);
   }
 
-  return <section style={cardStyle(560)}>
+  return <section className="bizzibuddi-light-workspace-card" style={cardStyle(560)}>
     <div style={centerStyle}>
       <div style={stepBadge}>{login ? "SIGN IN" : "STEP 1 OF 2 · ACCOUNT"}</div>
       <BizziBuddiLogo size={78} dark showWordmark={false} />
@@ -2155,7 +2155,7 @@ function OnboardingPanel({ account, onSubmit }) {
   }
 
   return (
-    <section style={cardStyle(700)}>
+    <section className="bizzibuddi-light-workspace-card" style={cardStyle(700)}>
       <div style={centerStyle}>
         <div style={stepBadge}>STEP {step} OF 4 · BUSINESS SETUP</div>
         <BizziBuddiLogo size={78} dark showWordmark={false} />
@@ -2539,7 +2539,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       )
     : people;
 
-  return <section style={cardStyle(940)}>
+  return <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div className="bizzibuddi-people-hero" style={{ marginTop: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 18, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0, flex: "1 1 420px" }}>
@@ -3279,7 +3279,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
     };
   }
 
-  return <section style={cardStyle(940)}>
+  return <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>JOBS</p>
@@ -3692,7 +3692,7 @@ function AccountPanel({ account, onBack, onPlans, onResetBusiness, onAccountUpda
   }
 
   return (
-    <section style={cardStyle(940)}>
+    <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
       <div style={{ marginTop: 22 }}>
         <p style={eyebrowStyle}>ACCOUNT</p>
@@ -4107,7 +4107,7 @@ function DashboardPanel({
   const isBrandNewBusiness = people.length === 0 && jobs.length === 0 && appointments.length === 0 && invoices.length === 0;
 
   return (
-    <section style={cardStyle(940)}>
+    <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
       <p style={eyebrowStyle}>YOUR BIZZIBUDDI BUSINESS</p>
       <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
       <p style={copyStyle}>Your business is ready. This is your operating view — what needs attention, what is happening today and where to go next.</p>
@@ -4599,7 +4599,7 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
   const available = hasBizzibuddiFeature(account?.plan, "automation");
 
   if (!available) {
-    return <section style={cardStyle(720)}>
+    return <section className="bizzibuddi-light-workspace-card" style={cardStyle(720)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
       <div style={{ ...centerStyle, marginTop: 24 }}>
         <p style={eyebrowStyle}>AUTOMATION</p>
@@ -4617,7 +4617,7 @@ function AutomationPanel({ account, events, invoices, onPlans, onRunChecks, onBa
     </section>;
   }
 
-  return <section style={cardStyle(940)}>
+  return <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>AUTOMATION</p>
@@ -4880,7 +4880,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
 
   if (!available) {
     return (
-      <section style={cardStyle(720)}>
+      <section className="bizzibuddi-light-workspace-card" style={cardStyle(720)}>
         <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
         <div style={{ ...centerStyle, marginTop: 24 }}>
           <p style={eyebrowStyle}>PRODUCTION</p>
@@ -5168,7 +5168,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   );
 
   return (
-    <section style={cardStyle(1040)}>
+    <section className="bizzibuddi-light-workspace-card" style={cardStyle(1040)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
 
       <div style={{ marginTop: 22 }}>
@@ -6416,7 +6416,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
   if (!available) {
     return (
-      <section style={cardStyle(720)}>
+      <section className="bizzibuddi-light-workspace-card" style={cardStyle(720)}>
         <button type="button" onClick={onBack} style={textButton}>
           ← Back to business
         </button>
@@ -6453,7 +6453,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
   if (loading && !reportData) {
     return (
-      <section style={cardStyle(720)}>
+      <section className="bizzibuddi-light-workspace-card" style={cardStyle(720)}>
         <button type="button" onClick={onBack} style={textButton}>
           ← Back to business
         </button>
@@ -6471,7 +6471,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
   if (!reportData) {
     return (
-      <section style={cardStyle(720)}>
+      <section className="bizzibuddi-light-workspace-card" style={cardStyle(720)}>
         <button type="button" onClick={onBack} style={textButton}>
           ← Back to business
         </button>
@@ -6500,7 +6500,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
   const productionStageGroups = production.stageGroups || [];
 
   return (
-    <section style={cardStyle(940)}>
+    <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
       <button type="button" onClick={onBack} style={textButton}>
         ← Back to business
       </button>
@@ -7336,7 +7336,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   }
 
   if (!available) {
-    return <section style={cardStyle(760)}>
+    return <section className="bizzibuddi-light-workspace-card" style={cardStyle(760)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
       <div style={{ ...centerStyle, marginTop: 34 }}>
         <div style={stepBadge}>PROFESSIONAL FEATURE</div>
@@ -7564,7 +7564,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           getFinancialYearLabel(financialYearStartYear)
         : "Custom report · " + formatInvoiceDate(selectedFinanceReportStartDate) + " to " + formatInvoiceDate(selectedFinanceReportEndDate);
 
-  return <section style={cardStyle(940)}>
+  return <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
     {paymentPendingRemoval && (
       <div
         role="dialog"
@@ -9259,7 +9259,7 @@ function CalendarPanel({
     }
   }
 
-  return <section style={cardStyle(940)}>
+  return <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>CALENDAR</p>
@@ -9920,7 +9920,7 @@ function HelpSupportPanel({
   const activeGuide = featureGuideItems.find((guide) => guide.id === activeFeatureGuide) || featureGuideItems[0];
 
   return (
-    <section style={cardStyle(940)}>
+    <section className="bizzibuddi-light-workspace-card" style={cardStyle(940)}>
       <div style={helpHero}>
         <div style={helpIcon}>
           <span>?</span>
