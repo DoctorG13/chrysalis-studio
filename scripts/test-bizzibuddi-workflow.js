@@ -209,3 +209,25 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "getFin
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "currently outstanding", "account Buddi outstanding balance answer");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "overdue invoice", "account Buddi overdue invoice answer");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Open finance →", "account Buddi finance navigation action");
+
+// Production workflow acceptance contracts: queue derivation, date filters,
+// stage views, task completion progress, and persisted production records.
+const productionPage = read("src/pages/BizzibuddiAccountPage.jsx");
+[
+  ["Production queue derives from persisted business jobs", "const productionJobs = jobs.map((job) => {"],
+  ["Production records are joined to jobs by job ID", "new Map(records.map((record) => [record.jobId, record]))"],
+  ["Due-today jobs are calculated from the production due date", "const dueToday = Boolean(due && due.getTime() === today.getTime() && stage !== \"Complete\");"],
+  ["Overdue jobs exclude completed work", "const overdue = Boolean(due && due < today && stage !== \"Complete\");"],
+  ["Active queue filter excludes completed jobs", 'if (queueFilter === "active") return !job.complete;'],
+  ["Due-today queue filter", 'if (queueFilter === "due-today") return job.dueToday;'],
+  ["Overdue queue filter", 'if (queueFilter === "overdue") return job.overdue;'],
+  ["Ready queue filter", 'if (queueFilter === "ready") return job.ready;'],
+  ["Complete queue filter", 'if (queueFilter === "complete") return job.complete;'],
+  ["Completed stage yields full progress", 'const progress = stage === "Complete"'],
+  ["Task progress is derived from completed tasks", "Math.round((completedTasks / tasks.length) * 100)"],
+  ["Production save persists through the account API", "/api/bizzibuddi/auth/production"],
+  ["Dashboard receives production records", "productionRecords={productionRecords}"],
+  ["Buddi receives production records", "productionRecords={productionRecords}"],
+].forEach(([name, marker]) => assertContains(productionPage, marker, name));
+
+console.log("Production workflow contract checks passed.");
