@@ -145,3 +145,41 @@ body:has(.bizzibuddi-footer-grid) .bizzibuddi-card:hover {
     transition: none !important;
   }
 }
+
+/* Shared card, form and dashboard surface contrast */
+body:has(.bizzibuddi-footer-grid) :is(input, select, textarea) {
+  border-color: #B8CADD !important;
+  color: #142B3D !important;
+  background-color: #FFFFFF !important;
+}
+
+body:has(.bizzibuddi-footer-grid) :is(input, select, textarea)::placeholder {
+  color: #63788A !important;
+  opacity: 1;
+}
+
+body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-card, [role="tabpanel"], [role="dialog"]) {
+  border-color: #B8CADD;
+}
+
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-card {
+  box-shadow: 0 8px 24px rgba(15, 45, 74, .12);
+}
+
+body:has(.bizzibuddi-footer-grid) :is(button, a).bizzibuddi-nav-link[aria-current="page"],
+body:has(.bizzibuddi-footer-grid) :is(button, a)[aria-current="page"] {
+  color: #FFFFFF !important;
+  background: #174EA6 !important;
+  border-color: #00A9D2 !important;
+  box-shadow: inset 3px 0 0 #00DDF4;
+}
+
+body:has(.bizzibuddi-footer-grid) :is(button, a):active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 720px) {
+  body:has(.bizzibuddi-footer-grid) :is(input, select, textarea, button) {
+    min-height: 42px;
+  }
+}
