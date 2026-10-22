@@ -3659,3 +3659,14 @@ All notable changes to Chrysalis are recorded here.
 - Corrected muted labels, supporting copy, form controls and heading contrast inside pale panels.
 - Kept the bright blue gradient and dark-glass navigation while improving readability inside the workspace.
 - Requires local build and visual verification before merge; not deployed.
+
+
+## BizziBuddy — Dashboard Readability Recovery
+
+### Fixed
+
+- Removed broad contrast rules that could conflict with page-specific styling.
+- Applied a scoped dashboard-card treatment with consistent dark typography on the pale surface.
+- Standardised nested light panels to pale blue with clear borders, and retained high-contrast blue primary actions.
+- Kept the blue gradient hero and dark-glass navigation.
+- Build and local visual verification are still required; not deployed.
