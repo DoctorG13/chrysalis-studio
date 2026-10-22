@@ -1,3 +1,18 @@
+## BizziBuddy — Favicon and Contrast Polish
+
+### Changed
+- Replaced the purple lightning favicon with a compact BizziBuddy clock-inspired mark using the approved navy, blue, cyan and gold palette.
+- Updated the browser title, theme colour and description to use the BizziBuddy product identity.
+- Shifted the main workspace canvas to a cool, pale blue surface with stronger ink and border contrast.
+- Added shared focus-visible treatments for keyboard navigation and clearer disabled-control states.
+- Replaced older crimson hover highlights in the BizziBuddy account navigation with the core blue/cyan identity.
+
+### Testing
+- Automated build, workflow and production release checks still need to run in the local project environment.
+- Browser acceptance review is still required to verify favicon rendering and check contrast across the key screens.
+
+---
+
 ## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
 
 ### Fixed
