@@ -183,3 +183,88 @@ body:has(.bizzibuddi-footer-grid) :is(button, a):active {
     min-height: 42px;
   }
 }
+
+
+/* BizziBuddy reference-matched blue workspace polish (2026-10-22)
+   Brighter blue canvas, high-contrast cyan labels, and light content surfaces. */
+body:has(.bizzibuddi-footer-grid) {
+  --bb-reference-navy: #07315F;
+  --bb-reference-blue: #0879F9;
+  --bb-reference-cyan: #00C8E8;
+  --bb-reference-ink: #102D4A;
+  --bb-reference-muted: #D7E8F8;
+  background: radial-gradient(ellipse at 88% 2%, rgba(0, 190, 255, .36), transparent 34%),
+              radial-gradient(ellipse at 8% 78%, rgba(0, 126, 255, .28), transparent 38%),
+              linear-gradient(135deg, #07315F 0%, #07529A 52%, #0874B8 100%) !important;
+  color: #F8FCFF !important;
+}
+
+body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-account-page, .bizzibuddi-account-shell, .bizzibuddi-workspace) {
+  color: #F8FCFF;
+}
+
+/* Hero eyebrow, informational copy and back links must remain legible on blue. */
+body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-eyebrow, .bizzibuddi-kicker, .bizzibuddi-section-eyebrow, .bizzibuddi-subtitle, .bizzibuddi-back-link, .bizzibuddi-account-note, .bizzibuddi-secure-note) {
+  color: #D9F5FF !important;
+}
+body:has(.bizzibuddi-footer-grid) a:is(.bizzibuddi-back-link, [href*="website"], [href*="business"]) {
+  color: #8BEAFF !important;
+  font-weight: 650;
+}
+body:has(.bizzibuddi-footer-grid) a:is(.bizzibuddi-back-link, [href*="website"], [href*="business"]):hover {
+  color: #FFFFFF !important;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Keep the security / account-backed notice bright and easy to scan. */
+body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-secure-pill, .bizzibuddi-account-notice, .bizzibuddi-info-pill) {
+  color: #7DEBFF !important;
+  background: rgba(4, 36, 70, .48) !important;
+  border: 1px solid #078FFF !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 204, 255, .08);
+}
+
+/* Navigation frame and tabs: dark glass on the brighter blue background. */
+body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-nav, .bizzibuddi-desktop-nav, .bizzibuddi-nav-shell, .bizzibuddi-navigation) {
+  background: rgba(3, 34, 66, .78) !important;
+  border-color: rgba(149, 207, 244, .28) !important;
+  box-shadow: 0 12px 32px rgba(0, 20, 48, .16);
+}
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav .bizzibuddi-nav-link,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-mobile-button {
+  color: #F4FAFF !important;
+  background: rgba(255, 255, 255, .045) !important;
+  border-color: rgba(187, 222, 248, .28) !important;
+}
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav .bizzibuddi-nav-link[aria-current="page"],
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-mobile-button[aria-current="page"] {
+  color: #FFFFFF !important;
+  background: #0879F9 !important;
+  border-color: #00D5F5 !important;
+  box-shadow: inset 0 -3px 0 #00D5F5;
+}
+
+/* Main workspace cards match the reference's bright surface and dark typography. */
+body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-card, .bizzibuddi-panel, .bizzibuddi-content-card, [role="tabpanel"]) {
+  border-color: rgba(0, 130, 255, .52);
+}
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-card {
+  background: #F5F9FF;
+  color: #102D4A;
+}
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-card :is(h1, h2, h3, h4, p, label, small, span) {
+  color: inherit;
+}
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-card :is(.bizzibuddi-eyebrow, .bizzibuddi-kicker, .bizzibuddi-section-eyebrow) {
+  color: #0879F9 !important;
+}
+
+@media (max-width: 720px) {
+  body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-nav, .bizzibuddi-desktop-nav, .bizzibuddi-nav-shell, .bizzibuddi-navigation) {
+    border-radius: 14px;
+  }
+  body:has(.bizzibuddi-footer-grid) :is(.bizzibuddi-eyebrow, .bizzibuddi-kicker, .bizzibuddi-section-eyebrow, .bizzibuddi-subtitle, .bizzibuddi-back-link, .bizzibuddi-account-note, .bizzibuddi-secure-note) {
+    overflow-wrap: anywhere;
+  }
+}
