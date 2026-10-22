@@ -3637,3 +3637,15 @@ All notable changes to Chrysalis are recorded here.
 - Applied a pale content-card surface with dark readable typography.
 - Added small-screen wrapping safeguards for informational labels and links.
 - Preserved application routes, navigation behaviour and business workflows; visual verification remains pending in the local app.
+
+
+## BizziBuddy — Reference-Matched Account Workspace
+
+### Changed
+
+- Updated the account hero to use a brighter blue gradient with cyan and white typography.
+- Improved contrast for the hero eyebrow, secure-account notice and back-navigation links.
+- Refined the sticky workspace navigation with a dark-glass treatment and brighter blue active tabs.
+- Updated shared workspace content cards to use a pale surface, dark heading/copy colours and a clear blue border.
+- Kept authentication forms and modal surfaces on their existing dark palette to avoid reducing form readability.
+- Visual verification and build/workflow checks are still required locally before merge; this change is not deployed.
