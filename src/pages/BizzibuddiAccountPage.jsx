@@ -5,13 +5,13 @@ import { bizzibuddiPlans, getBizzibuddiPlan, hasBizzibuddiFeature } from "../dat
 import { buildBizziBuddiIntelligence } from "../utils/bizzibuddiIntelligence";
 import BizziBuddiDemoWorkspace from "../components/bizzibuddi/BizziBuddiDemoWorkspace";
 
-const RED = "#2563EB";
-const CYAN = "#00B4DB";
-const BG = "#061A2B";
-const SURFACE = "#0F2D4A";
+const RED = "#0879F9";
+const CYAN = "#00D5F5";
+const BG = "#07315F";
+const SURFACE = "#F5F9FF";
 const TEXT = "#FFFFFF";
-const MUTED = "#B8C6D6";
-const BORDER = "rgba(255,255,255,.16)";
+const MUTED = "#425A70";
+const BORDER = "#C7DDF0";
 
 const plans = bizzibuddiPlans;
 
@@ -11021,16 +11021,16 @@ function Field({ name, label, type, placeholder, defaultValue, required = true }
   return <label style={fieldStyle}>{label}<input required={required} name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} style={inputStyle} /></label>;
 }
 
-const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: `linear-gradient(135deg, ${BG} 0%, ${SURFACE} 62%, #08233A 100%)`, color: TEXT, padding: "0 20px 24px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
+const pageStyle = { minHeight: "100vh", position: "relative", overflowX: "clip", background: "radial-gradient(ellipse at 90% 0%, rgba(0,196,255,.42), transparent 35%), radial-gradient(ellipse at 8% 75%, rgba(0,126,255,.3), transparent 38%), linear-gradient(135deg, #07315F 0%, #07529A 54%, #0874B8 100%)", color: TEXT, padding: "0 20px 24px", boxSizing: "border-box", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" };
 const shellStyle = { width: "100%", maxWidth: 1120, margin: "0 auto", position: "relative", zIndex: 1 };
 const headerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" };
 const brandStyle = { color: TEXT, textDecoration: "none", fontWeight: 700, fontSize: 28, letterSpacing: "0.02em" };
-const backLink = { color: RED, textDecoration: "none", fontWeight: 600, fontSize: 13 };
+const backLink = { color: "#8BEAFF", textDecoration: "none", fontWeight: 700, fontSize: 13 };
 const heroStyle = { maxWidth: 820, margin: "4px auto 8px", textAlign: "center" };
-const eyebrowStyle = { display: "inline-block", color: RED, fontSize: 10, fontWeight: 800, letterSpacing: "0.14em" };
-const heroHeading = { margin: "8px 0 8px", fontSize: "clamp(36px, 4.5vw, 52px)", lineHeight: 0.98, letterSpacing: "-0.055em", fontWeight: 600 };
-const heroCopy = { maxWidth: 650, margin: "0 auto", color: MUTED, fontSize: 14, lineHeight: 1.4 };
-const previewBadge = { display: "inline-block", marginTop: 10, padding: "6px 11px", border: `1px solid ${RED}`, borderRadius: 999, background: "rgba(0,180,219,.08)", color: RED, fontSize: 10, fontWeight: 600 };
+const eyebrowStyle = { display: "inline-block", color: "#BCEFFF", fontSize: 11, fontWeight: 800, letterSpacing: "0.14em" };
+const heroHeading = { margin: "12px 0 8px", fontSize: "clamp(38px, 4.8vw, 58px)", lineHeight: 0.99, letterSpacing: "-0.055em", fontWeight: 700, color: "#FFFFFF" };
+const heroCopy = { maxWidth: 780, margin: "0 auto", color: "#E0F0FF", fontSize: 15, lineHeight: 1.5 };
+const previewBadge = { display: "inline-block", marginTop: 16, padding: "9px 16px", border: "1px solid #078FFF", borderRadius: 999, background: "rgba(3,35,69,.48)", color: "#75E9FF", fontSize: 12, fontWeight: 650 };
 const navStyle = { display: "flex", justifyContent: "center", alignItems: "center", gap: 10, flexWrap: "wrap", margin: "12px 0 12px" };
 const navMainGroup = { display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap" };
 const tabStyle = (active) => ({ border: `1px solid ${active ? RED : BORDER}`, borderRadius: 999, padding: "9px 14px", background: active ? "rgba(255,23,79,.16)" : "rgba(255,255,255,.04)", color: TEXT, fontSize: 12, fontWeight: 700, cursor: "pointer" });
@@ -11041,9 +11041,9 @@ const workspaceNavShell = {
   width: "100%",
   boxSizing: "border-box",
   padding: 7,
-  border: "1px solid rgba(255,255,255,.10)",
-  borderRadius: 12,
-  background: "rgba(6,28,47,.94)",
+  border: "1px solid rgba(190,225,250,.22)",
+  borderRadius: 16,
+  background: "rgba(3,34,66,.84)",
   boxShadow: "0 10px 24px rgba(0,0,0,.20)",
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
@@ -11070,10 +11070,10 @@ const workspaceMainTab = (active) => ({
   width: "100%",
   minWidth: 0,
   minHeight: 38,
-  border: "1px solid " + (active ? RED : BORDER),
+  border: "1px solid " + (active ? CYAN : "rgba(190,225,250,.28)"),
   borderRadius: 9,
   padding: "7px 5px",
-  background: active ? "rgba(37,99,235,.18)" : "rgba(255,255,255,.035)",
+  background: active ? "#0879F9" : "rgba(255,255,255,.055)",
   color: TEXT,
   fontSize: 11,
   fontWeight: 800,
@@ -11186,15 +11186,15 @@ function getWorkspaceSubnav(account) {
   };
 }
 const footerStyle = { textAlign: "center", color: MUTED, fontSize: 12, lineHeight: 1.8, marginTop: 32 };
-const ambientGlow = { position: "absolute", width: 520, height: 520, borderRadius: "50%", background: "rgba(0,180,219,.10)", filter: "blur(110px)", top: -260, right: -180, pointerEvents: "none" };
+const ambientGlow = { position: "absolute", width: 620, height: 620, borderRadius: "50%", background: "rgba(0,198,255,.24)", filter: "blur(125px)", top: -300, right: -180, pointerEvents: "none" };
 const centerStyle = { textAlign: "center" };
 const stepBadge = { display: "inline-block", marginBottom: 14, color: RED, fontSize: 11, fontWeight: 700, letterSpacing: "0.14em" };
-const sectionHeading = { margin: "16px 0 10px", fontSize: "clamp(30px, 5vw, 44px)", letterSpacing: "-0.04em" };
-const copyStyle = { color: MUTED, lineHeight: 1.7 };
-const cardStyle = (maxWidth = "none") => ({ width: "100%", maxWidth, margin: "0 auto", boxSizing: "border-box", background: "rgba(255,255,255,.045)", border: `1px solid ${RED}`, borderRadius: 20, padding: "clamp(24px, 5vw, 48px)", boxShadow: "0 20px 48px rgba(0,0,0,.42)" });
+const sectionHeading = { margin: "16px 0 10px", fontSize: "clamp(30px, 5vw, 44px)", letterSpacing: "-0.04em", color: "#102D4A" };
+const copyStyle = { color: "#425A70", lineHeight: 1.7 };
+const cardStyle = (maxWidth = "none") => ({ width: "100%", maxWidth, margin: "0 auto", boxSizing: "border-box", background: "#F5F9FF", color: "#102D4A", border: "1px solid #168BFF", borderRadius: 24, padding: "clamp(24px, 5vw, 48px)", boxShadow: "0 18px 46px rgba(0,28,65,.18)" });
 const primaryButton = { width: "100%", minHeight: 52, marginTop: 20, border: 0, borderRadius: 10, background: RED, color: TEXT, fontWeight: 700, cursor: "pointer", padding: "0 20px", fontSize: 15 };
 const secondaryButton = { ...primaryButton, background: "transparent", border: `1px solid ${RED}` };
-const textButton = { border: 0, padding: 0, background: "transparent", color: RED, fontWeight: 700, cursor: "pointer" };
+const textButton = { border: 0, padding: 0, background: "transparent", color: "#8BEAFF", fontWeight: 750, cursor: "pointer" };
 const switchText = { textAlign: "center", color: MUTED, fontSize: 14, margin: "26px 0 0" };
 const smallText = { color: MUTED, fontSize: 13 };
 const fieldStyle = { display: "block", marginTop: 17, fontSize: 13, fontWeight: 700 };
