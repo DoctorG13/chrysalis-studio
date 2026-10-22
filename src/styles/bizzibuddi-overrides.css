@@ -42,3 +42,106 @@ body:has(.bizzibuddi-footer-grid) button:focus-visible {
   outline: 2px solid #FF174F;
   outline-offset: 3px;
 }
+
+/* BizziBuddy contrast and interaction polish */
+:root {
+  color-scheme: light;
+  --bb-navy: #0F2D4A;
+  --bb-blue: #2563EB;
+  --bb-cyan: #00A9D2;
+  --bb-ink: #142B3D;
+  --bb-muted: #526779;
+  --bb-border: #C8D5E2;
+  --bb-canvas: #F1F6FB;
+  --bb-surface: #FFFFFF;
+  --bb-focus: #007FA8;
+}
+
+body {
+  color: var(--bb-ink);
+  background: var(--bb-canvas);
+}
+
+button, input, select, textarea {
+  color: var(--bb-ink);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--bb-focus) !important;
+  outline-offset: 3px !important;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+::selection {
+  color: #FFFFFF;
+  background: var(--bb-blue);
+}
+
+/* Authenticated BizziBuddy workspace: clearer canvas, panels and text contrast. */
+.bizzibuddi-account-page,
+.bizzibuddi-account-shell,
+.bizzibuddi-workspace {
+  color: var(--bb-ink);
+}
+
+.bizzibuddi-account-page :is(input, select, textarea) {
+  border-color: var(--bb-border);
+  background-color: #FFFFFF;
+}
+
+.bizzibuddi-account-page :is(input, select, textarea)::placeholder {
+  color: #63788A;
+  opacity: 1;
+}
+
+.bizzibuddi-account-page :is(button, a) {
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.bizzibuddi-account-page :is(button, a):focus-visible {
+  outline: 3px solid var(--bb-focus);
+  outline-offset: 3px;
+}
+
+/* Replace the older crimson hover treatment with the core blue/cyan identity. */
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav .bizzibuddi-nav-link:hover,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-desktop-nav .bizzibuddi-nav-link:focus-visible,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-mobile-button:hover {
+  color: #FFFFFF !important;
+  background: #174EA6 !important;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2px #00B4DB, 0 0 16px rgba(0, 180, 219, .2);
+}
+
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-footer-link:hover,
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-footer-link:focus-visible {
+  color: #FFFFFF !important;
+  background: #174EA6 !important;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px #00B4DB;
+  filter: none !important;
+  outline: none;
+}
+
+body:has(.bizzibuddi-footer-grid) .bizzibuddi-card:hover {
+  background-color: #EAF5FF !important;
+  border-color: #78B5F5 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(.bizzibuddi-footer-grid) button {
+    transition: none !important;
+  }
+}
