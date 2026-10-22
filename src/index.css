@@ -4,19 +4,9 @@
 ====================================================== */
 
 :root {
-  color-scheme: light;
-  --brand-primary: #0F2D4A;
-  --brand-secondary: #142B3D;
-  --brand-accent: #2563EB;
-  --bb-navy: #0F2D4A;
-  --bb-blue: #2563EB;
-  --bb-cyan: #00A9D2;
-  --bb-ink: #142B3D;
-  --bb-muted: #526779;
-  --bb-border: #C8D5E2;
-  --bb-canvas: #F1F6FB;
-  --bb-surface: #FFFFFF;
-  --bb-focus: #007FA8;
+  --brand-primary: #8B1E3F;
+  --brand-secondary: #2F3A3F;
+  --brand-accent: #C96A83;
 }
 
 *,
@@ -36,8 +26,8 @@ body,
 
 body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: var(--bb-canvas);
-  color: var(--bb-ink);
+  background: #F7F5F2;
+  color: var(--brand-secondary);
   overflow: hidden;
 }
 
@@ -48,14 +38,7 @@ textarea { font: inherit; }
 button { cursor: pointer; }
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; display: block; }
-::selection { background: var(--bb-blue); color: #FFFFFF; }
-
-button, input, select, textarea { font: inherit; }
-input, select, textarea { accent-color: var(--bb-blue); }
-:where(button, a, input, select, textarea, [tabindex]):focus-visible { outline: 3px solid var(--bb-focus) !important; outline-offset: 3px !important; }
-:where(input, select, textarea)::placeholder { color: #63788A; opacity: 1; }
-:where(input, select, textarea) { border-color: var(--bb-border); }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; } }
+::selection { background: var(--brand-accent); color: #FFFFFF; }
 
 #buddi-assistant-title,
 #buddi-assistant-title span {
@@ -109,7 +92,7 @@ input, select, textarea { accent-color: var(--bb-blue); }
   box-shadow: 0 0 18px rgba(255,255,255,.18) !important;
 }
 [aria-label="Buddi assistant"] > div {
-  background: linear-gradient(180deg, #FFFFFF 0%, #F1F8FF 100%);
+  background: linear-gradient(180deg, #FFFDFC 0%, #FFF4F7 100%);
 }
 
 /* Buddi thinking indicator */
