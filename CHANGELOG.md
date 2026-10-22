@@ -3608,3 +3608,12 @@ All notable changes to Chrysalis are recorded here.
 - Send established business accounts to the Dashboard by default when no valid destination view was requested.
 - Update the URL and Today navigation state to match the displayed Dashboard.
 - Send accounts without business setup to onboarding and keep the URL in sync.
+
+
+## Production Workflow — Acceptance Contract Coverage
+
+### Added
+
+- Added workflow contract assertions for the production queue's job/record association, due-today and overdue logic, active/ready/complete filters, stage progress, task progress calculation, persistence API integration, and Dashboard/Buddi data wiring.
+- These checks validate that the expected implementation contracts remain present; they do not replace live UI acceptance testing or database persistence verification.
+- The Production Workflow acceptance checklist remains open until the local application is exercised and results are recorded.
