@@ -293,3 +293,50 @@ body:has(.bizzibuddi-footer-grid) .bizzibuddi-card :is(.bizzibuddi-eyebrow, .biz
   border-color: #B7D0E7 !important;
   color-scheme: light;
 }
+
+
+/* Dashboard readability pass: keep the approved blue hero/nav, but make the light
+   workspace surface coherent instead of allowing dark-theme inline colours to leak in. */
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card {
+  width: min(100%, 940px) !important;
+  margin-inline: auto !important;
+  padding: clamp(24px, 4vw, 48px) !important;
+  background: #F5F9FF !important;
+  color: #173754 !important;
+}
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(h1, h2, h3, h4) {
+  color: #102D4A !important;
+}
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong, em, li, dt, dd, span) {
+  color: #3D5871;
+}
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong, em, li, dt, dd, span)[style*="color: rgb(0, 213, 245)"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong, em, li, dt, dd, span)[style*="color: #00D5F5"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong, em, li, dt, dd, span)[style*="color: rgb(0, 180, 219)"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(p, small, label, strong, em, li, dt, dd, span)[style*="color: #00B4DB"] {
+  color: #0879C9 !important;
+}
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card [style*="background: rgba(255,255,255,.035)"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card [style*="background: rgba(255,255,255, .035)"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card [style*="background: rgba(255,255,255,.025)"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card [style*="background: rgba(255,255,255, .025)"] {
+  background: #EAF3FC !important;
+  border-color: #D1E3F3 !important;
+}
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card button {
+  color: #12395D;
+}
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card button[style*="background: rgb(8, 121, 249)"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card button[style*="background: #0879F9"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card button[style*="background: rgb(37, 99, 235)"],
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card button[style*="background: #2563EB"] {
+  color: #FFFFFF !important;
+  background: #0879F9 !important;
+  border-color: #0879F9 !important;
+}
+.bizzibuddi-account-page .bizzibuddi-light-workspace-card :is(input, select, textarea) {
+  color: #102D4A !important;
+  background: #FFFFFF !important;
+  border-color: #B7D0E7 !important;
+  color-scheme: light;
+}
