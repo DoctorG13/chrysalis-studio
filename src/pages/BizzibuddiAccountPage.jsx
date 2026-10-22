@@ -8,10 +8,10 @@ import BizziBuddiDemoWorkspace from "../components/bizzibuddi/BizziBuddiDemoWork
 const RED = "#0879F9";
 const CYAN = "#00D5F5";
 const BG = "#07315F";
-const SURFACE = "#F5F9FF";
+const SURFACE = "#0F2D4A";
 const TEXT = "#FFFFFF";
-const MUTED = "#425A70";
-const BORDER = "#C7DDF0";
+const MUTED = "#B8C6D6";
+const BORDER = "rgba(255,255,255,.16)";
 
 const plans = bizzibuddiPlans;
 
