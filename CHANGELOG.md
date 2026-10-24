@@ -3634,3 +3634,16 @@ All notable changes to Chrysalis are recorded here.
 
 - Reconciled the roadmap with recorded manual results without treating automated contract checks as substitutes for live UI testing.
 
+## Production Workflow Acceptance — October 2026
+
+### Passed
+
+- Confirmed the Production queue loads persisted jobs.
+- Confirmed Due Today and Overdue filters match job dates.
+- Confirmed Ready and Complete views reflect job stage/status.
+- Confirmed production-stage changes persist after refresh.
+- Confirmed production task creation, completion and removal persist after refresh.
+- Confirmed Dashboard/Today and Buddi reflect updated production state.
+
+- All Production Workflow acceptance checks are complete. Next: run the full real-business job workflow end to end.
+
