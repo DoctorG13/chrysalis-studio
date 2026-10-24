@@ -24,9 +24,11 @@
 - [ ] Verify the Production queue loads persisted jobs
 - [ ] Verify due-today and overdue filters against job dates
 - [ ] Verify ready and complete views reflect job stage/status
-- [ ] Update a production stage and confirm it persists after refresh
-- [ ] Complete a production task and confirm progress updates
+- [x] Update a production stage and confirm it persists after refresh
+- [x] Create, complete and remove production tasks; confirm task changes persist after refresh
 - [ ] Confirm Dashboard/Today and Buddi reflect the updated production state
+
+> Recorded from prior manual acceptance testing: stage persistence and production task create/complete/remove persistence were exercised. Queue loading, date-filter accuracy, ready/complete views and updated Dashboard/Buddi reflection remain unverified in the current acceptance record.
 
 ---
 
