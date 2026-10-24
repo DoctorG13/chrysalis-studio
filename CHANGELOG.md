@@ -3617,3 +3617,20 @@ All notable changes to Chrysalis are recorded here.
 - Added workflow contract assertions for the production queue's job/record association, due-today and overdue logic, active/ready/complete filters, stage progress, task progress calculation, persistence API integration, and Dashboard/Buddi data wiring.
 - These checks validate that the expected implementation contracts remain present; they do not replace live UI acceptance testing or database persistence verification.
 - The Production Workflow acceptance checklist remains open until the local application is exercised and results are recorded.
+
+## Production Workflow — Acceptance Record Reconciliation
+
+### Verified in prior manual testing
+
+- Confirmed production-stage changes persist after refresh.
+- Confirmed production task creation, completion and removal persist after refresh.
+
+### Still requiring live acceptance verification
+
+- Production queue loads persisted jobs.
+- Due-today and overdue filters match job dates.
+- Ready and complete views reflect the expected stage/status.
+- Dashboard/Today and Buddi reflect updated production state.
+
+- Reconciled the roadmap with recorded manual results without treating automated contract checks as substitutes for live UI testing.
+
