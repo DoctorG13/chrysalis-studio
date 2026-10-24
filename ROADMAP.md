@@ -19,16 +19,16 @@
 - [x] Confirm the invoice shows $40.00 paid and a $0.00 balance
 - [x] Reconcile Finance totals: $165.00 received before the temporary $12.00 expense; $153.00 net while the expense existed; $165.00 net after its removal
 
-## Next Acceptance Milestone — Production Workflow
+## Production Workflow Acceptance — October 2026
 
-- [ ] Verify the Production queue loads persisted jobs
-- [ ] Verify due-today and overdue filters against job dates
-- [ ] Verify ready and complete views reflect job stage/status
+- [x] Verify the Production queue loads persisted jobs
+- [x] Verify due-today and overdue filters against job dates
+- [x] Verify ready and complete views reflect job stage/status
 - [x] Update a production stage and confirm it persists after refresh
 - [x] Create, complete and remove production tasks; confirm task changes persist after refresh
-- [ ] Confirm Dashboard/Today and Buddi reflect the updated production state
+- [x] Confirm Dashboard/Today and Buddi reflect the updated production state
 
-> Recorded from prior manual acceptance testing: stage persistence and production task create/complete/remove persistence were exercised. Queue loading, date-filter accuracy, ready/complete views and updated Dashboard/Buddi reflection remain unverified in the current acceptance record.
+**Result: PASS** — all Production Workflow acceptance checks have been confirmed complete. Proceed to the end-to-end real-business job workflow.
 
 ---
 
