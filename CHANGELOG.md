@@ -3608,3 +3608,42 @@ All notable changes to Chrysalis are recorded here.
 - Send established business accounts to the Dashboard by default when no valid destination view was requested.
 - Update the URL and Today navigation state to match the displayed Dashboard.
 - Send accounts without business setup to onboarding and keep the URL in sync.
+
+
+## Production Workflow — Acceptance Contract Coverage
+
+### Added
+
+- Added workflow contract assertions for the production queue's job/record association, due-today and overdue logic, active/ready/complete filters, stage progress, task progress calculation, persistence API integration, and Dashboard/Buddi data wiring.
+- These checks validate that the expected implementation contracts remain present; they do not replace live UI acceptance testing or database persistence verification.
+- The Production Workflow acceptance checklist remains open until the local application is exercised and results are recorded.
+
+## Production Workflow — Acceptance Record Reconciliation
+
+### Verified in prior manual testing
+
+- Confirmed production-stage changes persist after refresh.
+- Confirmed production task creation, completion and removal persist after refresh.
+
+### Still requiring live acceptance verification
+
+- Production queue loads persisted jobs.
+- Due-today and overdue filters match job dates.
+- Ready and complete views reflect the expected stage/status.
+- Dashboard/Today and Buddi reflect updated production state.
+
+- Reconciled the roadmap with recorded manual results without treating automated contract checks as substitutes for live UI testing.
+
+## Production Workflow Acceptance — October 2026
+
+### Passed
+
+- Confirmed the Production queue loads persisted jobs.
+- Confirmed Due Today and Overdue filters match job dates.
+- Confirmed Ready and Complete views reflect job stage/status.
+- Confirmed production-stage changes persist after refresh.
+- Confirmed production task creation, completion and removal persist after refresh.
+- Confirmed Dashboard/Today and Buddi reflect updated production state.
+
+- All Production Workflow acceptance checks are complete. Next: run the full real-business job workflow end to end.
+
