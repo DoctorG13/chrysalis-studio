@@ -1,3 +1,16 @@
+## Finance — Invoice Management Fixes
+
+### Fixed
+- List newest invoices first consistently in the API and account UI.
+- Added invoice editing with server-side validation that prevents reducing an invoice total below recorded payments.
+- Added invoice deletion with a server-side guard against deleting invoices that have recorded payments.
+- After saving an invoice edit, scroll to and highlight the updated invoice card.
+
+### Testing
+- Source-level checks pending; run the project build and Finance acceptance tests in the local development environment.
+
+---
+
 ## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
 
 ### Fixed
