@@ -8557,8 +8557,18 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </p>
     </section>
 
+    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+      <button
+        type="button"
+        onClick={() => { setError(""); setShowForm(true); }}
+        style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0 }}
+      >
+        + Add Invoice
+      </button>
+    </div>
+
     {invoices.length > 0 ? (
-      <div id="finance-invoices" style={{ display: "grid", gap: 12, marginTop: 28 }}>
+      <div id="finance-invoices" style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
         {invoices.map((invoice) => {
           const balance = Math.max(
             0,
@@ -9095,7 +9105,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
     {!showForm ? (
       <button type="button" onClick={() => { setError(""); setShowForm(true); }} style={{ ...primaryButton, maxWidth: 240 }}>
-        + Create an invoice
+        + Add Invoice
       </button>
     ) : (
       <form onSubmit={handleSubmit} style={personForm}>
