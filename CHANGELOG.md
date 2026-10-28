@@ -8,6 +8,7 @@
 - Move the invoice editor below and slightly indented from its invoice card, with a clearer accent panel.
 - Strengthen the selected invoice card's cyan border and glow for easier visual tracking.
 - Replace the browser delete prompt with a BizziBuddi-styled confirmation modal; retain the server-side payment-history deletion guard.
+- Keep invoice cards and their editor panels in a single vertical flow, and restore a prominent **+ Add Invoice** action above the invoice list.
 
 ### Testing
 - Source-level checks pending; run the project build and Finance acceptance tests in the local development environment.
