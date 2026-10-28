@@ -5,6 +5,9 @@
 - Added invoice editing with server-side validation that prevents reducing an invoice total below recorded payments.
 - Added invoice deletion with a server-side guard against deleting invoices that have recorded payments.
 - After saving an invoice edit, scroll to and highlight the updated invoice card.
+- Move the invoice editor below and slightly indented from its invoice card, with a clearer accent panel.
+- Strengthen the selected invoice card's cyan border and glow for easier visual tracking.
+- Replace the browser delete prompt with a BizziBuddi-styled confirmation modal; retain the server-side payment-history deletion guard.
 
 ### Testing
 - Source-level checks pending; run the project build and Finance acceptance tests in the local development environment.
