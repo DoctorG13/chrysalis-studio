@@ -2449,11 +2449,18 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   }
 
   async function handleDeleteInvoice(invoice) {
-    if (saving || !window.confirm("Delete invoice " + invoice.number + "? This cannot be undone.")) return;
+    if (saving) return;
+    setPendingInvoiceRemoval(invoice);
+  }
+
+  async function confirmInvoiceRemoval() {
+    if (!pendingInvoiceRemoval || saving) return;
+    const invoice = pendingInvoiceRemoval;
     setError("");
     setSaving(true);
     try {
       await onDeleteInvoice(invoice.id);
+      setPendingInvoiceRemoval(null);
     } catch (requestError) {
       setError(requestError.message || "We could not delete this invoice.");
     } finally {
@@ -6929,6 +6936,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [editingInvoiceId, setEditingInvoiceId] = useState("");
   const [editingInvoiceForm, setEditingInvoiceForm] = useState({ personId: "", amount: "", issueDate: "", dueDate: "", description: "" });
   const [focusInvoiceId, setFocusInvoiceId] = useState("");
+  const [pendingInvoiceRemoval, setPendingInvoiceRemoval] = useState(null);
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -8583,15 +8591,16 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             payments.length > 0 || Number(invoice.amountPaid || 0) > 0;
 
           const selected = String(invoice.id) === String(focusInvoiceId || initialInvoiceId);
-          return <article
-            key={invoice.id}
+          return <div key={invoice.id} style={{ display: "grid", gap: 0 }}>
+          <article
             id={"invoice-card-" + invoice.id}
             ref={selected ? selectedInvoiceRef : null}
             style={{
               ...invoiceCard,
               scrollMarginTop: 24,
-              border: selected ? "1px solid rgba(0,180,219,.75)" : invoiceCard.border,
-              boxShadow: selected ? "0 0 0 2px rgba(0,180,219,.12), 0 14px 30px rgba(0,0,0,.18)" : invoiceCard.boxShadow,
+              border: selected ? "2px solid rgba(0,210,255,.98)" : invoiceCard.border,
+              background: selected ? "rgba(0,180,219,.10)" : invoiceCard.background,
+              boxShadow: selected ? "0 0 0 4px rgba(0,180,219,.22), 0 18px 42px rgba(0,0,0,.30)" : invoiceCard.boxShadow,
             }}
           >
             <div>
@@ -8650,36 +8659,6 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               ) : null}
               {balance > 0 && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
             </div>
-
-            {editingInvoiceId === invoice.id && (
-              <form onSubmit={(event) => submitEditInvoice(event, invoice)} style={{ flexBasis: "100%", marginTop: 12, padding: 14, border: "1px solid rgba(0,180,219,.35)", borderRadius: 10, background: "rgba(0,180,219,.035)" }}>
-                <strong style={{ display: "block", marginBottom: 10 }}>EDIT INVOICE {invoice.number}</strong>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
-                  <label style={fieldStyle}>Person
-                    <select value={editingInvoiceForm.personId} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, personId: event.target.value }))} required disabled={saving} style={inputStyle}>
-                      <option value="">Select person</option>
-                      {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
-                    </select>
-                  </label>
-                  <label style={fieldStyle}>Amount
-                    <input type="number" min={Number(invoice.amountPaid || 0)} step="0.01" value={editingInvoiceForm.amount} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, amount: event.target.value }))} required disabled={saving} style={inputStyle} />
-                  </label>
-                  <label style={fieldStyle}>Issue date
-                    <input type="date" value={editingInvoiceForm.issueDate} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, issueDate: event.target.value }))} required disabled={saving} style={inputStyle} />
-                  </label>
-                  <label style={fieldStyle}>Due date
-                    <input type="date" value={editingInvoiceForm.dueDate} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, dueDate: event.target.value }))} required disabled={saving} style={inputStyle} />
-                  </label>
-                  <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>Description
-                    <input type="text" maxLength="200" value={editingInvoiceForm.description} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, description: event.target.value }))} disabled={saving} style={inputStyle} />
-                  </label>
-                </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-                  <button type="button" onClick={cancelEditInvoice} disabled={saving} style={smallActionButton}>Cancel</button>
-                  <button type="submit" disabled={saving} style={smallActionButton}>{saving ? "Saving…" : "Save changes"}</button>
-                </div>
-              </form>
-            )}
 
             {paymentInvoiceId === invoice.id && (
               <form
@@ -9041,13 +9020,76 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 )}
               </div>
             )}
-          </article>;
+          </article>
+            {editingInvoiceId === invoice.id && (
+              <form onSubmit={(event) => submitEditInvoice(event, invoice)} style={{ marginTop: 10, marginLeft: 22, padding: 16, border: "1px solid rgba(0,180,219,.5)", borderLeft: "4px solid rgba(0,210,255,.98)", borderRadius: 10, background: "rgba(0,180,219,.065)", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
+                <strong style={{ display: "block", marginBottom: 10 }}>EDIT INVOICE {invoice.number}</strong>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+                  <label style={fieldStyle}>Person
+                    <select value={editingInvoiceForm.personId} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, personId: event.target.value }))} required disabled={saving} style={inputStyle}>
+                      <option value="">Select person</option>
+                      {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+                    </select>
+                  </label>
+                  <label style={fieldStyle}>Amount
+                    <input type="number" min={Number(invoice.amountPaid || 0)} step="0.01" value={editingInvoiceForm.amount} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, amount: event.target.value }))} required disabled={saving} style={inputStyle} />
+                  </label>
+                  <label style={fieldStyle}>Issue date
+                    <input type="date" value={editingInvoiceForm.issueDate} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, issueDate: event.target.value }))} required disabled={saving} style={inputStyle} />
+                  </label>
+                  <label style={fieldStyle}>Due date
+                    <input type="date" value={editingInvoiceForm.dueDate} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, dueDate: event.target.value }))} required disabled={saving} style={inputStyle} />
+                  </label>
+                  <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>Description
+                    <input type="text" maxLength="200" value={editingInvoiceForm.description} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, description: event.target.value }))} disabled={saving} style={inputStyle} />
+                  </label>
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+                  <button type="button" onClick={cancelEditInvoice} disabled={saving} style={smallActionButton}>Cancel</button>
+                  <button type="submit" disabled={saving} style={smallActionButton}>{saving ? "Saving…" : "Save changes"}</button>
+                </div>
+              </form>
+            )}
+
+        </div>;
         })}
       </div>
     ) : (
       <div style={emptyPeople}>
         <strong>No invoices yet.</strong>
         <p style={copyStyle}>Create your first invoice to start tracking money coming into your business.</p>
+      </div>
+    )}
+
+    {pendingInvoiceRemoval && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-invoice-title"
+        onClick={(event) => {
+          if (event.target === event.currentTarget && !saving) setPendingInvoiceRemoval(null);
+        }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1200,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          background: "rgba(3,12,22,.76)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <div style={{ width: "min(440px, 100%)", padding: 24, border: "1px solid rgba(255,100,100,.5)", borderRadius: 16, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.55)" }}>
+          <small style={{ ...smallText, color: "#ff9a9a" }}>DELETE INVOICE</small>
+          <h3 id="delete-invoice-title" style={{ margin: "10px 0", color: "#fff", fontSize: 22 }}>Delete {pendingInvoiceRemoval.number}?</h3>
+          <p style={{ ...copyStyle, margin: 0 }}>This will permanently delete this invoice. This action cannot be undone.</p>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
+            <button type="button" disabled={saving} onClick={() => setPendingInvoiceRemoval(null)} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0 }}>Cancel</button>
+            <button type="button" disabled={saving} onClick={confirmInvoiceRemoval} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318", borderColor: "#b42318", color: "#fff" }}>{saving ? "Deleting…" : "Delete invoice"}</button>
+          </div>
+        </div>
       </div>
     )}
 
