@@ -1,3 +1,16 @@
+## Finance — Invoice Form and Navigation Restoration
+
+### Fixed
+- Make both **+ Add Invoice** actions scroll to the newly opened invoice form.
+- Restore the optional invoice Description field when creating an invoice and submit its value to the API.
+- After creating an invoice, close the form and scroll to the new invoice card, highlighting it for visibility.
+- Preserve the existing Edit and Delete invoice actions and confirmation flow.
+
+### Testing
+- Source-level checks completed against the branch content; local build and browser acceptance testing still need to run.
+
+---
+
 ## Finance — Invoice Management Fixes
 
 ### Fixed
