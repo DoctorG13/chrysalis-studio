@@ -117,7 +117,7 @@ export default function BizzibuddiAccountPage() {
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
         // Leave a clear gap below the sticky navigation so the target is not clipped.
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 28;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
 
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "auto" });
         setWorkspaceScrollTarget("");
@@ -7001,7 +7001,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         if (!element) return;
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 24;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
     });
@@ -7056,7 +7056,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         if (!element) return;
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 24;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
     });
@@ -8588,7 +8588,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         id="finance-invoices"
         type="button"
         onClick={startCreateInvoice}
-        style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0, scrollMarginTop: 100 }}
+        style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0, scrollMarginTop: 124 }}
       >
         + Add Invoice
       </button>
@@ -8634,7 +8634,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             ref={selected ? selectedInvoiceRef : null}
             style={{
               ...invoiceCard,
-              scrollMarginTop: 24,
+              scrollMarginTop: 124,
               border: selected ? "2px solid rgba(0,210,255,.98)" : invoiceCard.border,
               background: selected ? "rgba(0,180,219,.10)" : invoiceCard.background,
               boxShadow: selected ? "0 0 0 4px rgba(0,180,219,.22), 0 18px 42px rgba(0,0,0,.30)" : invoiceCard.boxShadow,
@@ -9135,7 +9135,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         + Add Invoice
       </button>
     ) : (
-      <form ref={createInvoiceFormRef} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 100 }}>
+      <form ref={createInvoiceFormRef} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 124 }}>
         <strong style={{ fontSize: 18 }}>Create an invoice</strong>
 
         <label style={fieldStyle}>
