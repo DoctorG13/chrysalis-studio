@@ -1,3 +1,14 @@
+## BizziBuddi Finance — Invoice Scroll Visibility
+
+### Improved
+
+- Added extra spacing below the sticky workspace navigation when navigating to Finance → Invoices.
+- Adjusted the Add Invoice form scroll position so the form is positioned clearly below the sticky navigation.
+- Adjusted post-save invoice focus so the new invoice card is positioned fully below the sticky navigation.
+- Preserved existing invoice creation, invoice highlighting and navigation behaviour.
+
+---
+
 ## BizziBuddi Finance — Invoices Navigation Scroll
 
 ### Fixed
