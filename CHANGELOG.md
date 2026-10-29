@@ -1,3 +1,13 @@
+## BizziBuddi Finance — Invoice Edit and Delete Handler Fix
+
+### Fixed
+
+- Moved invoice edit, cancel, save and delete handlers into the Finance panel that owns their state and callbacks.
+- Fixed invoice Edit and Delete clicks failing because their handlers were scoped inside a different component.
+- Automatically scrolls the selected invoice edit form into view, with clearance below the sticky workspace navigation.
+
+---
+
 ## BizziBuddi Finance — Invoice Scroll Visibility
 
 ### Improved
