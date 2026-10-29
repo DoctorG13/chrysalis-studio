@@ -155,7 +155,15 @@ function saveInvoice(database, input, existing = null) {
 }
 
 function invoiceHasPaymentHistory(database, invoice) {
-  if (Number(invoice.amountPaid || 0) > 0) {
+  const storedRow = database
+    .prepare("SELECT data_json FROM invoices WHERE id = ?")
+    .get(invoice.id);
+  const storedInvoice = parseJson(storedRow?.data_json, {});
+
+  if (
+    Number(invoice.amountPaid || 0) > 0 ||
+    Number(storedInvoice.amountPaid || 0) > 0
+  ) {
     return true;
   }
 
