@@ -1,3 +1,13 @@
+## BizziBuddi Finance — Invoices Navigation Scroll
+
+### Fixed
+
+- Connected the Finance → Invoices submenu to the top **+ Add Invoice** button.
+- Removed the duplicate invoice-list target ID so navigation scrolls to the intended action, including when the invoice list is empty.
+- Preserved existing invoice creation, list rendering and post-save focus behaviour.
+
+---
+
 ## Finance — Invoice Form and Navigation Restoration
 
 ### Fixed
