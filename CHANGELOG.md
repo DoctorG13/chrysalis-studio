@@ -1,3 +1,16 @@
+## BizziBuddi Finance — Clear Invoice Deletion Warning
+
+### Fixed
+
+- Make the invoice deletion confirmation explicitly warn that invoices with recorded payments or payment activity cannot be deleted.
+- Explain that BizziBuddi preserves the invoice and payment records when payment history exists, before the user proceeds.
+
+### Testing
+
+- Confirmation copy updated; local build, workflow checks, and the payment-history deletion acceptance test must be rerun before release.
+
+---
+
 ## BizziBuddi Finance — Invoice API Payment-History Protection
 
 ### Fixed
