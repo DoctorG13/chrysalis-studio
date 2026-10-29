@@ -1,3 +1,20 @@
+## BizziBuddi Finance — Invoice Payment-History Protection
+
+### Fixed
+
+- Perform invoice edits inside a SQLite write transaction so the invoice total and recorded-payment total are checked and saved atomically.
+- Perform invoice deletion checks and deletion inside a SQLite write transaction to prevent concurrent payment changes from bypassing the safeguards.
+- Prevent deletion of invoices that have payment audit activity, even when a payment was subsequently removed, so the historical record is not orphaned.
+- Preserve the existing rule that invoice totals cannot be reduced below payments already recorded.
+- Show a clear server response explaining why an invoice with payment activity must be retained.
+
+### Testing
+
+- Reviewed the existing authenticated invoice routes and payment audit source-key formats.
+- Local build and authenticated Finance acceptance tests still need to run in the project environment.
+
+---
+
 ## BizziBuddi Finance — Invoice Edit and Delete Handler Fix
 
 ### Fixed
