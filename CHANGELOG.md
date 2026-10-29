@@ -2,10 +2,9 @@
 
 ### Improved
 
-- Added extra spacing below the sticky workspace navigation when navigating to Finance → Invoices.
-- Adjusted the Add Invoice form scroll position so the form is positioned clearly below the sticky navigation.
-- Adjusted post-save invoice focus so the new invoice card is positioned fully below the sticky navigation.
-- Preserved existing invoice creation, invoice highlighting and navigation behaviour.
+- Increased the clearance below the sticky workspace navigation to 48px for Finance → Invoices navigation, the Add Invoice form, and the focused invoice card.
+- Increased scroll-margin spacing on invoice navigation, form, and card targets so browser-driven scrolling also avoids the sticky navigation.
+- Preserved existing invoice creation, invoice highlighting, and navigation behaviour.
 
 ---
 
