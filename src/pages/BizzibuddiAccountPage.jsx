@@ -2422,53 +2422,6 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
     setShowForm(false);
   }
 
-  function startEditInvoice(invoice) {
-    setError("");
-    setEditingInvoiceId(invoice.id);
-    setEditingInvoiceForm({ personId: invoice.personId || "", amount: String(invoice.amount ?? ""), issueDate: invoice.issueDate || "", dueDate: invoice.dueDate || "", description: invoice.description || "" });
-  }
-
-  function cancelEditInvoice() {
-    if (!saving) setEditingInvoiceId("");
-  }
-
-  async function submitEditInvoice(event, invoice) {
-    event.preventDefault();
-    if (saving) return;
-    setError("");
-    setSaving(true);
-    try {
-      const updated = await onUpdateInvoice(invoice.id, { ...editingInvoiceForm, amount: Number(editingInvoiceForm.amount) });
-      setEditingInvoiceId("");
-      setFocusInvoiceId(updated.id);
-      window.setTimeout(() => document.getElementById("invoice-card-" + updated.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
-    } catch (requestError) {
-      setError(requestError.message || "We could not update this invoice.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDeleteInvoice(invoice) {
-    if (saving) return;
-    setPendingInvoiceRemoval(invoice);
-  }
-
-  async function confirmInvoiceRemoval() {
-    if (!pendingInvoiceRemoval || saving) return;
-    const invoice = pendingInvoiceRemoval;
-    setError("");
-    setSaving(true);
-    try {
-      await onDeleteInvoice(invoice.id);
-      setPendingInvoiceRemoval(null);
-    } catch (requestError) {
-      setError(requestError.message || "We could not delete this invoice.");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -6992,6 +6945,55 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [financeReportIncludeCategories, setFinanceReportIncludeCategories] = useState(true);
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
+  function startEditInvoice(invoice) {
+    setError("");
+    setEditingInvoiceId(invoice.id);
+    setEditingInvoiceForm({ personId: invoice.personId || "", amount: String(invoice.amount ?? ""), issueDate: invoice.issueDate || "", dueDate: invoice.dueDate || "", description: invoice.description || "" });
+    window.setTimeout(() => document.getElementById("invoice-edit-form-" + invoice.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  }
+
+  function cancelEditInvoice() {
+    if (!saving) setEditingInvoiceId("");
+  }
+
+  async function submitEditInvoice(event, invoice) {
+    event.preventDefault();
+    if (saving) return;
+    setError("");
+    setSaving(true);
+    try {
+      const updated = await onUpdateInvoice(invoice.id, { ...editingInvoiceForm, amount: Number(editingInvoiceForm.amount) });
+      setEditingInvoiceId("");
+      setFocusInvoiceId(updated.id);
+      window.setTimeout(() => document.getElementById("invoice-card-" + updated.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } catch (requestError) {
+      setError(requestError.message || "We could not update this invoice.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteInvoice(invoice) {
+    if (saving) return;
+    setPendingInvoiceRemoval(invoice);
+  }
+
+  async function confirmInvoiceRemoval() {
+    if (!pendingInvoiceRemoval || saving) return;
+    const invoice = pendingInvoiceRemoval;
+    setError("");
+    setSaving(true);
+    try {
+      await onDeleteInvoice(invoice.id);
+      setPendingInvoiceRemoval(null);
+    } catch (requestError) {
+      setError(requestError.message || "We could not delete this invoice.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
   useEffect(() => {
     const targetId = focusInvoiceId || initialInvoiceId;
     if (!targetId || !selectedInvoiceRef.current) return undefined;
@@ -9059,7 +9061,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             )}
           </article>
             {editingInvoiceId === invoice.id && (
-              <form onSubmit={(event) => submitEditInvoice(event, invoice)} style={{ marginTop: 10, marginLeft: 22, padding: 16, border: "1px solid rgba(0,180,219,.5)", borderLeft: "4px solid rgba(0,210,255,.98)", borderRadius: 10, background: "rgba(0,180,219,.065)", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
+              <form id={"invoice-edit-form-" + invoice.id} onSubmit={(event) => submitEditInvoice(event, invoice)} style={{ marginTop: 10, marginLeft: 22, padding: 16, scrollMarginTop: 124, border: "1px solid rgba(0,180,219,.5)", borderLeft: "4px solid rgba(0,210,255,.98)", borderRadius: 10, background: "rgba(0,180,219,.065)", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
                 <strong style={{ display: "block", marginBottom: 10 }}>EDIT INVOICE {invoice.number}</strong>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
                   <label style={fieldStyle}>Person
