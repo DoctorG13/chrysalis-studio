@@ -116,7 +116,8 @@ export default function BizzibuddiAccountPage() {
         // instead of giving up after a short, fixed delay.
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+        // Leave a clear gap below the sticky navigation so the target is not clipped.
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
 
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "auto" });
         setWorkspaceScrollTarget("");
@@ -1016,11 +1017,22 @@ export default function BizzibuddiAccountPage() {
                 body: JSON.stringify(invoice),
               });
               setInvoices((current) =>
-                [...current, result.invoice].sort((a, b) =>
-                  (a.dueDate || "").localeCompare(b.dueDate || "")
-                )
+                [result.invoice, ...current.filter((item) => item.id !== result.invoice.id)]
+                  .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""))
               );
               return result.invoice;
+            }}
+            onUpdateInvoice={async (invoiceId, invoice) => {
+              const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId), {
+                method: "PUT",
+                body: JSON.stringify(invoice),
+              });
+              setInvoices((current) => current.map((item) => item.id === invoiceId ? result.invoice : item).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || "")));
+              return result.invoice;
+            }}
+            onDeleteInvoice={async (invoiceId) => {
+              await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices/" + encodeURIComponent(invoiceId), { method: "DELETE" });
+              setInvoices((current) => current.filter((item) => item.id !== invoiceId));
             }}
             onIssueInvoice={async (invoiceId) => {
               const result = await bizzibuddiAuthRequest(
@@ -6873,8 +6885,13 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onUpdateInvoice, onDeleteInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const createInvoiceFormRef = useRef(null);
+  const [editingInvoiceId, setEditingInvoiceId] = useState("");
+  const [editingInvoiceForm, setEditingInvoiceForm] = useState({ personId: "", amount: "", issueDate: "", dueDate: "", description: "" });
+  const [focusInvoiceId, setFocusInvoiceId] = useState("");
+  const [pendingInvoiceRemoval, setPendingInvoiceRemoval] = useState(null);
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -6928,18 +6945,70 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   const [financeReportIncludeCategories, setFinanceReportIncludeCategories] = useState(true);
   const available = hasBizzibuddiFeature(account?.plan, "finance");
 
-  useEffect(() => {
-    if (!initialInvoiceId || !selectedInvoiceRef.current) return undefined;
+  function startEditInvoice(invoice) {
+    setError("");
+    setEditingInvoiceId(invoice.id);
+    setEditingInvoiceForm({ personId: invoice.personId || "", amount: String(invoice.amount ?? ""), issueDate: invoice.issueDate || "", dueDate: invoice.dueDate || "", description: invoice.description || "" });
+    window.setTimeout(() => document.getElementById("invoice-edit-form-" + invoice.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  }
 
+  function cancelEditInvoice() {
+    if (!saving) setEditingInvoiceId("");
+  }
+
+  async function submitEditInvoice(event, invoice) {
+    event.preventDefault();
+    if (saving) return;
+    setError("");
+    setSaving(true);
+    try {
+      const updated = await onUpdateInvoice(invoice.id, { ...editingInvoiceForm, amount: Number(editingInvoiceForm.amount) });
+      setEditingInvoiceId("");
+      setFocusInvoiceId(updated.id);
+      window.setTimeout(() => document.getElementById("invoice-card-" + updated.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+    } catch (requestError) {
+      setError(requestError.message || "We could not update this invoice.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteInvoice(invoice) {
+    if (saving) return;
+    setPendingInvoiceRemoval(invoice);
+  }
+
+  async function confirmInvoiceRemoval() {
+    if (!pendingInvoiceRemoval || saving) return;
+    const invoice = pendingInvoiceRemoval;
+    setError("");
+    setSaving(true);
+    try {
+      await onDeleteInvoice(invoice.id);
+      setPendingInvoiceRemoval(null);
+    } catch (requestError) {
+      setError(requestError.message || "We could not delete this invoice.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+
+  useEffect(() => {
+    const targetId = focusInvoiceId || initialInvoiceId;
+    if (!targetId || !selectedInvoiceRef.current) return undefined;
     const frame = window.requestAnimationFrame(() => {
-      selectedInvoiceRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
+      window.requestAnimationFrame(() => {
+        const element = selectedInvoiceRef.current;
+        if (!element) return;
+        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
+        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
     });
-
     return () => window.cancelAnimationFrame(frame);
-  }, [initialInvoiceId, invoices]);
+  }, [initialInvoiceId, focusInvoiceId, invoices]);
 
   useEffect(() => {
     setPaymentsByInvoice(
@@ -6980,6 +7049,21 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     };
   }, [available]);
 
+  function startCreateInvoice() {
+    setError("");
+    setShowForm(true);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        const element = createInvoiceFormRef.current;
+        if (!element) return;
+        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
+        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+      });
+    });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -6994,14 +7078,16 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       const submitter = event.nativeEvent?.submitter;
       const status = submitter?.value === "Issued" ? "Issued" : "Draft";
 
-      await onAddInvoice({
+      const createdInvoice = await onAddInvoice({
         personId,
         amount: Number.isFinite(amount) ? amount : 0,
         issueDate: String(form.get("issueDate") || ""),
         dueDate: String(form.get("dueDate") || ""),
+        description: String(form.get("description") || "").trim(),
         status,
       });
 
+      if (createdInvoice?.id) setFocusInvoiceId(createdInvoice.id);
       formElement.reset();
       setShowForm(false);
     } catch (requestError) {
@@ -8499,8 +8585,19 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </p>
     </section>
 
+    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+      <button
+        id="finance-invoices"
+        type="button"
+        onClick={startCreateInvoice}
+        style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0, scrollMarginTop: 124 }}
+      >
+        + Add Invoice
+      </button>
+    </div>
+
     {invoices.length > 0 ? (
-      <div id="finance-invoices" style={{ display: "grid", gap: 12, marginTop: 28 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
         {invoices.map((invoice) => {
           const balance = Math.max(
             0,
@@ -8532,15 +8629,17 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           const hasPaymentHistory =
             payments.length > 0 || Number(invoice.amountPaid || 0) > 0;
 
-          const selected = String(invoice.id) === String(initialInvoiceId);
-          return <article
-            key={invoice.id}
+          const selected = String(invoice.id) === String(focusInvoiceId || initialInvoiceId);
+          return <div key={invoice.id} style={{ display: "grid", gap: 0 }}>
+          <article
+            id={"invoice-card-" + invoice.id}
             ref={selected ? selectedInvoiceRef : null}
             style={{
               ...invoiceCard,
-              scrollMarginTop: 24,
-              border: selected ? "1px solid rgba(0,180,219,.75)" : invoiceCard.border,
-              boxShadow: selected ? "0 0 0 2px rgba(0,180,219,.12), 0 14px 30px rgba(0,0,0,.18)" : invoiceCard.boxShadow,
+              scrollMarginTop: 124,
+              border: selected ? "2px solid rgba(0,210,255,.98)" : invoiceCard.border,
+              background: selected ? "rgba(0,180,219,.10)" : invoiceCard.background,
+              boxShadow: selected ? "0 0 0 4px rgba(0,180,219,.22), 0 18px 42px rgba(0,0,0,.30)" : invoiceCard.boxShadow,
             }}
           >
             <div>
@@ -8551,6 +8650,10 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               <span style={{ ...smallText, display: "block", marginTop: 4 }}>
                 Issued {formatInvoiceDate(invoice.issueDate)}
               </span>
+              <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 8 }}>
+                <button type="button" disabled={saving} onClick={() => startEditInvoice(invoice)} style={smallActionButton}>Edit</button>
+                <button type="button" disabled={saving} onClick={() => handleDeleteInvoice(invoice)} style={{ ...smallActionButton, color: "#ff9a9a", borderColor: "rgba(255,120,120,.35)" }}>Delete</button>
+              </div>
               {invoice.status !== "Paid" && (
                 <span style={invoiceDueSignal(invoice, todayKey)}>
                   {invoice.status === "Overdue" || (invoice.dueDate && invoice.dueDate < todayKey)
@@ -8956,7 +9059,38 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 )}
               </div>
             )}
-          </article>;
+          </article>
+            {editingInvoiceId === invoice.id && (
+              <form id={"invoice-edit-form-" + invoice.id} onSubmit={(event) => submitEditInvoice(event, invoice)} style={{ marginTop: 10, marginLeft: 22, padding: 16, scrollMarginTop: 124, border: "1px solid rgba(0,180,219,.5)", borderLeft: "4px solid rgba(0,210,255,.98)", borderRadius: 10, background: "rgba(0,180,219,.065)", boxShadow: "0 8px 24px rgba(0,0,0,.18)" }}>
+                <strong style={{ display: "block", marginBottom: 10 }}>EDIT INVOICE {invoice.number}</strong>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+                  <label style={fieldStyle}>Person
+                    <select value={editingInvoiceForm.personId} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, personId: event.target.value }))} required disabled={saving} style={inputStyle}>
+                      <option value="">Select person</option>
+                      {people.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+                    </select>
+                  </label>
+                  <label style={fieldStyle}>Amount
+                    <input type="number" min={Number(invoice.amountPaid || 0)} step="0.01" value={editingInvoiceForm.amount} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, amount: event.target.value }))} required disabled={saving} style={inputStyle} />
+                  </label>
+                  <label style={fieldStyle}>Issue date
+                    <input type="date" value={editingInvoiceForm.issueDate} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, issueDate: event.target.value }))} required disabled={saving} style={inputStyle} />
+                  </label>
+                  <label style={fieldStyle}>Due date
+                    <input type="date" value={editingInvoiceForm.dueDate} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, dueDate: event.target.value }))} required disabled={saving} style={inputStyle} />
+                  </label>
+                  <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>Description
+                    <input type="text" maxLength="200" value={editingInvoiceForm.description} onChange={(event) => setEditingInvoiceForm((current) => ({ ...current, description: event.target.value }))} disabled={saving} style={inputStyle} />
+                  </label>
+                </div>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+                  <button type="button" onClick={cancelEditInvoice} disabled={saving} style={smallActionButton}>Cancel</button>
+                  <button type="submit" disabled={saving} style={smallActionButton}>{saving ? "Saving…" : "Save changes"}</button>
+                </div>
+              </form>
+            )}
+
+        </div>;
         })}
       </div>
     ) : (
@@ -8966,12 +9100,53 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </div>
     )}
 
+    {pendingInvoiceRemoval && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-invoice-title"
+        onClick={(event) => {
+          if (event.target === event.currentTarget && !saving) setPendingInvoiceRemoval(null);
+        }}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1200,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          background: "rgba(3,12,22,.76)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <div style={{ width: "min(440px, 100%)", padding: 24, border: "1px solid rgba(255,100,100,.5)", borderRadius: 16, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.55)" }}>
+          <small style={{ ...smallText, color: "#ff9a9a" }}>DELETE INVOICE</small>
+          <h3 id="delete-invoice-title" style={{ margin: "10px 0", color: "#fff", fontSize: 22 }}>Delete {pendingInvoiceRemoval.number}?</h3>
+          <p style={{ ...copyStyle, margin: 0 }}>This will permanently delete this invoice. This action cannot be undone.</p>
+          {error && (
+            <p
+              role="alert"
+              aria-live="assertive"
+              style={{ margin: "12px 0 0", color: "#FFB0B0", fontSize: 13, lineHeight: 1.5 }}
+            >
+              {error}
+            </p>
+          )}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
+            <button type="button" disabled={saving} onClick={() => setPendingInvoiceRemoval(null)} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0 }}>Cancel</button>
+            <button type="button" disabled={saving} onClick={confirmInvoiceRemoval} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318", borderColor: "#b42318", color: "#fff" }}>{saving ? "Deleting…" : "Delete invoice"}</button>
+          </div>
+        </div>
+      </div>
+    )}
+
     {!showForm ? (
-      <button type="button" onClick={() => { setError(""); setShowForm(true); }} style={{ ...primaryButton, maxWidth: 240 }}>
-        + Create an invoice
+      <button type="button" onClick={startCreateInvoice} style={{ ...primaryButton, maxWidth: 240 }}>
+        + Add Invoice
       </button>
     ) : (
-      <form onSubmit={handleSubmit} style={personForm}>
+      <form ref={createInvoiceFormRef} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 124 }}>
         <strong style={{ fontSize: 18 }}>Create an invoice</strong>
 
         <label style={fieldStyle}>
@@ -8990,6 +9165,8 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           <Field name="issueDate" label="Issue date" type="date" required />
           <Field name="dueDate" label="Due date" type="date" required />
         </div>
+
+        <Field name="description" label="Description" type="text" placeholder="Optional invoice description" required={false} />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
           <button

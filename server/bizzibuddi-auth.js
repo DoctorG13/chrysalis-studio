@@ -1138,7 +1138,7 @@ function getInvoices(userId) {
          ON people.id = invoices.person_id
         AND people.user_id = invoices.user_id
        WHERE invoices.user_id = ?
-       ORDER BY invoices.due_date ASC, invoices.created_at ASC`
+       ORDER BY invoices.created_at DESC, invoices.id DESC`
     )
     .all(userId);
 
@@ -1217,6 +1217,107 @@ function createInvoice(userId, payload) {
     amount_paid: 0,
     payments: [],
   });
+}
+
+function updateInvoice(userId, invoiceId, payload) {
+  const database = getDatabase();
+  const values = validateInvoicePayload(payload);
+  const person = getInvoicePerson(userId, values.personId);
+  if (!person) throw new Error("The selected person could not be found.");
+
+  // Lock the invoice and its payment total together so a concurrent payment
+  // cannot make the saved invoice total lower than the amount actually paid.
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    const existing = database.prepare(
+      `SELECT id, status, amount, due_date FROM bizzibuddi_invoices WHERE id = ? AND user_id = ?`
+    ).get(invoiceId, userId);
+    if (!existing) {
+      database.exec("ROLLBACK");
+      return null;
+    }
+
+    const paid = getInvoicePaymentTotal(userId, invoiceId);
+    if (values.amount + 0.000001 < paid) {
+      throw new Error("The invoice total cannot be less than payments already recorded.");
+    }
+
+    const now = new Date().toISOString();
+    const status = String(existing.status) === "Draft"
+      ? "Draft"
+      : getInvoiceStatus(values.amount, paid, "Issued", values.dueDate);
+    database.prepare(
+      `UPDATE bizzibuddi_invoices
+       SET person_id = ?, amount = ?, status = ?, issue_date = ?, due_date = ?, description = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    ).run(values.personId, values.amount, status, values.issueDate, values.dueDate, values.description, now, invoiceId, userId);
+
+    const row = database.prepare(
+      `SELECT invoices.*, people.name AS person_name,
+        COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+       FROM bizzibuddi_invoices AS invoices
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = invoices.person_id AND people.user_id = invoices.user_id
+       WHERE invoices.id = ? AND invoices.user_id = ?`
+    ).get(invoiceId, userId);
+    const result = toInvoice({
+      ...row,
+      payments: getInvoicePayments(userId, invoiceId),
+      paymentActivity: getInvoicePaymentActivity(userId, invoiceId),
+    });
+    database.exec("COMMIT");
+    return result;
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+}
+
+function deleteInvoice(userId, invoiceId) {
+  const database = getDatabase();
+
+  // Keep the payment checks and delete in one write transaction. This also
+  // protects audit history when a payment was recorded and later removed.
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    const invoice = database.prepare(
+      "SELECT id FROM bizzibuddi_invoices WHERE id = ? AND user_id = ?"
+    ).get(invoiceId, userId);
+    if (!invoice) {
+      database.exec("ROLLBACK");
+      return null;
+    }
+
+    const paymentCount = database.prepare(
+      "SELECT COUNT(*) AS count FROM bizzibuddi_payments WHERE invoice_id = ? AND user_id = ?"
+    ).get(invoiceId, userId);
+    if (Number(paymentCount?.count || 0) > 0) {
+      throw new Error("This invoice has recorded payments and cannot be deleted.");
+    }
+
+    const activityCount = database.prepare(
+      `SELECT COUNT(*) AS count
+       FROM bizzibuddi_automation_events
+       WHERE user_id = ?
+         AND type IN ('finance-payment-recorded', 'finance-payment-updated', 'finance-payment-removed')
+         AND (
+           source_key LIKE '%:' || ? || ':%'
+           OR source_key LIKE '%:' || ?
+         )`
+    ).get(userId, invoiceId, invoiceId);
+    if (Number(activityCount?.count || 0) > 0) {
+      throw new Error("This invoice has payment activity history and cannot be deleted. Keep it for your financial records.");
+    }
+
+    database.prepare(
+      "DELETE FROM bizzibuddi_invoices WHERE id = ? AND user_id = ?"
+    ).run(invoiceId, userId);
+    database.exec("COMMIT");
+    return { id: invoiceId };
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 function issueInvoice(userId, invoiceId) {
@@ -3948,6 +4049,26 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         });
         return true;
       }
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
+        !url.pathname.endsWith("/issue") && !url.pathname.endsWith("/payments") &&
+        ["PUT", "DELETE"].includes(request.method)) {
+      const invoiceId = decodeURIComponent(url.pathname.slice("/api/bizzibuddi/auth/invoices/".length)).replace(/\/$/, "").trim();
+      if (!invoiceId || invoiceId.includes("/")) { sendJson(response, 404, { ok: false, error: "Invoice not found." }); return true; }
+      const user = getSessionUser(request);
+      if (!user) { sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." }); return true; }
+      if (request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const invoice = updateInvoice(user.id, invoiceId, payload);
+        if (!invoice) { sendJson(response, 404, { ok: false, error: "Invoice not found." }); return true; }
+        sendJson(response, 200, { ok: true, authenticated: true, invoice });
+        return true;
+      }
+      const deleted = deleteInvoice(user.id, invoiceId);
+      if (!deleted) { sendJson(response, 404, { ok: false, error: "Invoice not found." }); return true; }
+      sendJson(response, 200, { ok: true, authenticated: true, deleted: true, invoiceId });
+      return true;
     }
 
     if (url.pathname === "/api/bizzibuddi/auth/invoices" && request.method === "GET") {

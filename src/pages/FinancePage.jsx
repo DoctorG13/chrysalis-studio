@@ -1117,10 +1117,19 @@ export default function FinancePage({
     const documentLabel =
       documentType === "quote" ? "Quote" : "Invoice";
 
+    setError("");
+
     const confirmed = await confirm({
-      title: `Delete ${documentLabel}`,
-      message: `Delete ${form.number}? This cannot be undone.`,
-      confirmLabel: `Delete ${documentLabel}`,
+      title:
+        documentType === "invoice"
+          ? `Delete invoice ${form.number}?`
+          : `Delete quote ${form.number}?`,
+      message:
+        documentType === "invoice"
+          ? `Warning: invoices with recorded payments or payment activity cannot be deleted. If this invoice has any payment history, BizziBuddi will refuse deletion and preserve the invoice and its payment records. Only continue if you understand this restriction. This action cannot be undone for invoices without payment history.`
+          : `This will permanently delete quote ${form.number}. This action cannot be undone.`,
+      confirmLabel:
+        documentType === "invoice" ? "Delete invoice" : "Delete quote",
       danger: true,
     });
 
@@ -1144,6 +1153,17 @@ export default function FinancePage({
         err.message ||
           `Unable to delete ${documentType}.`
       );
+
+      if (documentType === "invoice") {
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById("finance-error-message")
+            ?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -1245,7 +1265,12 @@ export default function FinancePage({
       </div>
 
       {error && (
-        <div style={errorBox}>
+        <div
+          id="finance-error-message"
+          role="alert"
+          aria-live="assertive"
+          style={errorBox}
+        >
           {error}
         </div>
       )}

@@ -1,3 +1,126 @@
+## BizziBuddi Finance - Invoice Deletion Rejection Message
+
+### Fixed
+
+- Display the server's invoice deletion rejection message inside the confirmation dialog when deletion is refused.
+- Add accessible alert semantics so the reason for the rejection is announced to assistive technologies.
+- Preserve existing protections against deleting invoices with recorded payments or payment activity history.
+
+### Testing
+
+- Production build passed.
+- Lint completed with zero errors and 86 warnings.
+- Workflow contract checks passed.
+- Production release checks passed.
+
+---
+
+## BizziBuddi Finance — Clear Invoice Deletion Warning
+
+### Fixed
+
+- Make the invoice deletion confirmation explicitly warn that invoices with recorded payments or payment activity cannot be deleted.
+- Explain that BizziBuddi preserves the invoice and payment records when payment history exists, before the user proceeds.
+
+### Testing
+
+- Confirmation copy updated; local build, workflow checks, and the payment-history deletion acceptance test must be rerun before release.
+
+---
+
+## BizziBuddi Finance — Invoice API Payment-History Protection
+
+### Fixed
+
+- Added the payment-history guard to the invoice API actually used by Finance, rather than relying on the separate BizziBuddi account service.
+- Check the live payment total, persisted paid amount, linked-job payments and retained timeline events inside a SQLite write transaction, including after a payment record is removed.
+- Keep invoices with recorded payment activity intact and return a clear rejection message to the Finance screen.
+- Make the invoice deletion confirmation explicit and bring the visible error message into view when deletion is refused.
+
+### Testing
+
+- Production build and workflow contract checks passed before this API correction.
+- The authenticated invoice deletion acceptance test still needs to be run locally against a disposable invoice.
+
+---
+
+## BizziBuddi Finance — Invoice Payment-History Protection
+
+### Fixed
+
+- Perform invoice edits inside a SQLite write transaction so the invoice total and recorded-payment total are checked and saved atomically.
+- Perform invoice deletion checks and deletion inside a SQLite write transaction to prevent concurrent payment changes from bypassing the safeguards.
+- Prevent deletion of invoices that have payment audit activity, even when a payment was subsequently removed, so the historical record is not orphaned.
+- Preserve the existing rule that invoice totals cannot be reduced below payments already recorded.
+- Show a clear server response explaining why an invoice with payment activity must be retained.
+
+### Testing
+
+- Reviewed the existing authenticated invoice routes and payment audit source-key formats.
+- Local build and authenticated Finance acceptance tests still need to run in the project environment.
+
+---
+
+## BizziBuddi Finance — Invoice Edit and Delete Handler Fix
+
+### Fixed
+
+- Moved invoice edit, cancel, save and delete handlers into the Finance panel that owns their state and callbacks.
+- Fixed invoice Edit and Delete clicks failing because their handlers were scoped inside a different component.
+- Automatically scrolls the selected invoice edit form into view, with clearance below the sticky workspace navigation.
+
+---
+
+## BizziBuddi Finance — Invoice Scroll Visibility
+
+### Improved
+
+- Increased the clearance below the sticky workspace navigation to 48px for Finance → Invoices navigation, the Add Invoice form, and the focused invoice card.
+- Increased scroll-margin spacing on invoice navigation, form, and card targets so browser-driven scrolling also avoids the sticky navigation.
+- Preserved existing invoice creation, invoice highlighting, and navigation behaviour.
+
+---
+
+## BizziBuddi Finance — Invoices Navigation Scroll
+
+### Fixed
+
+- Connected the Finance → Invoices submenu to the top **+ Add Invoice** button.
+- Removed the duplicate invoice-list target ID so navigation scrolls to the intended action, including when the invoice list is empty.
+- Preserved existing invoice creation, list rendering and post-save focus behaviour.
+
+---
+
+## Finance — Invoice Form and Navigation Restoration
+
+### Fixed
+- Make both **+ Add Invoice** actions scroll to the newly opened invoice form.
+- Restore the optional invoice Description field when creating an invoice and submit its value to the API.
+- After creating an invoice, close the form and scroll to the new invoice card, highlighting it for visibility.
+- Preserve the existing Edit and Delete invoice actions and confirmation flow.
+
+### Testing
+- Source-level checks completed against the branch content; local build and browser acceptance testing still need to run.
+
+---
+
+## Finance — Invoice Management Fixes
+
+### Fixed
+- List newest invoices first consistently in the API and account UI.
+- Added invoice editing with server-side validation that prevents reducing an invoice total below recorded payments.
+- Added invoice deletion with a server-side guard against deleting invoices that have recorded payments.
+- After saving an invoice edit, scroll to and highlight the updated invoice card.
+- Move the invoice editor below and slightly indented from its invoice card, with a clearer accent panel.
+- Strengthen the selected invoice card's cyan border and glow for easier visual tracking.
+- Replace the browser delete prompt with a BizziBuddi-styled confirmation modal; retain the server-side payment-history deletion guard.
+- Keep invoice cards and their editor panels in a single vertical flow, and restore a prominent **+ Add Invoice** action above the invoice list.
+
+### Testing
+- Source-level checks pending; run the project build and Finance acceptance tests in the local development environment.
+
+---
+
 ## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
 
 ### Fixed
