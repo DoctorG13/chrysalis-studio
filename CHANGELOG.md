@@ -1,3 +1,20 @@
+## BizziBuddi Finance - Invoice Deletion Rejection Message
+
+### Fixed
+
+- Display the server's invoice deletion rejection message inside the confirmation dialog when deletion is refused.
+- Add accessible alert semantics so the reason for the rejection is announced to assistive technologies.
+- Preserve existing protections against deleting invoices with recorded payments or payment activity history.
+
+### Testing
+
+- Production build passed.
+- Lint completed with zero errors and 86 warnings.
+- Workflow contract checks passed.
+- Production release checks passed.
+
+---
+
 ## BizziBuddi Finance — Clear Invoice Deletion Warning
 
 ### Fixed

@@ -9124,6 +9124,15 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           <small style={{ ...smallText, color: "#ff9a9a" }}>DELETE INVOICE</small>
           <h3 id="delete-invoice-title" style={{ margin: "10px 0", color: "#fff", fontSize: 22 }}>Delete {pendingInvoiceRemoval.number}?</h3>
           <p style={{ ...copyStyle, margin: 0 }}>This will permanently delete this invoice. This action cannot be undone.</p>
+          {error && (
+            <p
+              role="alert"
+              aria-live="assertive"
+              style={{ margin: "12px 0 0", color: "#FFB0B0", fontSize: 13, lineHeight: 1.5 }}
+            >
+              {error}
+            </p>
+          )}
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
             <button type="button" disabled={saving} onClick={() => setPendingInvoiceRemoval(null)} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0 }}>Cancel</button>
             <button type="button" disabled={saving} onClick={confirmInvoiceRemoval} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318", borderColor: "#b42318", color: "#fff" }}>{saving ? "Deleting…" : "Delete invoice"}</button>
