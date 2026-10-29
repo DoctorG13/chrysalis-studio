@@ -116,7 +116,8 @@ export default function BizzibuddiAccountPage() {
         // instead of giving up after a short, fixed delay.
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+        // Leave a clear gap below the sticky navigation so the target is not clipped.
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 28;
 
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "auto" });
         setWorkspaceScrollTarget("");
@@ -6995,7 +6996,14 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     const targetId = focusInvoiceId || initialInvoiceId;
     if (!targetId || !selectedInvoiceRef.current) return undefined;
     const frame = window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(() => selectedInvoiceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      window.requestAnimationFrame(() => {
+        const element = selectedInvoiceRef.current;
+        if (!element) return;
+        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
+        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 24;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+      });
     });
     return () => window.cancelAnimationFrame(frame);
   }, [initialInvoiceId, focusInvoiceId, invoices]);
@@ -7044,7 +7052,12 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     setShowForm(true);
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
-        createInvoiceFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const element = createInvoiceFormRef.current;
+        if (!element) return;
+        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
+        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 24;
+        window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
     });
   }
