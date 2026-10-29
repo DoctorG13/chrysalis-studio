@@ -1,3 +1,19 @@
+## BizziBuddi Finance — Invoice API Payment-History Protection
+
+### Fixed
+
+- Added the payment-history guard to the invoice API actually used by Finance, rather than relying on the separate BizziBuddi account service.
+- Check invoice deletion and linked-job payment activity inside a SQLite write transaction, including retained timeline events after a payment record is removed.
+- Keep invoices with recorded payment activity intact and return a clear rejection message to the Finance screen.
+- Make the invoice deletion confirmation explicit and bring the visible error message into view when deletion is refused.
+
+### Testing
+
+- Production build and workflow contract checks passed before this API correction.
+- The authenticated invoice deletion acceptance test still needs to be run locally against a disposable invoice.
+
+---
+
 ## BizziBuddi Finance — Invoice Payment-History Protection
 
 ### Fixed

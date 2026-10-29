@@ -154,17 +154,62 @@ function saveInvoice(database, input, existing = null) {
   return invoice;
 }
 
+function invoiceHasPaymentHistory(database, invoice) {
+  if (Number(invoice.amountPaid || 0) > 0) {
+    return true;
+  }
+
+  if (!invoice.jobId) {
+    return false;
+  }
+
+  const currentPayments = database
+    .prepare("SELECT COUNT(*) AS count FROM payments WHERE job_id = ?")
+    .get(invoice.jobId);
+
+  if (Number(currentPayments?.count || 0) > 0) {
+    return true;
+  }
+
+  const paymentActivity = database
+    .prepare(
+      "SELECT COUNT(*) AS count FROM timeline_events WHERE job_id = ? AND lower(type) = 'payment'"
+    )
+    .get(invoice.jobId);
+
+  return Number(paymentActivity?.count || 0) > 0;
+}
+
 function deleteInvoice(database, id) {
-  const existing = getInvoice(database, id);
-  if (!existing) return false;
   database.exec("BEGIN IMMEDIATE");
+
   try {
+    const existing = getInvoice(database, id);
+
+    if (!existing) {
+      database.exec("COMMIT");
+      return false;
+    }
+
+    if (invoiceHasPaymentHistory(database, existing)) {
+      throw new Error(
+        "This invoice has recorded payment activity and cannot be deleted. The invoice and its payment records must remain intact."
+      );
+    }
+
     database.prepare("DELETE FROM invoices WHERE id = ?").run(id);
     updateStoredInvoices(database, "clients", existing.clientId, id, existing, true);
-    if (existing.jobId) updateStoredInvoices(database, "jobs", existing.jobId, id, existing, true);
+
+    if (existing.jobId) {
+      updateStoredInvoices(database, "jobs", existing.jobId, id, existing, true);
+    }
+
     database.exec("COMMIT");
     return true;
-  } catch (error) { database.exec("ROLLBACK"); throw error; }
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 function main() {
