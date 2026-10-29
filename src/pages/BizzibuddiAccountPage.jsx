@@ -6933,6 +6933,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
 function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onUpdateInvoice, onDeleteInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const createInvoiceFormRef = useRef(null);
   const [editingInvoiceId, setEditingInvoiceId] = useState("");
   const [editingInvoiceForm, setEditingInvoiceForm] = useState({ personId: "", amount: "", issueDate: "", dueDate: "", description: "" });
   const [focusInvoiceId, setFocusInvoiceId] = useState("");
@@ -7038,6 +7039,16 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     };
   }, [available]);
 
+  function startCreateInvoice() {
+    setError("");
+    setShowForm(true);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        createInvoiceFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
@@ -7052,14 +7063,16 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       const submitter = event.nativeEvent?.submitter;
       const status = submitter?.value === "Issued" ? "Issued" : "Draft";
 
-      await onAddInvoice({
+      const createdInvoice = await onAddInvoice({
         personId,
         amount: Number.isFinite(amount) ? amount : 0,
         issueDate: String(form.get("issueDate") || ""),
         dueDate: String(form.get("dueDate") || ""),
+        description: String(form.get("description") || "").trim(),
         status,
       });
 
+      if (createdInvoice?.id) setFocusInvoiceId(createdInvoice.id);
       formElement.reset();
       setShowForm(false);
     } catch (requestError) {
@@ -8560,7 +8573,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
       <button
         type="button"
-        onClick={() => { setError(""); setShowForm(true); }}
+        onClick={startCreateInvoice}
         style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0 }}
       >
         + Add Invoice
@@ -9104,11 +9117,11 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     )}
 
     {!showForm ? (
-      <button type="button" onClick={() => { setError(""); setShowForm(true); }} style={{ ...primaryButton, maxWidth: 240 }}>
+      <button type="button" onClick={startCreateInvoice} style={{ ...primaryButton, maxWidth: 240 }}>
         + Add Invoice
       </button>
     ) : (
-      <form onSubmit={handleSubmit} style={personForm}>
+      <form ref={createInvoiceFormRef} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 100 }}>
         <strong style={{ fontSize: 18 }}>Create an invoice</strong>
 
         <label style={fieldStyle}>
@@ -9127,6 +9140,8 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           <Field name="issueDate" label="Issue date" type="date" required />
           <Field name="dueDate" label="Due date" type="date" required />
         </div>
+
+        <Field name="description" label="Description" type="text" placeholder="Optional invoice description" required={false} />
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
           <button
