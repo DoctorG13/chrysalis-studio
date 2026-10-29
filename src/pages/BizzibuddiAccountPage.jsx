@@ -8572,16 +8572,17 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
     <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
       <button
+        id="finance-invoices"
         type="button"
         onClick={startCreateInvoice}
-        style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0 }}
+        style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0, scrollMarginTop: 100 }}
       >
         + Add Invoice
       </button>
     </div>
 
     {invoices.length > 0 ? (
-      <div id="finance-invoices" style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
         {invoices.map((invoice) => {
           const balance = Math.max(
             0,
