@@ -46,9 +46,25 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getJobPayments(database, jobId) {
-  if (!jobId) return [];
-  return database.prepare("SELECT amount FROM payments WHERE job_id = ? ORDER BY date ASC, created_at ASC, id ASC").all(jobId);
+function getInvoicePayments(database, invoiceId) {
+  if (!invoiceId) return [];
+
+  return database
+    .prepare(
+      "SELECT amount, data_json FROM payments WHERE invoice_id = ? ORDER BY date ASC, created_at ASC, id ASC"
+    )
+    .all(invoiceId)
+    .map((row) => {
+      const payment = parseJson(row.data_json, {});
+      const amount = Number(row.amount || 0);
+      const isRefund =
+        String(payment.paymentType || "").trim().toLowerCase() === "refund";
+
+      return {
+        amount,
+        signedAmount: isRefund ? -amount : amount,
+      };
+    });
 }
 
 function reconcileInvoice(database, invoice) {
@@ -66,7 +82,10 @@ function reconcileInvoice(database, invoice) {
     };
   }
 
-  const paid = getJobPayments(database, invoice.jobId).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  const paid = getInvoicePayments(database, invoice.id).reduce(
+    (sum, row) => sum + row.signedAmount,
+    0
+  );
   const roundedPaid = Math.round(Math.max(paid, 0) * 100) / 100;
   const balance = Math.round(Math.max(total - roundedPaid, 0) * 100) / 100;
   const baseStatus = String(invoice.status || "Draft");
@@ -154,17 +173,70 @@ function saveInvoice(database, input, existing = null) {
   return invoice;
 }
 
+function invoiceHasPaymentHistory(database, invoice) {
+  const storedRow = database
+    .prepare("SELECT data_json FROM invoices WHERE id = ?")
+    .get(invoice.id);
+  const storedInvoice = parseJson(storedRow?.data_json, {});
+
+  if (
+    Number(invoice.amountPaid || 0) > 0 ||
+    Number(storedInvoice.amountPaid || 0) > 0
+  ) {
+    return true;
+  }
+
+  if (!invoice.jobId) {
+    return false;
+  }
+
+  const currentPayments = database
+    .prepare("SELECT COUNT(*) AS count FROM payments WHERE job_id = ?")
+    .get(invoice.jobId);
+
+  if (Number(currentPayments?.count || 0) > 0) {
+    return true;
+  }
+
+  const paymentActivity = database
+    .prepare(
+      "SELECT COUNT(*) AS count FROM timeline_events WHERE job_id = ? AND lower(type) = 'payment'"
+    )
+    .get(invoice.jobId);
+
+  return Number(paymentActivity?.count || 0) > 0;
+}
+
 function deleteInvoice(database, id) {
-  const existing = getInvoice(database, id);
-  if (!existing) return false;
   database.exec("BEGIN IMMEDIATE");
+
   try {
+    const existing = getInvoice(database, id);
+
+    if (!existing) {
+      database.exec("COMMIT");
+      return false;
+    }
+
+    if (invoiceHasPaymentHistory(database, existing)) {
+      throw new Error(
+        "This invoice has recorded payment activity and cannot be deleted. The invoice and its payment records must remain intact."
+      );
+    }
+
     database.prepare("DELETE FROM invoices WHERE id = ?").run(id);
     updateStoredInvoices(database, "clients", existing.clientId, id, existing, true);
-    if (existing.jobId) updateStoredInvoices(database, "jobs", existing.jobId, id, existing, true);
+
+    if (existing.jobId) {
+      updateStoredInvoices(database, "jobs", existing.jobId, id, existing, true);
+    }
+
     database.exec("COMMIT");
     return true;
-  } catch (error) { database.exec("ROLLBACK"); throw error; }
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 function main() {
