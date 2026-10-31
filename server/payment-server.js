@@ -102,6 +102,7 @@ function rowToPayment(row) {
     id: row.id,
     clientId: row.client_id,
     jobId: row.job_id || "",
+    invoiceId: row.invoice_id || "",
     amount: Number(row.amount || 0),
     date: row.date,
     method: row.method,
@@ -154,6 +155,7 @@ function normalizePayment(input, existing = null) {
     id: String(source.id || crypto.randomUUID()),
     clientId: String(source.clientId || ""),
     jobId: String(source.jobId || ""),
+    invoiceId: String(source.invoiceId || ""),
     amount: Math.round(amount * 100) / 100,
     date,
     method: String(source.method || ""),
@@ -193,6 +195,27 @@ function validatePaymentRelationships(database, payment) {
   if (job.clientId !== payment.clientId) {
     throw new Error("The payment job must belong to the payment client.");
   }
+
+  if (payment.invoiceId) {
+    const invoice = database
+      .prepare(
+        "SELECT id, client_id AS clientId, job_id AS jobId FROM invoices WHERE id = ?"
+      )
+      .get(payment.invoiceId);
+
+    if (!invoice) {
+      throw new Error(`Invoice not found: ${payment.invoiceId}`);
+    }
+
+    if (
+      invoice.clientId !== payment.clientId ||
+      invoice.jobId !== payment.jobId
+    ) {
+      throw new Error(
+        "The allocated invoice must belong to the same client and job as the payment."
+      );
+    }
+  }
 }
 
 function savePayment(database, input, existing = null) {
@@ -202,12 +225,13 @@ function savePayment(database, input, existing = null) {
   database
     .prepare(
       `INSERT INTO payments (
-        id, client_id, job_id, amount, date, method, description,
+        id, client_id, job_id, invoice_id, amount, date, method, description,
         created_at, updated_at, data_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
         client_id = excluded.client_id,
         job_id = excluded.job_id,
+        invoice_id = excluded.invoice_id,
         amount = excluded.amount,
         date = excluded.date,
         method = excluded.method,
@@ -219,6 +243,7 @@ function savePayment(database, input, existing = null) {
       payment.id,
       payment.clientId,
       payment.jobId,
+      payment.invoiceId || null,
       payment.amount,
       payment.date,
       payment.method,
