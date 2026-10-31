@@ -199,12 +199,16 @@ function validatePaymentRelationships(database, payment) {
   if (payment.invoiceId) {
     const invoice = database
       .prepare(
-        "SELECT id, client_id AS clientId, job_id AS jobId FROM invoices WHERE id = ?"
+        "SELECT id, client_id AS clientId, job_id AS jobId, status FROM invoices WHERE id = ?"
       )
       .get(payment.invoiceId);
 
     if (!invoice) {
       throw new Error(`Invoice not found: ${payment.invoiceId}`);
+    }
+
+    if (String(invoice.status || "").trim().toLowerCase() === "draft") {
+      throw new Error("Draft invoices cannot accept payments. Issue the invoice first.");
     }
 
     if (
