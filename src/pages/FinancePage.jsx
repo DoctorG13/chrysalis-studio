@@ -1774,7 +1774,8 @@ export default function FinancePage({
                 <option value="">Unallocated — Job-level payment</option>
                 {invoices
                   .filter((invoice) =>
-                    String(invoice.jobId || "") === String(paymentForm.jobId || "")
+                    String(invoice.jobId || "") === String(paymentForm.jobId || "") &&
+                    String(invoice.status || invoice.paymentStatus || "").toLowerCase() !== "draft"
                   )
                   .map((invoice) => (
                     <option key={invoice.id} value={invoice.id}>
