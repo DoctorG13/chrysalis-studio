@@ -4,6 +4,7 @@
 - Added explicit invoice allocation to Finance payments, while retaining unallocated job-level payments.
 - Added migration 22 with a nullable `payments.invoice_id` relationship and lookup index; existing payments remain unchanged and unallocated.
 - Validated that an allocated invoice belongs to the same client and job as the payment.
+- Prevented payment allocation to draft invoices until they are issued.
 
 ### Fixed
 - Reconcile each invoice using only payments allocated to that invoice.
