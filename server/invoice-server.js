@@ -46,9 +46,25 @@ function todayString() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function getJobPayments(database, jobId) {
-  if (!jobId) return [];
-  return database.prepare("SELECT amount FROM payments WHERE job_id = ? ORDER BY date ASC, created_at ASC, id ASC").all(jobId);
+function getInvoicePayments(database, invoiceId) {
+  if (!invoiceId) return [];
+
+  return database
+    .prepare(
+      "SELECT amount, data_json FROM payments WHERE invoice_id = ? ORDER BY date ASC, created_at ASC, id ASC"
+    )
+    .all(invoiceId)
+    .map((row) => {
+      const payment = parseJson(row.data_json, {});
+      const amount = Number(row.amount || 0);
+      const isRefund =
+        String(payment.paymentType || "").trim().toLowerCase() === "refund";
+
+      return {
+        amount,
+        signedAmount: isRefund ? -amount : amount,
+      };
+    });
 }
 
 function reconcileInvoice(database, invoice) {
@@ -66,7 +82,10 @@ function reconcileInvoice(database, invoice) {
     };
   }
 
-  const paid = getJobPayments(database, invoice.jobId).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+  const paid = getInvoicePayments(database, invoice.id).reduce(
+    (sum, row) => sum + row.signedAmount,
+    0
+  );
   const roundedPaid = Math.round(Math.max(paid, 0) * 100) / 100;
   const balance = Math.round(Math.max(total - roundedPaid, 0) * 100) / 100;
   const baseStatus = String(invoice.status || "Draft");

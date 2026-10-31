@@ -716,6 +716,17 @@ const MIGRATIONS = [
         ON bizzibuddi_custom_field_values(user_id, entity_type, entity_id);
     `,
   },
+  {
+    version: 22,
+    name: "invoice-payment-allocation",
+    sql: `
+      ALTER TABLE payments
+        ADD COLUMN invoice_id TEXT REFERENCES invoices(id) ON DELETE RESTRICT;
+
+      CREATE INDEX IF NOT EXISTS idx_payments_invoice_id
+        ON payments(invoice_id);
+    `,
+  },
 ];
 
 function assertSupportedNode() {

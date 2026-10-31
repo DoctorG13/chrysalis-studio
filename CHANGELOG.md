@@ -1,3 +1,25 @@
+## BizziBuddi Finance - Invoice Payment Allocation and Refund Reconciliation
+
+### Added
+- Added explicit invoice allocation to Finance payments, while retaining unallocated job-level payments.
+- Added migration 22 with a nullable `payments.invoice_id` relationship and lookup index; existing payments remain unchanged and unallocated.
+- Validated that an allocated invoice belongs to the same client and job as the payment.
+- Prevented payment allocation to draft invoices until they are issued.
+
+### Fixed
+- Reconcile each invoice using only payments allocated to that invoice.
+- Treat Refund payment records as negative amounts when calculating invoice paid totals and balances.
+- Apply the same refund-aware net calculation to job-level Finance revenue totals.
+- Ensure editing or deleting an allocated payment is reflected in the next invoice reconciliation.
+- Preserve existing payment activity and historical records.
+
+### Testing
+- Isolated API acceptance test passed for migration compatibility, invoice allocation, unallocated payments, refunds, cross-job validation, payment edits and deletions.
+- Node syntax checks passed for the migration and both payment/invoice services.
+- FinancePage JSX parse check passed.
+- Production build and full local release checks remain required before deployment.
+
+---
 ## BizziBuddi — Production Task Persistence and Readiness Fix
 
 ### Fixed
