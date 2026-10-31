@@ -90,12 +90,12 @@ try {
   });
   await Promise.all([waitForHealth(paymentPort, paymentProcess), waitForHealth(invoicePort, invoiceProcess)]);
 
-  async function createInvoice(id, number, jobId, amount) {
+  async function createInvoice(id, number, jobId, amount, status = "Issued") {
     const result = await api(invoicePort, "/api/invoices", {
       method: "POST",
       body: JSON.stringify({ invoice: {
         id, clientId: "client-1", jobId, number, amount, total: amount,
-        status: "Issued", issueDate: "2026-10-01", dueDate: "2026-11-01",
+        status, issueDate: "2026-10-01", dueDate: "2026-11-01",
       }}),
     });
     assert.equal(result.response.status, 201, JSON.stringify(result.payload));
@@ -116,6 +116,7 @@ try {
   await createInvoice("inv-1", "INV-001", "job-1", 100);
   await createInvoice("inv-2", "INV-002", "job-1", 200);
   await createInvoice("inv-other", "INV-003", "job-2", 75);
+  await createInvoice("inv-draft", "INV-004", "job-1", 60, "Draft");
 
   const editedPayment = await createPayment({
     clientId: "client-1", jobId: "job-1", invoiceId: "inv-1", amount: 40,
@@ -148,6 +149,15 @@ try {
   });
   assert.equal(invalid.response.status, 400);
 
+  const draftAllocation = await api(paymentPort, "/api/payments", {
+    method: "POST",
+    body: JSON.stringify({ payment: {
+      clientId: "client-1", jobId: "job-1", invoiceId: "inv-draft",
+      amount: 5, date: "2026-10-06", paymentType: "Part Payment",
+    }}),
+  });
+  assert.equal(draftAllocation.response.status, 400, "draft invoice allocation must be rejected");
+
   const edit = await api(paymentPort, `/api/payments/${editedPayment.id}`, {
     method: "PUT",
     body: JSON.stringify({ payment: { ...editedPayment, amount: 35 } }),
@@ -167,7 +177,7 @@ try {
   console.log("PASS: migration preserves historical payments as unallocated.");
   console.log("PASS: invoice balances include only allocated payments.");
   console.log("PASS: refunds reduce invoice paid totals.");
-  console.log("PASS: cross-job allocations are rejected.");
+  console.log("PASS: cross-job and draft invoice allocations are rejected.");
   console.log("PASS: payment edits and deletions recalculate balances.");
 } finally {
   await Promise.all([stop(paymentProcess), stop(invoiceProcess)]);
