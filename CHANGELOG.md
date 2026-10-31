@@ -52,7 +52,10 @@
 ### Testing
 
 - Production build and workflow contract checks passed before this API correction.
-- The authenticated invoice deletion acceptance test still needs to be run locally against a disposable invoice.
+- Authenticated invoice deletion acceptance test passed against an isolated production-mode server.
+- Deletion of an invoice with recorded payment history correctly returned HTTP 400.
+- Verified that the invoice and its associated payment record remained intact.
+- Test executed against data/invoice-delete-test, without modifying the production database.
 
 ---
 

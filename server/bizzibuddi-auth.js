@@ -4048,7 +4048,9 @@ export async function handleBizziBuddiAuthRequest(request, response) {
     }
 
     if (url.pathname.startsWith("/api/bizzibuddi/auth/invoices/") &&
-        !url.pathname.endsWith("/issue") && !url.pathname.endsWith("/payments") &&
+        !url.pathname.endsWith("/issue") &&
+        !url.pathname.endsWith("/payments") &&
+        !url.pathname.includes("/payments/") &&
         ["PUT", "DELETE"].includes(request.method)) {
       const invoiceId = decodeURIComponent(url.pathname.slice("/api/bizzibuddi/auth/invoices/".length)).replace(/\/$/, "").trim();
       if (!invoiceId || invoiceId.includes("/")) { sendJson(response, 404, { ok: false, error: "Invoice not found." }); return true; }
@@ -4211,12 +4213,12 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         request.method === "DELETE") {
       const paymentsPrefix = "/api/bizzibuddi/auth/invoices/";
       const paymentRoute = url.pathname.slice(paymentsPrefix.length);
-      const [rawInvoiceId, rawPaymentId, extra] = paymentRoute.split("/");
+      const [rawInvoiceId, paymentsSegment, rawPaymentId, extra] = paymentRoute.split("/");
 
       const invoiceId = decodeURIComponent(rawInvoiceId || "").trim();
       const paymentId = decodeURIComponent(rawPaymentId || "").trim();
 
-      if (!invoiceId || !paymentId || extra || invoiceId.includes("/") || paymentId.includes("/")) {
+      if (!invoiceId || paymentsSegment !== "payments" || !paymentId || extra || invoiceId.includes("/") || paymentId.includes("/")) {
         sendJson(response, 404, { ok: false, error: "Payment not found." });
         return true;
       }
