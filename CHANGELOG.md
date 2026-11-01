@@ -1,3 +1,17 @@
+## BizziBuddi — Production Task Removal Confirmation
+
+### Improved
+
+- Added an explicit confirmation before removing a production task.
+- Show the task title in the confirmation so the user can verify which task is being removed.
+- Cancelling leaves the task list unchanged; confirming continues through the existing persistent save flow.
+
+### Testing
+
+- Build and browser acceptance testing passed.
+
+---
+
 ## BizziBuddi Finance - Invoice Payment Allocation and Refund Reconciliation
 
 ### Added

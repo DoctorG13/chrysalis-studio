@@ -4708,6 +4708,7 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   const stages = ["Not started", "In production", "Quality check", "Ready", "Complete"];
   const [selectedJobId, setSelectedJobId] = useState(jobs[0]?.id || "");
   const [taskDrafts, setTaskDrafts] = useState([]);
+  const [pendingTaskRemoval, setPendingTaskRemoval] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [quickSavingJobId, setQuickSavingJobId] = useState("");
@@ -5189,9 +5190,21 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
     await persistTaskDrafts(nextTasks);
   }
 
-  async function removeTask(taskId) {
+  function removeTask(taskId) {
     if (saving) return;
+
+    const taskToRemove = taskDrafts.find((task) => task.id === taskId);
+    if (!taskToRemove) return;
+
+    setPendingTaskRemoval(taskToRemove);
+  }
+
+  async function confirmTaskRemoval() {
+    if (saving || !pendingTaskRemoval) return;
+
+    const taskId = pendingTaskRemoval.id;
     const nextTasks = taskDrafts.filter((task) => task.id !== taskId);
+    setPendingTaskRemoval(null);
     setTaskDrafts(nextTasks);
     await persistTaskDrafts(nextTasks);
   }
@@ -5223,6 +5236,45 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
 
   return (
     <section style={cardStyle(1040)}>
+      {pendingTaskRemoval && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="remove-production-task-title"
+          aria-describedby="remove-production-task-description"
+          onClick={(event) => {
+            if (event.target === event.currentTarget && !saving) setPendingTaskRemoval(null);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !saving) setPendingTaskRemoval(null);
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1400,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            background: "rgba(3,12,22,.78)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+          }}
+        >
+          <div style={{ width: "min(440px, 100%)", padding: 24, border: "1px solid rgba(255,100,100,.5)", borderRadius: 16, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.55)" }}>
+            <small style={{ ...smallText, color: "#ff9a9a" }}>REMOVE PRODUCTION TASK</small>
+            <h3 id="remove-production-task-title" style={{ margin: "10px 0", color: "#fff", fontSize: 22 }}>Remove this task?</h3>
+            <p id="remove-production-task-description" style={{ ...copyStyle, margin: 0 }}>
+              Are you sure you want to remove <strong style={{ color: TEXT }}>{pendingTaskRemoval.title}</strong> from this production task list?
+              This action cannot be undone.
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap", marginTop: 22 }}>
+              <button type="button" autoFocus disabled={saving} onClick={() => setPendingTaskRemoval(null)} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0 }}>Cancel</button>
+              <button type="button" disabled={saving} onClick={confirmTaskRemoval} style={{ ...smallActionButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318", borderColor: "#b42318", color: "#fff" }}>Remove task</button>
+            </div>
+          </div>
+        </div>
+      )}
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
 
       <div style={{ marginTop: 22 }}>
