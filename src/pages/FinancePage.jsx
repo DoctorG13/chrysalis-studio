@@ -507,11 +507,12 @@ export default function FinancePage({
 
           const totalPaid =
             payments.reduce(
-              (sum, payment) =>
-                sum +
-                Number(
-                  payment.amount || 0
-                ),
+              (sum, payment) => {
+                const amount = Number(payment.amount || 0);
+                const isRefund =
+                  String(payment.paymentType || "").toLowerCase() === "refund";
+                return sum + (isRefund ? -amount : amount);
+              },
               0
             );
 
@@ -668,6 +669,7 @@ export default function FinancePage({
       id: payment?.id || "",
       jobId: payment?.jobId || linkedJob?.id || "",
       clientId: payment?.clientId || linkedJob?.clientId || clients[0]?.id || "",
+      invoiceId: payment?.invoiceId || "",
       amount: payment?.amount ?? "",
       paymentType: payment?.paymentType || "Deposit",
       paymentMethod: payment?.paymentMethod || "Bank Transfer",
@@ -688,6 +690,9 @@ export default function FinancePage({
     const description =
       `${money(Number(payment.amount || 0))} ${label.toLowerCase()} ${edited ? "edited" : "recorded"}` +
       (payment.paymentMethod ? ` via ${payment.paymentMethod}` : "") +
+      (payment.invoiceId
+        ? ` allocated to invoice ${invoices.find((item) => String(item.id) === String(payment.invoiceId))?.number || payment.invoiceId}`
+        : " (unallocated job-level payment)") +
       ".";
 
     try {
@@ -1001,17 +1006,25 @@ export default function FinancePage({
         selectedJob.payments ||
         [];
 
-      return payments.reduce(
-        (sum, payment) =>
-          sum +
-          Number(
-            payment.amount || 0
-          ),
-        0
-      );
+      if (!form?.id) {
+        return 0;
+      }
+
+      return payments
+        .filter(
+          (payment) =>
+            String(payment.invoiceId || "") === String(form.id)
+        )
+        .reduce((sum, payment) => {
+          const amount = Number(payment.amount || 0);
+          const isRefund =
+            String(payment.paymentType || "").toLowerCase() === "refund";
+          return sum + (isRefund ? -amount : amount);
+        }, 0);
     }, [
       selectedJob,
       jobPayments,
+      form?.id,
     ]);
 
   const balance =
@@ -1117,10 +1130,19 @@ export default function FinancePage({
     const documentLabel =
       documentType === "quote" ? "Quote" : "Invoice";
 
+    setError("");
+
     const confirmed = await confirm({
-      title: `Delete ${documentLabel}`,
-      message: `Delete ${form.number}? This cannot be undone.`,
-      confirmLabel: `Delete ${documentLabel}`,
+      title:
+        documentType === "invoice"
+          ? `Delete invoice ${form.number}?`
+          : `Delete quote ${form.number}?`,
+      message:
+        documentType === "invoice"
+          ? `Warning: invoices with recorded payments or payment activity cannot be deleted. If this invoice has any payment history, BizziBuddi will refuse deletion and preserve the invoice and its payment records. Only continue if you understand this restriction. This action cannot be undone for invoices without payment history.`
+          : `This will permanently delete quote ${form.number}. This action cannot be undone.`,
+      confirmLabel:
+        documentType === "invoice" ? "Delete invoice" : "Delete quote",
       danger: true,
     });
 
@@ -1144,6 +1166,17 @@ export default function FinancePage({
         err.message ||
           `Unable to delete ${documentType}.`
       );
+
+      if (documentType === "invoice") {
+        window.requestAnimationFrame(() => {
+          document
+            .getElementById("finance-error-message")
+            ?.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+        });
+      }
     } finally {
       setSaving(false);
     }
@@ -1245,7 +1278,12 @@ export default function FinancePage({
       </div>
 
       {error && (
-        <div style={errorBox}>
+        <div
+          id="finance-error-message"
+          role="alert"
+          aria-live="assertive"
+          style={errorBox}
+        >
           {error}
         </div>
       )}
@@ -1721,9 +1759,29 @@ export default function FinancePage({
               </select>
             </Field>
             <Field label="Job">
-              <select value={paymentForm.jobId || ""} onChange={(e) => { const job = jobs.find((item) => String(item.id) === String(e.target.value)); updatePaymentField("jobId", e.target.value); if (job?.clientId) updatePaymentField("clientId", job.clientId); }} style={input}>
+              <select value={paymentForm.jobId || ""} onChange={(e) => { const job = jobs.find((item) => String(item.id) === String(e.target.value)); updatePaymentField("jobId", e.target.value); updatePaymentField("invoiceId", ""); if (job?.clientId) updatePaymentField("clientId", job.clientId); }} style={input}>
                 <option value="">Select job…</option>
                 {jobs.map((job) => <option key={job.id} value={job.id}>{job.reference ? `${job.reference} — ` : ""}{job.name || job.title || "Job"}</option>)}
+              </select>
+            </Field>
+            <Field label="Allocate to Invoice">
+              <select
+                value={paymentForm.invoiceId || ""}
+                onChange={(e) => updatePaymentField("invoiceId", e.target.value)}
+                style={input}
+                disabled={!paymentForm.jobId}
+              >
+                <option value="">Unallocated — Job-level payment</option>
+                {invoices
+                  .filter((invoice) =>
+                    String(invoice.jobId || "") === String(paymentForm.jobId || "") &&
+                    String(invoice.status || invoice.paymentStatus || "").toLowerCase() !== "draft"
+                  )
+                  .map((invoice) => (
+                    <option key={invoice.id} value={invoice.id}>
+                      {invoice.number || "Invoice"} — {money(Number(invoice.total ?? invoice.amount ?? 0))}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Field label="Amount (AUD)"><input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(e) => updatePaymentField("amount", e.target.value)} style={input} /></Field>

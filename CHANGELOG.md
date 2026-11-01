@@ -1,4 +1,183 @@
+## BizziBuddi Finance — Invoice Payment Allocation and Refund Reconciliation
+
+### Added
+- Added explicit invoice allocation to Finance payments, while retaining unallocated job-level payments.
+- Added migration 22 with a nullable `payments.invoice_id` relationship and lookup index; existing payments remain unchanged and unallocated.
+- Validated that an allocated invoice belongs to the same client and job as the payment.
+- Prevented payment allocation to draft invoices until they are issued.
+
+### Fixed
+- Reconcile each invoice using only payments allocated to that invoice.
+- Treat Refund payment records as negative amounts when calculating invoice paid totals and balances.
+- Apply the same refund-aware net calculation to job-level Finance revenue totals.
+- Ensure editing or deleting an allocated payment is reflected in the next invoice reconciliation.
+- Preserve existing payment activity and historical records.
+
+### Testing
+- Isolated API acceptance test passed for migration compatibility, invoice allocation, unallocated payments, refunds, cross-job validation, payment edits and deletions.
+- Node syntax checks passed for the migration and both payment/invoice services.
+- FinancePage JSX parse check passed.
+- Production build and full local release checks remain required before deployment.
+
+---
+
+## BizziBuddi — Production Task Persistence and Readiness Fix
+
+### Fixed
+- Persist production task creation, completion, and removal.
+- Prevent completed task lists from incorrectly changing a job's status to Ready.
+- Improve Production section navigation and work-item access.
+
+### Testing
+- Production build passed with Vite 8.1.0.
+- Acceptance tests passed for task creation, completion, and removal after browser refresh.
+- Production navigation, stage and due-date display, and readiness behaviour passed manual acceptance testing.
+
+## BizziBuddi Finance - Invoice Deletion Rejection Message
+
+### Fixed
+
+- Display the server's invoice deletion rejection message inside the confirmation dialog when deletion is refused.
+- Add accessible alert semantics so the reason for the rejection is announced to assistive technologies.
+- Preserve existing protections against deleting invoices with recorded payments or payment activity history.
+
+### Testing
+
+- Production build passed.
+- Lint completed with zero errors and 86 warnings.
+- Workflow contract checks passed.
+- Production release checks passed.
+
+---
+
+## BizziBuddi Finance — Clear Invoice Deletion Warning
+
+### Fixed
+
+- Make the invoice deletion confirmation explicitly warn that invoices with recorded payments or payment activity cannot be deleted.
+- Explain that BizziBuddi preserves the invoice and payment records when payment history exists, before the user proceeds.
+
+### Testing
+
+- Confirmation copy updated; local build, workflow checks, and the payment-history deletion acceptance test must be rerun before release.
+
+---
+
+## BizziBuddi Finance — Invoice API Payment-History Protection
+
+### Fixed
+
+- Added the payment-history guard to the invoice API actually used by Finance, rather than relying on the separate BizziBuddi account service.
+- Check the live payment total, persisted paid amount, linked-job payments and retained timeline events inside a SQLite write transaction, including after a payment record is removed.
+- Keep invoices with recorded payment activity intact and return a clear rejection message to the Finance screen.
+- Make the invoice deletion confirmation explicit and bring the visible error message into view when deletion is refused.
+
+### Testing
+
+- Production build and workflow contract checks passed before this API correction.
+- Authenticated invoice deletion acceptance test passed against an isolated production-mode server.
+- Deletion of an invoice with recorded payment history correctly returned HTTP 400.
+- Verified that the invoice and its associated payment record remained intact.
+- Test executed against data/invoice-delete-test, without modifying the production database.
+
+---
+
+## BizziBuddi Finance — Invoice Payment-History Protection
+
+### Fixed
+
+- Perform invoice edits inside a SQLite write transaction so the invoice total and recorded-payment total are checked and saved atomically.
+- Perform invoice deletion checks and deletion inside a SQLite write transaction to prevent concurrent payment changes from bypassing the safeguards.
+- Prevent deletion of invoices that have payment audit activity, even when a payment was subsequently removed, so the historical record is not orphaned.
+- Preserve the existing rule that invoice totals cannot be reduced below payments already recorded.
+- Show a clear server response explaining why an invoice with payment activity must be retained.
+
+### Testing
+
+- Reviewed the existing authenticated invoice routes and payment audit source-key formats.
+- Local build and authenticated Finance acceptance tests still need to run in the project environment.
+
+---
+
+## BizziBuddi Finance — Invoice Edit and Delete Handler Fix
+
+### Fixed
+
+- Moved invoice edit, cancel, save and delete handlers into the Finance panel that owns their state and callbacks.
+- Fixed invoice Edit and Delete clicks failing because their handlers were scoped inside a different component.
+- Automatically scrolls the selected invoice edit form into view, with clearance below the sticky workspace navigation.
+
+---
+
+## BizziBuddi Finance — Invoice Scroll Visibility
+
+### Improved
+
+- Increased the clearance below the sticky workspace navigation to 48px for Finance → Invoices navigation, the Add Invoice form, and the focused invoice card.
+- Increased scroll-margin spacing on invoice navigation, form, and card targets so browser-driven scrolling also avoids the sticky navigation.
+- Preserved existing invoice creation, invoice highlighting, and navigation behaviour.
+
+---
+
+## BizziBuddi Finance — Invoices Navigation Scroll
+
+### Fixed
+
+- Connected the Finance → Invoices submenu to the top **+ Add Invoice** button.
+- Removed the duplicate invoice-list target ID so navigation scrolls to the intended action, including when the invoice list is empty.
+- Preserved existing invoice creation, list rendering and post-save focus behaviour.
+
+---
+
+## Finance — Invoice Form and Navigation Restoration
+
+### Fixed
+- Make both **+ Add Invoice** actions scroll to the newly opened invoice form.
+- Restore the optional invoice Description field when creating an invoice and submit its value to the API.
+- After creating an invoice, close the form and scroll to the new invoice card, highlighting it for visibility.
+- Preserve the existing Edit and Delete invoice actions and confirmation flow.
+
+### Testing
+- Source-level checks completed against the branch content; local build and browser acceptance testing still need to run.
+
+---
+
+## Finance — Invoice Management Fixes
+
+### Fixed
+- List newest invoices first consistently in the API and account UI.
+- Added invoice editing with server-side validation that prevents reducing an invoice total below recorded payments.
+- Added invoice deletion with a server-side guard against deleting invoices that have recorded payments.
+- After saving an invoice edit, scroll to and highlight the updated invoice card.
+- Move the invoice editor below and slightly indented from its invoice card, with a clearer accent panel.
+- Strengthen the selected invoice card's cyan border and glow for easier visual tracking.
+- Replace the browser delete prompt with a BizziBuddi-styled confirmation modal; retain the server-side payment-history deletion guard.
+- Keep invoice cards and their editor panels in a single vertical flow, and restore a prominent **+ Add Invoice** action above the invoice list.
+
+### Testing
+- Source-level checks pending; run the project build and Finance acceptance tests in the local development environment.
+
+---
+
 ## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
+
+## BizziBuddi — Weather and Time Follow-up Improvements
+
+### Improved
+- Retain resolved city and region context across weather and time follow-up questions.
+- Recognise seven-day forecast requests and preserve forecast intent.
+- Route day-only follow-ups after time questions to weather forecasts.
+- Recognise local date and day questions in live-information requests.
+
+### Testing
+- Production build passed with Vite 8.1.0.
+- Verified the live weather endpoint returns current conditions for Brisbane.
+- Verified the live time endpoint returns local-time information for Sydney.
+- Browser follow-up tests previously confirmed location retention, rain probabilities, specific-day temperatures, weekly forecasts, and time follow-ups.
+- Deployment readiness and final release acceptance remain outstanding.
+
+---
+
 
 ### Fixed
 - Preserve live-information intent for short follow-ups such as a city name or “Current weather — Brisbane” when weather is already being discussed.
@@ -3608,3 +3787,15 @@ All notable changes to Chrysalis are recorded here.
 - Send established business accounts to the Dashboard by default when no valid destination view was requested.
 - Update the URL and Today navigation state to match the displayed Dashboard.
 - Send accounts without business setup to onboarding and keep the URL in sync.
+
+
+## Unreleased
+
+### BizziBuddi — Live Weather Improvements
+- Improved location matching and disambiguation for places sharing the same name.
+- Added clickable location choices for ambiguous weather and time requests.
+- Improved contextual weather follow-ups, including tomorrow's rain probability.
+- Corrected weather response formatting.
+- Verified backend syntax, production build, and weather follow-ups after backend restart.
+
+**Testing:** Passed.
