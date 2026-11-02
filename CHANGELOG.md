@@ -1,3 +1,26 @@
+## BizziBuddi Finance — Invoice Refund Recording
+
+### Added
+- Added an explicit Payment received / Refund issued transaction choice to invoice payment entry.
+- Made refund recording available on fully paid invoices.
+- Display refund transactions as deductions and show the net amount paid on the invoice.
+- Added migration 23 to identify invoice payment and refund records while preserving all existing records as payments.
+
+### Fixed
+- Reconcile invoice balances, statuses and reporting using payments less refunds.
+- Prevent removal of a payment when active refunds would exceed the remaining receipts.
+- Identify refunds clearly in the transaction-removal confirmation.
+- Validate refunds against the net amount received so refunds cannot exceed receipts.
+- Preserve refund transaction type when editing and removing invoice transactions.
+
+### Testing
+- Passed Node syntax checks and production build after the final refund-safety correction.
+- Passed isolated API acceptance tests covering payment and refund recording, partial and full refunds, refund limits, editing and removal, payment-edit and deletion safeguards, reconciliation, and audit-history persistence.
+- Passed manual Finance UI acceptance tests covering refund recording, paid-invoice refunds, editing, removal confirmations, transaction history, and over-refund validation.
+- Added atomic database write transactions to payment recording and editing so balance and refund limits are checked against the latest saved transaction history.
+
+---
+
 ## BizziBuddi — Production Task Removal Confirmation
 
 ### Improved

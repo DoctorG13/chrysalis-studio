@@ -726,6 +726,16 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_payments_invoice_id
         ON payments(invoice_id);
     `,
+  },  {
+    version: 23,
+    name: "bizzibuddi-invoice-payment-types",
+    sql: `
+      ALTER TABLE bizzibuddi_payments
+        ADD COLUMN payment_type TEXT NOT NULL DEFAULT 'Payment';
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_payments_type
+        ON bizzibuddi_payments(payment_type);
+    `,
   },
 ];
 

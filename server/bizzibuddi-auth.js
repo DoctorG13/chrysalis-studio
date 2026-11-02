@@ -938,7 +938,7 @@ function getInvoicePerson(userId, personId) {
 function getInvoicePaymentTotal(userId, invoiceId) {
   const row = getDatabase()
     .prepare(
-      `SELECT COALESCE(SUM(amount), 0) AS amount_paid
+      `SELECT COALESCE(SUM(CASE WHEN payment_type = 'Refund' THEN -amount ELSE amount END), 0) AS amount_paid
        FROM bizzibuddi_payments
        WHERE invoice_id = ? AND user_id = ?`
     )
@@ -954,6 +954,7 @@ function toInvoicePayment(row) {
     id: row.id,
     invoiceId: row.invoice_id,
     amount: Number(row.amount || 0),
+    paymentType: row.payment_type === "Refund" ? "Refund" : "Payment",
     date: row.date,
     method: row.method || "Other",
     description: row.description || "",
@@ -965,7 +966,7 @@ function toInvoicePayment(row) {
 function getInvoicePayments(userId, invoiceId) {
   return getDatabase()
     .prepare(
-      `SELECT id, invoice_id, amount, date, method, description, created_at, updated_at
+      `SELECT id, invoice_id, amount, payment_type, date, method, description, created_at, updated_at
        FROM bizzibuddi_payments
        WHERE invoice_id = ? AND user_id = ?
        ORDER BY date DESC, created_at DESC`
@@ -1032,7 +1033,7 @@ function getInvoicePaymentActivity(userId, invoiceId) {
        FROM bizzibuddi_automation_events
        WHERE user_id = ?
          AND type IN (
-           'finance-payment-recorded',
+           'finance-payment-recorded', 'finance-refund-recorded',
            'finance-payment-updated',
            'finance-payment-removed'
          )
@@ -1127,7 +1128,7 @@ function getInvoices(userId) {
          invoices.updated_at,
          people.name AS person_name,
          COALESCE(
-           (SELECT SUM(payments.amount)
+           (SELECT SUM(CASE WHEN payments.payment_type = 'Refund' THEN -payments.amount ELSE payments.amount END)
             FROM bizzibuddi_payments AS payments
             WHERE payments.invoice_id = invoices.id
               AND payments.user_id = invoices.user_id),
@@ -1254,7 +1255,7 @@ function updateInvoice(userId, invoiceId, payload) {
 
     const row = database.prepare(
       `SELECT invoices.*, people.name AS person_name,
-        COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+        COALESCE((SELECT SUM(CASE WHEN payment_type = 'Refund' THEN -amount ELSE amount END) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
        FROM bizzibuddi_invoices AS invoices
        LEFT JOIN bizzibuddi_people AS people
          ON people.id = invoices.person_id AND people.user_id = invoices.user_id
@@ -1299,7 +1300,7 @@ function deleteInvoice(userId, invoiceId) {
       `SELECT COUNT(*) AS count
        FROM bizzibuddi_automation_events
        WHERE user_id = ?
-         AND type IN ('finance-payment-recorded', 'finance-payment-updated', 'finance-payment-removed')
+         AND type IN ('finance-payment-recorded', 'finance-refund-recorded', 'finance-payment-updated', 'finance-payment-removed')
          AND (
            source_key LIKE '%:' || ? || ':%'
            OR source_key LIKE '%:' || ?
@@ -1351,7 +1352,7 @@ function issueInvoice(userId, invoiceId) {
     ...database
       .prepare(
         `SELECT invoices.*, people.name AS person_name,
-                COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+                COALESCE((SELECT SUM(CASE WHEN payment_type = 'Refund' THEN -amount ELSE amount END) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
          FROM bizzibuddi_invoices AS invoices
          LEFT JOIN bizzibuddi_people AS people
            ON people.id = invoices.person_id AND people.user_id = invoices.user_id
@@ -1364,88 +1365,119 @@ function issueInvoice(userId, invoiceId) {
 }
 
 function recordInvoicePayment(userId, invoiceId, payload = {}) {
-  const invoice = getDatabase()
-    .prepare(
+  const database = getDatabase();
+
+  // Lock the invoice and its payment history before calculating
+  // the available balance or refund limit.
+  database.exec("BEGIN IMMEDIATE");
+
+  try {
+    const invoice = database.prepare(
       `SELECT id, number, amount, status, due_date
        FROM bizzibuddi_invoices
        WHERE id = ? AND user_id = ?`
-    )
-    .get(invoiceId, userId);
+    ).get(invoiceId, userId);
 
-  if (!invoice) return null;
+    if (!invoice) {
+      database.exec("ROLLBACK");
+      return null;
+    }
 
-  if (String(invoice.status) === "Draft") {
-    throw new Error("Issue the invoice before recording a payment.");
-  }
+    if (String(invoice.status) === "Draft") {
+      throw new Error("Issue the invoice before recording a payment or refund.");
+    }
 
-  const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
-  const balance = Math.max(0, Number(invoice.amount || 0) - currentPaid);
+    const paymentType =
+      String(payload?.paymentType || "Payment").trim() === "Refund"
+        ? "Refund"
+        : "Payment";
 
-  if (balance <= 0) {
-    return toInvoice({
-      ...getDatabase().prepare(
-        `SELECT invoices.*, people.name AS person_name,
-                COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
-         FROM bizzibuddi_invoices AS invoices
-         LEFT JOIN bizzibuddi_people AS people
-           ON people.id = invoices.person_id AND people.user_id = invoices.user_id
-         WHERE invoices.id = ? AND invoices.user_id = ?`
-      ).get(invoiceId, userId),
-      payments: getInvoicePayments(userId, invoiceId),
-    });
-  }
-
-  const requestedAmount =
-    payload?.amount === undefined || payload?.amount === null || payload?.amount === ""
-      ? balance
-      : Number(payload.amount);
-  const amount = Math.round(requestedAmount * 100) / 100;
-  const method = String(payload?.method || "Other").trim().slice(0, 60) || "Other";
-  const date = String(payload?.date || todayDate()).trim();
-  const description = String(payload?.description || "Payment").trim().slice(0, 160) || "Payment";
-
-  if (!Number.isFinite(amount) || amount <= 0 || amount > balance) {
-    throw new Error(`Payment amount must be greater than zero and no more than the remaining balance of ${balance.toFixed(2)}.`);
-  }
-  if (!isValidDateString(date)) {
-    throw new Error("Please enter a valid payment date.");
-  }
-
-  const now = new Date().toISOString();
-  const payment = {
-    id: randomUUID(),
-    user_id: userId,
-    invoice_id: invoiceId,
-    amount,
-    date,
-    method,
-    description,
-    created_at: now,
-    updated_at: now,
-  };
-
-  const database = getDatabase();
-  database.exec("BEGIN");
-  try {
-    database.prepare(
-      `INSERT INTO bizzibuddi_payments (
-        id, user_id, invoice_id, amount, date, method,
-        description, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(
-      payment.id,
-      payment.user_id,
-      payment.invoice_id,
-      payment.amount,
-      payment.date,
-      payment.method,
-      payment.description,
-      payment.created_at,
-      payment.updated_at
+    // Read the latest total after obtaining the write lock.
+    const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
+    const balance = Math.max(
+      0,
+      Number(invoice.amount || 0) - currentPaid
     );
 
-    const nextPaid = currentPaid + amount;
-    const nextStatus = getInvoiceStatus(invoice.amount, nextPaid, invoice.status, invoice.due_date);
+    const maximum = paymentType === "Refund"
+      ? Math.max(0, currentPaid)
+      : balance;
+
+    const requestedAmount =
+      payload?.amount === undefined ||
+      payload?.amount === null ||
+      payload?.amount === ""
+        ? maximum
+        : Number(payload.amount);
+
+    const amount = Math.round(requestedAmount * 100) / 100;
+
+    const method = String(payload?.method || "Other")
+      .trim()
+      .slice(0, 60) || "Other";
+
+    const date = String(payload?.date || todayDate()).trim();
+
+    const description = String(
+      payload?.description || paymentType
+    ).trim().slice(0, 160) || paymentType;
+
+    if (!Number.isFinite(amount) ||
+        amount <= 0 ||
+        amount > maximum + 0.000001) {
+      throw new Error(
+        paymentType === "Refund"
+          ? `Refund amount must be greater than zero and no more than the amount received (${maximum.toFixed(2)}).`
+          : `Payment amount must be greater than zero and no more than the remaining balance (${maximum.toFixed(2)}).`
+      );
+    }
+
+    if (!isValidDateString(date)) {
+      throw new Error("Please enter a valid transaction date.");
+    }
+
+    const now = new Date().toISOString();
+
+    const payment = {
+      id: randomUUID(),
+      user_id: userId,
+      invoice_id: invoiceId,
+      amount,
+      payment_type: paymentType,
+      date,
+      method,
+      description,
+      created_at: now,
+      updated_at: now,
+    };
+
+    database.prepare(
+      `INSERT INTO bizzibuddi_payments (
+        id, user_id, invoice_id, amount, payment_type,
+        date, method, description, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      payment.id,
+      userId,
+      invoiceId,
+      amount,
+      paymentType,
+      date,
+      method,
+      description,
+      now,
+      now
+    );
+
+    const nextPaid = currentPaid +
+      (paymentType === "Refund" ? -amount : amount);
+
+    const nextStatus = getInvoiceStatus(
+      invoice.amount,
+      nextPaid,
+      invoice.status,
+      invoice.due_date
+    );
 
     database.prepare(
       `UPDATE bizzibuddi_invoices
@@ -1454,19 +1486,20 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
     ).run(nextStatus, now, invoiceId, userId);
 
     createAutomationEvent(userId, {
-      type: "finance-payment-recorded",
-      title: "Payment recorded",
+      type: paymentType === "Refund"
+        ? "finance-refund-recorded"
+        : "finance-payment-recorded",
+      title: paymentType === "Refund"
+        ? "Refund recorded"
+        : "Payment recorded",
       detail:
-        formatPaymentAuditCurrency(Number(amount) || 0) +
-        " payment recorded on " +
-        (invoice.number || invoiceId) +
-        " · " +
-        formatPaymentAuditDate(date) +
-        " · " +
-        method +
-        (description ? " · " + description : "") +
-        ".",
-      sourceKey: "finance-payment:recorded:" + payment.id + ":" + invoiceId,
+        `${formatPaymentAuditCurrency(amount)} ` +
+        `${paymentType.toLowerCase()} recorded on ` +
+        `${invoice.number || invoiceId} · ` +
+        `${formatPaymentAuditDate(date)} · ${method}` +
+        `${description ? " · " + description : ""}.`,
+      sourceKey:
+        `finance-${paymentType.toLowerCase()}:recorded:${payment.id}:${invoiceId}`,
     });
 
     database.exec("COMMIT");
@@ -1475,131 +1508,179 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
     throw error;
   }
 
-  const updatedInvoice = getDatabase()
-    .prepare(
-      `SELECT invoices.*, people.name AS person_name,
-              COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
-       FROM bizzibuddi_invoices AS invoices
-       LEFT JOIN bizzibuddi_people AS people
-         ON people.id = invoices.person_id AND people.user_id = invoices.user_id
-       WHERE invoices.id = ? AND invoices.user_id = ?`
-    )
-    .get(invoiceId, userId);
+  const updatedInvoice = database.prepare(
+    `SELECT invoices.*,
+            people.name AS person_name,
+            COALESCE((
+              SELECT SUM(
+                CASE WHEN payment_type = 'Refund'
+                  THEN -amount
+                  ELSE amount
+                END
+              )
+              FROM bizzibuddi_payments
+              WHERE invoice_id = invoices.id
+                AND user_id = invoices.user_id
+            ), 0) AS amount_paid
+     FROM bizzibuddi_invoices AS invoices
+     LEFT JOIN bizzibuddi_people AS people
+       ON people.id = invoices.person_id
+      AND people.user_id = invoices.user_id
+     WHERE invoices.id = ? AND invoices.user_id = ?`
+  ).get(invoiceId, userId);
 
-  const resultInvoice = toInvoice({
-    ...updatedInvoice,
-    payments: getInvoicePayments(userId, invoiceId),
-  });
-
-  return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, invoiceId) };
+  return {
+    ...toInvoice({
+      ...updatedInvoice,
+      payments: getInvoicePayments(userId, invoiceId),
+    }),
+    paymentActivity: getInvoicePaymentActivity(userId, invoiceId),
+  };
 }
-
-
 function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
   const database = getDatabase();
-  const payment = database
-    .prepare(
-      `SELECT payments.id, payments.invoice_id, payments.amount, payments.date,
-              payments.method, payments.description, invoices.number AS invoice_number, invoices.amount AS invoice_amount,
-              invoices.status AS invoice_status, invoices.due_date
+
+  // Lock the invoice payment history before calculating the new balance.
+  // This prevents concurrent changes from invalidating refund safeguards.
+  database.exec("BEGIN IMMEDIATE");
+
+  try {
+    const payment = database.prepare(
+      `SELECT payments.id, payments.invoice_id, payments.amount,
+              payments.payment_type, payments.date, payments.method,
+              payments.description,
+              invoices.number AS invoice_number,
+              invoices.amount AS invoice_amount,
+              invoices.status AS invoice_status,
+              invoices.due_date
        FROM bizzibuddi_payments AS payments
        INNER JOIN bizzibuddi_invoices AS invoices
          ON invoices.id = payments.invoice_id
         AND invoices.user_id = payments.user_id
        WHERE payments.id = ? AND payments.user_id = ?`
-    )
-    .get(paymentId, userId);
+    ).get(paymentId, userId);
 
-  if (!payment) return null;
+    if (!payment || payment.invoice_id !== invoiceId) {
+      database.exec("ROLLBACK");
+      return null;
+    }
 
-  const actualInvoiceId = payment.invoice_id;
-  const currentPaid = getInvoicePaymentTotal(userId, actualInvoiceId);
-  const currentAmount = Number(payment.amount || 0);
-  const maximumAmount = Math.max(
-    currentAmount,
-    Number(payment.invoice_amount || 0) - (currentPaid - currentAmount)
-  );
+    const oldType = payment.payment_type === "Refund"
+      ? "Refund"
+      : "Payment";
 
-  const requestedAmount =
-    payload?.amount === undefined || payload?.amount === null || payload?.amount === ""
-      ? currentAmount
-      : Number(payload.amount);
-  const amount = Math.round(requestedAmount * 100) / 100;
-  const method = String(payload?.method || payment.method || "Other").trim().slice(0, 60) || "Other";
-  const date = String(payload?.date || payment.date || todayDate()).trim();
-  const description = String(
-    payload?.description === undefined ? payment.description || "Payment" : payload.description
-  ).trim().slice(0, 160) || "Payment";
+    const nextType = String(payload?.paymentType || oldType).trim() === "Refund"
+      ? "Refund"
+      : "Payment";
 
-  if (!Number.isFinite(amount) || amount <= 0 || amount > maximumAmount) {
-    throw new Error(
-      `Payment amount must be greater than zero and no more than the available invoice balance of ${maximumAmount.toFixed(2)}.`
-    );
-  }
+    const currentAmount = Number(payment.amount || 0);
 
-  if (!isValidDateString(date)) {
-    throw new Error("Please enter a valid payment date.");
-  }
+    const currentContribution = oldType === "Refund"
+      ? -currentAmount
+      : currentAmount;
 
-  const paymentChanges = [];
+    const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
+    const netWithoutCurrent = currentPaid - currentContribution;
 
-  if (Number(currentAmount) !== Number(amount)) {
-    paymentChanges.push(
-      "Amount " +
-      formatPaymentAuditCurrency(Number(currentAmount) || 0) +
-      " → " +
-      formatPaymentAuditCurrency(Number(amount) || 0)
-    );
-  }
+    const maximum = nextType === "Refund"
+      ? Math.max(0, netWithoutCurrent)
+      : Math.max(0, Number(payment.invoice_amount || 0) - netWithoutCurrent);
 
-  if (String(payment.date || "") !== date) {
-    paymentChanges.push(
-      "Date " +
-      formatPaymentAuditDate(payment.date) +
-      " → " +
-      formatPaymentAuditDate(date)
-    );
-  }
+    const amountInput =
+      payload?.amount === undefined ||
+      payload?.amount === null ||
+      payload?.amount === ""
+        ? currentAmount
+        : Number(payload.amount);
 
-  if (String(payment.method || "Other") !== method) {
-    paymentChanges.push(
-      "Method " +
-      String(payment.method || "Other") +
-      " → " +
-      method
-    );
-  }
+    const amount = Math.round(amountInput * 100) / 100;
 
-  if (String(payment.description || "Payment") !== description) {
-    paymentChanges.push(
-      "Description " +
-      String(payment.description || "Payment") +
-      " → " +
-      description
-    );
-  }
+    const method = String(payload?.method || payment.method || "Other")
+      .trim()
+      .slice(0, 60) || "Other";
 
-  const now = new Date().toISOString();
-  database.exec("BEGIN");
-  try {
-    database
-      .prepare(
-        `UPDATE bizzibuddi_payments
-         SET amount = ?, date = ?, method = ?, description = ?, updated_at = ?
-         WHERE id = ? AND invoice_id = ? AND user_id = ?`
-      )
-      .run(
-        amount,
-        date,
-        method,
-        description,
-        now,
-        paymentId,
-        actualInvoiceId,
-        userId
+    const date = String(payload?.date || payment.date || todayDate()).trim();
+
+    const description = String(
+      payload?.description === undefined
+        ? payment.description || nextType
+        : payload.description
+    ).trim().slice(0, 160) || nextType;
+
+    if (!Number.isFinite(amount) ||
+        amount <= 0 ||
+        amount > maximum + 0.000001) {
+      throw new Error(
+        nextType === "Refund"
+          ? `Refund amount must be greater than zero and no more than the available amount received (${maximum.toFixed(2)}).`
+          : `Payment amount must be greater than zero and no more than the available invoice balance (${maximum.toFixed(2)}).`
       );
+    }
 
-    const nextPaid = currentPaid - currentAmount + amount;
+    // Calculate the resulting net receipts before saving anything.
+    const nextPaid = netWithoutCurrent +
+      (nextType === "Refund" ? -amount : amount);
+
+    // A payment cannot be reduced below the value of existing refunds.
+    if (nextPaid < -0.000001) {
+      const minimumRequired = Math.max(0, -netWithoutCurrent);
+
+      throw new Error(
+        `Payment amount must be at least ${minimumRequired.toFixed(2)} to cover refunds already recorded.`
+      );
+    }
+
+    if (!isValidDateString(date)) {
+      throw new Error("Please enter a valid transaction date.");
+    }
+
+    const changes = [];
+
+    if (currentAmount !== amount) {
+      changes.push(
+        `Amount ${formatPaymentAuditCurrency(currentAmount)} to ${formatPaymentAuditCurrency(amount)}`
+      );
+    }
+
+    if (oldType !== nextType) {
+      changes.push(`Type ${oldType} to ${nextType}`);
+    }
+
+    if (String(payment.date || "") !== date) {
+      changes.push(
+        `Date ${formatPaymentAuditDate(payment.date)} to ${formatPaymentAuditDate(date)}`
+      );
+    }
+
+    if (String(payment.method || "Other") !== method) {
+      changes.push(`Method ${payment.method || "Other"} to ${method}`);
+    }
+
+    if (String(payment.description || oldType) !== description) {
+      changes.push(
+        `Description ${payment.description || oldType} to ${description}`
+      );
+    }
+
+    const now = new Date().toISOString();
+
+    database.prepare(
+      `UPDATE bizzibuddi_payments
+       SET amount = ?, payment_type = ?, date = ?, method = ?,
+           description = ?, updated_at = ?
+       WHERE id = ? AND invoice_id = ? AND user_id = ?`
+    ).run(
+      amount,
+      nextType,
+      date,
+      method,
+      description,
+      now,
+      paymentId,
+      invoiceId,
+      userId
+    );
+
     const nextStatus = getInvoiceStatus(
       payment.invoice_amount,
       nextPaid,
@@ -1607,24 +1688,18 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       payment.due_date
     );
 
-    database
-      .prepare(
-        `UPDATE bizzibuddi_invoices
-         SET status = ?, updated_at = ?
-         WHERE id = ? AND user_id = ?`
-      )
-      .run(nextStatus, now, actualInvoiceId, userId);
+    database.prepare(
+      `UPDATE bizzibuddi_invoices
+       SET status = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    ).run(nextStatus, now, invoiceId, userId);
 
-    if (paymentChanges.length > 0) {
+    if (changes.length) {
       createAutomationEvent(userId, {
         type: "finance-payment-updated",
-        title: "Payment updated",
-        detail:
-          (payment.invoice_number || actualInvoiceId) +
-          " · " +
-          paymentChanges.join(" · ") +
-          ".",
-        sourceKey: "finance-payment:updated:" + actualInvoiceId + ":" + paymentId + ":" + now,
+        title: `${nextType} updated`,
+        detail: `${payment.invoice_number || invoiceId} | ${changes.join(" | ")}.`,
+        sourceKey: `finance-payment:updated:${invoiceId}:${paymentId}:${now}`,
       });
     }
 
@@ -1634,124 +1709,128 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
     throw error;
   }
 
-  const updatedInvoice = database
-    .prepare(
-      `SELECT invoices.*, people.name AS person_name,
-              COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
-       FROM bizzibuddi_invoices AS invoices
-       LEFT JOIN bizzibuddi_people AS people
-         ON people.id = invoices.person_id AND people.user_id = invoices.user_id
-       WHERE invoices.id = ? AND invoices.user_id = ?`
-    )
-    .get(actualInvoiceId, userId);
+  const row = database.prepare(
+    `SELECT invoices.*,
+            people.name AS person_name,
+            COALESCE((
+              SELECT SUM(
+                CASE WHEN payment_type = 'Refund'
+                  THEN -amount
+                  ELSE amount
+                END
+              )
+              FROM bizzibuddi_payments
+              WHERE invoice_id = invoices.id
+                AND user_id = invoices.user_id
+            ), 0) AS amount_paid
+     FROM bizzibuddi_invoices AS invoices
+     LEFT JOIN bizzibuddi_people AS people
+       ON people.id = invoices.person_id
+      AND people.user_id = invoices.user_id
+     WHERE invoices.id = ? AND invoices.user_id = ?`
+  ).get(invoiceId, userId);
 
-  const resultInvoice = toInvoice({
-    ...updatedInvoice,
-    payments: getInvoicePayments(userId, actualInvoiceId),
-  });
-
-  return { ...resultInvoice, paymentActivity: getInvoicePaymentActivity(userId, actualInvoiceId) };
+  return {
+    ...toInvoice({
+      ...row,
+      payments: getInvoicePayments(userId, invoiceId),
+    }),
+    paymentActivity: getInvoicePaymentActivity(userId, invoiceId),
+  };
 }
-
-
 function deleteInvoicePayment(userId, paymentId) {
   const database = getDatabase();
-  const payment = database
-    .prepare(
-      `SELECT id, invoice_id, amount, date, method, description
+  let invoiceId = "";
+
+  database.exec("BEGIN IMMEDIATE");
+  try {
+    const payment = database.prepare(
+      `SELECT id, invoice_id, amount, payment_type, date, method, description
        FROM bizzibuddi_payments
        WHERE id = ? AND user_id = ?`
-    )
-    .get(paymentId, userId);
+    ).get(paymentId, userId);
 
-  if (!payment) return null;
+    if (!payment) {
+      database.exec("ROLLBACK");
+      return null;
+    }
 
-  const invoice = database
-    .prepare(
+    const invoice = database.prepare(
       `SELECT id, number, amount, status, due_date
        FROM bizzibuddi_invoices
        WHERE id = ? AND user_id = ?`
-    )
-    .get(payment.invoice_id, userId);
+    ).get(payment.invoice_id, userId);
 
-  if (!invoice) return null;
+    if (!invoice) {
+      database.exec("ROLLBACK");
+      return null;
+    }
 
-  payment.invoice_number = invoice.number;
-  payment.invoice_amount = invoice.amount;
-  payment.invoice_status = invoice.status;
-  payment.due_date = invoice.due_date;
+    const paymentType = payment.payment_type === "Refund" ? "Refund" : "Payment";
+    const currentPaid = getInvoicePaymentTotal(userId, payment.invoice_id);
+    const contribution = paymentType === "Refund"
+      ? -Number(payment.amount || 0)
+      : Number(payment.amount || 0);
+    const nextPaid = currentPaid - contribution;
 
-  const currentPaid = getInvoicePaymentTotal(userId, payment.invoice_id);
-  const nextPaid = Math.max(0, currentPaid - Number(payment.amount || 0));
-  const nextStatus = getInvoiceStatus(
-    payment.invoice_amount,
-    nextPaid,
-    payment.invoice_status,
-    payment.due_date
-  );
-  const now = new Date().toISOString();
+    // A receipt cannot be removed while an active refund depends on it.
+    // Remove or reduce the refund first so the invoice never ends up with
+    // a negative net amount received.
+    if (nextPaid < -0.000001) {
+      throw new Error(
+        "This payment cannot be removed while refunds depend on it. Remove or reduce the related refund first."
+      );
+    }
 
-  database.exec("BEGIN");
-  try {
-    database
-      .prepare(
-        `DELETE FROM bizzibuddi_payments
-         WHERE id = ? AND user_id = ?`
-      )
-      .run(paymentId, userId);
+    const nextStatus = getInvoiceStatus(
+      invoice.amount,
+      Math.max(0, nextPaid),
+      invoice.status,
+      invoice.due_date
+    );
+    const now = new Date().toISOString();
 
-    database
-      .prepare(
-        `UPDATE bizzibuddi_invoices
-         SET status = ?, updated_at = ?
-         WHERE id = ? AND user_id = ?`
-      )
-      .run(nextStatus, now, payment.invoice_id, userId);
+    database.prepare(
+      `DELETE FROM bizzibuddi_payments
+       WHERE id = ? AND user_id = ?`
+    ).run(paymentId, userId);
+
+    database.prepare(
+      `UPDATE bizzibuddi_invoices
+       SET status = ?, updated_at = ?
+       WHERE id = ? AND user_id = ?`
+    ).run(nextStatus, now, payment.invoice_id, userId);
 
     createAutomationEvent(userId, {
       type: "finance-payment-removed",
-      title: "Payment removed",
-      detail:
-        formatPaymentAuditCurrency(Number(payment.amount) || 0) +
-        " payment removed from " +
-        (payment.invoice_number || payment.invoice_id) +
-        " · " +
-        formatPaymentAuditDate(payment.date) +
-        " · " +
-        String(payment.method || "Other") +
-        (payment.description ? " · " + payment.description : "") +
-        ".",
-      sourceKey: "finance-payment:removed:" + payment.invoice_id + ":" + paymentId + ":" + now,
+      title: `${paymentType} removed`,
+      detail: `${formatPaymentAuditCurrency(Number(payment.amount) || 0)} ${paymentType.toLowerCase()} removed from ${invoice.number || payment.invoice_id} · ${formatPaymentAuditDate(payment.date)} · ${payment.method || "Other"}${payment.description ? " · " + payment.description : ""}.`,
+      sourceKey: `finance-payment:removed:${payment.invoice_id}:${paymentId}:${now}`,
     });
 
+    invoiceId = payment.invoice_id;
     database.exec("COMMIT");
   } catch (error) {
     database.exec("ROLLBACK");
     throw error;
   }
 
-  const updatedInvoice = database
-    .prepare(
-      `SELECT invoices.*, people.name AS person_name,
-              COALESCE((SELECT SUM(amount) FROM bizzibuddi_payments WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
-       FROM bizzibuddi_invoices AS invoices
-       LEFT JOIN bizzibuddi_people AS people
-         ON people.id = invoices.person_id AND people.user_id = invoices.user_id
-       WHERE invoices.id = ? AND invoices.user_id = ?`
-    )
-    .get(payment.invoice_id, userId);
+  const row = database.prepare(
+    `SELECT invoices.*, people.name AS person_name,
+      COALESCE((SELECT SUM(CASE WHEN payment_type = 'Refund' THEN -amount ELSE amount END)
+        FROM bizzibuddi_payments
+        WHERE invoice_id = invoices.id AND user_id = invoices.user_id), 0) AS amount_paid
+     FROM bizzibuddi_invoices AS invoices
+     LEFT JOIN bizzibuddi_people AS people
+       ON people.id = invoices.person_id AND people.user_id = invoices.user_id
+     WHERE invoices.id = ? AND invoices.user_id = ?`
+  ).get(invoiceId, userId);
 
-  const resultInvoice = toInvoice({
-    ...updatedInvoice,
-    payments: getInvoicePayments(userId, payment.invoice_id),
-    paymentActivity: getInvoicePaymentActivity(userId, payment.invoice_id),
-  });
-
-  return resultInvoice;
+  return {
+    ...toInvoice({ ...row, payments: getInvoicePayments(userId, invoiceId) }),
+    paymentActivity: getInvoicePaymentActivity(userId, invoiceId),
+  };
 }
-
-
-
 
 
 function toExpense(row) {
@@ -2888,6 +2967,7 @@ const BIZZIBUDDI_AUTOMATION_TYPES = [
   "invoice-overdue",
   "check-complete",
   "finance-payment-recorded",
+  "finance-refund-recorded",
   "finance-payment-updated",
   "finance-payment-removed",
   "finance-expense-recorded",
@@ -3036,7 +3116,7 @@ function runAutomationChecks(userId) {
          people.name AS person_name,
          invoices.amount,
          COALESCE(
-           (SELECT SUM(payments.amount)
+           (SELECT SUM(CASE WHEN payments.payment_type = 'Refund' THEN -payments.amount ELSE payments.amount END)
             FROM bizzibuddi_payments AS payments
             WHERE payments.invoice_id = invoices.id
               AND payments.user_id = invoices.user_id),
@@ -3263,7 +3343,7 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
 
   const payments = getDatabase()
     .prepare(
-      `SELECT amount, date
+      `SELECT amount, payment_type, date
        FROM bizzibuddi_payments
        WHERE user_id = ?
        ORDER BY date ASC, created_at ASC`
@@ -3272,7 +3352,7 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
 
   for (const payment of payments) {
     const month = withinSelectedDates(payment.date) ? byMonth.get(monthKey(payment.date)) : null;
-    if (month) month.paid += Number(payment.amount) || 0;
+    if (month) month.paid += (payment.payment_type === "Refund" ? -1 : 1) * (Number(payment.amount) || 0);
   }
 
   for (const record of productionRecords) {
@@ -3375,7 +3455,7 @@ function getBizziBuddiReports(userId, period = {}) {
   const periodAppointments = appointments.filter((appointment) => withinPeriod(appointment.date)).length;
   const periodInvoices = invoices.filter((invoice) => withinPeriod(invoice.issueDate || invoice.createdAt));
   const periodPayments = getDatabase().prepare(
-    "SELECT amount, date FROM bizzibuddi_payments WHERE user_id = ?"
+    "SELECT amount, payment_type, date FROM bizzibuddi_payments WHERE user_id = ?"
   ).all(userId).filter((payment) => withinPeriod(payment.date));
   const periodProductionCompleted = productionRecords.filter((record) =>
     record.stage === "Complete" && withinPeriod(record.updatedAt || record.createdAt)
@@ -3387,7 +3467,7 @@ function getBizziBuddiReports(userId, period = {}) {
     jobsCreated: periodJobs,
     appointments: periodAppointments,
     totalInvoiced: Math.round(periodInvoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0) * 100) / 100,
-    totalPaid: Math.round(periodPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0) * 100) / 100,
+    totalPaid: Math.round(periodPayments.reduce((sum, payment) => sum + (payment.payment_type === "Refund" ? -1 : 1) * (Number(payment.amount) || 0), 0) * 100) / 100,
     productionCompleted: periodProductionCompleted,
   };
   const monthlyStatistics = getMonthlyBizziBuddiStatistics(userId, now, { start: periodStart, end: periodEnd });
@@ -4891,7 +4971,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   } catch (error) {
     console.error("BizziBuddi authentication request failed:", error);
 
-    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|invoice|payment|Payment|Template|template task|production template|START FRESH|confirmation|business data/.test(
+    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|invoice|payment|Payment|refund|Refund|Template|template task|production template|START FRESH|confirmation|business data/.test(
       error instanceof Error ? error.message : ""
     )
       ? 400

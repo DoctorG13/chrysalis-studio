@@ -7029,6 +7029,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     description: "",
   });
   const [paymentForm, setPaymentForm] = useState({
+    paymentType: "Payment",
     amount: "",
     date: getAccountLocalDateKey(),
     method: "Other",
@@ -7229,6 +7230,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     });
     setPaymentInvoiceId(invoice.id);
     setPaymentForm({
+      paymentType: "Payment",
       amount: "",
       date: getAccountLocalDateKey(),
       method: "Other",
@@ -7247,6 +7249,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     setPaymentInvoiceId("");
     setEditingPaymentId(payment.id);
     setEditingPaymentForm({
+      paymentType: payment.paymentType === "Refund" ? "Refund" : "Payment",
       amount: String(payment.amount ?? ""),
       date: payment.date || getAccountLocalDateKey(),
       method: payment.method || "Other",
@@ -7323,10 +7326,10 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       const amount = Number(editingPaymentForm.amount);
       const currentPaid = Number(invoice.amountPaid || 0);
       const currentPaymentAmount = Number(payment.amount || 0);
-      const maximumAmount = Math.max(
-        currentPaymentAmount,
-        Number(invoice.amount || 0) - (currentPaid - currentPaymentAmount)
-      );
+      const oldContribution = payment.paymentType === "Refund" ? -currentPaymentAmount : currentPaymentAmount;
+      const netWithoutCurrent = currentPaid - oldContribution;
+      const nextType = editingPaymentForm.paymentType === "Refund" ? "Refund" : "Payment";
+      const maximumAmount = nextType === "Refund" ? Math.max(0, netWithoutCurrent) : Math.max(0, Number(invoice.amount || 0) - netWithoutCurrent);
 
       if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error("Enter a payment amount greater than zero.");
@@ -7334,9 +7337,8 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
       if (amount > maximumAmount) {
         throw new Error(
-          "Payment cannot be greater than the available invoice balance of " +
-          formatCurrency(maximumAmount) +
-          "."
+          (nextType === "Refund" ? "Refund cannot be greater than the amount received of " : "Payment cannot be greater than the available invoice balance of ") +
+          formatCurrency(maximumAmount) + "."
         );
       }
 
@@ -7347,6 +7349,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       }
 
       await onUpdatePayment(paymentId, {
+        paymentType: nextType,
         amount,
         date: editingPaymentForm.date,
         method: editingPaymentForm.method || "Other",
@@ -7374,20 +7377,22 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
     try {
       const amount = Number(paymentForm.amount);
-      const balance = Math.max(
-        0,
-        Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0
-      );
+      const balance = Math.max(0, Number(invoice.balance ?? (invoice.amount - (invoice.amountPaid || 0))) || 0);
+      const paymentType = paymentForm.paymentType === "Refund" ? "Refund" : "Payment";
+      const maximumAmount = paymentType === "Refund" ? Math.max(0, Number(invoice.amountPaid || 0)) : balance;
 
       if (!Number.isFinite(amount) || amount <= 0) {
         throw new Error("Enter a payment amount greater than zero.");
       }
 
-      if (amount > balance) {
-        throw new Error("Payment cannot be greater than the remaining balance of " + formatCurrency(balance) + ".");
+      if (amount > maximumAmount) {
+        throw new Error(paymentType === "Refund"
+          ? "Refund cannot be greater than the amount received of " + formatCurrency(maximumAmount) + "."
+          : "Payment cannot be greater than the remaining balance of " + formatCurrency(maximumAmount) + ".");
       }
 
       await onRecordPayment(invoice.id, {
+        paymentType,
         amount,
         date: paymentForm.date,
         method: paymentForm.method || "Other",
@@ -7791,21 +7796,25 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         }}
       >
         <div style={{ width: "min(460px, 100%)", padding: 24, border: "1px solid rgba(0,180,219,.42)", borderRadius: 18, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.48)" }}>
-          <small style={{ ...smallText, color: CYAN }}>REMOVE PAYMENT</small>
-          <h3 id="remove-payment-title" style={{ margin: "7px 0 10px", fontSize: 22 }}>Remove this payment?</h3>
+          <small style={{ ...smallText, color: CYAN }}>REMOVE {paymentPendingRemoval.payment.paymentType === "Refund" ? "REFUND" : "PAYMENT"}</small>
+          <h3 id="remove-payment-title" style={{ margin: "7px 0 10px", fontSize: 22 }}>
+            Remove this {paymentPendingRemoval.payment.paymentType === "Refund" ? "refund" : "payment"}?
+          </h3>
           <p style={{ ...copyStyle, margin: 0 }}>
-            Remove <strong style={{ color: TEXT }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong> from{" "}
+            Remove this {paymentPendingRemoval.payment.paymentType === "Refund" ? "refund" : "payment"} of{" "}
+            <strong style={{ color: TEXT }}> {formatCurrency(paymentPendingRemoval.payment.amount)}</strong> from{" "}
             <strong style={{ color: TEXT }}>{paymentPendingRemoval.invoice.number || "this invoice"}</strong>?
             The invoice balance will be recalculated and the removal will remain recorded in Payment Activity.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 18, padding: 12, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, marginTop: 18, padding: 12, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+            <div><small style={smallText}>TRANSACTION</small><strong style={{ display: "block", marginTop: 4 }}>{paymentPendingRemoval.payment.paymentType === "Refund" ? "Refund issued" : "Payment received"}</strong></div>
             <div><small style={smallText}>AMOUNT</small><strong style={{ display: "block", marginTop: 4 }}>{formatCurrency(paymentPendingRemoval.payment.amount)}</strong></div>
             <div><small style={smallText}>DATE</small><strong style={{ display: "block", marginTop: 4 }}>{formatInvoiceDate(paymentPendingRemoval.payment.date)}</strong></div>
             <div><small style={smallText}>METHOD</small><strong style={{ display: "block", marginTop: 4 }}>{paymentPendingRemoval.payment.method || "Other"}</strong></div>
           </div>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, flexWrap: "wrap", marginTop: 20 }}>
-            <button type="button" onClick={cancelPaymentRemoval} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep payment</button>
-            <button type="button" onClick={confirmPaymentRemoval} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318" }}>{saving ? "Removing…" : "Remove payment"}</button>
+            <button type="button" onClick={cancelPaymentRemoval} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep {paymentPendingRemoval.payment.paymentType === "Refund" ? "refund" : "payment"}</button>
+            <button type="button" onClick={confirmPaymentRemoval} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318" }}>{saving ? "Removing…" : `Remove ${paymentPendingRemoval.payment.paymentType === "Refund" ? "refund" : "payment"}`}</button>
           </div>
         </div>
       </div>
@@ -8744,7 +8753,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   createdAt: payment.createdAt || payment.date || null,
                 }));
           const recordedPaymentTotal = payments.reduce(
-            (sum, payment) => sum + (Number(payment.amount) || 0),
+            (sum, payment) => sum + (payment.paymentType === "Refund" ? -1 : 1) * (Number(payment.amount) || 0),
             0
           );
           const hasPaymentHistory =
@@ -8797,7 +8806,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 >
                   Issue invoice
                 </button>
-              ) : invoice.status !== "Paid" ? (
+              ) : (
                 <>
                   <button
                     type="button"
@@ -8805,18 +8814,20 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                     onClick={() => startPayment(invoice)}
                     style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
                   >
-                    Add payment
+                    {invoice.status === "Paid" ? "Record refund" : "Add payment / refund"}
                   </button>
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={() => handleMarkPaid(invoice)}
-                    style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
-                  >
-                    Mark paid
-                  </button>
+                  {invoice.status !== "Paid" && (
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => handleMarkPaid(invoice)}
+                      style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}
+                    >
+                      Mark paid
+                    </button>
+                  )}
                 </>
-              ) : null}
+              )}
               {balance > 0 && <small style={smallText}>Balance {formatCurrency(balance)}</small>}
             </div>
 
@@ -8834,14 +8845,22 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   borderLeft: "2px solid rgba(0,180,219,.28)",
                 }}
               >
-                <small style={smallText}>RECORD PAYMENT</small>
+                <small style={smallText}>{paymentForm.paymentType === "Refund" ? "RECORD REFUND" : "RECORD PAYMENT"}</small>
+                <div style={{ ...smallText, marginTop: 5, marginBottom: 8 }}>Choose whether money was received from the customer or returned to them.</div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 9 }}>
+                  <label style={fieldStyle}>
+                    Transaction type
+                    <select value={paymentForm.paymentType} onChange={(event) => setPaymentForm((current) => ({ ...current, paymentType: event.target.value, amount: "" }))} disabled={saving} style={inputStyle}>
+                      <option value="Payment">Payment received</option>
+                      <option value="Refund">Refund issued</option>
+                    </select>
+                  </label>
                   <label style={fieldStyle}>
                     Amount
                     <input
                       type="number"
                       min="0.01"
-                      max={balance}
+                      max={paymentForm.paymentType === "Refund" ? Math.max(0, Number(invoice.amountPaid || 0)) : balance}
                       step="0.01"
                       value={paymentForm.amount}
                       onChange={(event) => setPaymentForm((current) => ({ ...current, amount: event.target.value }))}
@@ -8889,13 +8908,18 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                     />
                   </label>
                 </div>
+                <small style={{ ...smallText, display: "block", marginTop: 7 }}>
+                  {paymentForm.paymentType === "Refund"
+                    ? "Maximum refund: " + formatCurrency(Math.max(0, Number(invoice.amountPaid || 0))) + ". This reduces the amount paid and reopens the invoice balance."
+                    : "Remaining balance: " + formatCurrency(balance) + ". A payment increases the amount paid."}
+                </small>
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
                   <button
                     type="submit"
                     disabled={saving}
                     style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: saving ? 0.65 : 1 }}
                   >
-                    {saving ? "Saving…" : "Record payment"}
+                    {saving ? "Saving…" : paymentForm.paymentType === "Refund" ? "Record refund" : "Record payment"}
                   </button>
                   <button
                     type="button"
@@ -8931,9 +8955,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                       >
                         PAYMENT HISTORY
                       </small>
-                      {recordedPaymentTotal > 0 && (
+                      {payments.length > 0 && (
                         <small style={{ ...smallText, fontWeight: 700 }}>
-                          {formatCurrency(recordedPaymentTotal)} PAID
+                          {formatCurrency(recordedPaymentTotal)} NET PAID
                         </small>
                       )}
                     </div>
@@ -8951,9 +8975,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                             padding: "4px 0",
                           }}
                         >
-                          <strong style={{ fontSize: 14 }}>{formatCurrency(payment.amount)}</strong>
+                          <strong style={{ fontSize: 14, color: payment.paymentType === "Refund" ? "#FCA5A5" : TEXT }}>{payment.paymentType === "Refund" ? "−" : ""}{formatCurrency(payment.amount)}</strong>
                           <span style={smallText}>
-                            {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
+                            {payment.paymentType === "Refund" ? "Refund" : "Payment"} · {formatInvoiceDate(payment.date)} · {payment.method || "Other"}
                           </span>
                           {payment.description ? (
                             <span style={{ ...smallText, minWidth: 0 }}>
@@ -8991,18 +9015,23 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                               borderLeft: "1px solid rgba(0,180,219,.22)",
                             }}
                           >
-                            <small style={smallText}>EDIT PAYMENT</small>
+                            <small style={smallText}>EDIT {editingPaymentForm.paymentType === "Refund" ? "REFUND" : "PAYMENT"}</small>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginTop: 8 }}>
+                              <label style={fieldStyle}>
+                                Transaction type
+                                <select value={editingPaymentForm.paymentType || "Payment"} onChange={(event) => setEditingPaymentForm((current) => ({ ...current, paymentType: event.target.value }))} disabled={saving} style={inputStyle}>
+                                  <option value="Payment">Payment received</option>
+                                  <option value="Refund">Refund issued</option>
+                                </select>
+                              </label>
                               <label style={fieldStyle}>
                                 Amount
                                 <input
                                   type="number"
                                   min="0.01"
-                                  max={Math.max(
-                                    Number(payment.amount || 0),
-                                    Number(invoice.amount || 0) -
-                                      (Number(invoice.amountPaid || 0) - Number(payment.amount || 0))
-                                  )}
+                                  max={editingPaymentForm.paymentType === "Refund"
+                                    ? Math.max(0, Number(invoice.amountPaid || 0) + (payment.paymentType === "Refund" ? Number(payment.amount || 0) : -Number(payment.amount || 0)))
+                                    : Math.max(0, Number(invoice.amount || 0) - (Number(invoice.amountPaid || 0) - (payment.paymentType === "Refund" ? -Number(payment.amount || 0) : Number(payment.amount || 0))))}
                                   step="0.01"
                                   value={editingPaymentForm.amount}
                                   onChange={(event) => setEditingPaymentForm((current) => ({ ...current, amount: event.target.value }))}
