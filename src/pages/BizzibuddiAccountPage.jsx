@@ -6119,14 +6119,23 @@ function exportBizziBuddiReportPdf(reportData) {
     ["Open jobs (current)", reportData.jobs?.open ?? 0],
     ["Upcoming appointments (current)", reportData.calendar?.upcoming ?? 0],
     ["Outstanding balance (current)", `${Number(reportData.finance?.outstanding || 0).toFixed(2)}`],
+    ["Invoice payments (all time)", `${Number(reportData.finance?.totalPaid || 0).toFixed(2)}`],
     ["People added in period", reportData.periodSummary?.peopleCreated ?? 0],
     ["Jobs created in period", reportData.periodSummary?.jobsCreated ?? 0],
     ["Appointments in period", reportData.periodSummary?.appointments ?? 0],
     ["Invoiced in period", `${Number(reportData.periodSummary?.totalInvoiced || 0).toFixed(2)}`],
-    ["Payments received in period", `${Number(reportData.periodSummary?.totalPaid || 0).toFixed(2)}`],
+    ["Invoice payments in period", `${Number(reportData.periodSummary?.totalPaid || 0).toFixed(2)}`],
+    ["Job payments received in period", `${Number(reportData.periodSummary?.jobPaymentsReceived || 0).toFixed(2)}`],
+    ["Job refunds in period", `${Number(reportData.periodSummary?.jobRefunds || 0).toFixed(2)}`],
+    ["Net job payments in period", `${Number(reportData.periodSummary?.netJobPayments || 0).toFixed(2)}`],
+    ["Total net receipts in period", `${Number(reportData.periodSummary?.totalReceived || 0).toFixed(2)}`],
+    ["Job payments received (all time)", `${Number(reportData.finance?.jobPaymentsReceived || 0).toFixed(2)}`],
+    ["Job refunds (all time)", `${Number(reportData.finance?.jobRefunds || 0).toFixed(2)}`],
+    ["Net job payments (all time)", `${Number(reportData.finance?.netJobPayments || 0).toFixed(2)}`],
+    ["Total net receipts (all time)", `${Number(reportData.finance?.totalReceived || 0).toFixed(2)}`],
   ];
   const escapeHtml = (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-  printWindow.document.write(`<!doctype html><html><head><title>BizziBuddi Report</title><style>body{font:14px Arial,sans-serif;color:#172b3a;margin:32px}h1{margin-bottom:4px}p{color:#526575}table{border-collapse:collapse;width:100%;margin-top:24px}td,th{text-align:left;padding:10px;border-bottom:1px solid #d7e0e8}th{background:#edf3f7}@media print{button{display:none}}</style></head><body><h1>BizziBuddi Business Report</h1><p>Generated ${escapeHtml(reportData.generatedAt || "")}</p><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${rows.map(([label,value])=>`<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`).join("")}</tbody></table><h2>Monthly activity</h2><table><thead><tr><th>Month</th><th>People</th><th>Jobs</th><th>Appointments</th><th>Invoiced</th><th>Paid</th></tr></thead><tbody>${(reportData.monthlyStatistics || []).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.newPeople}</td><td>${m.jobsCreated}</td><td>${m.appointments}</td><td>${Number(m.invoiced||0).toFixed(2)}</td><td>${Number(m.paid||0).toFixed(2)}</td></tr>`).join("")}</tbody></table><p>Current balances and workload are current snapshot figures; period activity is limited to the selected dates.</p><script>window.onload=()=>window.print()</script></body></html>`);
+  printWindow.document.write(`<!doctype html><html><head><title>BizziBuddi Report</title><style>@page{size:A4;margin:12mm}*{box-sizing:border-box}body{font:12px/1.3 Arial,sans-serif;color:#172b3a;margin:0}h1{font-size:23px;margin:0 0 4px}p{color:#526575;margin:6px 0 0}h2{font-size:16px;margin:16px 0 8px;break-after:avoid;page-break-after:avoid}table{border-collapse:collapse;width:100%;margin-top:14px;break-inside:auto}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}td,th{text-align:left;padding:6px 8px;border-bottom:1px solid #d7e0e8}th{background:#edf3f7}body>p:last-of-type{font-size:10px;line-height:1.25;margin-top:12px;break-inside:avoid;page-break-inside:avoid}@media print{button{display:none}}</style></head><body><h1>BizziBuddi Business Report</h1><p>Generated ${escapeHtml(reportData.generatedAt || "")}</p><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${rows.map(([label,value])=>`<tr><td>${escapeHtml(label)}</td><td>${escapeHtml(value)}</td></tr>`).join("")}</tbody></table><h2>Monthly activity</h2><table><thead><tr><th>Month</th><th>People</th><th>Jobs</th><th>Appointments</th><th>Invoiced</th><th>Invoice paid</th><th>Job payments</th><th>Job refunds</th><th>Net received</th></tr></thead><tbody>${(reportData.monthlyStatistics || []).map(m=>`<tr><td>${escapeHtml(m.label)}</td><td>${m.newPeople}</td><td>${m.jobsCreated}</td><td>${m.appointments}</td><td>${Number(m.invoiced||0).toFixed(2)}</td><td>${Number(m.invoicePaid||0).toFixed(2)}</td><td>${Number(m.jobPaymentsReceived||0).toFixed(2)}</td><td>${Number(m.jobRefunds||0).toFixed(2)}</td><td>${Number(m.paid||0).toFixed(2)}</td></tr>`).join("")}</tbody></table><p>Current balances and workload are current snapshot figures; period activity is limited to the selected dates.</p><script>window.onload=()=>window.print()</script></body></html>`);
   printWindow.document.close();
 }
 
@@ -6139,7 +6148,11 @@ function exportBizziBuddiReportCsv(reportData) {
     ["Period activity", "Jobs created", reportData.periodSummary?.jobsCreated ?? 0],
     ["Period activity", "Appointments", reportData.periodSummary?.appointments ?? 0],
     ["Period activity", "Invoiced", reportData.periodSummary?.totalInvoiced ?? 0],
-    ["Period activity", "Payments received", reportData.periodSummary?.totalPaid ?? 0],
+    ["Period activity", "Invoice payments", reportData.periodSummary?.totalPaid ?? 0],
+    ["Period activity", "Job payments received", reportData.periodSummary?.jobPaymentsReceived ?? 0],
+    ["Period activity", "Job refunds", reportData.periodSummary?.jobRefunds ?? 0],
+    ["Period activity", "Net job payments", reportData.periodSummary?.netJobPayments ?? 0],
+    ["Period activity", "Total net receipts", reportData.periodSummary?.totalReceived ?? 0],
     ["" , ""],
     ["People", "Total", reportData.people?.total ?? 0],
     ["Jobs", "Total", reportData.jobs?.total ?? 0],
@@ -6150,7 +6163,11 @@ function exportBizziBuddiReportCsv(reportData) {
     ["Calendar", "Booked / confirmed", reportData.calendar?.bookedConfirmed ?? 0],
     ["Calendar", "Cancelled", reportData.calendar?.cancelled ?? 0],
     ["Finance", "Total invoiced", reportData.finance?.totalInvoiced ?? 0],
-    ["Finance", "Total paid", reportData.finance?.totalPaid ?? 0],
+    ["Finance", "Invoice payments", reportData.finance?.totalPaid ?? 0],
+    ["Finance", "Job payments received", reportData.finance?.jobPaymentsReceived ?? 0],
+    ["Finance", "Job refunds", reportData.finance?.jobRefunds ?? 0],
+    ["Finance", "Net job payments", reportData.finance?.netJobPayments ?? 0],
+    ["Finance", "Total net receipts", reportData.finance?.totalReceived ?? 0],
     ["Finance", "Outstanding", reportData.finance?.outstanding ?? 0],
     ["Finance", "Overdue amount", reportData.finance?.overdueAmount ?? 0],
     ["Finance", "Paid invoices", reportData.finance?.paidInvoiceCount ?? 0],
@@ -6165,7 +6182,7 @@ function exportBizziBuddiReportCsv(reportData) {
     ["Insights", "Payment collection rate", reportData.insights?.paymentCollectionRate ?? 0],
     ["Insights", "Production completion rate", reportData.insights?.productionCompletionRate ?? 0],
     ["" , ""],
-    ["Monthly statistics", "Month", "New people", "Jobs", "Appointments", "Invoiced", "Paid", "Production complete"],
+    ["Monthly statistics", "Month", "New people", "Jobs", "Appointments", "Invoiced", "Invoice paid", "Job payments received", "Job refunds", "Net received", "Production complete"],
     ...(reportData.monthlyStatistics || []).map((month) => [
       "Monthly statistics",
       month.label,
@@ -6173,6 +6190,9 @@ function exportBizziBuddiReportCsv(reportData) {
       month.jobsCreated,
       month.appointments,
       month.invoiced,
+      month.invoicePaid,
+      month.jobPaymentsReceived,
+      month.jobRefunds,
       month.paid,
       month.productionCompleted,
     ]),
@@ -6767,7 +6787,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
           <div style={{ ...reportSummaryCard, flex: "2 1 300px", border: "1px solid rgba(0,180,219,.55)", background: "rgba(0,180,219,.08)" }}><small style={{ ...smallText, color: CYAN, fontWeight: 800 }}>SELECTED PERIOD</small><strong style={{ display: "block", marginTop: 5 }}>{reportRange.startDate} – {reportRange.endDate}</strong><span style={smallText}>Period activity is filtered; balances and open workload below are current.</span>{reportError ? <span role="alert" style={{ display: "block", marginTop: 7, color: "#FCA5A5", fontSize: 12 }}>{reportError} The previous figures remain visible.</span> : loading || loadedReportUrl !== reportUrl ? <span role="status" aria-live="polite" style={{ display: "block", marginTop: 7, color: CYAN, fontSize: 12 }}>Updating figures for the selected period…</span> : null}</div>
         </div>
         <div style={{ ...reportSummaryGrid, marginTop: 14 }}>
-          {[["PEOPLE ADDED", periodSummary.peopleCreated ?? 0], ["JOBS CREATED", periodSummary.jobsCreated ?? 0], ["APPOINTMENTS", periodSummary.appointments ?? 0], ["INVOICED IN PERIOD", formatCurrency(periodSummary.totalInvoiced)], ["PAYMENTS IN PERIOD", formatCurrency(periodSummary.totalPaid)], ["PRODUCTION COMPLETED", periodSummary.productionCompleted ?? 0]].map(([label, value]) => <div key={label} style={reportSummaryCard}><small style={smallText}>{label}</small><strong style={reportSummaryValue}>{value}</strong></div>)}
+          {[['PEOPLE ADDED', periodSummary.peopleCreated ?? 0], ['JOBS CREATED', periodSummary.jobsCreated ?? 0], ['APPOINTMENTS', periodSummary.appointments ?? 0], ['INVOICED IN PERIOD', formatCurrency(periodSummary.totalInvoiced)], ['INVOICE PAYMENTS', formatCurrency(periodSummary.totalPaid)], ['JOB PAYMENTS (NET)', formatCurrency(periodSummary.netJobPayments)], ['TOTAL NET RECEIVED', formatCurrency(periodSummary.totalReceived)], ['PRODUCTION COMPLETED', periodSummary.productionCompleted ?? 0]].map(([label, value]) => <div key={label} style={reportSummaryCard}><small style={smallText}>{label}</small><strong style={reportSummaryValue}>{value}</strong></div>)}
         </div>
       </article>
 
@@ -6878,9 +6898,29 @@ function ReportsPanel({ account, onPlans, onBack }) {
               <span style={smallText}>{finance.averageInvoice ? formatCurrency(finance.averageInvoice) : "—"} average invoice</span>
             </div>
             <div style={reportSummaryCard}>
-              <small style={smallText}>PAID</small>
+              <small style={smallText}>INVOICE PAYMENTS</small>
               <strong style={reportSummaryValue}>{formatCurrency(finance.totalPaid)}</strong>
               <span style={smallText}>{finance.paidInvoiceCount} paid invoice{finance.paidInvoiceCount === 1 ? "" : "s"}</span>
+            </div>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>JOB PAYMENTS RECEIVED</small>
+              <strong style={reportSummaryValue}>{formatCurrency(finance.jobPaymentsReceived)}</strong>
+              <span style={smallText}>Gross job-level receipts</span>
+            </div>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>JOB REFUNDS</small>
+              <strong style={reportSummaryValue}>{formatCurrency(finance.jobRefunds)}</strong>
+              <span style={smallText}>Refunds recorded against jobs</span>
+            </div>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>NET JOB PAYMENTS</small>
+              <strong style={reportSummaryValue}>{formatCurrency(finance.netJobPayments)}</strong>
+              <span style={smallText}>Job receipts less refunds</span>
+            </div>
+            <div style={reportSummaryCard}>
+              <small style={smallText}>TOTAL NET RECEIVED</small>
+              <strong style={reportSummaryValue}>{formatCurrency(finance.totalReceived)}</strong>
+              <span style={smallText}>Invoice and job receipts, less refunds</span>
             </div>
             <div style={reportSummaryCard}>
               <small style={smallText}>OUTSTANDING</small>
@@ -7015,10 +7055,10 @@ function ReportsPanel({ account, onPlans, onBack }) {
 
         {monthlyStatistics.length ? (
           <div style={{ overflowX: "auto", marginTop: 16 }}>
-            <div className="bizzibuddi-table-scroll" role="region" aria-label="Monthly statistics" tabIndex="0"><table style={{ width: "100%", minWidth: 760, borderCollapse: "collapse", fontSize: 13 }}>
+            <div className="bizzibuddi-table-scroll" role="region" aria-label="Monthly statistics" tabIndex="0"><table style={{ width: "100%", minWidth: 1080, borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
-                  {["Month", "New people", "Jobs", "Appointments", "Invoiced", "Paid", "Production complete"].map((heading) => (
+                  {["Month", "New people", "Jobs", "Appointments", "Invoiced", "Invoice paid", "Job payments", "Job refunds", "Net received", "Production complete"].map((heading) => (
                     <th key={heading} style={{ textAlign: heading === "Month" ? "left" : "right", padding: "9px 10px", borderBottom: "1px solid " + BORDER, color: MUTED, fontSize: 11, textTransform: "uppercase", letterSpacing: ".08em" }}>
                       {heading}
                     </th>
@@ -7033,6 +7073,9 @@ function ReportsPanel({ account, onPlans, onBack }) {
                     <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{month.jobsCreated}</td>
                     <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{month.appointments}</td>
                     <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{formatCurrency(month.invoiced)}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{formatCurrency(month.invoicePaid)}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{formatCurrency(month.jobPaymentsReceived)}</td>
+                    <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{formatCurrency(month.jobRefunds)}</td>
                     <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{formatCurrency(month.paid)}</td>
                     <td style={{ padding: "10px", textAlign: "right", borderBottom: "1px solid rgba(255,255,255,.08)" }}>{month.productionCompleted}</td>
                   </tr>
@@ -7045,7 +7088,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
         )}
 
         <p style={{ ...copyStyle, marginTop: 14, marginBottom: 0 }}>
-          Monthly figures are generated from persisted BizziBuddi activity. Invoiced amounts use invoice issue dates and paid amounts use recorded payment dates.
+          Monthly figures are generated from persisted BizziBuddi activity. Invoiced amounts use invoice issue dates. Invoice payments and job-level receipts/refunds use their recorded payment dates; net received combines both streams without changing invoice balances.
         </p>
       </article>
 

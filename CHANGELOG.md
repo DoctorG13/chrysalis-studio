@@ -3854,3 +3854,16 @@ All notable changes to Chrysalis are recorded here.
 - Production startup now waits for database health before starting dependent services.
 
 **Testing:** Passed. Verified job payment creation, editing, refunds, refund calculations, removal confirmation, activity history, cashflow, existing invoice records, Finance CSV export and production build.
+
+### BizziBuddi Reports — Job Payment Integration
+
+- Included account-scoped job payments in Business Reports.
+- Separated invoice payments, job receipts and job refunds in reporting totals.
+- Calculated net job payments after deducting refunds.
+- Included job payments in selected-period summaries and monthly statistics.
+- Updated business insights to reflect invoice and job payments, less refunds.
+- Updated CSV, JSON and PDF exports with the additional financial figures.
+- Preserved invoice outstanding balances, invoice counts and collection calculations.
+- Improved PDF pagination, table layout and readability.
+
+**Testing:** Passed. Verified report period filtering, job-payment totals, refund handling, CSV export, JSON export, PDF export and one-page PDF layout.

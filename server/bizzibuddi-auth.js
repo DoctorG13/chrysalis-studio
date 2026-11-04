@@ -3735,11 +3735,11 @@ function buildBizziBuddiBusinessInsights(monthlyStatistics, finance, jobs, calen
     },
     {
       key: "paid-trend",
-      label: "Payments recorded",
+      label: "Net payments received",
       value: formatBusinessInsightCurrency(recentPaid),
       trend: trend(paidChange),
       change: trendLabel(paidChange),
-      detail: "Payments recorded across the most recent three months.",
+      detail: "Invoice payments and job-level receipts, less refunds, across the most recent three months.",
     },
     {
       key: "client-activity",
@@ -3812,6 +3812,10 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
       jobsCreated: 0,
       appointments: 0,
       invoiced: 0,
+      invoicePaid: 0,
+      jobPaymentsReceived: 0,
+      jobRefunds: 0,
+      netJobPayments: 0,
       paid: 0,
       productionCompleted: 0,
     });
@@ -3860,7 +3864,34 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
 
   for (const payment of payments) {
     const month = withinSelectedDates(payment.date) ? byMonth.get(monthKey(payment.date)) : null;
-    if (month) month.paid += (payment.payment_type === "Refund" ? -1 : 1) * (Number(payment.amount) || 0);
+    if (!month) continue;
+    const signedAmount = (payment.payment_type === "Refund" ? -1 : 1) * (Number(payment.amount) || 0);
+    month.invoicePaid += signedAmount;
+    month.paid += signedAmount;
+  }
+
+  const jobPayments = getDatabase()
+    .prepare(
+      `SELECT amount, payment_type, date
+       FROM bizzibuddi_job_payments
+       WHERE user_id = ?
+       ORDER BY date ASC, created_at ASC`
+    )
+    .all(userId);
+
+  for (const payment of jobPayments) {
+    const month = withinSelectedDates(payment.date) ? byMonth.get(monthKey(payment.date)) : null;
+    if (!month) continue;
+    const amount = Number(payment.amount) || 0;
+    if (payment.payment_type === "Refund") {
+      month.jobRefunds += amount;
+      month.netJobPayments -= amount;
+      month.paid -= amount;
+    } else {
+      month.jobPaymentsReceived += amount;
+      month.netJobPayments += amount;
+      month.paid += amount;
+    }
   }
 
   for (const record of productionRecords) {
@@ -3873,6 +3904,10 @@ function getMonthlyBizziBuddiStatistics(userId, now = new Date(), period = {}) {
   return months.map((month) => ({
     ...month,
     invoiced: Math.round(month.invoiced * 100) / 100,
+    invoicePaid: Math.round(month.invoicePaid * 100) / 100,
+    jobPaymentsReceived: Math.round(month.jobPaymentsReceived * 100) / 100,
+    jobRefunds: Math.round(month.jobRefunds * 100) / 100,
+    netJobPayments: Math.round(month.netJobPayments * 100) / 100,
     paid: Math.round(month.paid * 100) / 100,
   }));
 }
@@ -3885,6 +3920,23 @@ function getBizziBuddiReports(userId, period = {}) {
   const productionRecords = getProductionRecords(userId);
   const totalInvoiced = invoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0);
   const totalPaid = invoices.reduce((sum, invoice) => sum + (Number(invoice.amountPaid) || 0), 0);
+  const jobPaymentRows = getDatabase()
+    .prepare(
+      `SELECT amount, payment_type, date
+       FROM bizzibuddi_job_payments
+       WHERE user_id = ?`
+    )
+    .all(userId);
+  const jobPaymentsReceived = jobPaymentRows.reduce(
+    (sum, payment) => sum + (payment.payment_type === "Refund" ? 0 : Number(payment.amount) || 0),
+    0
+  );
+  const jobRefunds = jobPaymentRows.reduce(
+    (sum, payment) => sum + (payment.payment_type === "Refund" ? Number(payment.amount) || 0 : 0),
+    0
+  );
+  const netJobPayments = Math.round((jobPaymentsReceived - jobRefunds) * 100) / 100;
+  const totalReceived = Math.round((totalPaid + netJobPayments) * 100) / 100;
   const completedJobs = jobs.filter((job) => job.status === "Complete").length;
   const openJobs = jobs.filter((job) => job.status !== "Complete").length;
   const today = todayDate();
@@ -3936,6 +3988,10 @@ function getBizziBuddiReports(userId, period = {}) {
   const financeReport = {
     totalInvoiced: Math.round(totalInvoiced * 100) / 100,
     totalPaid: Math.round(totalPaid * 100) / 100,
+    jobPaymentsReceived: Math.round(jobPaymentsReceived * 100) / 100,
+    jobRefunds: Math.round(jobRefunds * 100) / 100,
+    netJobPayments,
+    totalReceived,
     outstanding: Math.max(0, Math.round((totalInvoiced - totalPaid) * 100) / 100),
     overdueInvoices: overdueInvoiceRecords.length,
     overdueAmount: Math.round(overdueAmount * 100) / 100,
@@ -3965,6 +4021,22 @@ function getBizziBuddiReports(userId, period = {}) {
   const periodPayments = getDatabase().prepare(
     "SELECT amount, payment_type, date FROM bizzibuddi_payments WHERE user_id = ?"
   ).all(userId).filter((payment) => withinPeriod(payment.date));
+  const periodJobPayments = getDatabase().prepare(
+    "SELECT amount, payment_type, date FROM bizzibuddi_job_payments WHERE user_id = ?"
+  ).all(userId).filter((payment) => withinPeriod(payment.date));
+  const periodJobPaymentsReceived = periodJobPayments.reduce(
+    (sum, payment) => sum + (payment.payment_type === "Refund" ? 0 : Number(payment.amount) || 0),
+    0
+  );
+  const periodJobRefunds = periodJobPayments.reduce(
+    (sum, payment) => sum + (payment.payment_type === "Refund" ? Number(payment.amount) || 0 : 0),
+    0
+  );
+  const periodNetJobPayments = Math.round((periodJobPaymentsReceived - periodJobRefunds) * 100) / 100;
+  const periodTotalPaid = Math.round(periodPayments.reduce(
+    (sum, payment) => sum + (payment.payment_type === "Refund" ? -1 : 1) * (Number(payment.amount) || 0),
+    0
+  ) * 100) / 100;
   const periodProductionCompleted = productionRecords.filter((record) =>
     record.stage === "Complete" && withinPeriod(record.updatedAt || record.createdAt)
   ).length;
@@ -3975,7 +4047,11 @@ function getBizziBuddiReports(userId, period = {}) {
     jobsCreated: periodJobs,
     appointments: periodAppointments,
     totalInvoiced: Math.round(periodInvoices.reduce((sum, invoice) => sum + (Number(invoice.amount) || 0), 0) * 100) / 100,
-    totalPaid: Math.round(periodPayments.reduce((sum, payment) => sum + (payment.payment_type === "Refund" ? -1 : 1) * (Number(payment.amount) || 0), 0) * 100) / 100,
+    totalPaid: periodTotalPaid,
+    jobPaymentsReceived: Math.round(periodJobPaymentsReceived * 100) / 100,
+    jobRefunds: Math.round(periodJobRefunds * 100) / 100,
+    netJobPayments: periodNetJobPayments,
+    totalReceived: Math.round((periodTotalPaid + periodNetJobPayments) * 100) / 100,
     productionCompleted: periodProductionCompleted,
   };
   const monthlyStatistics = getMonthlyBizziBuddiStatistics(userId, now, { start: periodStart, end: periodEnd });
