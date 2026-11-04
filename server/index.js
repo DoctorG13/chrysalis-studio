@@ -737,6 +737,36 @@ const MIGRATIONS = [
         ON bizzibuddi_payments(payment_type);
     `,
   },
+  {
+    version: 24,
+    name: "bizzibuddi-job-payments",
+    sql: `
+      CREATE TABLE IF NOT EXISTS bizzibuddi_job_payments (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        job_id TEXT NOT NULL,
+        amount REAL NOT NULL DEFAULT 0,
+        payment_type TEXT NOT NULL DEFAULT 'Payment',
+        date TEXT NOT NULL,
+        method TEXT NOT NULL DEFAULT 'Other',
+        description TEXT NOT NULL DEFAULT '',
+        data_json TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (job_id) REFERENCES bizzibuddi_jobs(id) ON DELETE RESTRICT
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_job_payments_user_date
+        ON bizzibuddi_job_payments(user_id, date);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_job_payments_job_date
+        ON bizzibuddi_job_payments(job_id, date);
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_job_payments_user_job
+        ON bizzibuddi_job_payments(user_id, job_id);
+    `,
+  },
 ];
 
 function assertSupportedNode() {
@@ -1108,6 +1138,35 @@ async function runMigrations(database) {
     database.exec("BEGIN IMMEDIATE");
 
     try {
+      // Migration 3 historically expects quote-server.js to have created the
+      // legacy quotes table first. Fresh installs run database migrations
+      // before starting that service, so establish the original table here.
+      // Keep this bootstrap outside MIGRATIONS so the recorded migration 3
+      // checksum remains unchanged for existing installations.
+      if (migration.version === 3) {
+        database.exec(`
+          CREATE TABLE IF NOT EXISTS quotes (
+            id TEXT PRIMARY KEY,
+            client_id TEXT,
+            job_id TEXT,
+            number TEXT NOT NULL,
+            amount REAL NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'Draft',
+            issue_date TEXT NOT NULL,
+            valid_until TEXT,
+            data_json TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            FOREIGN KEY (client_id)
+              REFERENCES clients(id)
+              ON DELETE RESTRICT,
+            FOREIGN KEY (job_id)
+              REFERENCES jobs(id)
+              ON DELETE SET NULL
+          );
+        `);
+      }
+
       database.exec(migration.sql);
       database
         .prepare(

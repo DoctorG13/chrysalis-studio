@@ -3835,3 +3835,22 @@ All notable changes to Chrysalis are recorded here.
 - Verified backend syntax, production build, and weather follow-ups after backend restart.
 
 **Testing:** Passed.
+### BizziBuddi Finance — Job Payments
+
+- Added account-scoped job payment records, separate from invoice payment allocations.
+- Added support for deposits, part payments, final payments, other payments and refunds.
+- Added authenticated API operations for recording, editing and removing job payments.
+- Added transaction safeguards, account ownership checks and payment activity auditing.
+- Added the Finance → Payments workspace, including payment history and removal confirmation.
+- Included job payments in revenue, monthly cashflow, Finance reports and CSV exports.
+- Refunded amounts are deducted from received revenue.
+- Preserved existing invoice payment handling and invoice balances.
+- Added database migration 24 and indexes for job payment records.
+
+### Backend — Startup and Database Reliability
+
+- Restored the database API entry point in `server/index.js`.
+- Added safe quotes-table initialization for fresh database installations.
+- Production startup now waits for database health before starting dependent services.
+
+**Testing:** Passed. Verified job payment creation, editing, refunds, refund calculations, removal confirmation, activity history, cashflow, existing invoice records, Finance CSV export and production build.

@@ -44,6 +44,7 @@ export default function BizzibuddiAccountPage() {
   const [jobs, setJobs] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [jobPayments, setJobPayments] = useState([]);
   const [automationEvents, setAutomationEvents] = useState([]);
   const [productionRecords, setProductionRecords] = useState([]);
   const [productionTemplates, setProductionTemplates] = useState([]);
@@ -220,17 +221,19 @@ export default function BizzibuddiAccountPage() {
     setPeople([]);
     setJobs([]);
     setAppointments([]);
+    setJobPayments([]);
     applyAccountData(nextAccount, {
       setInvoices,
       setAutomationEvents,
       setProductionRecords,
     });
 
-    const [peopleResult, jobsResult, calendarResult, invoicesResult, automationResult, productionResult, productionTemplatesResult, productionTimeResult] = await Promise.allSettled([
+    const [peopleResult, jobsResult, calendarResult, invoicesResult, jobPaymentsResult, automationResult, productionResult, productionTemplatesResult, productionTimeResult] = await Promise.allSettled([
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/people"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/calendar"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices"),
+      bizzibuddiAuthRequest("/api/bizzibuddi/auth/job-payments"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/production"),
       bizzibuddiAuthRequest("/api/bizzibuddi/auth/production/templates"),
@@ -257,6 +260,11 @@ export default function BizzibuddiAccountPage() {
         ? invoicesResult.value.invoices
         : []
     );
+    setJobPayments(
+      jobPaymentsResult.status === "fulfilled" && Array.isArray(jobPaymentsResult.value.payments)
+        ? jobPaymentsResult.value.payments
+        : []
+    );
     setAutomationEvents(
       automationResult.status === "fulfilled" && Array.isArray(automationResult.value.events)
         ? automationResult.value.events
@@ -277,6 +285,70 @@ export default function BizzibuddiAccountPage() {
         ? productionTimeResult.value.entries
         : []
     );
+  }
+
+  async function refreshAccountAutomationEvents() {
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/automation");
+      setAutomationEvents(Array.isArray(result.events) ? result.events : []);
+    } catch {
+      // The payment has already been saved. A temporary activity refresh failure
+      // must not make the completed payment operation appear to have failed.
+    }
+  }
+
+  async function recordAccountJobPayment(jobId, payment) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/jobs/" + encodeURIComponent(jobId) + "/payments",
+      {
+        method: "POST",
+        body: JSON.stringify(payment),
+      }
+    );
+
+    setJobPayments((current) =>
+      [result.payment, ...current.filter((item) => item.id !== result.payment.id)]
+        .sort((left, right) =>
+          String(right.date || "").localeCompare(String(left.date || "")) ||
+          String(right.createdAt || "").localeCompare(String(left.createdAt || ""))
+        )
+    );
+    await refreshAccountAutomationEvents();
+    return result.payment;
+  }
+
+  async function updateAccountJobPayment(jobId, paymentId, payment) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/jobs/" + encodeURIComponent(jobId) +
+        "/payments/" + encodeURIComponent(paymentId),
+      {
+        method: "PUT",
+        body: JSON.stringify(payment),
+      }
+    );
+
+    setJobPayments((current) =>
+      current
+        .map((item) => item.id === paymentId ? result.payment : item)
+        .sort((left, right) =>
+          String(right.date || "").localeCompare(String(left.date || "")) ||
+          String(right.createdAt || "").localeCompare(String(left.createdAt || ""))
+        )
+    );
+    await refreshAccountAutomationEvents();
+    return result.payment;
+  }
+
+  async function deleteAccountJobPayment(jobId, paymentId) {
+    const result = await bizzibuddiAuthRequest(
+      "/api/bizzibuddi/auth/jobs/" + encodeURIComponent(jobId) +
+        "/payments/" + encodeURIComponent(paymentId),
+      { method: "DELETE" }
+    );
+
+    setJobPayments((current) => current.filter((item) => item.id !== paymentId));
+    await refreshAccountAutomationEvents();
+    return result;
   }
 
   async function recordAccountPayment(invoiceId, payment) {
@@ -597,6 +669,7 @@ export default function BizzibuddiAccountPage() {
     setJobs([]);
     setAppointments([]);
     setInvoices([]);
+    setJobPayments([]);
     setAutomationEvents([]);
     setProductionRecords([]);
     window.history.replaceState({}, "", window.location.pathname + "?view=login");
@@ -1003,12 +1076,18 @@ export default function BizzibuddiAccountPage() {
           <FinancePanel
             account={account}
             invoices={invoices}
+            jobs={jobs}
+            jobPayments={jobPayments}
             people={people}
+            automationEvents={automationEvents}
             initialInvoiceId={deepLink.invoiceId}
             onPlans={() => selectView("plans")}
             onRecordPayment={recordAccountPayment}
             onUpdatePayment={updateAccountPayment}
             onDeletePayment={deleteAccountPayment}
+            onRecordJobPayment={recordAccountJobPayment}
+            onUpdateJobPayment={updateAccountJobPayment}
+            onDeleteJobPayment={deleteAccountJobPayment}
             onAddInvoice={async (invoice) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/invoices", {
                 method: "POST",
@@ -6178,19 +6257,21 @@ function exportFinanceReportCsv({
   if (includeTransactions) {
     rows.push(
       ["" , ""],
-      ["Transactions", "Date", "Type", "Amount", "Category", "Method", "Description", "Invoice", "Client"]
+      ["Transactions", "Date", "Type", "Amount", "Category", "Method", "Description", "Invoice / Job", "Client"]
     );
 
     [
       ...payments.map((payment) => ({
         date: payment.date || "",
-        type: "Payment",
-        amount: Number(payment.amount) || 0,
-        category: "Customer payment",
+        type: payment.paymentType || "Payment",
+        amount: payment.paymentType === "Refund"
+          ? -Math.abs(Number(payment.amount) || 0)
+          : Number(payment.amount) || 0,
+        category: payment.sourceType === "job" ? "Job payment" : "Invoice payment",
         method: payment.method || "Other",
         description: payment.description || "",
-        invoice: payment.invoiceNumber || "",
-        client: payment.invoicePerson || "",
+        invoice: payment.invoiceNumber || payment.jobTitle || "",
+        client: payment.invoicePerson || payment.personName || "",
       })),
       ...expenses.map((expense) => ({
         date: expense.date || "",
@@ -6230,7 +6311,7 @@ function exportFinanceReportCsv({
     )
     .join("\n");
 
-  const blob = new Blob(["\\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   const fileStart = String(startDate || "").replaceAll("-", "");
@@ -6275,13 +6356,15 @@ function printFinanceReport({
   const transactionRows = [
     ...payments.map((payment) => ({
       date: payment.date || "",
-      type: "Payment",
-      amount: Number(payment.amount) || 0,
-      category: "Customer payment",
+      type: payment.paymentType || "Payment",
+      amount: payment.paymentType === "Refund"
+        ? -Math.abs(Number(payment.amount) || 0)
+        : Number(payment.amount) || 0,
+      category: payment.sourceType === "job" ? "Job payment" : "Invoice payment",
       method: payment.method || "Other",
       description: payment.description || "",
-      reference: payment.invoiceNumber || "",
-      client: payment.invoicePerson || "",
+      reference: payment.invoiceNumber || payment.jobTitle || "",
+      client: payment.invoicePerson || payment.personName || "",
     })),
     ...expenses.map((expense) => ({
       date: expense.date || "",
@@ -6340,7 +6423,7 @@ function printFinanceReport({
         <h2>Transactions</h2>
         ${
           transactionRows.length
-            ? `<table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Category</th><th>Method</th><th>Description</th><th>Invoice / Client</th></tr></thead><tbody>${transactionRows
+            ? `<table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Category</th><th>Method</th><th>Description</th><th>Invoice / Job / Client</th></tr></thead><tbody>${transactionRows
                 .map(
                   (item) =>
                     `<tr>
@@ -7006,7 +7089,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onUpdateInvoice, onDeleteInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, jobs, jobPayments, people, automationEvents, initialInvoiceId, onPlans, onAddInvoice, onUpdateInvoice, onDeleteInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onRecordJobPayment, onUpdateJobPayment, onDeleteJobPayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const createInvoiceFormRef = useRef(null);
   const [editingInvoiceId, setEditingInvoiceId] = useState("");
@@ -7030,6 +7113,17 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   });
   const [paymentForm, setPaymentForm] = useState({
     paymentType: "Payment",
+    amount: "",
+    date: getAccountLocalDateKey(),
+    method: "Other",
+    description: "",
+  });
+  const [showJobPaymentForm, setShowJobPaymentForm] = useState(false);
+  const [editingJobPaymentId, setEditingJobPaymentId] = useState("");
+  const [jobPaymentPendingRemoval, setJobPaymentPendingRemoval] = useState(null);
+  const [jobPaymentForm, setJobPaymentForm] = useState({
+    jobId: "",
+    paymentType: "Deposit",
     amount: "",
     date: getAccountLocalDateKey(),
     method: "Other",
@@ -7426,6 +7520,179 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     }
   }
 
+  function resetJobPaymentForm() {
+    setJobPaymentForm({
+      jobId: "",
+      paymentType: "Deposit",
+      amount: "",
+      date: getAccountLocalDateKey(),
+      method: "Other",
+      description: "",
+    });
+    setEditingJobPaymentId("");
+  }
+
+  function startAddJobPayment(jobId = "") {
+    setError("");
+    setEditingJobPaymentId("");
+    setJobPaymentForm({
+      jobId: jobId || "",
+      paymentType: "Deposit",
+      amount: "",
+      date: getAccountLocalDateKey(),
+      method: "Other",
+      description: "",
+    });
+    setShowJobPaymentForm(true);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById("job-payment-form")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    });
+  }
+
+  function startEditJobPayment(payment) {
+    setError("");
+    setEditingJobPaymentId(payment.id);
+    setJobPaymentForm({
+      jobId: payment.jobId,
+      paymentType: payment.paymentType || "Payment",
+      amount: String(payment.amount ?? ""),
+      date: payment.date || getAccountLocalDateKey(),
+      method: payment.method || "Other",
+      description: payment.description || "",
+    });
+    setShowJobPaymentForm(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById("job-payment-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }
+
+  function cancelJobPayment() {
+    if (saving) return;
+    setShowJobPaymentForm(false);
+    resetJobPaymentForm();
+    setError("");
+  }
+
+  async function handleJobPaymentSubmit(event) {
+    event.preventDefault();
+    if (saving) return;
+    setError("");
+    setSaving(true);
+
+    try {
+      const jobId = String(jobPaymentForm.jobId || "").trim();
+      const job = jobs.find((item) => item.id === jobId);
+      if (!job) throw new Error("Please select a job for this payment.");
+
+      const amount = Number(jobPaymentForm.amount);
+      const paymentType = jobPaymentForm.paymentType || "Payment";
+      if (!Number.isFinite(amount) || amount <= 0) {
+        throw new Error("Enter a payment amount greater than zero.");
+      }
+
+      const existingPayment = editingJobPaymentId
+        ? jobPayments.find((item) => item.id === editingJobPaymentId)
+        : null;
+      if (editingJobPaymentId && (!existingPayment || existingPayment.jobId !== jobId)) {
+        throw new Error("The job payment could not be found. Refresh the page and try again.");
+      }
+
+      const currentNetForJob = jobPayments
+        .filter((item) => item.jobId === jobId)
+        .reduce(
+          (total, item) =>
+            total + (item.paymentType === "Refund" ? -Number(item.amount || 0) : Number(item.amount || 0)),
+          0
+        );
+      const oldContribution = existingPayment
+        ? (existingPayment.paymentType === "Refund"
+            ? -Number(existingPayment.amount || 0)
+            : Number(existingPayment.amount || 0))
+        : 0;
+      const netWithoutCurrent = currentNetForJob - oldContribution;
+      const nextContribution = paymentType === "Refund" ? -amount : amount;
+      const nextNet = netWithoutCurrent + nextContribution;
+      const jobPrice = Number(job.price || 0);
+
+      if (paymentType === "Refund" && amount > Math.max(0, netWithoutCurrent) + 0.000001) {
+        throw new Error(
+          "Refund cannot be greater than the amount received of " +
+          formatCurrency(Math.max(0, netWithoutCurrent)) + "."
+        );
+      }
+      if (nextNet < -0.000001) {
+        throw new Error("This payment amount must cover refunds already recorded against this job.");
+      }
+      if (paymentType !== "Refund" && jobPrice > 0 && nextNet > jobPrice + 0.000001) {
+        throw new Error(
+          "Payment cannot be greater than the remaining job balance of " +
+          formatCurrency(Math.max(0, jobPrice - netWithoutCurrent)) + "."
+        );
+      }
+
+      const payload = {
+        amount,
+        paymentType,
+        date: jobPaymentForm.date,
+        method: jobPaymentForm.method || "Other",
+        description: jobPaymentForm.description || paymentType,
+      };
+
+      if (editingJobPaymentId) {
+        await onUpdateJobPayment(jobId, editingJobPaymentId, payload);
+      } else {
+        await onRecordJobPayment(jobId, payload);
+      }
+
+      setShowJobPaymentForm(false);
+      resetJobPaymentForm();
+    } catch (requestError) {
+      setError(requestError.message || "We could not save this job payment.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function handleDeleteJobPayment(payment) {
+    if (saving) return;
+    setError("");
+    setJobPaymentPendingRemoval(payment);
+  }
+
+  async function confirmDeleteJobPayment() {
+    if (saving || !jobPaymentPendingRemoval) return;
+    const payment = jobPaymentPendingRemoval;
+    setError("");
+    setSaving(true);
+
+    try {
+      await onDeleteJobPayment(payment.jobId, payment.id);
+      setJobPaymentPendingRemoval(null);
+      if (editingJobPaymentId === payment.id) {
+        setShowJobPaymentForm(false);
+        resetJobPaymentForm();
+      }
+    } catch (requestError) {
+      setError(requestError.message || "We could not remove this job payment.");
+      setJobPaymentPendingRemoval(null);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function cancelJobPaymentRemoval() {
+    if (saving) return;
+    setJobPaymentPendingRemoval(null);
+  }
+
   function resetExpenseForm() {
     setExpenseForm({
       amount: "",
@@ -7581,21 +7848,37 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     return days >= 0 && days <= 7;
   });
 
-  const financePayments = invoices.flatMap((invoice) =>
-    (Array.isArray(invoice.payments) ? invoice.payments : []).map((payment) => ({
+  const financePayments = [
+    ...invoices.flatMap((invoice) =>
+      (Array.isArray(invoice.payments) ? invoice.payments : []).map((payment) => ({
+        ...payment,
+        sourceType: "invoice",
+        invoiceNumber: invoice.number,
+        invoicePerson: invoice.personName,
+      }))
+    ),
+    ...(Array.isArray(jobPayments) ? jobPayments : []).map((payment) => ({
       ...payment,
-      invoiceNumber: invoice.number,
-      invoicePerson: invoice.personName,
-    }))
+      sourceType: "job",
+      jobTitle: payment.jobTitle || jobs.find((job) => job.id === payment.jobId)?.title || "Job payment",
+      personName: payment.personName || jobs.find((job) => job.id === payment.jobId)?.clientName || "Unassigned",
+    })),
+  ].sort((left, right) =>
+    String(right.date || "").localeCompare(String(left.date || "")) ||
+    String(right.createdAt || "").localeCompare(String(left.createdAt || ""))
   );
+  const paymentContribution = (payment) =>
+    payment?.paymentType === "Refund"
+      ? -Math.abs(Number(payment.amount) || 0)
+      : Number(payment.amount) || 0;
   const totalReceived = financePayments.reduce(
-    (sum, payment) => sum + (Number(payment.amount) || 0),
+    (sum, payment) => sum + paymentContribution(payment),
     0
   );
   const currentMonthKey = todayKey.slice(0, 7);
   const currentMonthReceived = financePayments
     .filter((payment) => String(payment.date || "").slice(0, 7) === currentMonthKey)
-    .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+    .reduce((sum, payment) => sum + paymentContribution(payment), 0);
   const overdueAmount = overdueInvoices.reduce(
     (sum, invoice) => sum + Math.max(0, Number(invoice.balance) || 0),
     0
@@ -7617,7 +7900,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       String(monthDate.getMonth() + 1).padStart(2, "0");
     const amount = financePayments
       .filter((payment) => String(payment.date || "").slice(0, 7) === monthKey)
-      .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+      .reduce((sum, payment) => sum + paymentContribution(payment), 0);
 
     return {
       key: monthKey,
@@ -7650,7 +7933,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
 
     const received = financePayments
       .filter((payment) => String(payment.date || "").slice(0, 7) === monthKey)
-      .reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+      .reduce((sum, payment) => sum + paymentContribution(payment), 0);
 
     const spent = expenses
       .filter((expense) => String(expense.date || "").slice(0, 7) === monthKey)
@@ -7755,7 +8038,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     return date >= selectedFinanceReportStartDate && date <= selectedFinanceReportEndDate;
   });
   const selectedFinanceReportReceived = selectedFinanceReportPayments.reduce(
-    (sum, payment) => sum + (Number(payment.amount) || 0),
+    (sum, payment) => sum + paymentContribution(payment),
     0
   );
   const selectedFinanceReportSpent = selectedFinanceReportExpenses.reduce(
@@ -7775,6 +8058,46 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         ? financialYearOptions.find((option) => option.key === financeReportFinancialYear)?.label ||
           getFinancialYearLabel(financialYearStartYear)
         : "Custom report · " + formatInvoiceDate(selectedFinanceReportStartDate) + " to " + formatInvoiceDate(selectedFinanceReportEndDate);
+
+  const selectedJobForPayment = jobs.find((job) => job.id === jobPaymentForm.jobId);
+  const editingJobPayment = editingJobPaymentId
+    ? jobPayments.find((payment) => payment.id === editingJobPaymentId)
+    : null;
+  const selectedJobNetReceived = selectedJobForPayment
+    ? jobPayments
+        .filter((payment) => payment.jobId === selectedJobForPayment.id)
+        .reduce(
+          (total, payment) =>
+            total + (payment.paymentType === "Refund"
+              ? -Number(payment.amount || 0)
+              : Number(payment.amount || 0)),
+          0
+        )
+    : 0;
+  const selectedJobNetWithoutCurrent = selectedJobNetReceived - (
+    editingJobPayment
+      ? (editingJobPayment.paymentType === "Refund"
+          ? -Number(editingJobPayment.amount || 0)
+          : Number(editingJobPayment.amount || 0))
+      : 0
+  );
+  const selectedJobPaymentLimit = !selectedJobForPayment
+    ? null
+    : jobPaymentForm.paymentType === "Refund"
+      ? Math.max(0, selectedJobNetWithoutCurrent)
+      : Number(selectedJobForPayment.price || 0) > 0
+        ? Math.max(0, Number(selectedJobForPayment.price || 0) - selectedJobNetWithoutCurrent)
+        : null;
+  const jobPaymentNetReceived = jobPayments.reduce(
+    (total, payment) =>
+      total + (payment.paymentType === "Refund"
+        ? -Number(payment.amount || 0)
+        : Number(payment.amount || 0)),
+    0
+  );
+  const jobPaymentActivity = (Array.isArray(automationEvents) ? automationEvents : [])
+    .filter((event) => String(event.type || "").startsWith("finance-job-"))
+    .slice(0, 20);
 
   return <section style={cardStyle(940)}>
     {paymentPendingRemoval && (
@@ -7819,11 +8142,52 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         </div>
       </div>
     )}
+    {jobPaymentPendingRemoval && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="remove-job-payment-title"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 1100,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 20,
+          background: "rgba(3,12,22,.76)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <section style={{ width: "min(460px, 100%)", padding: 24, border: "1px solid rgba(255,100,100,.48)", borderRadius: 16, background: "#0B243C", boxShadow: "0 24px 70px rgba(0,0,0,.5)" }}>
+          <small style={{ ...smallText, color: "#FF9999" }}>REMOVE JOB {jobPaymentPendingRemoval.paymentType === "Refund" ? "REFUND" : "PAYMENT"}</small>
+          <h3 id="remove-job-payment-title" style={{ margin: "8px 0 10px", fontSize: 21 }}>
+            Remove this {jobPaymentPendingRemoval.paymentType === "Refund" ? "refund" : "payment"}?
+          </h3>
+          <p style={{ ...copyStyle, margin: 0 }}>
+            Remove {formatCurrency(jobPaymentPendingRemoval.amount)} from{" "}
+            <strong style={{ color: TEXT }}>{jobPaymentPendingRemoval.jobTitle || "this job"}</strong>?
+            The transaction removal will remain in Payment Activity. A receipt cannot be removed while a refund depends on it.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, marginTop: 18, padding: 12, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)" }}>
+            <div><small style={smallText}>TRANSACTION</small><strong style={{ display: "block", marginTop: 4 }}>{jobPaymentPendingRemoval.paymentType || "Payment"}</strong></div>
+            <div><small style={smallText}>AMOUNT</small><strong style={{ display: "block", marginTop: 4 }}>{formatCurrency(jobPaymentPendingRemoval.amount)}</strong></div>
+            <div><small style={smallText}>DATE</small><strong style={{ display: "block", marginTop: 4 }}>{formatInvoiceDate(jobPaymentPendingRemoval.date)}</strong></div>
+            <div><small style={smallText}>METHOD</small><strong style={{ display: "block", marginTop: 4 }}>{jobPaymentPendingRemoval.method || "Other"}</strong></div>
+          </div>
+          {error && <p role="alert" style={{ margin: "12px 0 0", color: "#FFB0B0", fontSize: 12 }}>{error}</p>}
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 9, flexWrap: "wrap", marginTop: 20 }}>
+            <button type="button" onClick={cancelJobPaymentRemoval} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0 }}>Keep payment</button>
+            <button type="button" onClick={confirmDeleteJobPayment} disabled={saving} style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, background: "#b42318" }}>{saving ? "Removing…" : "Remove payment"}</button>
+          </div>
+        </section>
+      </div>
+    )}
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
     <div style={{ marginTop: 22 }}>
       <p style={eyebrowStyle}>FINANCE</p>
       <h2 style={sectionHeading}>Your finances.</h2>
-      <p style={copyStyle}>Create invoices and keep track of what has been paid. Your financial records are now stored with your BizziBuddi account.</p>
+      <p style={copyStyle}>Manage invoices, record payments against jobs and keep track of money received. Your financial records are stored with your BizziBuddi account.</p>
     </div>
 
     <div style={financeSummary}>
@@ -7866,7 +8230,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           <small style={smallText}>REVENUE OVERVIEW</small>
           <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Money received.</h3>
         </div>
-        <small style={{ ...smallText, color: MUTED }}>Based on recorded payments</small>
+        <small style={{ ...smallText, color: MUTED }}>Invoice and job payments, less refunds</small>
       </div>
 
       <div
@@ -7926,7 +8290,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               >
                 <div
                   style={{
-                    width: (month.amount / maxMonthlyRevenue) * 100 + "%",
+                    width: Math.max(0, (month.amount / maxMonthlyRevenue) * 100) + "%",
                     minWidth: month.amount > 0 ? 3 : 0,
                     height: "100%",
                     borderRadius: 999,
@@ -7944,6 +8308,232 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
     </section>
 
     <section
+      id="finance-payments"
+      style={{
+        marginTop: 18,
+        padding: 18,
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        background: "rgba(0,180,219,.035)",
+        scrollMarginTop: 132,
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <small style={smallText}>JOB PAYMENTS</small>
+          <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Payments against jobs.</h3>
+          <p style={{ ...copyStyle, margin: "5px 0 0", fontSize: 11 }}>
+            Record deposits, part payments, final payments and refunds directly against a job when they are not allocated to an invoice. Do not record the same transaction in both places.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => startAddJobPayment()}
+          disabled={saving || jobs.length === 0}
+          style={{ ...smallActionButton, opacity: saving || jobs.length === 0 ? 0.6 : 1 }}
+        >
+          + Record job payment
+        </button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 15 }}>
+        <div style={{ padding: "12px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,.10)", background: "rgba(255,255,255,.025)" }}>
+          <small style={{ ...smallText, fontSize: 9 }}>JOB PAYMENT RECORDS</small>
+          <strong style={{ display: "block", marginTop: 6, fontSize: 19 }}>{jobPayments.length}</strong>
+        </div>
+        <div style={{ padding: "12px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,.10)", background: "rgba(255,255,255,.025)" }}>
+          <small style={{ ...smallText, fontSize: 9 }}>NET RECEIVED AGAINST JOBS</small>
+          <strong style={{ display: "block", marginTop: 6, fontSize: 19 }}>{formatCurrency(jobPaymentNetReceived)}</strong>
+        </div>
+      </div>
+
+      {showJobPaymentForm && (
+        <form
+          id="job-payment-form"
+          onSubmit={handleJobPaymentSubmit}
+          style={{
+            marginTop: 16,
+            padding: "14px 15px",
+            borderRadius: 10,
+            border: "1px solid rgba(0,180,219,.30)",
+            background: "rgba(0,180,219,.045)",
+            scrollMarginTop: 132,
+          }}
+        >
+          <small style={smallText}>{editingJobPaymentId ? "EDIT JOB PAYMENT" : "RECORD JOB PAYMENT"}</small>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 9, marginTop: 10 }}>
+            <label style={fieldStyle}>
+              Job
+              <select
+                value={jobPaymentForm.jobId}
+                onChange={(event) => setJobPaymentForm((current) => ({ ...current, jobId: event.target.value }))}
+                required
+                disabled={saving || Boolean(editingJobPaymentId)}
+                style={inputStyle}
+              >
+                <option value="">Select a job</option>
+                {jobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title}{job.clientName ? " — " + job.clientName : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label style={fieldStyle}>
+              Transaction type
+              <select
+                value={jobPaymentForm.paymentType}
+                onChange={(event) => setJobPaymentForm((current) => ({ ...current, paymentType: event.target.value }))}
+                disabled={saving}
+                style={inputStyle}
+              >
+                <option value="Deposit">Deposit</option>
+                <option value="Part Payment">Part payment</option>
+                <option value="Final Payment">Final payment</option>
+                <option value="Payment">Payment</option>
+                <option value="Other">Other</option>
+                <option value="Refund">Refund</option>
+              </select>
+            </label>
+            <label style={fieldStyle}>
+              Amount
+              <input
+                type="number"
+                min="0.01"
+                max={selectedJobPaymentLimit === null ? undefined : Math.max(0.01, selectedJobPaymentLimit)}
+                step="0.01"
+                value={jobPaymentForm.amount}
+                onChange={(event) => setJobPaymentForm((current) => ({ ...current, amount: event.target.value }))}
+                required
+                disabled={saving}
+                style={inputStyle}
+              />
+            </label>
+            <label style={fieldStyle}>
+              Date
+              <input
+                type="date"
+                value={jobPaymentForm.date}
+                onChange={(event) => setJobPaymentForm((current) => ({ ...current, date: event.target.value }))}
+                required
+                disabled={saving}
+                style={inputStyle}
+              />
+            </label>
+            <label style={fieldStyle}>
+              Method
+              <select
+                value={jobPaymentForm.method}
+                onChange={(event) => setJobPaymentForm((current) => ({ ...current, method: event.target.value }))}
+                disabled={saving}
+                style={inputStyle}
+              >
+                <option>Other</option>
+                <option>Bank Transfer</option>
+                <option>Cash</option>
+                <option>Card</option>
+                <option>EFTPOS</option>
+                <option>Direct Debit</option>
+              </select>
+            </label>
+            <label style={{ ...fieldStyle, gridColumn: "1 / -1" }}>
+              Description
+              <input
+                value={jobPaymentForm.description}
+                onChange={(event) => setJobPaymentForm((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Optional note about this transaction"
+                disabled={saving}
+                style={inputStyle}
+              />
+            </label>
+          </div>
+          {selectedJobForPayment && (
+            <p style={{ ...copyStyle, margin: "8px 0 0", fontSize: 11 }}>
+              Job value: {formatCurrency(Number(selectedJobForPayment.price || 0))}
+              {" · "}
+              {jobPaymentForm.paymentType === "Refund" ? "Available to refund: " : "Available to receive: "}
+              {selectedJobPaymentLimit === null ? "No job price limit set" : formatCurrency(selectedJobPaymentLimit)}
+              {" · "}Net previously received: {formatCurrency(selectedJobNetWithoutCurrent)}
+            </p>
+          )}
+          {error && <p role="alert" style={{ margin: "10px 0 0", color: "#FFB0B0", fontSize: 12 }}>{error}</p>}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+            <button type="submit" disabled={saving || jobs.length === 0} style={{ ...primaryButton, width: "auto", minHeight: 38, marginTop: 0, opacity: saving ? 0.65 : 1 }}>
+              {saving ? "Saving…" : editingJobPaymentId ? "Save changes" : jobPaymentForm.paymentType === "Refund" ? "Record refund" : "Record payment"}
+            </button>
+            <button type="button" onClick={cancelJobPayment} disabled={saving} style={{ ...secondaryButton, width: "auto", minHeight: 38, marginTop: 0 }}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+
+      {jobPayments.length > 0 ? (
+        <div style={{ display: "grid", gap: 7, marginTop: 15 }}>
+          {jobPayments.map((payment) => (
+            <div
+              key={payment.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
+                alignItems: "center",
+                gap: 10,
+                padding: "10px 0",
+                borderTop: "1px solid rgba(255,255,255,.07)",
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <strong style={{ display: "block", fontSize: 13, overflowWrap: "anywhere" }}>{payment.jobTitle || "Job payment"}</strong>
+                <span style={{ ...smallText, display: "block", marginTop: 3 }}>{payment.personName || "Unassigned"}</span>
+                {payment.description && <span style={{ ...smallText, display: "block", marginTop: 3, overflowWrap: "anywhere" }}>{payment.description}</span>}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <strong style={{ display: "block", fontSize: 12, color: payment.paymentType === "Refund" ? "#FCA5A5" : TEXT }}>
+                  {payment.paymentType === "Refund" ? "−" : ""}{formatCurrency(payment.amount)}
+                </strong>
+                <span style={{ ...smallText, display: "block", marginTop: 3 }}>
+                  {payment.paymentType || "Payment"} · {formatInvoiceDate(payment.date)}
+                </span>
+                <span style={{ ...smallText, display: "block", marginTop: 2 }}>{payment.method || "Other"}</span>
+              </div>
+              <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: 6 }}>
+                <button type="button" onClick={() => startEditJobPayment(payment)} disabled={saving} style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}>Edit</button>
+                <button type="button" onClick={() => handleDeleteJobPayment(payment)} disabled={saving} style={{ ...smallActionButton, opacity: saving ? 0.6 : 1 }}>Remove</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p style={{ ...copyStyle, margin: "14px 0 0", fontSize: 11 }}>
+          No job payments recorded yet. Record a deposit or part payment against a job to start tracking its receipts.
+        </p>
+      )}
+
+      {jobs.length === 0 && (
+        <p style={{ ...copyStyle, margin: "12px 0 0", fontSize: 11 }}>
+          Create a job before recording a job-level payment.
+        </p>
+      )}
+
+      {jobPaymentActivity.length > 0 && (
+        <div style={{ marginTop: 17, paddingTop: 13, borderTop: "1px solid rgba(255,255,255,.09)" }}>
+          <small style={smallText}>JOB PAYMENT ACTIVITY</small>
+          <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+            {jobPaymentActivity.map((event) => (
+              <div key={event.id} style={{ padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                  <strong style={{ fontSize: 12 }}>{event.title}</strong>
+                  <span style={{ ...smallText, fontSize: 10 }}>{formatPaymentActivityDate(event.createdAt)}</span>
+                </div>
+                <p style={{ ...copyStyle, margin: "4px 0 0", fontSize: 11 }}>{event.detail}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+
+    <section
       id="finance-cashflow"
       style={{
         marginTop: 18,
@@ -7958,7 +8548,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
           <small style={smallText}>CASHFLOW OUTLOOK</small>
           <h3 style={{ margin: "5px 0 0", fontSize: 20 }}>Money in, money out.</h3>
         </div>
-        <small style={{ ...smallText, color: MUTED }}>Based on recorded cash activity</small>
+        <small style={{ ...smallText, color: MUTED }}>Net customer receipts and recorded expenses</small>
       </div>
 
       <div
@@ -8276,7 +8866,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                 >
                   <div
                     style={{
-                      width: (month.received / maxCashflowValue) * 100 + "%",
+                      width: Math.max(0, (month.received / maxCashflowValue) * 100) + "%",
                       height: "100%",
                       borderRadius: 999,
                       background: CYAN,
@@ -8654,13 +9244,13 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               ...selectedFinanceReportPayments.map((payment) => ({
                 id: "payment-" + payment.id,
                 date: payment.date,
-                type: "Payment",
-                amount: Number(payment.amount) || 0,
-                category: "Customer payment",
+                type: payment.paymentType || "Payment",
+                amount: paymentContribution(payment),
+                category: payment.sourceType === "job" ? "Job payment" : "Invoice payment",
                 method: payment.method || "Other",
                 description: payment.description || "",
-                reference: payment.invoiceNumber || "",
-                person: payment.invoicePerson || "",
+                reference: payment.invoiceNumber || payment.jobTitle || "",
+                person: payment.invoicePerson || payment.personName || "",
               })),
               ...selectedFinanceReportExpenses.map((expense) => ({
                 id: "expense-" + expense.id,
@@ -8688,7 +9278,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
                   }}
                 >
                   <span style={smallText}>{formatInvoiceDate(item.date)}</span>
-                  <strong style={{ fontSize: 12, color: item.type === "Expense" ? "#ffb0b0" : TEXT }}>
+                  <strong style={{ fontSize: 12, color: item.type === "Expense" || item.type === "Refund" ? "#ffb0b0" : TEXT }}>
                     {item.type}
                   </strong>
                   <strong style={{ fontSize: 13 }}>{formatCurrency(item.amount)}</strong>

@@ -616,8 +616,19 @@ async function main() {
     5 * 60 * 1000
   );
 
-  for (const service of SERVICES) spawnService(service);
-  await Promise.all(SERVICES.map((service) => checkHealth(service)));
+  // The database service runs schema migrations during startup. Wait until
+  // it is healthy before launching services that may create or use its tables.
+  const [databaseService, ...dependentServices] = SERVICES;
+
+  spawnService(databaseService);
+  await checkHealth(databaseService);
+  log("Database service is healthy; starting dependent services.");
+
+  for (const service of dependentServices) {
+    spawnService(service);
+  }
+
+  await Promise.all(dependentServices.map((service) => checkHealth(service)));
 
   gateway = createGateway();
   gateway.listen(PORT, "0.0.0.0", () => {

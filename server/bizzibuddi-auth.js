@@ -854,14 +854,64 @@ function updateJob(userId, jobId, payload) {
 }
 
 function deleteJob(userId, jobId) {
-  const result = getDatabase()
-    .prepare(
-      `DELETE FROM bizzibuddi_jobs
-       WHERE id = ? AND user_id = ?`
-    )
-    .run(jobId, userId);
+  const database = getDatabase();
+  database.exec("BEGIN IMMEDIATE");
 
-  return Boolean(result.changes);
+  try {
+    const job = database
+      .prepare("SELECT id FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?")
+      .get(jobId, userId);
+
+    if (!job) {
+      database.exec("ROLLBACK");
+      return false;
+    }
+
+    const paymentCount = database
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM bizzibuddi_job_payments
+         WHERE job_id = ? AND user_id = ?`
+      )
+      .get(jobId, userId);
+
+    if (Number(paymentCount?.count || 0) > 0) {
+      throw new Error("This job has recorded payments and cannot be deleted.");
+    }
+
+    const paymentActivityCount = database
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM bizzibuddi_automation_events
+         WHERE user_id = ? AND job_id = ?
+           AND type IN (
+             'finance-job-payment-recorded',
+             'finance-job-refund-recorded',
+             'finance-job-payment-updated',
+             'finance-job-payment-removed'
+           )`
+      )
+      .get(userId, jobId);
+
+    if (Number(paymentActivityCount?.count || 0) > 0) {
+      throw new Error(
+        "This job has payment activity history and cannot be deleted. Keep it for your financial records."
+      );
+    }
+
+    const result = database
+      .prepare(
+        `DELETE FROM bizzibuddi_jobs
+         WHERE id = ? AND user_id = ?`
+      )
+      .run(jobId, userId);
+
+    database.exec("COMMIT");
+    return Boolean(result.changes);
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
 }
 
 const BIZZIBUDDI_INVOICE_STATUSES = ["Issued", "Part Paid", "Paid", "Overdue"];
@@ -1832,6 +1882,460 @@ function deleteInvoicePayment(userId, paymentId) {
   };
 }
 
+
+const BIZZIBUDDI_JOB_PAYMENT_TYPES = [
+  "Deposit",
+  "Part Payment",
+  "Final Payment",
+  "Payment",
+  "Other",
+  "Refund",
+];
+
+function normalizeJobPaymentType(value, fallback = "Payment") {
+  const requested = String(value ?? fallback).trim();
+  if (!BIZZIBUDDI_JOB_PAYMENT_TYPES.includes(requested)) {
+    throw new Error("Please select a valid job payment type.");
+  }
+  return requested;
+}
+
+function getJobPaymentTotal(userId, jobId) {
+  const row = getDatabase()
+    .prepare(
+      `SELECT COALESCE(
+         SUM(CASE WHEN payment_type = 'Refund' THEN -amount ELSE amount END),
+         0
+       ) AS amount_paid
+       FROM bizzibuddi_job_payments
+       WHERE job_id = ? AND user_id = ?`
+    )
+    .get(jobId, userId);
+
+  return Number(row?.amount_paid || 0);
+}
+
+function toJobPayment(row) {
+  if (!row) return null;
+
+  return {
+    ...parseJsonObject(row.data_json),
+    id: row.id,
+    jobId: row.job_id,
+    jobTitle: row.job_title || "",
+    personId: row.person_id || null,
+    personName: row.person_name || "Unassigned",
+    amount: Number(row.amount || 0),
+    paymentType: normalizeJobPaymentType(row.payment_type || "Payment"),
+    date: row.date || "",
+    method: row.method || "Other",
+    description: row.description || "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function getJobPayments(userId, jobId = null) {
+  const database = getDatabase();
+  const filterByJob = Boolean(jobId);
+  const rows = database
+    .prepare(
+      `SELECT
+         payments.id,
+         payments.job_id,
+         payments.amount,
+         payments.payment_type,
+         payments.date,
+         payments.method,
+         payments.description,
+         payments.data_json,
+         payments.created_at,
+         payments.updated_at,
+         jobs.title AS job_title,
+         jobs.person_id,
+         people.name AS person_name
+       FROM bizzibuddi_job_payments AS payments
+       INNER JOIN bizzibuddi_jobs AS jobs
+         ON jobs.id = payments.job_id
+        AND jobs.user_id = payments.user_id
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = jobs.person_id
+        AND people.user_id = jobs.user_id
+       WHERE payments.user_id = ?
+         AND (? = 0 OR payments.job_id = ?)
+       ORDER BY payments.date DESC, payments.created_at DESC, payments.id DESC`
+    )
+    .all(userId, filterByJob ? 1 : 0, jobId || "");
+
+  return rows.map(toJobPayment);
+}
+
+function getJobPaymentForUser(userId, jobId, paymentId) {
+  const row = getDatabase()
+    .prepare(
+      `SELECT
+         payments.id,
+         payments.job_id,
+         payments.amount,
+         payments.payment_type,
+         payments.date,
+         payments.method,
+         payments.description,
+         payments.data_json,
+         payments.created_at,
+         payments.updated_at,
+         jobs.title AS job_title,
+         jobs.person_id,
+         people.name AS person_name
+       FROM bizzibuddi_job_payments AS payments
+       INNER JOIN bizzibuddi_jobs AS jobs
+         ON jobs.id = payments.job_id
+        AND jobs.user_id = payments.user_id
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = jobs.person_id
+        AND people.user_id = jobs.user_id
+       WHERE payments.id = ?
+         AND payments.job_id = ?
+         AND payments.user_id = ?`
+    )
+    .get(paymentId, jobId, userId);
+
+  return toJobPayment(row);
+}
+
+function getJobPaymentJob(userId, jobId) {
+  return getDatabase()
+    .prepare(
+      `SELECT jobs.id, jobs.title, jobs.price,
+              jobs.person_id, people.name AS person_name
+       FROM bizzibuddi_jobs AS jobs
+       LEFT JOIN bizzibuddi_people AS people
+         ON people.id = jobs.person_id
+        AND people.user_id = jobs.user_id
+       WHERE jobs.id = ? AND jobs.user_id = ?`
+    )
+    .get(jobId, userId);
+}
+
+function validateJobPaymentValues(payload, existing = null) {
+  const paymentType = normalizeJobPaymentType(
+    payload?.paymentType === undefined ? existing?.payment_type || "Payment" : payload.paymentType
+  );
+  const amountInput =
+    payload?.amount === undefined || payload?.amount === null || payload?.amount === ""
+      ? Number(existing?.amount || 0)
+      : Number(payload.amount);
+  const amount = Math.round(amountInput * 100) / 100;
+  const method = String(payload?.method ?? existing?.method ?? "Other")
+    .trim()
+    .slice(0, 60) || "Other";
+  const date = String(payload?.date ?? existing?.date ?? todayDate()).trim();
+  const description = String(payload?.description ?? existing?.description ?? paymentType)
+    .trim()
+    .slice(0, 160) || paymentType;
+
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
+    throw new Error("Payment amount must be greater than zero and no more than $100,000,000.");
+  }
+
+  if (!isValidDateString(date)) {
+    throw new Error("Please enter a valid transaction date.");
+  }
+
+  return { amount, paymentType, date, method, description };
+}
+
+function getJobPaymentMaximum(job, netWithoutCurrent, paymentType) {
+  if (paymentType === "Refund") {
+    return Math.max(0, netWithoutCurrent);
+  }
+
+  const jobPrice = Number(job?.price || 0);
+  if (jobPrice <= 0) return Number.POSITIVE_INFINITY;
+  return Math.max(0, jobPrice - netWithoutCurrent);
+}
+
+function recordJobPayment(userId, jobId, payload = {}) {
+  const database = getDatabase();
+  let newPaymentId = "";
+  database.exec("BEGIN IMMEDIATE");
+
+  try {
+    const job = getJobPaymentJob(userId, jobId);
+    if (!job) {
+      database.exec("ROLLBACK");
+      return null;
+    }
+
+    const values = validateJobPaymentValues(payload);
+    const currentPaid = getJobPaymentTotal(userId, jobId);
+    const maximum = getJobPaymentMaximum(job, currentPaid, values.paymentType);
+
+    if (values.amount > maximum + 0.000001) {
+      const limitText = Number.isFinite(maximum)
+        ? formatPaymentAuditCurrency(maximum)
+        : "the available amount";
+      throw new Error(
+        values.paymentType === "Refund"
+          ? `Refund amount must be greater than zero and no more than the amount received (${limitText}).`
+          : `Payment amount exceeds the remaining job balance (${limitText}).`
+      );
+    }
+
+    const now = new Date().toISOString();
+    newPaymentId = randomUUID();
+    const payment = {
+      id: newPaymentId,
+      user_id: userId,
+      job_id: jobId,
+      amount: values.amount,
+      payment_type: values.paymentType,
+      date: values.date,
+      method: values.method,
+      description: values.description,
+      data_json: JSON.stringify({
+        amount: values.amount,
+        paymentType: values.paymentType,
+        date: values.date,
+        method: values.method,
+        description: values.description,
+      }),
+      created_at: now,
+      updated_at: now,
+    };
+
+    database.prepare(
+      `INSERT INTO bizzibuddi_job_payments (
+        id, user_id, job_id, amount, payment_type, date, method,
+        description, data_json, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      payment.id,
+      payment.user_id,
+      payment.job_id,
+      payment.amount,
+      payment.payment_type,
+      payment.date,
+      payment.method,
+      payment.description,
+      payment.data_json,
+      payment.created_at,
+      payment.updated_at
+    );
+
+    const isRefund = values.paymentType === "Refund";
+    createAutomationEvent(userId, {
+      type: isRefund ? "finance-job-refund-recorded" : "finance-job-payment-recorded",
+      title: isRefund ? "Job refund recorded" : "Job payment recorded",
+      detail:
+        `${formatPaymentAuditCurrency(values.amount)} ${values.paymentType.toLowerCase()} ` +
+        `recorded for ${job.title || jobId} · ${formatPaymentAuditDate(values.date)} · ${values.method}` +
+        `${values.description ? " · " + values.description : ""}.`,
+      sourceKey: `finance-job-payment:recorded:${payment.id}:${jobId}`,
+      jobId,
+    });
+
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getJobPaymentForUser(userId, jobId, newPaymentId);
+}
+
+function updateJobPayment(userId, jobId, paymentId, payload = {}) {
+  const database = getDatabase();
+  database.exec("BEGIN IMMEDIATE");
+
+  try {
+    const existing = database
+      .prepare(
+        `SELECT payments.id, payments.job_id, payments.amount,
+                payments.payment_type, payments.date, payments.method,
+                payments.description, payments.data_json,
+                jobs.title AS job_title, jobs.price
+         FROM bizzibuddi_job_payments AS payments
+         INNER JOIN bizzibuddi_jobs AS jobs
+           ON jobs.id = payments.job_id
+          AND jobs.user_id = payments.user_id
+         WHERE payments.id = ?
+           AND payments.job_id = ?
+           AND payments.user_id = ?`
+      )
+      .get(paymentId, jobId, userId);
+
+    if (!existing) {
+      database.exec("ROLLBACK");
+      return null;
+    }
+
+    const oldType = normalizeJobPaymentType(existing.payment_type || "Payment");
+    const values = validateJobPaymentValues(payload, existing);
+    const currentAmount = Number(existing.amount || 0);
+    const oldContribution = oldType === "Refund" ? -currentAmount : currentAmount;
+    const currentPaid = getJobPaymentTotal(userId, jobId);
+    const netWithoutCurrent = currentPaid - oldContribution;
+    const nextContribution = values.paymentType === "Refund" ? -values.amount : values.amount;
+    const nextPaid = netWithoutCurrent + nextContribution;
+
+    if (values.paymentType === "Refund") {
+      const maximumRefund = Math.max(0, netWithoutCurrent);
+      if (values.amount > maximumRefund + 0.000001) {
+        throw new Error(
+          `Refund amount must be greater than zero and no more than the amount received (${formatPaymentAuditCurrency(maximumRefund)}).`
+        );
+      }
+    }
+
+    if (nextPaid < -0.000001) {
+      const minimumRequired = Math.max(0, -netWithoutCurrent);
+      throw new Error(
+        `Payment amount must be at least ${formatPaymentAuditCurrency(minimumRequired)} to cover refunds already recorded.`
+      );
+    }
+
+    const jobPrice = Number(existing.price || 0);
+    if (
+      values.paymentType !== "Refund" &&
+      jobPrice > 0 &&
+      nextPaid > currentPaid + 0.000001 &&
+      nextPaid > jobPrice + 0.000001
+    ) {
+      const remaining = Math.max(0, jobPrice - netWithoutCurrent);
+      throw new Error(
+        `Payment amount exceeds the remaining job balance (${formatPaymentAuditCurrency(remaining)}).`
+      );
+    }
+
+    const changes = [];
+    if (currentAmount !== values.amount) {
+      changes.push(
+        `Amount ${formatPaymentAuditCurrency(currentAmount)} to ${formatPaymentAuditCurrency(values.amount)}`
+      );
+    }
+    if (oldType !== values.paymentType) changes.push(`Type ${oldType} to ${values.paymentType}`);
+    if (String(existing.date || "") !== values.date) {
+      changes.push(`Date ${formatPaymentAuditDate(existing.date)} to ${formatPaymentAuditDate(values.date)}`);
+    }
+    if (String(existing.method || "Other") !== values.method) {
+      changes.push(`Method ${existing.method || "Other"} to ${values.method}`);
+    }
+    if (String(existing.description || oldType) !== values.description) {
+      changes.push(`Description ${existing.description || oldType} to ${values.description}`);
+    }
+
+    const now = new Date().toISOString();
+    const previousData = parseJsonObject(existing.data_json);
+    const nextData = {
+      ...previousData,
+      amount: values.amount,
+      paymentType: values.paymentType,
+      date: values.date,
+      method: values.method,
+      description: values.description,
+    };
+
+    database.prepare(
+      `UPDATE bizzibuddi_job_payments
+       SET amount = ?, payment_type = ?, date = ?, method = ?,
+           description = ?, data_json = ?, updated_at = ?
+       WHERE id = ? AND job_id = ? AND user_id = ?`
+    ).run(
+      values.amount,
+      values.paymentType,
+      values.date,
+      values.method,
+      values.description,
+      JSON.stringify(nextData),
+      now,
+      paymentId,
+      jobId,
+      userId
+    );
+
+    if (changes.length) {
+      createAutomationEvent(userId, {
+        type: "finance-job-payment-updated",
+        title: `${values.paymentType} updated`,
+        detail: `${existing.job_title || jobId} | ${changes.join(" | ")}.`,
+        sourceKey: `finance-job-payment:updated:${jobId}:${paymentId}:${now}`,
+        jobId,
+      });
+    }
+
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  return getJobPaymentForUser(userId, jobId, paymentId);
+}
+
+function deleteJobPayment(userId, jobId, paymentId) {
+  const database = getDatabase();
+  database.exec("BEGIN IMMEDIATE");
+
+  try {
+    const payment = database
+      .prepare(
+        `SELECT payments.id, payments.job_id, payments.amount,
+                payments.payment_type, payments.date, payments.method,
+                payments.description, jobs.title AS job_title
+         FROM bizzibuddi_job_payments AS payments
+         INNER JOIN bizzibuddi_jobs AS jobs
+           ON jobs.id = payments.job_id
+          AND jobs.user_id = payments.user_id
+         WHERE payments.id = ?
+           AND payments.job_id = ?
+           AND payments.user_id = ?`
+      )
+      .get(paymentId, jobId, userId);
+
+    if (!payment) {
+      database.exec("ROLLBACK");
+      return null;
+    }
+
+    const paymentType = normalizeJobPaymentType(payment.payment_type || "Payment");
+    const currentPaid = getJobPaymentTotal(userId, jobId);
+    const contribution = paymentType === "Refund"
+      ? -Number(payment.amount || 0)
+      : Number(payment.amount || 0);
+    const nextPaid = currentPaid - contribution;
+
+    if (nextPaid < -0.000001) {
+      throw new Error(
+        "This payment cannot be removed while refunds depend on it. Remove or reduce the related refund first."
+      );
+    }
+
+    const now = new Date().toISOString();
+    database.prepare(
+      `DELETE FROM bizzibuddi_job_payments
+       WHERE id = ? AND job_id = ? AND user_id = ?`
+    ).run(paymentId, jobId, userId);
+
+    createAutomationEvent(userId, {
+      type: "finance-job-payment-removed",
+      title: `${paymentType} removed`,
+      detail:
+        `${formatPaymentAuditCurrency(Number(payment.amount) || 0)} ${paymentType.toLowerCase()} ` +
+        `removed from ${payment.job_title || jobId} · ${formatPaymentAuditDate(payment.date)} · ${payment.method || "Other"}` +
+        `${payment.description ? " · " + payment.description : ""}.`,
+      sourceKey: `finance-job-payment:removed:${jobId}:${paymentId}:${now}`,
+      jobId,
+    });
+
+    database.exec("COMMIT");
+  } catch (error) {
+    database.exec("ROLLBACK");
+    throw error;
+  }
+
+  return { id: paymentId, jobId };
+}
 
 function toExpense(row) {
   if (!row) return null;
@@ -2970,6 +3474,10 @@ const BIZZIBUDDI_AUTOMATION_TYPES = [
   "finance-refund-recorded",
   "finance-payment-updated",
   "finance-payment-removed",
+  "finance-job-payment-recorded",
+  "finance-job-refund-recorded",
+  "finance-job-payment-updated",
+  "finance-job-payment-removed",
   "finance-expense-recorded",
   "finance-expense-updated",
   "finance-expense-removed",
@@ -4524,6 +5032,102 @@ export async function handleBizziBuddiAuthRequest(request, response) {
           return true;
         }
         sendJson(response, 200, { ok: true, authenticated: true, deleted: true, appointmentId: entryId });
+        return true;
+      }
+    }
+
+    if (url.pathname === "/api/bizzibuddi/auth/job-payments" && request.method === "GET") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        authenticated: true,
+        payments: getJobPayments(user.id),
+      });
+      return true;
+    }
+
+    if (url.pathname.startsWith("/api/bizzibuddi/auth/jobs/") &&
+        url.pathname.includes("/payments")) {
+      const paymentsPrefix = "/api/bizzibuddi/auth/jobs/";
+      const paymentRoute = url.pathname.slice(paymentsPrefix.length).replace(/\/$/, "");
+      const [rawJobId, paymentsSegment, rawPaymentId, extra] = paymentRoute.split("/");
+      const jobId = decodeURIComponent(rawJobId || "").trim();
+      const paymentId = decodeURIComponent(rawPaymentId || "").trim();
+
+      if (!jobId || paymentsSegment !== "payments" || extra || jobId.includes("/") || paymentId.includes("/")) {
+        sendJson(response, 404, { ok: false, error: "Job payment not found." });
+        return true;
+      }
+
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const job = getJobPaymentJob(user.id, jobId);
+      if (!job) {
+        sendJson(response, 404, { ok: false, error: "Job not found." });
+        return true;
+      }
+
+      if (!paymentId && request.method === "GET") {
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          payments: getJobPayments(user.id, jobId),
+        });
+        return true;
+      }
+
+      if (!paymentId && request.method === "POST") {
+        const payload = await readJsonBody(request);
+        const payment = recordJobPayment(user.id, jobId, payload);
+        if (!payment) {
+          sendJson(response, 404, { ok: false, error: "Job not found." });
+          return true;
+        }
+        sendJson(response, 201, {
+          ok: true,
+          authenticated: true,
+          payment,
+        });
+        return true;
+      }
+
+      if (paymentId && request.method === "PUT") {
+        const payload = await readJsonBody(request);
+        const payment = updateJobPayment(user.id, jobId, paymentId, payload);
+        if (!payment) {
+          sendJson(response, 404, { ok: false, error: "Job payment not found." });
+          return true;
+        }
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          payment,
+        });
+        return true;
+      }
+
+      if (paymentId && request.method === "DELETE") {
+        const payment = deleteJobPayment(user.id, jobId, paymentId);
+        if (!payment) {
+          sendJson(response, 404, { ok: false, error: "Job payment not found." });
+          return true;
+        }
+        sendJson(response, 200, {
+          ok: true,
+          authenticated: true,
+          deleted: true,
+          paymentId,
+          jobId,
+        });
         return true;
       }
     }
