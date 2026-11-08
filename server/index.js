@@ -1098,6 +1098,36 @@ async function runMigrations(database) {
     database.exec("BEGIN IMMEDIATE");
 
     try {
+      // Migration 3 rebuilds the quotes table to change its foreign-key
+      // deletion behaviour. Fresh databases have no legacy quotes table to
+      // rebuild, so create the empty legacy-compatible source table first.
+      // Existing databases with quotes are left untouched, preserving data.
+      if (migration.version === 3) {
+        const quotesTable = database
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
+          )
+          .get("quotes");
+
+        if (!quotesTable) {
+          database.exec(`
+            CREATE TABLE quotes (
+              id TEXT PRIMARY KEY,
+              client_id TEXT,
+              job_id TEXT,
+              number TEXT NOT NULL,
+              amount REAL NOT NULL DEFAULT 0,
+              status TEXT NOT NULL DEFAULT 'Draft',
+              issue_date TEXT NOT NULL,
+              valid_until TEXT,
+              data_json TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL
+            );
+          `);
+        }
+      }
+
       database.exec(migration.sql);
       database
         .prepare(
