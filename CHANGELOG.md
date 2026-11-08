@@ -1,3 +1,16 @@
+## BizziBuddi — Public Root Landing Page
+
+### Fixed
+- Serve the BizziBuddi public landing page at the domain root (`/`) instead of falling through to the legacy Chrysalis Studio staff authentication gate.
+- Preserve the existing BizziBuddi account route at `/bizzibuddi/account` and the landing, terms, and privacy routes under `/bizzibuddi`.
+
+### Testing
+- Confirmed the root route previously fell through to the Chrysalis authentication gate.
+- Updated the route selection so the public domain root renders the existing BizziBuddi landing page.
+- Railway redeployment and browser verification remain required.
+
+---
+
 ## BizziBuddi — Fresh Database Quotes Migration Fix
 
 ### Fixed
