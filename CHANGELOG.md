@@ -1,3 +1,17 @@
+## BizziBuddi — Railway Production Database Startup Ordering
+
+### Fixed
+- Start the database service first and wait for its health check, ensuring schema migrations finish before dependent backend services open SQLite.
+- Run the job-reference integrity check only after the database service confirms the schema is ready.
+- Prevent concurrent first-startup processes from opening a newly created but not-yet-migrated database.
+
+### Testing
+- Reviewed Railway deployment logs identifying concurrent SQLite startup and the missing `jobs` table.
+- Startup sequence corrected in the production entry point and service supervisor.
+- Railway redeployment and health verification remain required.
+
+---
+
 ## BizziBuddi Finance — Invoice Payment Allocation and Refund Reconciliation
 
 ### Added
