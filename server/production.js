@@ -1,6 +1,7 @@
 import { createServer, request as httpRequest } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, resolve, sep } from "node:path";
+import { repairAndEnforceJobReferences } from "./job-reference.js";
 import { spawn } from "node:child_process";
 
 import {
@@ -616,8 +617,22 @@ async function main() {
     5 * 60 * 1000
   );
 
-  for (const service of SERVICES) spawnService(service);
-  await Promise.all(SERVICES.map((service) => checkHealth(service)));
+  const [databaseService, ...backendServices] = SERVICES;
+
+  // The database service runs all schema migrations before its health endpoint
+  // becomes available. Start it alone so no dependent service can open a
+  // partially initialised SQLite database.
+  spawnService(databaseService);
+  await checkHealth(databaseService);
+  log("Database service is ready; applying the job-reference integrity check.");
+
+  const referenceRepair = repairAndEnforceJobReferences();
+  log(
+    `Job reference check complete: ${referenceRepair.repaired} reference(s) repaired.`
+  );
+
+  for (const service of backendServices) spawnService(service);
+  await Promise.all(backendServices.map((service) => checkHealth(service)));
 
   gateway = createGateway();
   gateway.listen(PORT, "0.0.0.0", () => {
