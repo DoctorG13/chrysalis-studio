@@ -1,3 +1,17 @@
+## BizziBuddi — Fresh Database Quotes Migration Fix
+
+### Fixed
+- Create an empty legacy-compatible `quotes` source table immediately before migration 3 when a fresh database does not yet contain one.
+- Preserve existing quote tables and records; the bootstrap only runs when the table is absent.
+- Keep the existing migration SQL and checksum unchanged so databases that have already applied migration 3 remain compatible.
+
+### Testing
+- Verified the failure path: migration 3 copied from `quotes` before any migration had created that table.
+- Added a guarded pre-migration bootstrap for fresh databases.
+- Fresh Railway migration and health verification remain required.
+
+---
+
 ## BizziBuddi — Railway Production Database Startup Ordering
 
 ### Fixed
