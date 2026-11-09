@@ -7730,6 +7730,13 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       <h2 style={sectionHeading}>Your finances.</h2>
       <p style={copyStyle}>Create invoices and keep track of what has been paid. Your financial records are now stored with your BizziBuddi account.</p>
     </div>
+    {!showForm && (
+      <div style={{ marginTop: 18 }}>
+        <button type="button" onClick={() => { setError(""); setShowForm(true); }} style={{ ...primaryButton, maxWidth: 260, marginTop: 0 }}>
+          + Create an invoice
+        </button>
+      </div>
+    )}
 
     <div style={financeSummary}>
       <div>
@@ -9087,11 +9094,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </div>
     )}
 
-    {!showForm ? (
-      <button type="button" onClick={() => { setError(""); setShowForm(true); }} style={{ ...primaryButton, maxWidth: 240 }}>
-        + Create an invoice
-      </button>
-    ) : (
+    {showForm ? (
       <form onSubmit={handleSubmit} style={personForm}>
         <strong style={{ fontSize: 18 }}>Create an invoice</strong>
 
