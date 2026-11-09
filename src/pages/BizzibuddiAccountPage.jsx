@@ -1033,6 +1033,7 @@ export default function BizzibuddiAccountPage() {
             account={account}
             invoices={invoices}
             people={people}
+            jobs={jobs}
             initialInvoiceId={deepLink.invoiceId}
             onPlans={() => selectView("plans")}
             onRecordPayment={recordAccountPayment}
@@ -6994,8 +6995,9 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, onAddInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, people, jobs, initialInvoiceId, onPlans, onAddInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
+  const [selectedInvoicePersonId, setSelectedInvoicePersonId] = useState("");
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -7120,6 +7122,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
         amount: Number.isFinite(amount) ? amount : 0,
         issueDate: String(form.get("issueDate") || ""),
         dueDate: String(form.get("dueDate") || ""),
+        description: String(form.get("description") || "").trim(),
+        jobId: String(form.get("jobId") || "").trim(),
+        notes: String(form.get("notes") || "").trim(),
         status,
       });
 
@@ -7736,7 +7741,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
   
           <label style={fieldStyle}>
             Client
-            <select required name="personId" defaultValue="" style={inputStyle}>
+            <select required name="personId" value={selectedInvoicePersonId} onChange={(event) => setSelectedInvoicePersonId(event.target.value)} style={inputStyle}>
               <option value="" disabled>Select a person</option>
               {people.map((person) => (
                 <option key={person.id} value={person.id}>{person.name}</option>
@@ -7745,11 +7750,28 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
             </select>
           </label>
   
+          <label style={fieldStyle}>
+            Description
+            <input name="description" type="text" maxLength={200} placeholder="e.g. Wedding dress alterations" style={inputStyle} />
+          </label>
+          <label style={fieldStyle}>
+            Related job (optional)
+            <select name="jobId" defaultValue="" style={inputStyle}>
+              <option value="">No job linked</option>
+              {jobs.filter((job) => !selectedInvoicePersonId || job.personId === selectedInvoicePersonId).map((job) => (
+                <option key={job.id} value={job.id}>{job.title || "Untitled job"}</option>
+              ))}
+            </select>
+          </label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
             <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
             <Field name="issueDate" label="Issue date" type="date" required />
             <Field name="dueDate" label="Due date" type="date" required />
           </div>
+          <label style={fieldStyle}>
+            Notes (optional)
+            <textarea name="notes" rows={3} maxLength={1000} placeholder="Additional information for your records" style={{ ...inputStyle, padding: "12px 15px", minHeight: 88, resize: "vertical" }} />
+          </label>
   
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
             <button
@@ -8728,6 +8750,9 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
               <span style={smallText}>
                 {invoice.personName} · Due {formatInvoiceDate(invoice.dueDate)}
               </span>
+              {invoice.description && <span style={{ ...smallText, display: "block", marginTop: 6 }}>{invoice.description}</span>}
+              {invoice.jobTitle && <span style={{ ...smallText, display: "block", marginTop: 4 }}>Job: {invoice.jobTitle}</span>}
+              {invoice.notes && <span style={{ ...smallText, display: "block", marginTop: 4 }}>Notes: {invoice.notes}</span>
               <span style={{ ...smallText, display: "block", marginTop: 4 }}>
                 Issued {formatInvoiceDate(invoice.issueDate)}
               </span>
