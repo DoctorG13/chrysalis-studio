@@ -53,7 +53,7 @@ export default function BizzibuddiAccountPage() {
     requestedView === "dashboard" || !requestedView
       ? "today"
       : requestedView === "people"
-        ? "people"
+        ? "people-all"
         : requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
           ? "work"
           : requestedView === "finance"
@@ -67,7 +67,7 @@ export default function BizzibuddiAccountPage() {
     requestedView === "dashboard" || !requestedView
       ? "overview"
       : requestedView === "people"
-        ? "people"
+        ? "people-all"
         : requestedView === "jobs"
           ? "jobs"
           : requestedView === "calendar"
@@ -350,7 +350,7 @@ export default function BizzibuddiAccountPage() {
     setWorkspaceNavSection(section);
     setWorkspaceNavItem(firstItem?.[0] || "overview");
     if (section === "people") {
-      selectView("people", { workspaceNavItem: "people" });
+      selectView("people", { workspaceNavItem: "people-all" });
       return;
     }
     if (!firstItem) return;
@@ -924,7 +924,7 @@ export default function BizzibuddiAccountPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => selectView("people", { workspaceNavItem: "people" })}
+                  onClick={() => selectView("people", { workspaceNavItem: "people-all" })}
                   style={workspaceMainTab(workspaceNavSection === "people")}
                   aria-selected={workspaceNavSection === "people"}
                 >
@@ -949,7 +949,7 @@ export default function BizzibuddiAccountPage() {
                 ))}
               </div>
 
-              {workspaceNavSection !== "people" && (
+              {true && (
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
@@ -1131,6 +1131,8 @@ export default function BizzibuddiAccountPage() {
         )}
         {view === "people" && (
           <PeoplePanel
+            activePeopleFilter={workspaceNavItem}
+            onPeopleFilterChange={(filter) => selectView("people", { workspaceNavItem: filter })}
             people={people}
             jobs={jobs}
             appointments={appointments}
@@ -2407,7 +2409,7 @@ function CustomFieldsEditor({ entityType, entityId, onChange }) {
   );
 }
 
-function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack }) {
+function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack, activePeopleFilter = "people-all", onPeopleFilterChange }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -2512,6 +2514,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         email: String(form.get("email") || "").trim(),
         phone: String(form.get("phone") || "").trim(),
         clientSince: String(form.get("clientSince") || "").trim(),
+        relationshipType: String(form.get("relationshipType") || "client").trim(),
       };
 
       let savedPerson;
@@ -2619,13 +2622,18 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   }
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const peopleForView = activePeopleFilter === "clients"
+    ? people.filter((person) => (person.relationshipType || "client") === "client")
+    : activePeopleFilter === "contacts"
+      ? people.filter((person) => person.relationshipType === "contact")
+      : people;
   const filteredPeople = normalizedQuery
-    ? people.filter((person) =>
+    ? peopleForView.filter((person) =>
         [person.name, person.email, person.phone].some((value) =>
           String(value || "").toLowerCase().includes(normalizedQuery)
         )
       )
-    : people;
+    : peopleForView;
 
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -2648,6 +2656,13 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           placeholder="Client or contact name"
           defaultValue={editingPerson?.name || ""}
         />
+        <label style={fieldStyle}>
+          Relationship
+          <select name="relationshipType" defaultValue={editingPerson?.relationshipType || "client"} style={inputStyle}>
+            <option value="client">Client</option>
+            <option value="contact">Contact</option>
+          </select>
+        </label>
         <Field
           name="email"
           label="Email address"
@@ -2693,6 +2708,18 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         </div>
       </form>
     ) : null}
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
+      {[
+        ["people-all", "All People"],
+        ["clients", "Clients"],
+        ["contacts", "Contacts"],
+      ].map(([key, label]) => (
+        <button key={key} type="button" onClick={() => onPeopleFilterChange?.(key)} style={workspaceSubnavTab(activePeopleFilter === key, "people", key)}>
+          {label}
+        </button>
+      ))}
+    </div>
+
     <div className="bizzibuddi-people-summary" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 9, marginTop: 18 }}>
       <div style={personSummaryCard}>
         <small style={{ ...smallText, display: "block", marginBottom: 4 }}>PEOPLE</small>
@@ -2754,7 +2781,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         <section style={personFocusPanel}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0 }}>
-              <small style={smallText}>CLIENT OVERVIEW</small>
+              <small style={smallText}>{selectedPerson.relationshipType === "contact" ? "CONTACT OVERVIEW" : "CLIENT OVERVIEW"}</small>
               <h3 style={{ margin: "5px 0 3px", fontSize: 24 }}>{selectedPerson.name}</h3>
               <span style={{ color: MUTED, fontSize: 12 }}>
                 {selectedPerson.email || "No email"}{selectedPerson.phone ? ` · ${selectedPerson.phone}` : ""}
