@@ -1,3 +1,16 @@
+## Finance — Inline invoice creation
+
+### Improved
+
+- Replace the **Create an invoice** button with the invoice form in the same position when clicked.
+- Display the form directly beneath the Finance heading, before financial summaries and invoice records.
+- Restore the button when the form is cancelled.
+- Preserve existing validation, draft saving and issue invoice actions.
+
+**Testing:** Pending Railway build and production browser verification.
+
+---
+
 ## Finance — Invoice action build correction
 
 ### Fixed
