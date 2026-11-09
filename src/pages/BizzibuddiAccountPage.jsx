@@ -11223,6 +11223,7 @@ const workspaceSubnavTray = {
 const workspaceSubnavItems = (section) => {
   const layout = {
     today: { gridColumn: "1 / -1" },
+    people: { gridColumn: "1 / -1" },
     work: { gridColumn: "1 / -1" },
     finance: { gridColumn: "1 / -1" },
     insights: { gridColumn: "1 / -1" },
@@ -11243,8 +11244,8 @@ const workspaceSubnavItems = (section) => {
   };
 };
 const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
-  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
-  minWidth: ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
+  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
+  minWidth: ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
   boxSizing: "border-box",
   overflow: "visible",
   textOverflow: "clip",
@@ -11260,6 +11261,11 @@ const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
   whiteSpace: "nowrap",
 });
 const workspaceSubnav = {
+  people: [
+    ["people-all", "All People", "people"],
+    ["clients", "Clients", "people"],
+    ["contacts", "Contacts", "people"],
+  ],
   today: [
     ["overview", "Overview", "dashboard", "today-overview"],
     ["priorities", "Priorities", "dashboard", "today-priority-list"],
@@ -11301,6 +11307,11 @@ function getWorkspaceSubnav(account) {
   const appointmentLabel = terminology.appointment || "Calendar";
   return {
     ...workspaceSubnav,
+    people: [
+      ["people-all", "All People", "people"],
+      ["clients", "Clients", "people"],
+      ["contacts", "Contacts", "people"],
+    ],
     work: [
       ["jobs", jobLabel, "jobs"],
       ["calendar", appointmentLabel, "calendar"],
