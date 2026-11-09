@@ -52,9 +52,11 @@ export default function BizzibuddiAccountPage() {
   const initialWorkspaceNavSection =
     requestedView === "dashboard" || !requestedView
       ? "today"
-      : requestedView === "people" || requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
-      ? "work"
-      : requestedView === "finance"
+      : requestedView === "people"
+        ? "people"
+        : requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
+          ? "work"
+          : requestedView === "finance"
         ? "finance"
         : requestedView === "reports"
           ? "insights"
@@ -347,6 +349,10 @@ export default function BizzibuddiAccountPage() {
     const firstItem = workspaceSubnav[section]?.[0];
     setWorkspaceNavSection(section);
     setWorkspaceNavItem(firstItem?.[0] || "overview");
+    if (section === "people") {
+      selectView("people", { workspaceNavItem: "people" });
+      return;
+    }
     if (!firstItem) return;
     if (firstItem[2] === "buddi") {
       openBuddi();
@@ -431,7 +437,9 @@ export default function BizzibuddiAccountPage() {
     );
     if (nextView === "dashboard") {
       setWorkspaceNavSection("today");
-    } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+    } else if (nextView === "people") {
+      setWorkspaceNavSection("people");
+    } else if (["jobs", "calendar", "production"].includes(nextView)) {
       setWorkspaceNavSection("work");
     } else if (nextView === "finance") {
       setWorkspaceNavSection("finance");
@@ -500,7 +508,9 @@ export default function BizzibuddiAccountPage() {
         );
         if (nextView === "dashboard") {
           setWorkspaceNavSection("today");
-        } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+        } else if (nextView === "people") {
+          setWorkspaceNavSection("people");
+        } else if (["jobs", "calendar", "production"].includes(nextView)) {
           setWorkspaceNavSection("work");
         } else if (nextView === "finance") {
           setWorkspaceNavSection("finance");
@@ -912,6 +922,14 @@ export default function BizzibuddiAccountPage() {
                 >
                   <span aria-hidden="true">⌂</span> Today
                 </button>
+                <button
+                  type="button"
+                  onClick={() => selectView("people", { workspaceNavItem: "people" })}
+                  style={workspaceMainTab(workspaceNavSection === "people")}
+                  aria-selected={workspaceNavSection === "people"}
+                >
+                  PEOPLE
+                </button>
                 {[
                   ["work", "WORK"],
                   ["finance", "FINANCE"],
@@ -931,6 +949,7 @@ export default function BizzibuddiAccountPage() {
                 ))}
               </div>
 
+              {workspaceNavSection !== "people" && (
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
@@ -950,6 +969,7 @@ export default function BizzibuddiAccountPage() {
                   ))}
                 </div>
               </div>
+              )}
             </div>
           )}
 
@@ -11138,7 +11158,7 @@ const workspaceStickyNav = {
 };
 const workspaceMainNav = {
   display: "grid",
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
   gap: 5,
   width: "100%",
   minWidth: 0,
@@ -11175,12 +11195,12 @@ const workspaceSubnavTray = {
 };
 const workspaceSubnavItems = (section) => {
   const layout = {
-    today: { gridColumn: "1 / span 2" },
-    work: { gridColumn: "2 / span 2" },
-    finance: { gridColumn: "2 / span 4" },
-    insights: { gridColumn: "4 / span 2" },
-    assist: { gridColumn: "5 / span 2" },
-    account: { gridColumn: "5 / span 2" },
+    today: { gridColumn: "1 / -1" },
+    work: { gridColumn: "1 / -1" },
+    finance: { gridColumn: "1 / -1" },
+    insights: { gridColumn: "1 / -1" },
+    assist: { gridColumn: "1 / -1" },
+    account: { gridColumn: "1 / -1" },
   };
   return {
     ...(layout[section] || layout.today),
@@ -11220,7 +11240,6 @@ const workspaceSubnav = {
     ["attention", "Attention", "dashboard", "today-attention"],
   ],
   work: [
-    ["people", "People", "people"],
     ["jobs", "Jobs", "jobs"],
     ["calendar", "Calendar", "calendar"],
     ["production", "Production", "production"],
@@ -11256,7 +11275,6 @@ function getWorkspaceSubnav(account) {
   return {
     ...workspaceSubnav,
     work: [
-      ["people", personLabel, "people"],
       ["jobs", jobLabel, "jobs"],
       ["calendar", appointmentLabel, "calendar"],
       ["production", "Production", "production"],

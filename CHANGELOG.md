@@ -1,3 +1,17 @@
+## BizziBuddi Workspace — People Navigation
+
+### Improved
+- Give People its own top-level workspace destination so clients and contacts are immediately discoverable.
+- Keep Work focused on Jobs, Calendar and Production.
+- Remove People from the Work submenu to avoid duplicate or confusing navigation.
+- Preserve existing page routes, deep links, account-specific terminology and mobile navigation breakpoints.
+
+### Testing
+- Source-level navigation paths reviewed, including direct People routes and browser history.
+- Production build and Railway browser verification remain pending.
+
+---
+
 ## BizziBuddi People — Default Client Since Date
 
 ### Improved
