@@ -1,3 +1,14 @@
+## Finance — Create invoice action placement
+
+### Improved
+
+- Move the primary **Create an invoice** action directly beneath the Finance heading and description, before the financial summary and invoice list.
+- Keep the existing invoice form, validation and save actions unchanged.
+
+**Testing:** Pending production deployment and browser acceptance verification.
+
+---
+
 ## Calendar — Add appointment action placement
 
 ### Improved
