@@ -1,3 +1,16 @@
+## BizziBuddi — People, Clients and Contacts
+
+### Added
+- Added a persistent Client/Contact relationship type to each People record.
+- Added All People, Clients and Contacts views under the People navigation.
+- Added a Client/Contact selector when creating or editing a person, allowing a contact to become a client without creating a duplicate record.
+- Added database migration v23 with a Client default so existing People records remain available in the Clients view.
+- Kept the full directory and existing person/job/appointment relationships intact.
+
+**Testing:** Pending production build, migration verification and deployed browser acceptance testing.
+
+---
+
 ## BizziBuddi Workspace — People Navigation
 
 ### Improved
