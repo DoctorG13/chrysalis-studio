@@ -949,7 +949,7 @@ export default function BizzibuddiAccountPage() {
                 ))}
               </div>
 
-              {true && (
+              {(
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
@@ -2708,18 +2708,6 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         </div>
       </form>
     ) : null}
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 18 }}>
-      {[
-        ["people-all", "All People"],
-        ["clients", "Clients"],
-        ["contacts", "Contacts"],
-      ].map(([key, label]) => (
-        <button key={key} type="button" onClick={() => onPeopleFilterChange?.(key)} style={workspaceSubnavTab(activePeopleFilter === key, "people", key)}>
-          {label}
-        </button>
-      ))}
-    </div>
-
     <div className="bizzibuddi-people-summary" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 9, marginTop: 18 }}>
       <div style={personSummaryCard}>
         <small style={{ ...smallText, display: "block", marginBottom: 4 }}>PEOPLE</small>
