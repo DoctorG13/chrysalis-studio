@@ -1,3 +1,15 @@
+## BizziBuddi — People submenu refresh restoration
+
+### Fixed
+
+- Restore the People navigation section and its default **All People** submenu selection when an authenticated session is restored on the People route.
+- Apply the same restoration when browser history returns to the People route.
+- Preserve existing People records and Client/Contact classifications.
+
+**Testing:** Pending production deployment and browser acceptance verification.
+
+---
+
 ## BizziBuddi — People, Clients and Contacts
 
 ### Added
