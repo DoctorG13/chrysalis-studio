@@ -717,6 +717,17 @@ const MIGRATIONS = [
     `,
   },
   {
+    version: 23,
+    name: "bizzibuddi-people-relationship-type",
+    sql: `
+      ALTER TABLE bizzibuddi_people
+        ADD COLUMN relationship_type TEXT NOT NULL DEFAULT 'client';
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_people_relationship_type
+        ON bizzibuddi_people(user_id, relationship_type);
+    `,
+  },
+  {
     version: 22,
     name: "invoice-payment-allocation",
     sql: `

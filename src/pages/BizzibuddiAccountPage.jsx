@@ -53,7 +53,7 @@ export default function BizzibuddiAccountPage() {
     requestedView === "dashboard" || !requestedView
       ? "today"
       : requestedView === "people"
-        ? "people"
+        ? "people-all"
         : requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
           ? "work"
           : requestedView === "finance"
@@ -67,7 +67,7 @@ export default function BizzibuddiAccountPage() {
     requestedView === "dashboard" || !requestedView
       ? "overview"
       : requestedView === "people"
-        ? "people"
+        ? "people-all"
         : requestedView === "jobs"
           ? "jobs"
           : requestedView === "calendar"
@@ -350,7 +350,7 @@ export default function BizzibuddiAccountPage() {
     setWorkspaceNavSection(section);
     setWorkspaceNavItem(firstItem?.[0] || "overview");
     if (section === "people") {
-      selectView("people", { workspaceNavItem: "people" });
+      selectView("people", { workspaceNavItem: "people-all" });
       return;
     }
     if (!firstItem) return;
@@ -924,7 +924,7 @@ export default function BizzibuddiAccountPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => selectView("people", { workspaceNavItem: "people" })}
+                  onClick={() => selectView("people", { workspaceNavItem: "people-all" })}
                   style={workspaceMainTab(workspaceNavSection === "people")}
                   aria-selected={workspaceNavSection === "people"}
                 >
@@ -949,7 +949,7 @@ export default function BizzibuddiAccountPage() {
                 ))}
               </div>
 
-              {workspaceNavSection !== "people" && (
+              {(
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
@@ -1131,6 +1131,8 @@ export default function BizzibuddiAccountPage() {
         )}
         {view === "people" && (
           <PeoplePanel
+            activePeopleFilter={workspaceNavItem}
+            onPeopleFilterChange={(filter) => selectView("people", { workspaceNavItem: filter })}
             people={people}
             jobs={jobs}
             appointments={appointments}
@@ -2407,7 +2409,7 @@ function CustomFieldsEditor({ entityType, entityId, onChange }) {
   );
 }
 
-function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack }) {
+function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack, activePeopleFilter = "people-all", onPeopleFilterChange }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -2512,6 +2514,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         email: String(form.get("email") || "").trim(),
         phone: String(form.get("phone") || "").trim(),
         clientSince: String(form.get("clientSince") || "").trim(),
+        relationshipType: String(form.get("relationshipType") || "client").trim(),
       };
 
       let savedPerson;
@@ -2619,13 +2622,18 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   }
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const peopleForView = activePeopleFilter === "clients"
+    ? people.filter((person) => (person.relationshipType || "client") === "client")
+    : activePeopleFilter === "contacts"
+      ? people.filter((person) => person.relationshipType === "contact")
+      : people;
   const filteredPeople = normalizedQuery
-    ? people.filter((person) =>
+    ? peopleForView.filter((person) =>
         [person.name, person.email, person.phone].some((value) =>
           String(value || "").toLowerCase().includes(normalizedQuery)
         )
       )
-    : people;
+    : peopleForView;
 
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -2648,6 +2656,13 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           placeholder="Client or contact name"
           defaultValue={editingPerson?.name || ""}
         />
+        <label style={fieldStyle}>
+          Relationship
+          <select name="relationshipType" defaultValue={editingPerson?.relationshipType || "client"} style={inputStyle}>
+            <option value="client">Client</option>
+            <option value="contact">Contact</option>
+          </select>
+        </label>
         <Field
           name="email"
           label="Email address"
@@ -2754,7 +2769,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         <section style={personFocusPanel}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0 }}>
-              <small style={smallText}>CLIENT OVERVIEW</small>
+              <small style={smallText}>{selectedPerson.relationshipType === "contact" ? "CONTACT OVERVIEW" : "CLIENT OVERVIEW"}</small>
               <h3 style={{ margin: "5px 0 3px", fontSize: 24 }}>{selectedPerson.name}</h3>
               <span style={{ color: MUTED, fontSize: 12 }}>
                 {selectedPerson.email || "No email"}{selectedPerson.phone ? ` · ${selectedPerson.phone}` : ""}
@@ -11196,6 +11211,7 @@ const workspaceSubnavTray = {
 const workspaceSubnavItems = (section) => {
   const layout = {
     today: { gridColumn: "1 / -1" },
+    people: { gridColumn: "1 / -1" },
     work: { gridColumn: "1 / -1" },
     finance: { gridColumn: "1 / -1" },
     insights: { gridColumn: "1 / -1" },
@@ -11216,8 +11232,8 @@ const workspaceSubnavItems = (section) => {
   };
 };
 const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
-  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
-  minWidth: ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
+  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
+  minWidth: ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
   boxSizing: "border-box",
   overflow: "visible",
   textOverflow: "clip",
@@ -11233,6 +11249,11 @@ const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
   whiteSpace: "nowrap",
 });
 const workspaceSubnav = {
+  people: [
+    ["people-all", "All People", "people"],
+    ["clients", "Clients", "people"],
+    ["contacts", "Contacts", "people"],
+  ],
   today: [
     ["overview", "Overview", "dashboard", "today-overview"],
     ["priorities", "Priorities", "dashboard", "today-priority-list"],
@@ -11274,6 +11295,11 @@ function getWorkspaceSubnav(account) {
   const appointmentLabel = terminology.appointment || "Calendar";
   return {
     ...workspaceSubnav,
+    people: [
+      ["people-all", "All People", "people"],
+      ["clients", "Clients", "people"],
+      ["contacts", "Contacts", "people"],
+    ],
     work: [
       ["jobs", jobLabel, "jobs"],
       ["calendar", appointmentLabel, "calendar"],
