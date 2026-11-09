@@ -7730,7 +7730,59 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       <h2 style={sectionHeading}>Your finances.</h2>
       <p style={copyStyle}>Create invoices and keep track of what has been paid. Your financial records are now stored with your BizziBuddi account.</p>
     </div>
-    {!showForm && (
+    {showForm ? (
+        <form onSubmit={handleSubmit} style={personForm}>
+          <strong style={{ fontSize: 18 }}>Create an invoice</strong>
+  
+          <label style={fieldStyle}>
+            Client
+            <select required name="personId" defaultValue="" style={inputStyle}>
+              <option value="" disabled>Select a person</option>
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>{person.name}</option>
+              ))}
+              {people.length === 0 && <option value="" disabled>Add a person first</option>}
+            </select>
+          </label>
+  
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+            <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
+            <Field name="issueDate" label="Issue date" type="date" required />
+            <Field name="dueDate" label="Due date" type="date" required />
+          </div>
+  
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+            <button
+              type="submit"
+              name="invoiceAction"
+              value="Draft"
+              disabled={people.length === 0 || saving}
+              style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+            >
+              {saving ? "Saving…" : "Save draft"}
+            </button>
+            <button
+              type="submit"
+              name="invoiceAction"
+              value="Issued"
+              disabled={people.length === 0 || saving}
+              style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+            >
+              {saving ? "Saving…" : "Save & issue"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setError(""); setShowForm(false); }}
+              disabled={saving}
+              style={{ ...secondaryButton, width: "auto", marginTop: 0 }}
+            >
+              Cancel
+            </button>
+          </div>
+  
+          {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create an invoice for them.</p>}
+        </form>
+    ) : (
       <div style={{ marginTop: 18 }}>
         <button type="button" onClick={() => { setError(""); setShowForm(true); }} style={{ ...primaryButton, maxWidth: 260, marginTop: 0 }}>
           + Create an invoice
@@ -9094,59 +9146,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </div>
     )}
 
-    {showForm && (
-      <form onSubmit={handleSubmit} style={personForm}>
-        <strong style={{ fontSize: 18 }}>Create an invoice</strong>
 
-        <label style={fieldStyle}>
-          Client
-          <select required name="personId" defaultValue="" style={inputStyle}>
-            <option value="" disabled>Select a person</option>
-            {people.map((person) => (
-              <option key={person.id} value={person.id}>{person.name}</option>
-            ))}
-            {people.length === 0 && <option value="" disabled>Add a person first</option>}
-          </select>
-        </label>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-          <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
-          <Field name="issueDate" label="Issue date" type="date" required />
-          <Field name="dueDate" label="Due date" type="date" required />
-        </div>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
-          <button
-            type="submit"
-            name="invoiceAction"
-            value="Draft"
-            disabled={people.length === 0 || saving}
-            style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
-          >
-            {saving ? "Saving…" : "Save draft"}
-          </button>
-          <button
-            type="submit"
-            name="invoiceAction"
-            value="Issued"
-            disabled={people.length === 0 || saving}
-            style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
-          >
-            {saving ? "Saving…" : "Save & issue"}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setError(""); setShowForm(false); }}
-            disabled={saving}
-            style={{ ...secondaryButton, width: "auto", marginTop: 0 }}
-          >
-            Cancel
-          </button>
-        </div>
-
-        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create an invoice for them.</p>}
-      </form>
-    )}
   </section>;
 }
 
