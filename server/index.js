@@ -728,6 +728,16 @@ const MIGRATIONS = [
     `,
   },
   {
+    version: 24,
+    name: "bizzibuddi-invoice-details",
+    sql: `
+      ALTER TABLE bizzibuddi_invoices ADD COLUMN job_id TEXT;
+      ALTER TABLE bizzibuddi_invoices ADD COLUMN notes TEXT NOT NULL DEFAULT '';
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_job_id
+        ON bizzibuddi_invoices(job_id);
+    `,
+  },
+  {
     version: 22,
     name: "invoice-payment-allocation",
     sql: `
