@@ -9094,7 +9094,7 @@ function FinancePanel({ account, invoices, people, initialInvoiceId, onPlans, on
       </div>
     )}
 
-    {showForm ? (
+    {showForm && (
       <form onSubmit={handleSubmit} style={personForm}>
         <strong style={{ fontSize: 18 }}>Create an invoice</strong>
 
