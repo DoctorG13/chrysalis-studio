@@ -1,3 +1,13 @@
+## Finance — Invoice action build correction
+
+### Fixed
+
+- Correct the invoice form's conditional rendering so the new top-of-section action compiles without changing the existing create, cancel or save behaviour.
+
+**Testing:** Railway build and production browser verification pending.
+
+---
+
 ## Finance — Create invoice action placement
 
 ### Improved
