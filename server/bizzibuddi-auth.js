@@ -2092,8 +2092,7 @@ function getPeople(userId) {
        WHERE user_id = ?
        ORDER BY created_at DESC`
     )
-    .all(userId)
-    .map(toPerson);
+    .all(userId);
 }
 
 function createPerson(userId, payload) {
