@@ -195,6 +195,10 @@ export default function BizzibuddiAccountPage() {
           writeWorkspaceRoute(destinationView, initialDeepLink);
           setView(destinationView);
           setDeepLink(initialDeepLink);
+          if (destinationView === "people") {
+            setWorkspaceNavSection("people");
+            setWorkspaceNavItem("people-all");
+          }
           if (destinationView === "dashboard") {
             setWorkspaceNavSection("today");
             setWorkspaceNavItem("overview");
@@ -481,6 +485,10 @@ export default function BizzibuddiAccountPage() {
       });
       if (account) {
         setView(nextView);
+        if (nextView === "people") {
+          setWorkspaceNavSection("people");
+          setWorkspaceNavItem("people-all");
+        }
         setWorkspaceNavItem(
           nextView === "dashboard"
             ? "overview"
