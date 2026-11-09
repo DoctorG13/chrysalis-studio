@@ -1,3 +1,15 @@
+## Calendar — Add appointment action placement
+
+### Improved
+
+- Move the primary **Add appointment** action directly beneath the Calendar heading and description, making it visible before users scroll through the calendar content.
+- Remove the duplicate action from the sticky calendar navigation.
+- Preserve the existing appointment form, submission flow and scroll-to-form behaviour.
+
+**Testing:** Pending production deployment and browser acceptance verification.
+
+---
+
 ## BizziBuddi — People submenu refresh restoration
 
 ### Fixed

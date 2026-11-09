@@ -9386,6 +9386,17 @@ function CalendarPanel({
       <p style={eyebrowStyle}>CALENDAR</p>
       <h2 style={sectionHeading}>Your calendar.</h2>
       <p style={copyStyle}>Keep appointments, fittings, meetings and important business dates organised.</p>
+      {!showForm && (
+        <div style={{ marginTop: 18 }}>
+          <button
+            type="button"
+            onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }}
+            style={{ ...primaryButton, maxWidth: 260, marginTop: 0 }}
+          >
+            + Add appointment
+          </button>
+        </div>
+      )}
       {advancedScheduling && (
         <div style={schedulingSummary}>
           <span style={schedulingSummaryContent}>
@@ -9400,7 +9411,6 @@ function CalendarPanel({
         <span style={{ ...smallText, fontWeight: 800, marginRight: 3 }}>FITTINGS</span>
         <button type="button" onClick={() => scrollToCalendarSection("calendar")} style={smallActionButton}>Calendar</button>
         <button type="button" onClick={() => scrollToCalendarSection("appointments")} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>Appointments · {appointments.length}</button>
-        <button type="button" onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>+ Add appointment</button>
       </div>
     </div>
     <div ref={(node) => { calendarSectionRefs.current.appointments = node; }} id="calendar-appointments" style={{ scrollMarginTop: 110 }} />
