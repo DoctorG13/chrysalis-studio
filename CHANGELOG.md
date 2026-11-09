@@ -1,3 +1,16 @@
+## Finance — Invoice descriptions, job links and notes
+
+### Added
+
+- Add a saved invoice description, optional related-job link and optional notes.
+- Filter related jobs to the selected client and validate the relationship on the server.
+- Persist the details in the account database and display them on invoice records.
+- Add a backward-compatible migration; existing invoices retain their current data.
+
+**Testing:** Pending Railway migration, build and production acceptance testing.
+
+---
+
 ## Finance — Inline invoice creation
 
 ### Improved
