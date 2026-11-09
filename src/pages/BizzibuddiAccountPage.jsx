@@ -2646,7 +2646,17 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           name="clientSince"
           label="Client since"
           type="date"
-          defaultValue={editingPerson?.clientSince || ""}
+          defaultValue={
+            editingPerson
+              ? editingPerson.clientSince || ""
+              : (() => {
+                  const today = new Date();
+                  const year = today.getFullYear();
+                  const month = String(today.getMonth() + 1).padStart(2, "0");
+                  const day = String(today.getDate()).padStart(2, "0");
+                  return `${year}-${month}-${day}`;
+                })()
+          }
         />
         <CustomFieldsEditor
           entityType="person"
