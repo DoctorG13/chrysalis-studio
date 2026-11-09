@@ -3832,6 +3832,17 @@ All notable changes to Chrysalis are recorded here.
 
 ## Unreleased
 
+### BizziBuddi — New Account Confirmation
+
+- Added a clear account-created confirmation to the first workspace welcome screen.
+- Displayed the account holder, business name, username, email address and current membership.
+- Confirmed that passwords are never displayed in the account summary.
+- Changed the self-guided action to the clearer **Go to my dashboard** call to action.
+- Preserved the existing first-run setup actions and account creation flow.
+
+**Testing:** Pending production build and deployed browser verification.
+
+
 ### BizziBuddi — Live Weather Improvements
 - Improved location matching and disambiguation for places sharing the same name.
 - Added clickable location choices for ambiguous weather and time requests.
