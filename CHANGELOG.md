@@ -1,3 +1,17 @@
+## BizziBuddi People — Default Client Since Date
+
+### Improved
+- Default the Client since date to the user's local current date when adding a new person.
+- Preserve the saved Client since date when editing an existing person, including leaving an intentionally blank historical date unchanged.
+- Keep the date editable so users can enter an earlier relationship start date when needed.
+
+### Testing
+- Source-level review confirms the default uses local calendar date parts rather than UTC conversion.
+- Existing edit values remain unchanged.
+- Production build and Railway browser verification remain pending.
+
+---
+
 ## BizziBuddi — Public Root Landing Page
 
 ### Fixed
