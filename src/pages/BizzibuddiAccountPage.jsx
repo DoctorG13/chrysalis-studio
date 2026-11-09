@@ -1939,9 +1939,77 @@ function FirstRunPanel({
             Let's get your business set up.
           </h2>
           <p style={{ ...copyStyle, maxWidth: 650, margin: "8px auto 0" }}>
-            Your workspace is ready. We'll help you get your first customer, job and appointment into BizziBuddi.
+            Your BizziBuddi account has been created securely and your business workspace is ready.
           </p>
         </div>
+
+        <section
+          aria-labelledby="bizzibuddi-account-created-title"
+          style={{
+            marginTop: 24,
+            padding: 20,
+            borderRadius: 16,
+            border: "1px solid rgba(0,180,219,.34)",
+            background: "rgba(6,26,43,.34)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <span
+              aria-hidden="true"
+              style={{
+                display: "grid",
+                placeItems: "center",
+                flex: "0 0 34px",
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                background: "rgba(0,180,219,.16)",
+                color: CYAN,
+                fontSize: 20,
+                fontWeight: 900,
+              }}
+            >
+              ✓
+            </span>
+            <div>
+              <h3 id="bizzibuddi-account-created-title" style={{ margin: 0, color: TEXT, fontSize: 18 }}>
+                Your account is ready, {account?.name || "welcome"}!
+              </h3>
+              <p style={{ margin: "4px 0 0", color: MUTED, fontSize: 12 }}>
+                Keep these details handy when you sign in to BizziBuddi.
+              </p>
+            </div>
+          </div>
+
+          <dl style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+            gap: 10,
+            margin: 0,
+          }}>
+            {[
+              ["Account holder", account?.name || "—"],
+              ["Business", account?.business || "—"],
+              ["Username", account?.username ? "@" + account.username : "—"],
+              ["Email address", account?.email || "—"],
+              ["Membership", account?.plan || "Free"],
+            ].map(([label, value]) => (
+              <div key={label} style={{
+                minWidth: 0,
+                padding: "11px 13px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,.10)",
+                background: "rgba(255,255,255,.035)",
+              }}>
+                <dt style={{ color: MUTED, fontSize: 11, marginBottom: 5 }}>{label}</dt>
+                <dd style={{ color: TEXT, fontSize: 13, fontWeight: 800, margin: 0, overflowWrap: "anywhere" }}>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p style={{ margin: "13px 0 0", color: MUTED, fontSize: 11, lineHeight: 1.5 }}>
+            Your password is never displayed here. Keep it private and use it whenever you log in.
+          </p>
+        </section>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginTop: 26 }}>
           {steps.map(([number, title, detail, action]) => (
@@ -2023,7 +2091,7 @@ function FirstRunPanel({
             You can always come back to the Dashboard and continue at your own pace.
           </span>
           <button type="button" onClick={onExplore} style={textButton}>
-            I'll explore on my own
+            Go to my dashboard →
           </button>
         </div>
       </div>
