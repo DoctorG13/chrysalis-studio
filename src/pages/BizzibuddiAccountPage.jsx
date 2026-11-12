@@ -7441,7 +7441,7 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
         if (!element) return;
         const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
         const navHeight = nav ? nav.getBoundingClientRect().height : 0;
-        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
+        const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 12;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
     });
@@ -9555,7 +9555,7 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
       aria-labelledby="finance-invoices-heading"
       style={{
         marginTop: 24,
-        minHeight: "calc(100vh - 150px)",
+        minHeight: 0,
         paddingBottom: 24,
         boxSizing: "border-box",
         scrollMarginTop: 124,
