@@ -53,9 +53,11 @@ export default function BizzibuddiAccountPage() {
   const initialWorkspaceNavSection =
     requestedView === "dashboard" || !requestedView
       ? "today"
-      : requestedView === "people" || requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
-      ? "work"
-      : requestedView === "finance"
+      : requestedView === "people"
+        ? "people-all"
+        : requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
+          ? "work"
+          : requestedView === "finance"
         ? "finance"
         : requestedView === "reports"
           ? "insights"
@@ -66,7 +68,7 @@ export default function BizzibuddiAccountPage() {
     requestedView === "dashboard" || !requestedView
       ? "overview"
       : requestedView === "people"
-        ? "people"
+        ? "people-all"
         : requestedView === "jobs"
           ? "jobs"
           : requestedView === "calendar"
@@ -195,6 +197,10 @@ export default function BizzibuddiAccountPage() {
           writeWorkspaceRoute(destinationView, initialDeepLink);
           setView(destinationView);
           setDeepLink(initialDeepLink);
+          if (destinationView === "people") {
+            setWorkspaceNavSection("people");
+            setWorkspaceNavItem("people-all");
+          }
           if (destinationView === "dashboard") {
             setWorkspaceNavSection("today");
             setWorkspaceNavItem("overview");
@@ -420,6 +426,10 @@ export default function BizzibuddiAccountPage() {
     const firstItem = workspaceSubnav[section]?.[0];
     setWorkspaceNavSection(section);
     setWorkspaceNavItem(firstItem?.[0] || "overview");
+    if (section === "people") {
+      selectView("people", { workspaceNavItem: "people-all" });
+      return;
+    }
     if (!firstItem) return;
     if (firstItem[2] === "buddi") {
       openBuddi();
@@ -504,7 +514,9 @@ export default function BizzibuddiAccountPage() {
     );
     if (nextView === "dashboard") {
       setWorkspaceNavSection("today");
-    } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+    } else if (nextView === "people") {
+      setWorkspaceNavSection("people");
+    } else if (["jobs", "calendar", "production"].includes(nextView)) {
       setWorkspaceNavSection("work");
     } else if (nextView === "finance") {
       setWorkspaceNavSection("finance");
@@ -546,6 +558,10 @@ export default function BizzibuddiAccountPage() {
       });
       if (account) {
         setView(nextView);
+        if (nextView === "people") {
+          setWorkspaceNavSection("people");
+          setWorkspaceNavItem("people-all");
+        }
         setWorkspaceNavItem(
           nextView === "dashboard"
             ? "overview"
@@ -573,7 +589,9 @@ export default function BizzibuddiAccountPage() {
         );
         if (nextView === "dashboard") {
           setWorkspaceNavSection("today");
-        } else if (["people", "jobs", "calendar", "production"].includes(nextView)) {
+        } else if (nextView === "people") {
+          setWorkspaceNavSection("people");
+        } else if (["jobs", "calendar", "production"].includes(nextView)) {
           setWorkspaceNavSection("work");
         } else if (nextView === "finance") {
           setWorkspaceNavSection("finance");
@@ -984,6 +1002,14 @@ export default function BizzibuddiAccountPage() {
                 >
                   <span aria-hidden="true">⌂</span> Today
                 </button>
+                <button
+                  type="button"
+                  onClick={() => selectView("people", { workspaceNavItem: "people-all" })}
+                  style={workspaceMainTab(workspaceNavSection === "people")}
+                  aria-selected={workspaceNavSection === "people"}
+                >
+                  PEOPLE
+                </button>
                 {[
                   ["work", "WORK"],
                   ["finance", "FINANCE"],
@@ -1003,6 +1029,7 @@ export default function BizzibuddiAccountPage() {
                 ))}
               </div>
 
+              {(
               <div
                 className="bizzibuddi-workspace-subnav"
                 aria-label={workspaceNavSection + " submenu"}
@@ -1022,6 +1049,7 @@ export default function BizzibuddiAccountPage() {
                   ))}
                 </div>
               </div>
+              )}
             </div>
           )}
 
@@ -1200,6 +1228,8 @@ export default function BizzibuddiAccountPage() {
         )}
         {view === "people" && (
           <PeoplePanel
+            activePeopleFilter={workspaceNavItem}
+            onPeopleFilterChange={(filter) => selectView("people", { workspaceNavItem: filter })}
             people={people}
             jobs={jobs}
             appointments={appointments}
@@ -2043,9 +2073,77 @@ function FirstRunPanel({
             Let's get your business set up.
           </h2>
           <p style={{ ...copyStyle, maxWidth: 650, margin: "8px auto 0" }}>
-            Your workspace is ready. We'll help you get your first customer, job and appointment into BizziBuddi.
+            Your BizziBuddi account has been created securely and your business workspace is ready.
           </p>
         </div>
+
+        <section
+          aria-labelledby="bizzibuddi-account-created-title"
+          style={{
+            marginTop: 24,
+            padding: 20,
+            borderRadius: 16,
+            border: "1px solid rgba(0,180,219,.34)",
+            background: "rgba(6,26,43,.34)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <span
+              aria-hidden="true"
+              style={{
+                display: "grid",
+                placeItems: "center",
+                flex: "0 0 34px",
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                background: "rgba(0,180,219,.16)",
+                color: CYAN,
+                fontSize: 20,
+                fontWeight: 900,
+              }}
+            >
+              ✓
+            </span>
+            <div>
+              <h3 id="bizzibuddi-account-created-title" style={{ margin: 0, color: TEXT, fontSize: 18 }}>
+                Your account is ready, {account?.name || "welcome"}!
+              </h3>
+              <p style={{ margin: "4px 0 0", color: MUTED, fontSize: 12 }}>
+                Keep these details handy when you sign in to BizziBuddi.
+              </p>
+            </div>
+          </div>
+
+          <dl style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+            gap: 10,
+            margin: 0,
+          }}>
+            {[
+              ["Account holder", account?.name || "—"],
+              ["Business", account?.business || "—"],
+              ["Username", account?.username ? "@" + account.username : "—"],
+              ["Email address", account?.email || "—"],
+              ["Membership", account?.plan || "Free"],
+            ].map(([label, value]) => (
+              <div key={label} style={{
+                minWidth: 0,
+                padding: "11px 13px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,.10)",
+                background: "rgba(255,255,255,.035)",
+              }}>
+                <dt style={{ color: MUTED, fontSize: 11, marginBottom: 5 }}>{label}</dt>
+                <dd style={{ color: TEXT, fontSize: 13, fontWeight: 800, margin: 0, overflowWrap: "anywhere" }}>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p style={{ margin: "13px 0 0", color: MUTED, fontSize: 11, lineHeight: 1.5 }}>
+            Your password is never displayed here. Keep it private and use it whenever you log in.
+          </p>
+        </section>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 10, marginTop: 26 }}>
           {steps.map(([number, title, detail, action]) => (
@@ -2127,7 +2225,7 @@ function FirstRunPanel({
             You can always come back to the Dashboard and continue at your own pace.
           </span>
           <button type="button" onClick={onExplore} style={textButton}>
-            I'll explore on my own
+            Go to my dashboard →
           </button>
         </div>
       </div>
@@ -2423,7 +2521,7 @@ function CustomFieldsEditor({ entityType, entityId, onChange }) {
   );
 }
 
-function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack }) {
+function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack, activePeopleFilter = "people-all", onPeopleFilterChange }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -2528,6 +2626,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         email: String(form.get("email") || "").trim(),
         phone: String(form.get("phone") || "").trim(),
         clientSince: String(form.get("clientSince") || "").trim(),
+        relationshipType: String(form.get("relationshipType") || "client").trim(),
       };
 
       let savedPerson;
@@ -2635,13 +2734,18 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   }
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
+  const peopleForView = activePeopleFilter === "clients"
+    ? people.filter((person) => (person.relationshipType || "client") === "client")
+    : activePeopleFilter === "contacts"
+      ? people.filter((person) => person.relationshipType === "contact")
+      : people;
   const filteredPeople = normalizedQuery
-    ? people.filter((person) =>
+    ? peopleForView.filter((person) =>
         [person.name, person.email, person.phone].some((value) =>
           String(value || "").toLowerCase().includes(normalizedQuery)
         )
       )
-    : people;
+    : peopleForView;
 
   return <section style={cardStyle(940)}>
     <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -2664,6 +2768,13 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           placeholder="Client or contact name"
           defaultValue={editingPerson?.name || ""}
         />
+        <label style={fieldStyle}>
+          Relationship
+          <select name="relationshipType" defaultValue={editingPerson?.relationshipType || "client"} style={inputStyle}>
+            <option value="client">Client</option>
+            <option value="contact">Contact</option>
+          </select>
+        </label>
         <Field
           name="email"
           label="Email address"
@@ -2682,7 +2793,17 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           name="clientSince"
           label="Client since"
           type="date"
-          defaultValue={editingPerson?.clientSince || ""}
+          defaultValue={
+            editingPerson
+              ? editingPerson.clientSince || ""
+              : (() => {
+                  const today = new Date();
+                  const year = today.getFullYear();
+                  const month = String(today.getMonth() + 1).padStart(2, "0");
+                  const day = String(today.getDate()).padStart(2, "0");
+                  return `${year}-${month}-${day}`;
+                })()
+          }
         />
         <CustomFieldsEditor
           entityType="person"
@@ -2760,7 +2881,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         <section style={personFocusPanel}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0 }}>
-              <small style={smallText}>CLIENT OVERVIEW</small>
+              <small style={smallText}>{selectedPerson.relationshipType === "contact" ? "CONTACT OVERVIEW" : "CLIENT OVERVIEW"}</small>
               <h3 style={{ margin: "5px 0 3px", fontSize: 24 }}>{selectedPerson.name}</h3>
               <span style={{ color: MUTED, fontSize: 12 }}>
                 {selectedPerson.email || "No email"}{selectedPerson.phone ? ` · ${selectedPerson.phone}` : ""}
@@ -7139,6 +7260,7 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
   const [editingInvoiceForm, setEditingInvoiceForm] = useState({ personId: "", amount: "", issueDate: "", dueDate: "", description: "" });
   const [focusInvoiceId, setFocusInvoiceId] = useState("");
   const [pendingInvoiceRemoval, setPendingInvoiceRemoval] = useState(null);
+  const [selectedInvoicePersonId, setSelectedInvoicePersonId] = useState("");
   const selectedInvoiceRef = useRef(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -7343,6 +7465,8 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
         issueDate: String(form.get("issueDate") || ""),
         dueDate: String(form.get("dueDate") || ""),
         description: String(form.get("description") || "").trim(),
+        jobId: String(form.get("jobId") || "").trim(),
+        notes: String(form.get("notes") || "").trim(),
         status,
       });
 
@@ -8232,6 +8356,82 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
       <h2 style={sectionHeading}>Your finances.</h2>
       <p style={copyStyle}>Manage invoices, record payments against jobs and keep track of money received. Your financial records are stored with your BizziBuddi account.</p>
     </div>
+    {showForm ? (
+        <form ref={createInvoiceFormRef} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 124 }}>
+          <strong style={{ fontSize: 18 }}>Create an invoice</strong>
+
+          <label style={fieldStyle}>
+            Client
+            <select required name="personId" value={selectedInvoicePersonId} onChange={(event) => setSelectedInvoicePersonId(event.target.value)} style={inputStyle}>
+              <option value="" disabled>Select a person</option>
+              {people.map((person) => (
+                <option key={person.id} value={person.id}>{person.name}</option>
+              ))}
+              {people.length === 0 && <option value="" disabled>Add a person first</option>}
+            </select>
+          </label>
+
+          <label style={fieldStyle}>
+            Description
+            <input name="description" type="text" maxLength={200} placeholder="e.g. Wedding dress alterations" style={inputStyle} />
+          </label>
+          <label style={fieldStyle}>
+            Related job (optional)
+            <select name="jobId" defaultValue="" style={inputStyle}>
+              <option value="">No job linked</option>
+              {jobs.filter((job) => !selectedInvoicePersonId || job.personId === selectedInvoicePersonId).map((job) => (
+                <option key={job.id} value={job.id}>{job.title || "Untitled job"}</option>
+              ))}
+            </select>
+          </label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+            <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
+            <Field name="issueDate" label="Issue date" type="date" required />
+            <Field name="dueDate" label="Due date" type="date" required />
+          </div>
+          <label style={fieldStyle}>
+            Notes (optional)
+            <textarea name="notes" rows={3} maxLength={1000} placeholder="Additional information for your records" style={{ ...inputStyle, padding: "12px 15px", minHeight: 88, resize: "vertical" }} />
+          </label>
+
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+            <button
+              type="submit"
+              name="invoiceAction"
+              value="Draft"
+              disabled={people.length === 0 || saving}
+              style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+            >
+              {saving ? "Saving…" : "Save draft"}
+            </button>
+            <button
+              type="submit"
+              name="invoiceAction"
+              value="Issued"
+              disabled={people.length === 0 || saving}
+              style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+            >
+              {saving ? "Saving…" : "Save & issue"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setError(""); setShowForm(false); }}
+              disabled={saving}
+              style={{ ...secondaryButton, width: "auto", marginTop: 0 }}
+            >
+              Cancel
+            </button>
+          </div>
+
+          {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create an invoice for them.</p>}
+        </form>
+    ) : (
+      <div style={{ marginTop: 18 }}>
+        <button type="button" onClick={startCreateInvoice} style={{ ...primaryButton, maxWidth: 260, marginTop: 0 }}>
+          + Create an invoice
+        </button>
+      </div>
+    )}
 
     <div style={financeSummary}>
       <div>
@@ -9348,17 +9548,6 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
       </p>
     </section>
 
-    <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
-      <button
-        id="finance-invoices"
-        type="button"
-        onClick={startCreateInvoice}
-        style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0, scrollMarginTop: 124 }}
-      >
-        + Add Invoice
-      </button>
-    </div>
-
     {invoices.length > 0 ? (
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
         {invoices.map((invoice) => {
@@ -9410,6 +9599,9 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
               <span style={smallText}>
                 {invoice.personName} · Due {formatInvoiceDate(invoice.dueDate)}
               </span>
+              {invoice.description && <span style={{ ...smallText, display: "block", marginTop: 6 }}>{invoice.description}</span>}
+              {invoice.jobTitle && <span style={{ ...smallText, display: "block", marginTop: 4 }}>Job: {invoice.jobTitle}</span>}
+              {invoice.notes && <span style={{ ...smallText, display: "block", marginTop: 4 }}>Notes: {invoice.notes}</span>}
               <span style={{ ...smallText, display: "block", marginTop: 4 }}>
                 Issued {formatInvoiceDate(invoice.issueDate)}
               </span>
@@ -9648,7 +9840,9 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
                               borderLeft: "1px solid rgba(0,180,219,.22)",
                             }}
                           >
-                            <small style={smallText}>EDIT {editingPaymentForm.paymentType === "Refund" ? "REFUND" : "PAYMENT"}</small>
+                            <small style={smallText}>
+  {editingPaymentForm.paymentType === "Refund" ? "EDIT REFUND" : "EDIT PAYMENT"}
+</small>
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginTop: 8 }}>
                               <label style={fieldStyle}>
                                 Transaction type
@@ -9923,66 +10117,6 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
         </div>
       </div>
     )}
-
-    {!showForm ? (
-      <button type="button" onClick={startCreateInvoice} style={{ ...primaryButton, maxWidth: 240 }}>
-        + Add Invoice
-      </button>
-    ) : (
-      <form ref={createInvoiceFormRef} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 124 }}>
-        <strong style={{ fontSize: 18 }}>Create an invoice</strong>
-
-        <label style={fieldStyle}>
-          Client
-          <select required name="personId" defaultValue="" style={inputStyle}>
-            <option value="" disabled>Select a person</option>
-            {people.map((person) => (
-              <option key={person.id} value={person.id}>{person.name}</option>
-            ))}
-            {people.length === 0 && <option value="" disabled>Add a person first</option>}
-          </select>
-        </label>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-          <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
-          <Field name="issueDate" label="Issue date" type="date" required />
-          <Field name="dueDate" label="Due date" type="date" required />
-        </div>
-
-        <Field name="description" label="Description" type="text" placeholder="Optional invoice description" required={false} />
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
-          <button
-            type="submit"
-            name="invoiceAction"
-            value="Draft"
-            disabled={people.length === 0 || saving}
-            style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
-          >
-            {saving ? "Saving…" : "Save draft"}
-          </button>
-          <button
-            type="submit"
-            name="invoiceAction"
-            value="Issued"
-            disabled={people.length === 0 || saving}
-            style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
-          >
-            {saving ? "Saving…" : "Save & issue"}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setError(""); setShowForm(false); }}
-            disabled={saving}
-            style={{ ...secondaryButton, width: "auto", marginTop: 0 }}
-          >
-            Cancel
-          </button>
-        </div>
-
-        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create an invoice for them.</p>}
-      </form>
-    )}
   </section>;
 }
 
@@ -10225,6 +10359,17 @@ function CalendarPanel({
       <p style={eyebrowStyle}>CALENDAR</p>
       <h2 style={sectionHeading}>Your calendar.</h2>
       <p style={copyStyle}>Keep appointments, fittings, meetings and important business dates organised.</p>
+      {!showForm && (
+        <div style={{ marginTop: 18 }}>
+          <button
+            type="button"
+            onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }}
+            style={{ ...primaryButton, maxWidth: 260, marginTop: 0 }}
+          >
+            + Add appointment
+          </button>
+        </div>
+      )}
       {advancedScheduling && (
         <div style={schedulingSummary}>
           <span style={schedulingSummaryContent}>
@@ -10239,7 +10384,6 @@ function CalendarPanel({
         <span style={{ ...smallText, fontWeight: 800, marginRight: 3 }}>FITTINGS</span>
         <button type="button" onClick={() => scrollToCalendarSection("calendar")} style={smallActionButton}>Calendar</button>
         <button type="button" onClick={() => scrollToCalendarSection("appointments")} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>Appointments · {appointments.length}</button>
-        <button type="button" onClick={() => { startAdd(); requestAnimationFrame(() => scrollToCalendarSection("appointment-form")); }} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>+ Add appointment</button>
       </div>
     </div>
     <div ref={(node) => { calendarSectionRefs.current.appointments = node; }} id="calendar-appointments" style={{ scrollMarginTop: 110 }} />
@@ -11569,7 +11713,7 @@ const todayViewItem = {
   textAlign: "left", cursor: "pointer",
 };
 const todayViewEmpty = { display: "block", marginTop: 14, color: MUTED, fontSize: 12 };
- 
+
 const nextActionPanel = {
   display: "flex",
   alignItems: "center",
@@ -12007,7 +12151,7 @@ const workspaceNavShell = {
   boxShadow: "0 10px 24px rgba(0,0,0,.20)",
   backdropFilter: "blur(14px)",
   WebkitBackdropFilter: "blur(14px)",
-}; 
+};
 const workspaceStickyNav = {
   position: "relative",
   zIndex: 1,
@@ -12020,7 +12164,7 @@ const workspaceStickyNav = {
 };
 const workspaceMainNav = {
   display: "grid",
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
   gap: 5,
   width: "100%",
   minWidth: 0,
@@ -12057,12 +12201,13 @@ const workspaceSubnavTray = {
 };
 const workspaceSubnavItems = (section) => {
   const layout = {
-    today: { gridColumn: "1 / span 2" },
-    work: { gridColumn: "2 / span 2" },
-    finance: { gridColumn: "2 / span 4" },
-    insights: { gridColumn: "4 / span 2" },
-    assist: { gridColumn: "5 / span 2" },
-    account: { gridColumn: "5 / span 2" },
+    today: { gridColumn: "1 / -1" },
+    people: { gridColumn: "1 / -1" },
+    work: { gridColumn: "1 / -1" },
+    finance: { gridColumn: "1 / -1" },
+    insights: { gridColumn: "1 / -1" },
+    assist: { gridColumn: "1 / -1" },
+    account: { gridColumn: "1 / -1" },
   };
   return {
     ...(layout[section] || layout.today),
@@ -12078,8 +12223,8 @@ const workspaceSubnavItems = (section) => {
   };
 };
 const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
-  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
-  minWidth: ["finance", "today", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
+  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
+  minWidth: ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
   boxSizing: "border-box",
   overflow: "visible",
   textOverflow: "clip",
@@ -12095,6 +12240,11 @@ const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
   whiteSpace: "nowrap",
 });
 const workspaceSubnav = {
+  people: [
+    ["people-all", "All People", "people"],
+    ["clients", "Clients", "people"],
+    ["contacts", "Contacts", "people"],
+  ],
   today: [
     ["overview", "Overview", "dashboard", "today-overview"],
     ["priorities", "Priorities", "dashboard", "today-priority-list"],
@@ -12102,7 +12252,6 @@ const workspaceSubnav = {
     ["attention", "Attention", "dashboard", "today-attention"],
   ],
   work: [
-    ["people", "People", "people"],
     ["jobs", "Jobs", "jobs"],
     ["calendar", "Calendar", "calendar"],
     ["production", "Production", "production"],
@@ -12137,8 +12286,12 @@ function getWorkspaceSubnav(account) {
   const appointmentLabel = terminology.appointment || "Calendar";
   return {
     ...workspaceSubnav,
+    people: [
+      ["people-all", "All People", "people"],
+      ["clients", "Clients", "people"],
+      ["contacts", "Contacts", "people"],
+    ],
     work: [
-      ["people", personLabel, "people"],
       ["jobs", jobLabel, "jobs"],
       ["calendar", appointmentLabel, "calendar"],
       ["production", "Production", "production"],

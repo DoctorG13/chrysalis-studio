@@ -2,6 +2,7 @@ import { createServer, request as httpRequest } from "node:http";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { extname, join, resolve, sep } from "node:path";
 import { spawn } from "node:child_process";
+import { repairAndEnforceJobReferences } from "./job-reference.js";
 
 import {
   handleBizziBuddiAuthRequest,
@@ -616,18 +617,21 @@ async function main() {
     5 * 60 * 1000
   );
 
-  // The database service runs schema migrations during startup. Wait until
-  // it is healthy before launching services that may create or use its tables.
   const [databaseService, ...dependentServices] = SERVICES;
 
+  // The database service runs all schema migrations before its health endpoint
+  // becomes available. Start it alone so no dependent service can open a
+  // partially initialised SQLite database.
   spawnService(databaseService);
   await checkHealth(databaseService);
-  log("Database service is healthy; starting dependent services.");
+  log("Database service is ready; applying the job-reference integrity check.");
 
-  for (const service of dependentServices) {
-    spawnService(service);
-  }
+  const referenceRepair = repairAndEnforceJobReferences();
+  log(
+    `Job reference check complete: ${referenceRepair.repaired} reference(s) repaired.`
+  );
 
+  for (const service of dependentServices) spawnService(service);
   await Promise.all(dependentServices.map((service) => checkHealth(service)));
 
   gateway = createGateway();

@@ -4,7 +4,7 @@
 - Added an explicit Payment received / Refund issued transaction choice to invoice payment entry.
 - Made refund recording available on fully paid invoices.
 - Display refund transactions as deductions and show the net amount paid on the invoice.
-- Added migration 23 to identify invoice payment and refund records while preserving all existing records as payments.
+- Added migration 25 to identify invoice payment and refund records while preserving all existing records as payments.
 
 ### Fixed
 - Reconcile invoice balances, statuses and reporting using payments less refunds.
@@ -34,6 +34,161 @@
 - Build and browser acceptance testing passed.
 
 ---
+
+## Finance — Invoice descriptions, job links and notes
+
+### Added
+
+- Add a saved invoice description, optional related-job link and optional notes.
+- Filter related jobs to the selected client and validate the relationship on the server.
+- Persist the details in the account database and display them on invoice records.
+- Add a backward-compatible migration; existing invoices retain their current data.
+
+**Testing:** Pending Railway migration, build and production acceptance testing.
+
+---
+
+## Finance — Inline invoice creation
+
+### Improved
+
+- Replace the **Create an invoice** button with the invoice form in the same position when clicked.
+- Display the form directly beneath the Finance heading, before financial summaries and invoice records.
+- Restore the button when the form is cancelled.
+- Preserve existing validation, draft saving and issue invoice actions.
+
+**Testing:** Pending Railway build and production browser verification.
+
+---
+
+## Finance — Invoice action build correction
+
+### Fixed
+
+- Correct the invoice form's conditional rendering so the new top-of-section action compiles without changing the existing create, cancel or save behaviour.
+
+**Testing:** Railway build and production browser verification pending.
+
+---
+
+## Finance — Create invoice action placement
+
+### Improved
+
+- Move the primary **Create an invoice** action directly beneath the Finance heading and description, before the financial summary and invoice list.
+- Keep the existing invoice form, validation and save actions unchanged.
+
+**Testing:** Pending production deployment and browser acceptance verification.
+
+---
+
+## Calendar — Add appointment action placement
+
+### Improved
+
+- Move the primary **Add appointment** action directly beneath the Calendar heading and description, making it visible before users scroll through the calendar content.
+- Remove the duplicate action from the sticky calendar navigation.
+- Preserve the existing appointment form, submission flow and scroll-to-form behaviour.
+
+**Testing:** Pending production deployment and browser acceptance verification.
+
+---
+
+## BizziBuddi — People submenu refresh restoration
+
+### Fixed
+
+- Restore the People navigation section and its default **All People** submenu selection when an authenticated session is restored on the People route.
+- Apply the same restoration when browser history returns to the People route.
+- Preserve existing People records and Client/Contact classifications.
+
+**Testing:** Pending production deployment and browser acceptance verification.
+
+---
+
+## BizziBuddi — People, Clients and Contacts
+
+### Added
+- Added a persistent Client/Contact relationship type to each People record.
+- Added All People, Clients and Contacts views under the People navigation.
+- Added a Client/Contact selector when creating or editing a person, allowing a contact to become a client without creating a duplicate record.
+- Added database migration v23 with a Client default so existing People records remain available in the Clients view.
+- Kept the full directory and existing person/job/appointment relationships intact.
+
+**Testing:** Pending production build, migration verification and deployed browser acceptance testing.
+
+---
+
+## BizziBuddi Workspace — People Navigation
+
+### Improved
+- Give People its own top-level workspace destination so clients and contacts are immediately discoverable.
+- Keep Work focused on Jobs, Calendar and Production.
+- Remove People from the Work submenu to avoid duplicate or confusing navigation.
+- Preserve existing page routes, deep links, account-specific terminology and mobile navigation breakpoints.
+
+### Testing
+- Source-level navigation paths reviewed, including direct People routes and browser history.
+- Production build and Railway browser verification remain pending.
+
+---
+
+## BizziBuddi People — Default Client Since Date
+
+### Improved
+- Default the Client since date to the user's local current date when adding a new person.
+- Preserve the saved Client since date when editing an existing person, including leaving an intentionally blank historical date unchanged.
+- Keep the date editable so users can enter an earlier relationship start date when needed.
+
+### Testing
+- Source-level review confirms the default uses local calendar date parts rather than UTC conversion.
+- Existing edit values remain unchanged.
+- Production build and Railway browser verification remain pending.
+
+---
+
+## BizziBuddi — Public Root Landing Page
+
+### Fixed
+- Serve the BizziBuddi public landing page at the domain root (`/`) instead of falling through to the legacy Chrysalis Studio staff authentication gate.
+- Preserve the existing BizziBuddi account route at `/bizzibuddi/account` and the landing, terms, and privacy routes under `/bizzibuddi`.
+
+### Testing
+- Confirmed the root route previously fell through to the Chrysalis authentication gate.
+- Updated the route selection so the public domain root renders the existing BizziBuddi landing page.
+- Railway redeployment and browser verification remain required.
+
+---
+
+## BizziBuddi — Fresh Database Quotes Migration Fix
+
+### Fixed
+- Create an empty legacy-compatible `quotes` source table immediately before migration 3 when a fresh database does not yet contain one.
+- Preserve existing quote tables and records; the bootstrap only runs when the table is absent.
+- Keep the existing migration SQL and checksum unchanged so databases that have already applied migration 3 remain compatible.
+
+### Testing
+- Verified the failure path: migration 3 copied from `quotes` before any migration had created that table.
+- Added a guarded pre-migration bootstrap for fresh databases.
+- Fresh Railway migration and health verification remain required.
+
+---
+
+## BizziBuddi — Railway Production Database Startup Ordering
+
+### Fixed
+- Start the database service first and wait for its health check, ensuring schema migrations finish before dependent backend services open SQLite.
+- Run the job-reference integrity check only after the database service confirms the schema is ready.
+- Prevent concurrent first-startup processes from opening a newly created but not-yet-migrated database.
+
+### Testing
+- Reviewed Railway deployment logs identifying concurrent SQLite startup and the missing `jobs` table.
+- Startup sequence corrected in the production entry point and service supervisor.
+- Railway redeployment and health verification remain required.
+
+---
+
+## BizziBuddi Finance — Invoice Payment Allocation and Refund Reconciliation
 
 ## BizziBuddi Finance - Invoice Payment Allocation and Refund Reconciliation
 
@@ -3827,6 +3982,17 @@ All notable changes to Chrysalis are recorded here.
 
 ## Unreleased
 
+### BizziBuddi — New Account Confirmation
+
+- Added a clear account-created confirmation to the first workspace welcome screen.
+- Displayed the account holder, business name, username, email address and current membership.
+- Confirmed that passwords are never displayed in the account summary.
+- Changed the self-guided action to the clearer **Go to my dashboard** call to action.
+- Preserved the existing first-run setup actions and account creation flow.
+
+**Testing:** Pending production build and deployed browser verification.
+
+
 ### BizziBuddi — Live Weather Improvements
 - Improved location matching and disambiguation for places sharing the same name.
 - Added clickable location choices for ambiguous weather and time requests.
@@ -3845,7 +4011,7 @@ All notable changes to Chrysalis are recorded here.
 - Included job payments in revenue, monthly cashflow, Finance reports and CSV exports.
 - Refunded amounts are deducted from received revenue.
 - Preserved existing invoice payment handling and invoice balances.
-- Added database migration 24 and indexes for job payment records.
+- Added database migration 26 and indexes for job payment records.
 
 ### Backend — Startup and Database Reliability
 

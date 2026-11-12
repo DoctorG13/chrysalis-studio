@@ -954,6 +954,8 @@ function validateInvoicePayload(payload) {
   const issueDate = String(payload?.issueDate || todayDate()).trim();
   const dueDate = String(payload?.dueDate || "").trim();
   const description = String(payload?.description || "").trim().slice(0, 200);
+  const jobId = String(payload?.jobId || "").trim();
+  const notes = String(payload?.notes || "").trim().slice(0, 1000);
 
   if (!personId) throw new Error("Please select a person for this invoice.");
   if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
@@ -972,6 +974,8 @@ function validateInvoicePayload(payload) {
     issueDate,
     dueDate,
     description,
+    jobId,
+    notes,
   };
 }
 
@@ -1150,6 +1154,9 @@ function toInvoice(row) {
     issueDate: row.issue_date,
     dueDate: row.due_date,
     description: row.description || "",
+    jobId: row.job_id || null,
+    jobTitle: row.job_title || "",
+    notes: row.notes || "",
     payments: Array.isArray(row.payments) ? row.payments : [],
     paymentActivity: Array.isArray(row.paymentActivity)
       ? row.paymentActivity
@@ -1174,6 +1181,9 @@ function getInvoices(userId) {
          invoices.issue_date,
          invoices.due_date,
          invoices.description,
+         invoices.job_id,
+         invoices.notes,
+         jobs.title AS job_title,
          invoices.created_at,
          invoices.updated_at,
          people.name AS person_name,
@@ -1188,6 +1198,9 @@ function getInvoices(userId) {
        LEFT JOIN bizzibuddi_people AS people
          ON people.id = invoices.person_id
         AND people.user_id = invoices.user_id
+       LEFT JOIN bizzibuddi_jobs AS jobs
+         ON jobs.id = invoices.job_id
+        AND jobs.user_id = invoices.user_id
        WHERE invoices.user_id = ?
        ORDER BY invoices.created_at DESC, invoices.id DESC`
     )
@@ -1220,6 +1233,8 @@ function createInvoice(userId, payload) {
   const person = getInvoicePerson(userId, values.personId);
 
   if (!person) throw new Error("The selected person could not be found.");
+  const job = values.jobId ? getDatabase().prepare("SELECT id, title, person_id FROM bizzibuddi_jobs WHERE id = ? AND user_id = ?").get(values.jobId, userId) : null;
+  if (values.jobId && (!job || job.person_id !== person.id)) throw new Error("Choose a job linked to the selected client.");
 
   const now = new Date().toISOString();
   const requestedStatus = String(payload?.status || "Draft").trim();
@@ -1237,6 +1252,9 @@ function createInvoice(userId, payload) {
     issue_date: values.issueDate,
     due_date: values.dueDate,
     description: values.description,
+    job_id: job?.id || null,
+    job_title: job?.title || "",
+    notes: values.notes,
     created_at: now,
     updated_at: now,
   };
@@ -1245,8 +1263,8 @@ function createInvoice(userId, payload) {
     .prepare(
       `INSERT INTO bizzibuddi_invoices (
         id, user_id, person_id, number, amount, status,
-        issue_date, due_date, description, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        issue_date, due_date, description, job_id, notes, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       invoice.id,
@@ -1258,6 +1276,8 @@ function createInvoice(userId, payload) {
       invoice.issue_date,
       invoice.due_date,
       invoice.description,
+      invoice.job_id,
+      invoice.notes,
       invoice.created_at,
       invoice.updated_at
     );
@@ -1615,6 +1635,8 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       return null;
     }
 
+    const actualInvoiceId = payment.invoice_id;
+
     const oldType = payment.payment_type === "Refund"
       ? "Refund"
       : "Payment";
@@ -1629,7 +1651,7 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       ? -currentAmount
       : currentAmount;
 
-    const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
+    const currentPaid = getInvoicePaymentTotal(userId, actualInvoiceId);
     const netWithoutCurrent = currentPaid - currentContribution;
 
     const maximum = nextType === "Refund"
@@ -1727,7 +1749,7 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       description,
       now,
       paymentId,
-      invoiceId,
+      actualInvoiceId,
       userId
     );
 
@@ -1742,14 +1764,14 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       `UPDATE bizzibuddi_invoices
        SET status = ?, updated_at = ?
        WHERE id = ? AND user_id = ?`
-    ).run(nextStatus, now, invoiceId, userId);
+    ).run(nextStatus, now, actualInvoiceId, userId);
 
     if (changes.length) {
       createAutomationEvent(userId, {
         type: "finance-payment-updated",
         title: `${nextType} updated`,
-        detail: `${payment.invoice_number || invoiceId} | ${changes.join(" | ")}.`,
-        sourceKey: `finance-payment:updated:${invoiceId}:${paymentId}:${now}`,
+        detail: `${payment.invoice_number || actualInvoiceId} | ${changes.join(" | ")}.`,
+        sourceKey: `finance-payment:updated:${actualInvoiceId}:${paymentId}:${now}`,
       });
     }
 
@@ -1778,14 +1800,14 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
        ON people.id = invoices.person_id
       AND people.user_id = invoices.user_id
      WHERE invoices.id = ? AND invoices.user_id = ?`
-  ).get(invoiceId, userId);
+  ).get(actualInvoiceId, userId);
 
   return {
     ...toInvoice({
       ...row,
-      payments: getInvoicePayments(userId, invoiceId),
+      payments: getInvoicePayments(userId, actualInvoiceId),
     }),
-    paymentActivity: getInvoicePaymentActivity(userId, invoiceId),
+    paymentActivity: getInvoicePaymentActivity(userId, actualInvoiceId),
   };
 }
 function deleteInvoicePayment(userId, paymentId) {
@@ -2728,6 +2750,7 @@ function validatePersonPayload(payload) {
   const email = normalizeEmail(payload?.email);
   const phone = String(payload?.phone || "").trim();
   const clientSince = String(payload?.clientSince || "").trim();
+  const relationshipType = String(payload?.relationshipType || "client").trim().toLowerCase();
 
   if (!name || name.length > 120) {
     throw new Error("Person name is required and must be 120 characters or fewer.");
@@ -2745,7 +2768,11 @@ function validatePersonPayload(payload) {
     throw new Error("Please enter a valid client since date.");
   }
 
-  return { name, email, phone, clientSince };
+  if (!["client", "contact"].includes(relationshipType)) {
+    throw new Error("Please choose Client or Contact.");
+  }
+
+  return { name, email, phone, clientSince, relationshipType };
 }
 
 function toPerson(row) {
@@ -2757,6 +2784,7 @@ function toPerson(row) {
     email: row.email,
     phone: row.phone,
     clientSince: row.client_since || "",
+    relationshipType: row.relationship_type || "client",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -2765,7 +2793,7 @@ function toPerson(row) {
 function getPeople(userId) {
   return getDatabase()
     .prepare(
-      `SELECT id, name, email, phone, client_since, created_at, updated_at
+      `SELECT id, name, email, phone, client_since, relationship_type, created_at, updated_at
        FROM bizzibuddi_people
        WHERE user_id = ?
        ORDER BY created_at DESC`
@@ -2774,7 +2802,7 @@ function getPeople(userId) {
 }
 
 function createPerson(userId, payload) {
-  const { name, email, phone, clientSince } = validatePersonPayload(payload);
+  const { name, email, phone, clientSince, relationshipType } = validatePersonPayload(payload);
   const now = new Date().toISOString();
   const person = {
     id: randomUUID(),
@@ -2782,6 +2810,7 @@ function createPerson(userId, payload) {
     email,
     phone,
     client_since: clientSince,
+    relationship_type: relationshipType,
     created_at: now,
     updated_at: now,
   };
@@ -2789,8 +2818,8 @@ function createPerson(userId, payload) {
   getDatabase()
     .prepare(
       `INSERT INTO bizzibuddi_people (
-        id, user_id, name, email, phone, client_since, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        id, user_id, name, email, phone, client_since, relationship_type, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       person.id,
@@ -2799,6 +2828,7 @@ function createPerson(userId, payload) {
       person.email,
       person.phone,
       person.client_since,
+      person.relationship_type,
       person.created_at,
       person.updated_at
     );
@@ -2807,23 +2837,23 @@ function createPerson(userId, payload) {
 }
 
 function updatePerson(userId, personId, payload) {
-  const { name, email, phone, clientSince } = validatePersonPayload(payload);
+  const { name, email, phone, clientSince, relationshipType } = validatePersonPayload(payload);
   const now = new Date().toISOString();
 
   const result = getDatabase()
     .prepare(
       `UPDATE bizzibuddi_people
-       SET name = ?, email = ?, phone = ?, client_since = ?, updated_at = ?
+       SET name = ?, email = ?, phone = ?, client_since = ?, relationship_type = ?, updated_at = ?
        WHERE id = ? AND user_id = ?`
     )
-    .run(name, email, phone, clientSince, now, personId, userId);
+    .run(name, email, phone, clientSince, relationshipType, now, personId, userId);
 
   if (!result.changes) return null;
 
   return toPerson(
     getDatabase()
       .prepare(
-        `SELECT id, name, email, phone, client_since, created_at, updated_at
+        `SELECT id, name, email, phone, client_since, relationship_type, created_at, updated_at
          FROM bizzibuddi_people
          WHERE id = ? AND user_id = ?`
       )

@@ -557,7 +557,11 @@ export default function App() {
     return <BizzibuddiAccountPage />;
   }
 
-  if (pathname === "/bizzibuddi" || pathname.startsWith("/bizzibuddi/")) {
+  if (
+    pathname === "/" ||
+    pathname === "/bizzibuddi" ||
+    pathname.startsWith("/bizzibuddi/")
+  ) {
     return <BizzibuddiLandingPage />;
   }
 

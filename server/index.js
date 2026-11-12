@@ -1,4 +1,4 @@
-﻿import { createServer } from "node:http";
+import { createServer } from "node:http";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { createHash } from "node:crypto";
@@ -726,8 +726,30 @@ const MIGRATIONS = [
       CREATE INDEX IF NOT EXISTS idx_payments_invoice_id
         ON payments(invoice_id);
     `,
-  },  {
+  },
+  {
     version: 23,
+    name: "bizzibuddi-people-relationship-type",
+    sql: `
+      ALTER TABLE bizzibuddi_people
+        ADD COLUMN relationship_type TEXT NOT NULL DEFAULT 'client';
+
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_people_relationship_type
+        ON bizzibuddi_people(user_id, relationship_type);
+    `,
+  },
+  {
+    version: 24,
+    name: "bizzibuddi-invoice-details",
+    sql: `
+      ALTER TABLE bizzibuddi_invoices ADD COLUMN job_id TEXT;
+      ALTER TABLE bizzibuddi_invoices ADD COLUMN notes TEXT NOT NULL DEFAULT '';
+      CREATE INDEX IF NOT EXISTS idx_bizzibuddi_invoices_job_id
+        ON bizzibuddi_invoices(job_id);
+    `,
+  },
+  {
+    version: 25,
     name: "bizzibuddi-invoice-payment-types",
     sql: `
       ALTER TABLE bizzibuddi_payments
@@ -738,7 +760,7 @@ const MIGRATIONS = [
     `,
   },
   {
-    version: 24,
+    version: 26,
     name: "bizzibuddi-job-payments",
     sql: `
       CREATE TABLE IF NOT EXISTS bizzibuddi_job_payments (
@@ -767,6 +789,7 @@ const MIGRATIONS = [
         ON bizzibuddi_job_payments(user_id, job_id);
     `,
   },
+
 ];
 
 function assertSupportedNode() {
@@ -1138,33 +1161,42 @@ async function runMigrations(database) {
     database.exec("BEGIN IMMEDIATE");
 
     try {
-      // Migration 3 historically expects quote-server.js to have created the
-      // legacy quotes table first. Fresh installs run database migrations
-      // before starting that service, so establish the original table here.
-      // Keep this bootstrap outside MIGRATIONS so the recorded migration 3
-      // checksum remains unchanged for existing installations.
+      // Migration 3 rebuilds the quotes table to change its foreign-key
+      // deletion behaviour. Fresh databases have no legacy quotes table to
+      // rebuild, so create the empty legacy-compatible source table first.
+      // Existing databases with quotes are left untouched, preserving data.
+      // Keep this bootstrap outside MIGRATIONS so migration 3's checksum
+      // remains unchanged for existing installations.
       if (migration.version === 3) {
-        database.exec(`
-          CREATE TABLE IF NOT EXISTS quotes (
-            id TEXT PRIMARY KEY,
-            client_id TEXT,
-            job_id TEXT,
-            number TEXT NOT NULL,
-            amount REAL NOT NULL DEFAULT 0,
-            status TEXT NOT NULL DEFAULT 'Draft',
-            issue_date TEXT NOT NULL,
-            valid_until TEXT,
-            data_json TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY (client_id)
-              REFERENCES clients(id)
-              ON DELETE RESTRICT,
-            FOREIGN KEY (job_id)
-              REFERENCES jobs(id)
-              ON DELETE SET NULL
-          );
-        `);
+        const quotesTable = database
+          .prepare(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?"
+          )
+          .get("quotes");
+
+        if (!quotesTable) {
+          database.exec(`
+            CREATE TABLE quotes (
+              id TEXT PRIMARY KEY,
+              client_id TEXT,
+              job_id TEXT,
+              number TEXT NOT NULL,
+              amount REAL NOT NULL DEFAULT 0,
+              status TEXT NOT NULL DEFAULT 'Draft',
+              issue_date TEXT NOT NULL,
+              valid_until TEXT,
+              data_json TEXT NOT NULL,
+              created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL,
+              FOREIGN KEY (client_id)
+                REFERENCES clients(id)
+                ON DELETE RESTRICT,
+              FOREIGN KEY (job_id)
+                REFERENCES jobs(id)
+                ON DELETE SET NULL
+            );
+          `);
+        }
       }
 
       database.exec(migration.sql);
