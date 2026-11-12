@@ -132,7 +132,7 @@ function AuthenticationGate({ children }) {
     return (
       <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, boxSizing: "border-box", background: "#F7F5F2", color: "#2F3A3F" }}>
         <div style={{ width: "100%", maxWidth: 430, padding: 28, background: "#FFFFFF", border: "1px solid #E8E8E8", borderRadius: 16, textAlign: "center", boxShadow: "0 18px 50px rgba(47,58,63,.08)" }}>
-          <div style={{ fontSize: 36, marginBottom: 12 }}>🦋</div>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>ðŸ¦‹</div>
           <h1 style={{ margin: 0, fontSize: 22 }}>Chrysalis Studio</h1>
           <p style={{ color: "#6B7478", lineHeight: 1.5 }}>
             Secure access could not be verified. Please refresh the page and try again.
@@ -556,7 +556,6 @@ export default function App() {
   if (pathname === "/bizzibuddi/account") {
     return <BizzibuddiAccountPage />;
   }
-
   if (
     pathname === "/" ||
     pathname === "/bizzibuddi" ||

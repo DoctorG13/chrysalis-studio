@@ -826,6 +826,7 @@ export default function FinancePage({
       issueDate: today(),
       dueDate: "",
       status: "Draft",
+      description: "",
       notes: "",
       gstRate: DEFAULT_GST_RATE,
       lineItems: [
@@ -887,6 +888,7 @@ export default function FinancePage({
 
     setForm({
       ...invoice,
+      description: invoice.description || "",
       gstRate: Number(
         invoice.gstRate ?? DEFAULT_GST_RATE
       ),
@@ -1258,12 +1260,28 @@ export default function FinancePage({
           )}
 
           {financeTab === "invoices" && (
-            <button
-              onClick={startNew}
-              style={primaryButton}
-            >
-              + New Invoice
-            </button>
+            form && documentType === "invoice" ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setForm(null);
+                  setSelectedId("");
+                  setError("");
+                }}
+                style={secondaryButton}
+                disabled={saving}
+              >
+                Cancel
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={startNew}
+                style={primaryButton}
+              >
+                + New Invoice
+              </button>
+            )
           )}
 
           {financeTab === "payments" && (
@@ -2616,13 +2634,24 @@ export default function FinancePage({
         style={{
           display: "grid",
           gridTemplateColumns:
-            "340px 1fr",
+            form && documentType === "invoice"
+              ? "minmax(0, 1fr)"
+              : "340px minmax(0, 1fr)",
+          gridTemplateAreas:
+            form && documentType === "invoice"
+              ? '"editor" "list"'
+              : '"list editor"',
           gap: 22,
           alignItems:
             "start",
         }}
       >
-        <section style={panel}>
+        <section
+          style={{
+            ...panel,
+            gridArea: "list",
+          }}
+        >
           <div style={sectionTitle}>
             Invoices ({invoices.length})
           </div>
@@ -2711,7 +2740,12 @@ export default function FinancePage({
           )}
         </section>
 
-        <section style={panel}>
+        <section
+          style={{
+            ...panel,
+            gridArea: "editor",
+          }}
+        >
           {!form ? (
             <div
               style={{
@@ -2964,6 +2998,17 @@ export default function FinancePage({
                         )
                       )}
                   </select>
+                </Field>
+
+                <Field label="Description">
+                  <input
+                    value={form.description || ""}
+                    onChange={(e) =>
+                      updateField("description", e.target.value)
+                    }
+                    style={input}
+                    placeholder="Brief description of this invoice"
+                  />
                 </Field>
 
                 <Field label="Issue Date">

@@ -1835,6 +1835,8 @@ function measurementFieldLabel(key) {
     shoulder: "Shoulder",
     sleeve: "Sleeve",
     neck: "Neck",
+    frontLength: "Front Length",
+    backLength: "Back Length",
     backWaist: "Back waist",
     inseam: "Inseam",
     height: "Height",
@@ -9548,7 +9550,35 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
       </p>
     </section>
 
-    {invoices.length > 0 ? (
+    <section
+      id="finance-invoices"
+      aria-labelledby="finance-invoices-heading"
+      style={{
+        marginTop: 24,
+        minHeight: "calc(100vh - 150px)",
+        paddingBottom: 24,
+        boxSizing: "border-box",
+        scrollMarginTop: 124,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 14 }}>
+        <div>
+          <p style={{ ...smallText, margin: 0, letterSpacing: 1 }}>FINANCE</p>
+          <h3 id="finance-invoices-heading" style={{ margin: "5px 0 0", color: TEXT, fontSize: 20, fontWeight: 800 }}>
+            Invoices
+          </h3>
+        </div>
+        <button
+          type="button"
+          onClick={startCreateInvoice}
+          style={{ ...primaryButton, width: "auto", minWidth: 160, marginTop: 0 }}
+        >
+          + Add Invoice
+        </button>
+      </div>
+
+      {invoices.length > 0 ? (
+
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
         {invoices.map((invoice) => {
           const balance = Math.max(
@@ -10116,6 +10146,67 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
           </div>
         </div>
       </div>
+    )}
+    </section>
+
+    {!showForm ? (
+      <button type="button" onClick={startCreateInvoice} style={{ ...primaryButton, maxWidth: 240 }}>
+        + Add Invoice
+      </button>
+    ) : (
+      <form ref={createInvoiceFormRef} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 124 }}>
+        <strong style={{ fontSize: 18 }}>Create an invoice</strong>
+
+        <label style={fieldStyle}>
+          Client
+          <select required name="personId" defaultValue="" style={inputStyle}>
+            <option value="" disabled>Select a person</option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>{person.name}</option>
+            ))}
+            {people.length === 0 && <option value="" disabled>Add a person first</option>}
+          </select>
+        </label>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+          <Field name="amount" label="Amount" type="number" placeholder="0.00" required />
+          <Field name="issueDate" label="Issue date" type="date" required />
+          <Field name="dueDate" label="Due date" type="date" required />
+        </div>
+
+        <Field name="description" label="Description" type="text" placeholder="Optional invoice description" required={false} />
+
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button
+            type="submit"
+            name="invoiceAction"
+            value="Draft"
+            disabled={people.length === 0 || saving}
+            style={{ ...secondaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+          >
+            {saving ? "Saving…" : "Save draft"}
+          </button>
+          <button
+            type="submit"
+            name="invoiceAction"
+            value="Issued"
+            disabled={people.length === 0 || saving}
+            style={{ ...primaryButton, width: "auto", minHeight: 42, marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}
+          >
+            {saving ? "Saving…" : "Save & issue"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setError(""); setShowForm(false); }}
+            disabled={saving}
+            style={{ ...secondaryButton, width: "auto", marginTop: 0 }}
+          >
+            Cancel
+          </button>
+        </div>
+
+        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create an invoice for them.</p>}
+      </form>
     )}
   </section>;
 }
