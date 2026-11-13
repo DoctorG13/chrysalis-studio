@@ -16,12 +16,12 @@ const DONNA_MIGRATION_PAGE = `<!doctype html>
 <label class="field" for="package">Migration package</label>
 <input id="package" type="file" accept=".json,application/json">
 <p class="muted">Choose the file named donna-migration-20261113.json from your computer.</p>
-<button id="dryRun" type="button">Run safe dry run (optional)</button>
+<p class="muted">The import validates the package, creates and verifies a fresh Railway backup, then imports all records in one transaction.</p>
 <div id="status" aria-live="polite"></div>
 <pre id="result" class="panel result hidden"></pre>
 <section id="commitPanel" class="panel hidden">
 <h2>Production import</h2>
-<p>Only proceed after the dry run reports success. A fresh Railway database backup will be created and verified immediately before importing.</p>
+<p>A fresh Railway database backup will be created and verified immediately before importing.</p>
 <label class="field" for="confirmation">Type the confirmation phrase exactly</label>
 <input id="confirmation" type="text" autocomplete="off" placeholder="IMPORT DONNA CHRYSALIS WORKSPACE">
 <button id="commit" type="button">Import Donna's account and data</button>
@@ -31,7 +31,6 @@ const DONNA_MIGRATION_PAGE = `<!doctype html>
 <script>
 const $=id=>document.getElementById(id);
 let validatedFile=null;
-let dryRunPassed=false;
 let adminAuthenticated=false;
 function showStatus(message,kind){$('status').className='status '+kind;$('status').textContent=message;}
 function showResult(data){$('result').classList.remove('hidden');$('result').textContent=JSON.stringify(data,null,2);}
@@ -49,25 +48,17 @@ async function upload(mode){
 }
 $('package').addEventListener('change',()=>{
  validatedFile=$('package').files?.[0]||null;
- dryRunPassed=false;
- $('commitPanel').classList.add('hidden');
+ $('commitPanel').classList.remove('hidden');
  $('result').classList.add('hidden');
  if(!validatedFile){showStatus('No file selected.','');return;}
  if(validatedFile.name!=='donna-migration-20261113.json'){validatedFile=null;$('package').value='';showStatus('That is not the expected Donna migration package. Nothing was uploaded.','error');return;}
  showStatus('Selected '+validatedFile.name+' ('+validatedFile.size.toLocaleString()+' bytes). Ready for import. A verified backup will be made first.','success');
 });
-$('dryRun').addEventListener('click',async()=>{
- $('dryRun').disabled=true;$('commitPanel').classList.add('hidden');showStatus('Checking the package against Railway. No customer data will be changed…','');
- try{const data=await upload('dry-run');dryRunPassed=true;$('commitPanel').classList.remove('hidden');showStatus('Dry run passed. '+data.totalImported+' records validated; nothing was imported. Review the results below.','success');}
- catch(error){dryRunPassed=false;showStatus(error.message,'error');}
- finally{$('dryRun').disabled=false;}
-});
 $('commit').addEventListener('click',async()=>{
- if(!dryRunPassed)return showStatus('Run a successful dry run first.','error');
  if($('confirmation').value.trim()!=='IMPORT DONNA CHRYSALIS WORKSPACE')return showStatus('The confirmation phrase does not match. No changes made.','error');
  if(!window.confirm('This will import Donna’s account and business data into the live Railway database. A verified backup will be created first. The other four customer accounts will be retained. Proceed?'))return;
  $('commit').disabled=true;showStatus('Creating and verifying the Railway backup, then importing Donna’s records…','');
- try{const data=await upload('commit');dryRunPassed=false;showStatus('Import completed. Backup verified: '+Boolean(data.backup?.verified)+'. Donna’s records imported: '+data.totalImported+'. Please review the results below.','success');}
+ try{const data=await upload('commit');showStatus('Import completed. Backup verified: '+Boolean(data.backup?.verified)+'. Donna’s records imported: '+data.totalImported+'. Please review the results below.','success');}
  catch(error){showStatus(error.message,'error');}
  finally{$('commit').disabled=false;}
 });
