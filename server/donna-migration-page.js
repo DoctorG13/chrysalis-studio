@@ -11,11 +11,12 @@ const DONNA_MIGRATION_PAGE = `<!doctype html>
 <body><main class="wrap"><section class="card">
 <h1>Donna's Chrysalis Clothes migration</h1>
 <p class="intro">Securely transfer Donna's existing account and business records into Railway without replacing the database or changing the other customers.</p>
-<div class="warning"><strong>Important:</strong> The first check is a dry run. It does not import or change any customer data. We will review its results before any production import.</div>
+<div class="panel"><h2>Administrator sign-in</h2><p>Sign in with the Railway platform administrator credentials. This page itself can now load without a session; the import endpoint remains protected.</p><label class="field" for="adminUsername">Administrator username</label><input id="adminUsername" type="text" autocomplete="username"><label class="field" for="adminPassword">Administrator password</label><input id="adminPassword" type="password" autocomplete="current-password"><button id="login" type="button">Sign in</button><span id="loginStatus" class="muted"></span></div>
+<div class="warning"><strong>Important:</strong> Select Donna’s migration package. A verified Railway backup is created immediately before the live import. The four existing customers are retained.</div>
 <label class="field" for="package">Migration package</label>
 <input id="package" type="file" accept=".json,application/json">
 <p class="muted">Choose the file named donna-migration-20261113.json from your computer.</p>
-<button id="dryRun" type="button">Run safe dry run</button>
+<button id="dryRun" type="button">Run safe dry run (optional)</button>
 <div id="status" aria-live="polite"></div>
 <pre id="result" class="panel result hidden"></pre>
 <section id="commitPanel" class="panel hidden">
@@ -31,9 +32,12 @@ const DONNA_MIGRATION_PAGE = `<!doctype html>
 const $=id=>document.getElementById(id);
 let validatedFile=null;
 let dryRunPassed=false;
+let adminAuthenticated=false;
 function showStatus(message,kind){$('status').className='status '+kind;$('status').textContent=message;}
 function showResult(data){$('result').classList.remove('hidden');$('result').textContent=JSON.stringify(data,null,2);}
+$('login').addEventListener('click',async()=>{const status=$('loginStatus');status.textContent='Signing in…';try{const r=await fetch('/api/auth/login',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('adminUsername').value,password:$('adminPassword').value})});const d=await r.json();if(!r.ok||!d.ok)throw Error(d.error||'Administrator sign-in failed.');const check=await fetch('/api/auth/me',{credentials:'same-origin',cache:'no-store'});const session=await check.json();if(!check.ok||!session.authenticated)throw Error('Sign-in did not establish an administrator session.');adminAuthenticated=true;$('adminPassword').value='';status.textContent='Signed in. You can now import.';status.style.color='#176437';}catch(e){adminAuthenticated=false;status.textContent=e.message;status.style.color='#9b1c1c';}});
 async function upload(mode){
+ if(!adminAuthenticated)throw new Error('Sign in as the Railway administrator first.');
  if(!validatedFile)throw new Error('Choose the migration package first.');
  const headers={'Content-Type':'application/json'};
  if(mode==='commit')headers['x-migration-confirmation']=$('confirmation').value.trim();
