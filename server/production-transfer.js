@@ -11,6 +11,8 @@ import { basename, join, resolve } from "node:path";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 
+import { handleDonnaMigrationRoute } from "./donna-migration-route.js";
+
 import {
   getAuthenticatedUser,
   validateAuthConfiguration,
@@ -477,6 +479,18 @@ const server = createServer(async (request, response) => {
     request.url || "/",
     `http://${request.headers.host || "localhost"}`
   );
+
+    const donnaMigrationHandled = await handleDonnaMigrationRoute({
+    request,
+    response,
+    url,
+    authenticate,
+    requireSameOrigin,
+    databasePath: CUSTOMER_DATABASE_PATH,
+    backupDirectory: BACKUP_DIR,
+  });
+
+  if (donnaMigrationHandled) return;
 
   if (url.pathname === "/admin/customer-access" && request.method === "GET") {
     if (!authenticate(request, response)) return;
