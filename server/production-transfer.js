@@ -494,7 +494,6 @@ const server = createServer(async (request, response) => {
   if (donnaMigrationHandled) return;
 
   if (url.pathname === "/admin/donna-migration" && request.method === "GET") {
-    if (!authenticate(request, response)) return;
     serveDonnaMigrationPage(response);
     return;
   }
