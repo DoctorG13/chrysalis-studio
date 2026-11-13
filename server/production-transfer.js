@@ -12,6 +12,7 @@ import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 
 import { handleDonnaMigrationRoute } from "./donna-migration-route.js";
+import { serveDonnaMigrationPage } from "./donna-migration-page.js";
 
 import {
   getAuthenticatedUser,
@@ -491,6 +492,12 @@ const server = createServer(async (request, response) => {
   });
 
   if (donnaMigrationHandled) return;
+
+  if (url.pathname === "/admin/donna-migration" && request.method === "GET") {
+    if (!authenticate(request, response)) return;
+    serveDonnaMigrationPage(response);
+    return;
+  }
 
   if (url.pathname === "/admin/customer-access" && request.method === "GET") {
     if (!authenticate(request, response)) return;
