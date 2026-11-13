@@ -24,7 +24,7 @@ const DONNA_MIGRATION_PAGE = `<!doctype html>
 <label class="field" for="confirmation">Type the confirmation phrase exactly</label>
 <input id="confirmation" type="text" autocomplete="off" placeholder="IMPORT DONNA CHRYSALIS WORKSPACE">
 <button id="commit" type="button">Import Donna's account and data</button>
-<p class="muted">This final action changes the production database. Do not use it until you have reviewed and approved the dry-run result.</p>
+<p class="muted">This final action changes the production database. A verified backup is created first. Confirm only when you are ready to proceed.</p>
 </section>
 </section></main>
 <script>
@@ -50,7 +50,7 @@ $('package').addEventListener('change',()=>{
  $('result').classList.add('hidden');
  if(!validatedFile){showStatus('No file selected.','');return;}
  if(validatedFile.name!=='donna-migration-20261113.json'){validatedFile=null;$('package').value='';showStatus('That is not the expected Donna migration package. Nothing was uploaded.','error');return;}
- showStatus('Selected '+validatedFile.name+' ('+validatedFile.size.toLocaleString()+' bytes). Ready for the safe dry run.','success');
+ showStatus('Selected '+validatedFile.name+' ('+validatedFile.size.toLocaleString()+' bytes). Ready for import. A verified backup will be made first.','success');
 });
 $('dryRun').addEventListener('click',async()=>{
  $('dryRun').disabled=true;$('commitPanel').classList.add('hidden');showStatus('Checking the package against Railway. No customer data will be changed…','');
