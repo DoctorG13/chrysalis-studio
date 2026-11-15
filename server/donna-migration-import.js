@@ -296,52 +296,206 @@ function validateTableSchemas(database, payload) {
 }
 
 function validateTargetDoesNotContainDonna(database) {
-  const existingUsers = database.prepare(`
-    SELECT id, email, username
+  const users = database.prepare(`
+    SELECT id, email, username, display_name
     FROM users
     WHERE id = ?
        OR email = ? COLLATE NOCASE
        OR username = ? COLLATE NOCASE
   `).all(DONNA.userId, DONNA.email, DONNA.username);
 
-  if (existingUsers.length) {
-    const conflicts = new Set();
-
-    for (const user of existingUsers) {
-      if (user.id === DONNA.userId) conflicts.add("account ID");
-      if (String(user.email || "").toLowerCase() === DONNA.email) {
-        conflicts.add("email address");
-      }
-      if (String(user.username || "").toLowerCase() === DONNA.username) {
-        conflicts.add("username");
-      }
-    }
-
-    fail(
-      `Production identity conflict detected: ${[...conflicts].join(", ")} already exists. No records were changed. The conflicting account details are intentionally not exposed.`
-    );
+  if (users.length > 1) {
+    fail("Donna's identity fields match more than one production account. Import refused.");
   }
 
-  const existingWorkspace = database.prepare(`
-    SELECT id, slug
+  if (users.length === 1) {
+    const user = users[0];
+    if (
+      user.id !== DONNA.userId ||
+      String(user.email || "").toLowerCase() !== DONNA.email ||
+      String(user.username || "").toLowerCase() !== DONNA.username ||
+      user.display_name !== DONNA.displayName
+    ) {
+      fail("A production account uses one or more of Donna's identity details, but is not an exact match. Import refused.");
+    }
+  }
+
+  const workspaces = database.prepare(`
+    SELECT id, name, slug, owner_user_id
     FROM workspaces
     WHERE id = ? OR slug = ? COLLATE NOCASE
   `).all(DONNA.workspaceId, DONNA.workspaceSlug);
 
-  if (existingWorkspace.length) {
-    const conflicts = new Set();
+  if (workspaces.length > 1) {
+    fail("Donna's workspace identifiers match more than one production workspace. Import refused.");
+  }
 
-    for (const workspace of existingWorkspace) {
-      if (workspace.id === DONNA.workspaceId) conflicts.add("workspace ID");
-      if (String(workspace.slug || "").toLowerCase() === DONNA.workspaceSlug) {
-        conflicts.add("workspace slug");
+  if (workspaces.length === 1) {
+    const workspace = workspaces[0];
+    if (
+      workspace.id !== DONNA.workspaceId ||
+      String(workspace.slug || "").toLowerCase() !== DONNA.workspaceSlug ||
+      workspace.name !== DONNA.workspaceName ||
+      workspace.owner_user_id !== DONNA.userId
+    ) {
+      fail("A production workspace uses one or more of Donna's workspace identifiers, but is not an exact match. Import refused.");
+    }
+  }
+
+  const membership = database.prepare(`
+    SELECT workspace_id, user_id, role, status
+    FROM workspace_memberships
+    WHERE user_id = ? OR workspace_id = ?
+  `).all(DONNA.userId, DONNA.workspaceId);
+
+  for (const row of membership) {
+    if (
+      row.user_id !== DONNA.userId ||
+      row.workspace_id !== DONNA.workspaceId ||
+      row.role !== "owner" ||
+      row.status !== "active"
+    ) {
+      fail("A conflicting production workspace membership exists. Import refused.");
+    }
+  }
+}
+
+function valuesMatch(existing, incoming, columns) {
+  return columns.every((column) => {
+    const left = existing[column];
+    const right = incoming[column];
+    if (left === right) return true;
+    if (left == null && right == null) return true;
+    return false;
+  });
+}
+
+function insertOrVerifyRows(database, tableName, rows) {
+  if (!rows.length) return { inserted: 0, alreadyPresent: 0 };
+
+  if (tableName === "users") {
+    const incoming = rows[0];
+    const existing = database.prepare(
+      "SELECT * FROM users WHERE id = ?"
+    ).get(incoming.id);
+
+    if (existing) {
+      if (
+        existing.id !== DONNA.userId ||
+        String(existing.email || "").toLowerCase() !== DONNA.email ||
+        String(existing.username || "").toLowerCase() !== DONNA.username ||
+        existing.display_name !== DONNA.displayName
+      ) {
+        fail("The existing production account does not exactly match Donna. Import refused.");
       }
+      // Preserve the existing production password hash and account state.
+      return { inserted: 0, alreadyPresent: 1 };
+    }
+  }
+
+  if (tableName === "workspaces") {
+    const incoming = rows[0];
+    const existing = database.prepare(
+      "SELECT * FROM workspaces WHERE id = ?"
+    ).get(incoming.id);
+
+    if (existing) {
+      if (
+        existing.id !== DONNA.workspaceId ||
+        existing.name !== DONNA.workspaceName ||
+        existing.slug !== DONNA.workspaceSlug ||
+        existing.owner_user_id !== DONNA.userId
+      ) {
+        fail("The existing production workspace does not exactly match Donna. Import refused.");
+      }
+      // Preserve current production subscription and workspace settings.
+      return { inserted: 0, alreadyPresent: 1 };
+    }
+  }
+
+  if (tableName === "workspace_memberships") {
+    const incoming = rows[0];
+    const existing = database.prepare(`
+      SELECT * FROM workspace_memberships
+      WHERE user_id = ? AND workspace_id = ?
+    `).get(incoming.user_id, incoming.workspace_id);
+
+    if (existing) {
+      if (
+        existing.user_id !== DONNA.userId ||
+        existing.workspace_id !== DONNA.workspaceId ||
+        existing.role !== "owner" ||
+        existing.status !== "active"
+      ) {
+        fail("Donna's existing production workspace membership is not the expected active owner membership. Import refused.");
+      }
+      return { inserted: 0, alreadyPresent: 1 };
+    }
+  }
+
+  const columns = Object.keys(rows[0]);
+  const primaryKey = tableName === "workspace_memberships"
+    ? ["user_id", "workspace_id"]
+    : ["id"];
+
+  const selectSql = `SELECT * FROM "${tableName}" WHERE ${primaryKey
+    .map((column) => `"${column}" = ?`).join(" AND ")}`;
+  const insert = database.prepare(`
+    INSERT INTO "${tableName}" (
+      ${columns.map((column) => `"${column}"`).join(", ")}
+    )
+    VALUES (${columns.map(() => "?").join(", ")})
+  `);
+
+  let inserted = 0;
+  let alreadyPresent = 0;
+
+  for (const row of rows) {
+    const existing = database.prepare(selectSql).get(
+      ...primaryKey.map((column) => row[column])
+    );
+
+    if (existing) {
+      if (!valuesMatch(existing, row, columns)) {
+        fail(`Existing production record in ${tableName} differs from the migration package. Import refused without changing records.`);
+      }
+      alreadyPresent += 1;
+      continue;
     }
 
-    fail(
-      `Production workspace conflict detected: ${[...conflicts].join(", ")} already exists. No records were changed.`
-    );
+    insert.run(...columns.map((column) => row[column]));
+    inserted += 1;
   }
+
+  return { inserted, alreadyPresent };
+}
+
+function verifyImportedRows(database, payload) {
+  const counts = {};
+
+  for (const [tableName, table] of Object.entries(payload.tables)) {
+    const columns = Object.keys(table.rows[0] || {});
+    let verified = 0;
+
+    for (const row of table.rows) {
+      const keyColumns = tableName === "workspace_memberships"
+        ? ["user_id", "workspace_id"]
+        : ["id"];
+      const existing = database.prepare(
+        `SELECT * FROM "${tableName}" WHERE ${keyColumns
+          .map((column) => `"${column}" = ?`).join(" AND ")}`
+      ).get(...keyColumns.map((column) => row[column]));
+
+      if (!existing || !valuesMatch(existing, row, columns)) {
+        fail(`Post-import verification failed for a record in ${tableName}.`);
+      }
+      verified += 1;
+    }
+
+    counts[tableName] = verified;
+  }
+
+  return counts;
 }
 
 function insertRows(database, tableName, rows) {
@@ -443,16 +597,19 @@ export function importDonnaMigration({
     validateTableSchemas(database, payload);
 
     const imported = {};
+    const alreadyPresent = {};
 
     for (const tableName of Object.keys(EXPECTED_TABLES)) {
-      imported[tableName] = insertRows(
+      const result = insertOrVerifyRows(
         database,
         tableName,
         payload.tables[tableName].rows
       );
+      imported[tableName] = result.inserted;
+      alreadyPresent[tableName] = result.alreadyPresent;
     }
 
-    const countsVerified = verifyImportedCounts(database);
+    const countsVerified = verifyImportedRows(database, payload);
 
     const violations = foreignKeyViolations(database);
 
@@ -490,6 +647,7 @@ export function importDonnaMigration({
       },
       checksum,
       imported,
+      alreadyPresent,
       totalImported: totalRecords,
       countsVerified,
       integrity: integrityAfter,
