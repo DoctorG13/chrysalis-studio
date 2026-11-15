@@ -305,7 +305,21 @@ function validateTargetDoesNotContainDonna(database) {
   `).all(DONNA.userId, DONNA.email, DONNA.username);
 
   if (existingUsers.length) {
-    fail("Donna's account ID, email or username already exists. Import refused.");
+    const conflicts = new Set();
+
+    for (const user of existingUsers) {
+      if (user.id === DONNA.userId) conflicts.add("account ID");
+      if (String(user.email || "").toLowerCase() === DONNA.email) {
+        conflicts.add("email address");
+      }
+      if (String(user.username || "").toLowerCase() === DONNA.username) {
+        conflicts.add("username");
+      }
+    }
+
+    fail(
+      `Production identity conflict detected: ${[...conflicts].join(", ")} already exists. No records were changed. The conflicting account details are intentionally not exposed.`
+    );
   }
 
   const existingWorkspace = database.prepare(`
@@ -315,7 +329,18 @@ function validateTargetDoesNotContainDonna(database) {
   `).all(DONNA.workspaceId, DONNA.workspaceSlug);
 
   if (existingWorkspace.length) {
-    fail("Donna's workspace ID or slug already exists. Import refused.");
+    const conflicts = new Set();
+
+    for (const workspace of existingWorkspace) {
+      if (workspace.id === DONNA.workspaceId) conflicts.add("workspace ID");
+      if (String(workspace.slug || "").toLowerCase() === DONNA.workspaceSlug) {
+        conflicts.add("workspace slug");
+      }
+    }
+
+    fail(
+      `Production workspace conflict detected: ${[...conflicts].join(", ")} already exists. No records were changed.`
+    );
   }
 }
 
