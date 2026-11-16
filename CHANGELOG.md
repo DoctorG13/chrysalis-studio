@@ -1,3 +1,25 @@
+## BizziBuddi Public Demo — Final Acceptance Improvements
+
+### Improved
+
+- Refreshed Harbour & Thread sample data with eight people, jobs, appointments, invoices and production records.
+- Made sample dates and activity timestamps relative to the current date.
+- Corrected production-stage consistency, including the Bridesmaid dress moving to Measurements.
+- Sorted Calendar appointments chronologically by date and time.
+- Sorted Automation activity newest first and formatted timestamps for Australian display.
+- Added Finance summary cards and individual Payment Activity records, including invoice references, descriptions, dates, methods and amounts.
+- Added interactive Ask Buddi Business Snapshot cards and Suggested Questions, with contextual answers, close controls and navigation to relevant demo modules.
+- Updated the demo session key so existing temporary demo data is refreshed.
+
+### Testing
+
+- Passed production build.
+- Passed browser acceptance tests for Calendar ordering, Production stages, Automation ordering and Australian timestamps, Finance totals and individual payment activity, and Ask Buddi interactions.
+- Confirmed demo data remains isolated from real BizziBuddi accounts.
+
+**Deployment:** Pending final release checks and explicit approval.
+
+---
 ## BizziBuddi Finance — Invoice Refund Recording
 
 ### Added

@@ -6,7 +6,7 @@ const CYAN = "#00B4DB";
 const TEXT = "#FFFFFF";
 const MUTED = "#B8C6D6";
 const BORDER = "rgba(255,255,255,.14)";
-const DEMO_SESSION_KEY = "bizzibuddi-demo-session-v1";
+const DEMO_SESSION_KEY = "bizzibuddi-demo-session-v2";
 
 function cloneSeed() {
   return JSON.parse(JSON.stringify(seedData));
@@ -41,6 +41,8 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
   const [appointmentForm, setAppointmentForm] = useState({ title: "", personId: "", date: "", time: "" });
   const [customFieldName, setCustomFieldName] = useState("");
   const [pendingRemove, setPendingRemove] = useState("");
+  const [buddiQuestion, setBuddiQuestion] = useState("");
+  const [buddiAnswer, setBuddiAnswer] = useState("");
   const peopleWorkspaceRef = useRef(null);
   const noticeTimerRef = useRef(null);
 
@@ -135,6 +137,8 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
     setAppointmentForm({ title: "", personId: "", date: "", time: "" });
     setCustomFieldName("");
     setPendingRemove("");
+    setBuddiQuestion("");
+    setBuddiAnswer("");
     notify("The original Harbour & Thread sample business has been restored. Your real BizziBuddi account has not been changed.");
   }
 
@@ -255,6 +259,90 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
     notify("Production task updated in the demo. This change is temporary and will not affect your real account.");
   }
 
+  function askBuddi(question) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    let response = { summary: "Here is what I found in the Harbour & Thread demo workspace.", items: [], emptyMessage: "There is nothing to report for this question." };
+
+    if (question === "Who currently owes me money?") {
+      const owing = data.invoices
+        .filter((invoice) => Number(invoice.balance) > 0)
+        .sort((a, b) => Number(b.balance) - Number(a.balance));
+      const total = owing.reduce((sum, invoice) => sum + Number(invoice.balance || 0), 0);
+      response = {
+        summary: `${owing.length} ${owing.length === 1 ? "invoice has" : "invoices have"} an outstanding balance totalling ${money(total)}.`,
+        items: owing.map((invoice) => ({
+          title: invoice.personName,
+          detail: invoice.description || "Outstanding invoice",
+          meta: `${invoice.number} · ${invoice.status}`,
+          amount: money(invoice.balance),
+          destination: "finance",
+        })),
+        emptyMessage: "All sample invoices have been paid. There are no outstanding balances.",
+      };
+    } else if (question === "What is due this week?") {
+      const dueJobs = data.jobs.filter((job) => {
+        if (!job.dueDate || job.status === "Complete") return false;
+        const due = new Date(`${job.dueDate}T00:00:00`);
+        return !Number.isNaN(due.getTime()) && due >= today && due <= weekEnd;
+      }).map((job) => ({
+        title: job.title,
+        detail: `Job for ${job.clientName}`,
+        meta: `Due ${formatDate(job.dueDate)} · ${job.status}`,
+        destination: "jobs",
+      }));
+      const dueAppointments = data.appointments.filter((appointment) => {
+        if (!appointment.date) return false;
+        const date = new Date(`${appointment.date}T00:00:00`);
+        return !Number.isNaN(date.getTime()) && date >= today && date <= weekEnd;
+      }).map((item) => ({
+        title: item.title,
+        detail: `Appointment with ${item.personName}`,
+        meta: `${formatDate(item.date)}${item.time ? ` · ${item.time}` : ""}`,
+        destination: "calendar",
+      }));
+      response = {
+        summary: `${dueJobs.length} open ${dueJobs.length === 1 ? "job" : "jobs"} and ${dueAppointments.length} ${dueAppointments.length === 1 ? "appointment" : "appointments"} are scheduled in the next seven days.`,
+        items: [...dueJobs, ...dueAppointments],
+        emptyMessage: "There are no open jobs or appointments due in the next seven days.",
+      };
+    } else if (question === "Which jobs need attention?") {
+      const jobsNeedingAttention = data.jobs.filter((job) => job.status !== "Complete");
+      response = {
+        summary: `${jobsNeedingAttention.length} ${jobsNeedingAttention.length === 1 ? "job is" : "jobs are"} currently open.`,
+        items: jobsNeedingAttention.map((job) => ({
+          title: job.title,
+          detail: `Customer: ${job.clientName}`,
+          meta: `${job.status}${job.dueDate ? ` · Due ${formatDate(job.dueDate)}` : " · No due date"}`,
+          destination: "jobs",
+        })),
+        emptyMessage: "All sample jobs are marked complete. Nothing currently needs attention.",
+      };
+    } else if (question === "Show me production workload") {
+      const active = data.production.filter((record) => record.stage !== "Complete");
+      response = {
+        summary: `${active.length} active production ${active.length === 1 ? "record" : "records"} across the sample business.`,
+        items: active.map((record) => {
+          const done = record.tasks.filter((task) => task.complete).length;
+          return {
+            title: record.jobTitle,
+            detail: record.stage,
+            meta: `${done} of ${record.tasks.length} tasks complete${record.dueDate ? ` · Due ${formatDate(record.dueDate)}` : ""}`,
+            progress: record.tasks.length ? Math.round((done / record.tasks.length) * 100) : 0,
+            destination: "production",
+          };
+        }),
+        emptyMessage: "There are no active production records in the demo.",
+      };
+    }
+
+    setBuddiQuestion(question);
+    setBuddiAnswer(response);
+  }
+
   function addCustomField(event) {
     event.preventDefault();
     const name = customFieldName.trim();
@@ -322,7 +410,7 @@ export default function BizziBuddiDemoWorkspace({ onExit, onCreateAccount }) {
         />
       );
     }
-    if (module === "buddi") return <BuddiDemo data={data} />;
+    if (module === "buddi") return <BuddiDemo data={data} question={buddiQuestion} answer={buddiAnswer} onAsk={askBuddi} onClose={() => { setBuddiQuestion(""); setBuddiAnswer(""); }} onNavigate={setModule} />;
 
     return <Overview summary={summary} onReset={resetDemo} />;
   }
@@ -544,7 +632,11 @@ function CalendarDemo({ data, form, setForm, onAdd }) {
       </div>
 
       <div style={recordList}>
-        {data.appointments.map((appointment) => (
+        {[...data.appointments].sort((a, b) => {
+          const dateTimeA = `${a.date || "9999-12-31"} ${a.time || "23:59"}`;
+          const dateTimeB = `${b.date || "9999-12-31"} ${b.time || "23:59"}`;
+          return dateTimeA.localeCompare(dateTimeB);
+        }).map((appointment) => (
           <div key={appointment.id} style={rowStyle}>
             <div style={recordContent}>
               <strong>{appointment.title}</strong>
@@ -558,18 +650,42 @@ function CalendarDemo({ data, form, setForm, onAdd }) {
   );
 }
 
+function formatDate(value) {
+  if (!value) return "—";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+
+function formatDateTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 function RecordList({ title, rows, fields }) {
+  const orderedRows = fields.includes("createdAt")
+    ? [...rows].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    : rows;
+
   return (
     <article style={card}>
       <SectionHeading label="DEMO DATA" title={title} count={rows.length} />
       <div style={recordList}>
-        {rows.map((row) => (
+        {orderedRows.map((row) => (
           <div key={row.id} style={rowStyle}>
             <div style={recordGrid}>
               {fields.map((field) => (
                 <div key={field}>
                   <small style={muted}>{label(field)}</small>
-                  <strong style={{ display: "block", marginTop: 3, fontSize: 13 }}>{String(row[field] ?? "—")}</strong>
+                  <strong style={{ display: "block", marginTop: 3, fontSize: 13 }}>{field === "createdAt" ? formatDateTime(row[field]) : String(row[field] ?? "—")}</strong>
                 </div>
               ))}
             </div>
@@ -587,6 +703,21 @@ function FinanceDemo({ data }) {
   return (
     <article style={card}>
       <SectionHeading label="SAMPLE FINANCE" title="Invoices, payments and balances" count={data.invoices.length} />
+      <div style={{ ...grid, marginTop: 16 }}>
+        <div style={card}>
+          <small style={muted}>TOTAL INVOICED</small>
+          <strong style={metric}>{money(invoiced)}</strong>
+        </div>
+        <div style={card}>
+          <small style={muted}>PAYMENTS RECEIVED</small>
+          <strong style={metric}>{money(paid)}</strong>
+        </div>
+        <div style={card}>
+          <small style={muted}>OUTSTANDING</small>
+          <strong style={metric}>{money(data.invoices.reduce((sum, item) => sum + Number(item.balance || 0), 0))}</strong>
+        </div>
+      </div>
+      <h4 style={{ margin: "20px 0 8px", fontSize: 16 }}>Invoices</h4>
       <div style={recordList}>
         {data.invoices.map((invoice) => (
           <div key={invoice.id} style={rowStyle}>
@@ -600,6 +731,25 @@ function FinanceDemo({ data }) {
             </div>
           </div>
         ))}
+      </div>
+      <h4 style={{ margin: "22px 0 8px", fontSize: 16 }}>Payment activity</h4>
+      <div style={recordList}>
+        {(data.payments || []).slice().sort((a, b) => String(b.date).localeCompare(String(a.date))).map((payment) => {
+          const invoice = data.invoices.find((item) => item.id === payment.invoiceId);
+          return (
+            <div key={payment.id} style={rowStyle}>
+              <div style={recordContent}>
+                <strong>{invoice?.number || "Demo payment"}</strong>
+                <small style={muted}>{invoice?.personName || "Customer"} · {payment.description || payment.method || "Payment"} · {formatDate(payment.date)}</small>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <strong>{money(payment.amount)}</strong>
+                <small style={{ display: "block", ...muted }}>{payment.method || "Payment method not recorded"}</small>
+              </div>
+            </div>
+          );
+        })}
+        {!(data.payments || []).length && <p style={copy}>No payments have been recorded in this demo yet.</p>}
       </div>
       <p style={copy}>Collection rate: {invoiced ? Math.round((paid / invoiced) * 100) : 0}%. Finance is fully isolated inside this demo.</p>
     </article>
@@ -667,34 +817,169 @@ function CustomDemo({ data, fieldName, setFieldName, onAdd }) {
   );
 }
 
-function BuddiDemo({ data }) {
-  const priorities = [];
-  if (data.appointments.length) priorities.push(data.appointments[0].title);
-  const unpaid = data.invoices.find((invoice) => Number(invoice.balance) > 0);
-  if (unpaid) priorities.push(unpaid.number + " has an outstanding balance");
-  const activeProduction = data.production.find((record) => record.stage !== "Complete");
-  if (activeProduction) priorities.push(activeProduction.jobTitle + " is in production");
+function BuddiDemo({ data, question, answer, onAsk, onClose, onNavigate }) {
+  const [answerSource, setAnswerSource] = useState(null);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcomingAppointments = data.appointments
+    .filter((item) => item.date && new Date(`${item.date}T00:00:00`) >= today)
+    .sort((a, b) => `${a.date} ${a.time || ""}`.localeCompare(`${b.date} ${b.time || ""}`));
+  const unpaidInvoices = data.invoices
+    .filter((invoice) => Number(invoice.balance) > 0)
+    .sort((a, b) => Number(b.balance) - Number(a.balance));
+  const activeProduction = data.production.filter((record) => record.stage !== "Complete");
+
+  const priorities = [
+    ...(upcomingAppointments.length ? [{
+      title: upcomingAppointments[0].title,
+      detail: `${upcomingAppointments[0].personName} · ${formatDate(upcomingAppointments[0].date)}${upcomingAppointments[0].time ? ` at ${upcomingAppointments[0].time}` : ""}`,
+      destination: "calendar",
+      action: "View calendar",
+    }] : []),
+    ...(unpaidInvoices.length ? [{
+      title: `${unpaidInvoices.length} invoices need payment`,
+      detail: `${money(unpaidInvoices.reduce((sum, invoice) => sum + Number(invoice.balance || 0), 0))} outstanding · Largest balance: ${unpaidInvoices[0].personName} (${money(unpaidInvoices[0].balance)})`,
+      destination: "finance",
+      action: "View finance",
+    }] : []),
+    ...(activeProduction.length ? [{
+      title: `${activeProduction.length} jobs in production`,
+      detail: `${activeProduction.slice(0, 2).map((record) => record.jobTitle).join(" · ")}${activeProduction.length > 2 ? " · and more" : ""}`,
+      destination: "production",
+      action: "View production",
+    }] : []),
+  ];
+
+  const questions = ["Who currently owes me money?", "What is due this week?", "Which jobs need attention?", "Show me production workload"];
+  const questionRowRefs = useRef([]);
+
+  function handlePriorityClick(item) {
+    const relatedQuestion = {
+      calendar: "What is due this week?",
+      finance: "Who currently owes me money?",
+      production: "Show me production workload",
+    }[item.destination];
+
+    if (!relatedQuestion) return;
+    const source = `priority:${item.destination}`;
+    if (answerSource === source) {
+      closeAnswer();
+      return;
+    }
+    onAsk(relatedQuestion);
+    setAnswerSource(source);
+  }
+
+  function handleQuestionClick(item) {
+    if (answerSource === `question:${item}`) {
+      closeAnswer();
+      return;
+    }
+    onAsk(item);
+    setAnswerSource(`question:${item}`);
+  }
+
+  function closeAnswer() {
+    setAnswerSource(null);
+    onClose();
+  }
+
+  function renderAnswerPanel() {
+    if (!answer || !answerSource) return null;
+    return (
+      <section style={answerPanel} role="status" aria-live="polite" aria-labelledby="buddi-answer-heading">
+        <div style={sectionHeader}>
+          <div>
+            <small style={{ color: CYAN, fontWeight: 800, letterSpacing: ".06em" }}>BUDDI'S DEMO RESPONSE</small>
+            <h4 id="buddi-answer-heading" style={{ margin: "5px 0 0", fontSize: 18 }}>{question}</h4>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={badge}>{answer.items.length} {answer.items.length === 1 ? "result" : "results"}</span>
+            <button type="button" onClick={closeAnswer} style={answerClose} aria-label="Close Buddi response">✕ Close</button>
+          </div>
+        </div>
+        <p style={{ ...copy, margin: "10px 0 14px" }}>{answer.summary}</p>
+        {answer.items.length ? (
+          <div style={answerList}>
+            {answer.items.map((result, resultIndex) => (
+              <div key={`${result.title}-${resultIndex}`} style={answerItem}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <strong style={{ display: "block" }}>{result.title}</strong>
+                  <span style={answerDetail}>{result.detail}</span>
+                  <small style={muted}>{result.meta}</small>
+                  {typeof result.progress === "number" && (
+                    <div style={progressTrack}><div style={{ ...progressFill, width: `${result.progress}%` }} /></div>
+                  )}
+                </div>
+                {result.amount && <strong style={{ whiteSpace: "nowrap", color: TEXT }}>{result.amount}</strong>}
+                <button type="button" onClick={() => onNavigate(result.destination)} style={answerLink}>View →</button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={emptyAnswer}>{answer.emptyMessage}</div>
+        )}
+      </section>
+    );
+  }
 
   return (
     <article style={card}>
       <small style={muted}>ASK BUDDI</small>
       <h3 style={{ margin: "6px 0", fontSize: 22 }}>Your business assistant</h3>
-      <p style={copy}>This demo response changes as you modify the sample business.</p>
-      <div style={promptBox}>
-        “What needs attention today?”
-        <br />
-        <strong style={{ display: "block", marginTop: 8 }}>
-          {priorities.length ? priorities.join(" · ") : "Nothing currently needs attention."}
-        </strong>
-      </div>
-      <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-        {["Who currently owes me money?", "What is due this week?", "Which jobs need attention?", "Show me production workload"].map((item) => (
-          <div key={item} style={rowStyle}>
-            <span>{item}</span>
-            <span style={{ color: CYAN }}>Ask Buddi →</span>
+      <p style={copy}>Explore what is happening in Harbour & Thread. Choose a question and Buddi will summarise the current demo records.</p>
+
+      <section style={{ ...priorityPanel, marginTop: 16 }} aria-labelledby="demo-priorities-heading">
+        <div style={sectionHeader}>
+          <div>
+            <small style={{ color: CYAN, fontWeight: 800, letterSpacing: ".06em" }}>BUSINESS SNAPSHOT</small>
+            <h4 id="demo-priorities-heading" style={{ margin: "5px 0 0", fontSize: 18 }}>What needs attention today?</h4>
           </div>
-        ))}
-      </div>
+          <span style={badge}>{priorities.length} priorities</span>
+        </div>
+        {priorities.length ? (
+          <div style={priorityGrid}>
+            {priorities.map((item) => (
+              <button key={item.destination} type="button" onClick={() => handlePriorityClick(item)} style={{ ...priorityCard, ...(answerSource === `priority:${item.destination}` ? questionRowActive : {}) }} aria-expanded={answerSource === `priority:${item.destination}`}>
+                <strong>{item.title}</strong>
+                <span style={muted}>{item.detail}</span>
+                <span style={{ color: CYAN, fontSize: 12, fontWeight: 800 }}>{item.action} →</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p style={copy}>Nothing urgent is showing in the current demo data.</p>
+        )}
+        {answerSource && answerSource.startsWith("priority:") && (
+          <div style={{ marginTop: 12, width: "100%" }}>
+            {renderAnswerPanel()}
+          </div>
+        )}
+      </section>
+
+      <section style={{ marginTop: 22 }} aria-labelledby="buddi-questions-heading">
+        <small style={{ color: CYAN, fontWeight: 800, letterSpacing: ".06em" }}>SUGGESTED QUESTIONS</small>
+        <h4 id="buddi-questions-heading" style={{ margin: "5px 0 10px", fontSize: 18 }}>What would you like to know?</h4>
+        <div style={{ display: "grid", gap: 8 }}>
+          {questions.map((item, index) => (
+            <div key={item} style={{ display: "grid", gap: 8 }}>
+              <button
+                ref={(element) => { questionRowRefs.current[index] = element; }}
+                type="button"
+                onClick={() => handleQuestionClick(item)}
+                style={{ ...questionRow, ...(question === item ? questionRowActive : {}) }}
+                aria-pressed={question === item}
+              >
+                <span style={questionNumber}>{String(index + 1).padStart(2, "0")}</span>
+                <span style={{ flex: 1, textAlign: "left" }}>{item}</span>
+                <span style={{ color: CYAN, whiteSpace: "nowrap", fontWeight: 800 }}>Ask Buddi →</span>
+              </button>
+
+              {answerSource === `question:${item}` && renderAnswerPanel()}
+            </div>
+          ))}
+        </div>
+      </section>
     </article>
   );
 }
@@ -771,6 +1056,21 @@ const muted = { color: MUTED, fontSize: 11 };
 const badge = { padding: "5px 8px", borderRadius: 999, background: "rgba(0,180,219,.10)", color: CYAN, fontSize: 10, fontWeight: 800 };
 const sectionHeader = { display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" };
 const promptBox = { marginTop: 16, padding: 16, borderRadius: 12, border: "1px solid rgba(0,180,219,.35)", background: "rgba(0,180,219,.07)", color: TEXT, lineHeight: 1.5 };
+const priorityPanel = { padding: 16, borderRadius: 12, border: "1px solid rgba(0,180,219,.32)", background: "linear-gradient(135deg,rgba(0,180,219,.09),rgba(255,255,255,.025))" };
+const priorityGrid = { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 9, marginTop: 13 };
+const priorityCard = { display: "grid", gap: 8, minWidth: 0, padding: 13, borderRadius: 10, border: "1px solid rgba(255,255,255,.12)", background: "rgba(7,25,43,.25)", color: TEXT, textAlign: "left", font: "inherit", cursor: "pointer" };
+const questionRow = { display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "13px 14px", borderRadius: 10, border: "1px solid rgba(255,255,255,.10)", background: "rgba(255,255,255,.025)", color: TEXT, font: "inherit", textAlign: "left", cursor: "pointer" };
+const questionRowActive = { borderColor: "rgba(0,180,219,.65)", background: "rgba(0,180,219,.09)" };
+const questionNumber = { color: CYAN, fontSize: 11, fontWeight: 900, letterSpacing: ".05em" };
+const answerPanel = { minWidth: 0, marginTop: 4, padding: 15, borderRadius: 12, border: "1px solid rgba(0,180,219,.38)", background: "rgba(0,180,219,.065)" };
+const answerClose = { flexShrink: 0, padding: "7px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,.18)", background: "rgba(255,255,255,.045)", color: TEXT, fontSize: 11, fontWeight: 800, cursor: "pointer" };
+const answerList = { display: "grid", gap: 8 };
+const answerItem = { display: "flex", alignItems: "center", gap: 12, padding: 12, borderRadius: 9, border: "1px solid rgba(255,255,255,.10)", background: "rgba(255,255,255,.035)" };
+const answerDetail = { display: "block", margin: "3px 0", color: "#E0EAF4", fontSize: 12 };
+const answerLink = { flexShrink: 0, padding: "7px 9px", borderRadius: 7, border: "1px solid rgba(0,180,219,.35)", background: "rgba(0,180,219,.08)", color: CYAN, fontSize: 11, fontWeight: 800, cursor: "pointer" };
+const emptyAnswer = { padding: 13, borderRadius: 9, background: "rgba(255,255,255,.035)", color: MUTED, fontSize: 13 };
+const progressTrack = { height: 5, marginTop: 8, borderRadius: 99, overflow: "hidden", background: "rgba(255,255,255,.12)" };
+const progressFill = { height: "100%", borderRadius: 99, background: CYAN };
 const primary = { border: 0, borderRadius: 9, padding: "10px 13px", background: BLUE, color: TEXT, fontWeight: 800, cursor: "pointer" };
 const smallPrimary = { ...primary, padding: "9px 11px", fontSize: 11 };
 const secondary = { border: "1px solid " + BORDER, borderRadius: 9, padding: "10px 13px", background: "transparent", color: TEXT, fontWeight: 800, cursor: "pointer" };
