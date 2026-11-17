@@ -627,6 +627,15 @@ function formatFinanceCurrency(value) {
 
 function getFinanceIntelligence(rawQuestion, invoices, people) {
   const value = String(rawQuestion || "").trim().toLowerCase();
+
+  // Only handle questions that clearly concern finance. In particular,
+  // "overdue" or "late" on its own must not divert production, job, or
+  // appointment questions away from the subscriber Buddi AI endpoint.
+  const hasFinanceContext =
+    /\\b(?:invoice|invoices|payment|payments|deposit|deposits|money|owe|owing|outstanding|balance|balances|receivable|paid|unpaid)\\b/.test(value);
+
+  if (!hasFinanceContext) return null;
+
   const today = getLocalDateKey();
   const outstanding = invoices.filter((invoice) => Number(invoice.balance || 0) > 0);
   const overdue = outstanding.filter((invoice) => invoice.dueDate && invoice.dueDate < today);
@@ -887,7 +896,13 @@ function ThinkingIndicator() {
 
 export default function BizziBuddiAccountBuddi({ account, people, jobs, appointments, invoices, automationEvents, productionRecords, initialPrompt = "", onFinance, onCalendar, onJobs, onProduction, onSaveProduction, onAddJob, onAddPerson, onAddAppointment, onRecordPayment, onCreateInvoice, onBack }) {
   const questionInputRef = useRef(null);
+  const recognitionRef = useRef(null);
+  const lastSpokenAnswerRef = useRef("");
   const [question, setQuestion] = useState("");
+  const [voiceSupported, setVoiceSupported] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speakResponses, setSpeakResponses] = useState(false);
+  const [voiceMessage, setVoiceMessage] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [conversation, setConversation] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -902,10 +917,108 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
   const [jobMessage, setJobMessage] = useState("");
 
   useEffect(() => {
-  if (!isLoading) {
-    questionInputRef.current?.focus();
+    const SpeechRecognition =
+      typeof window !== "undefined" &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition);
+    setVoiceSupported(Boolean(SpeechRecognition));
+  }, []);
+
+  useEffect(() => {
+    if (!speakResponses || !conversation.length || typeof window === "undefined" || !window.speechSynthesis) return;
+
+    const latest = conversation[0];
+    const answer = String(latest?.answer || "").trim();
+    const key = String(latest?.question || "") + "::" + answer;
+    if (!answer || key === lastSpokenAnswerRef.current) return;
+
+    lastSpokenAnswerRef.current = key;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(answer.replace(/[*#•]/g, " "));
+    utterance.lang = "en-AU";
+    utterance.rate = 1;
+    window.speechSynthesis.speak(utterance);
+  }, [conversation, speakResponses]);
+
+  useEffect(() => () => {
+    recognitionRef.current?.stop?.();
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
+  function toggleVoiceInput() {
+    if (isListening) {
+      recognitionRef.current?.stop?.();
+      return;
+    }
+
+    const SpeechRecognition =
+      typeof window !== "undefined" &&
+      (window.SpeechRecognition || window.webkitSpeechRecognition);
+
+    if (!SpeechRecognition) {
+      setVoiceMessage("Voice input is not supported by this browser. Try the latest Chrome or Edge.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-AU";
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognitionRef.current = recognition;
+    let finalTranscript = "";
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceMessage("Listening… speak naturally, then pause.");
+      setSpeakResponses(true);
+    };
+
+    recognition.onresult = (event) => {
+      let interimTranscript = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const transcript = event.results[index][0]?.transcript || "";
+        if (event.results[index].isFinal) finalTranscript += transcript;
+        else interimTranscript += transcript;
+      }
+      setQuestion((finalTranscript + " " + interimTranscript).trim());
+    };
+
+    recognition.onerror = (event) => {
+      setVoiceMessage(
+        event.error === "not-allowed"
+          ? "Microphone access was blocked. Allow microphone access in your browser settings."
+          : "I couldn't hear that clearly. Please try again."
+      );
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+      const transcript = finalTranscript.trim();
+      if (transcript) {
+        setQuestion("");
+        setVoiceMessage("Sending your question to Buddi…");
+        askBuddi(transcript);
+      } else {
+        setVoiceMessage((current) => current === "Listening… speak naturally, then pause." ? "I didn't catch that. Tap the microphone and try again." : current);
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch {
+      setIsListening(false);
+      setVoiceMessage("The microphone couldn't start. Please try again.");
+    }
   }
-}, [isLoading]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      questionInputRef.current?.focus();
+    }
+  }, [isLoading]);
 
   const businessContext = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10);
@@ -1516,10 +1629,17 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
 
     try {
       const [response] = await Promise.all([
-        fetch("/api/donna/chat", {
+        fetch("/api/bizzibuddi/auth/buddi/chat", {
           method: "POST",
+          credentials: "same-origin",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: value, context: businessContext }),
+          body: JSON.stringify({
+            message: value,
+            history: conversation.slice(0, 8).reverse().map((entry) => ({
+              question: entry.question,
+              answer: entry.answer,
+            })),
+          }),
         }),
         wait,
       ]);
@@ -1576,13 +1696,46 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
             ref={questionInputRef}
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Type your question here…"
+            placeholder="Type or speak your question…"
             disabled={isLoading}
             style={inputStyle}
             aria-label="Your question for Buddi"
           />
+          <button
+            type="button"
+            onClick={toggleVoiceInput}
+            disabled={!voiceSupported || isLoading}
+            style={{
+              ...voiceButtonStyle,
+              ...(isListening ? voiceListeningButtonStyle : {}),
+              opacity: voiceSupported ? 1 : 0.55,
+              cursor: voiceSupported && !isLoading ? "pointer" : "not-allowed",
+            }}
+            aria-label={isListening ? "Stop voice input" : "Speak to Buddi"}
+            title={voiceSupported ? (isListening ? "Stop listening" : "Speak to Buddi") : "Voice input is not supported by this browser"}
+          >
+            {isListening ? "■" : "🎙"}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSpeakResponses((enabled) => {
+                if (enabled && typeof window !== "undefined" && window.speechSynthesis) window.speechSynthesis.cancel();
+                return !enabled;
+              });
+              setVoiceMessage(speakResponses ? "Spoken replies turned off." : "Spoken replies turned on.");
+            }}
+            style={{ ...voiceButtonStyle, ...(speakResponses ? voiceEnabledButtonStyle : {}) }}
+            aria-label={speakResponses ? "Turn spoken replies off" : "Turn spoken replies on"}
+            title={speakResponses ? "Spoken replies on" : "Read Buddi's replies aloud"}
+          >
+            {speakResponses ? "🔊" : "🔈"}
+          </button>
           <button type="submit" disabled={!question.trim() || isLoading} style={sendButtonStyle} aria-label="Send question to Buddi">↑</button>
         </form>
+        {voiceMessage && (
+          <div role="status" aria-live="polite" style={voiceStatusStyle}>{voiceMessage}</div>
+        )}
 
         <div style={{ ...quickSectionStyle, marginTop: 12 }}>
           <button
@@ -2371,6 +2524,35 @@ const sendButtonStyle = {
   fontSize: 22,
   fontWeight: 700,
   cursor: "pointer",
+};
+
+const voiceButtonStyle = {
+  width: 52,
+  minWidth: 52,
+  minHeight: 52,
+  border: "1px solid rgba(0,180,219,.38)",
+  borderRadius: 12,
+  background: "rgba(0,180,219,.08)",
+  color: "#FFFFFF",
+  fontSize: 19,
+  cursor: "pointer",
+};
+
+const voiceListeningButtonStyle = {
+  background: "rgba(220,50,50,.18)",
+  borderColor: "rgba(248,113,113,.7)",
+};
+
+const voiceEnabledButtonStyle = {
+  background: "rgba(37,99,235,.24)",
+  borderColor: "rgba(96,165,250,.65)",
+};
+
+const voiceStatusStyle = {
+  marginTop: 7,
+  color: "#9FB5CA",
+  fontSize: 11,
+  lineHeight: 1.4,
 };
 
 const thinkingStyle = {
