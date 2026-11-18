@@ -1,4 +1,4 @@
-﻿import { createServer } from "node:http";
+import { createServer } from "node:http";
 
 const PORT = 4184;
 const API_KEY = process.env.OPENAI_API_KEY;
@@ -222,13 +222,47 @@ function resolveLiveInfoLocation(location) {
 async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
   const location = resolveLiveInfoLocation(rawLocation);
   
-  if (!location) return { answer: kind === "weather" ? "Which city or town should I check the weather for? For example, Brisbane." : "Which city should I check the current time for? For example, London." };
+  if (!location) {
+    if (kind === "weather") {
+      return { answer: "Which city or town should I check the weather for? For example, Brisbane." };
+    }
+    if (kind === "date") {
+      return { answer: "Which city should I check the date for? For example, Brisbane." };
+    }
+    return { answer: "Which city should I check the current time for? For example, Brisbane." };
+  }
 
   const place = await geocodeLocation(location);
   const placeName = [place.name, place.admin1, place.country].filter(Boolean).filter((part, index, all) => all.indexOf(part) === index).join(", ");
   const timeZone = place.timezone || "UTC";
   const now = new Date();
-  if (kind === "time") return { answer: "**Current time in " + placeName + "**\n" + formatPlaceTime(now, timeZone) + "\n\nTime zone: " + timeZone + ".", source: "Open-Meteo geocoding and IANA time-zone data", updatedAt: now.toISOString() };
+
+  if (kind === "date") {
+    const localDate = new Intl.DateTimeFormat("en-AU", {
+      timeZone,
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    }).format(now);
+
+    return {
+      answer: "**Today's date in " + placeName + "**\n" + localDate + "\n\nTime zone: " + timeZone + ".",
+      source: "IANA time-zone data",
+      updatedAt: now.toISOString(),
+      timezone: timeZone
+    };
+  }
+
+  if (kind === "time") {
+    return {
+      answer: "**Current time in " + placeName + "**\n" + formatPlaceTime(now, timeZone) + "\n\nTime zone: " + timeZone + ".",
+      source: "Open-Meteo geocoding and IANA time-zone data",
+      updatedAt: now.toISOString(),
+      timezone: timeZone
+    };
+  }
+
   if (kind !== "weather") throw new Error("Unsupported live information request.");
   const query = new URLSearchParams({ latitude: String(place.latitude), longitude: String(place.longitude), current: "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m", daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max", forecast_days: "7", timezone: timeZone, temperature_unit: "celsius", wind_speed_unit: "kmh" });
   const response = await fetch("https://api.open-meteo.com/v1/forecast?" + query);
@@ -237,39 +271,42 @@ async function getLiveInformation(kind, rawLocation, rawQuestion = "") {
   const current = weather.current;
   if (!current) throw new Error("The weather service did not return current conditions.");
   
+  const question = String(rawQuestion || "");
+  const asksFullWeekForecast =
+    /\b(?:next\s+seven\s+days|next\s+7\s+days|seven[- ]day|7[- ]day|weekly)\b/i.test(question) &&
+    /\b(weather|forecast)\b/i.test(question);
+
   const lines = [
     "**Weather in " + placeName + "**",
-    "Now: " + (weatherDescriptions[current.weather_code] || "Conditions unavailable") + ", " + Math.round(current.temperature_2m) + "°C (feels like " + Math.round(current.apparent_temperature) + "°C).",
-    "Humidity: " + Math.round(current.relative_humidity_2m) + "% | Wind: " + Math.round(current.wind_speed_10m) + " km/h | Precipitation: " + Number(current.precipitation || 0).toFixed(1) + " mm.",
-    "",
-    "**Next 7 days**"
+    "Now: " + (weatherDescriptions[current.weather_code] || "Conditions unavailable") + ", " + Math.round(current.temperature_2m) + "\u00B0C (feels like " + Math.round(current.apparent_temperature) + "\u00B0C).",
+    "Humidity: " + Math.round(current.relative_humidity_2m) + "% | Wind: " + Math.round(current.wind_speed_10m) + " km/h | Precipitation: " + Number(current.precipitation || 0).toFixed(1) + " mm."
   ];
 
+  if (asksFullWeekForecast) {
+    lines.push("", "**Next 7 days**");
 
-for (let i = 0; i < (weather.daily?.time || []).length; i += 1) {
-  const date = new Date(weather.daily.time[i] + "T12:00:00Z");
-  const day = new Intl.DateTimeFormat("en-AU", {
-    timeZone,
-    weekday: "short",
-    day: "numeric",
-    month: "short"
-  }).format(date);
-  const desc =
-    weatherDescriptions[weather.daily.weather_code[i]] ||
-    "Conditions unavailable";
-  const rain = weather.daily.precipitation_probability_max?.[i];
+    for (let i = 0; i < (weather.daily?.time || []).length; i += 1) {
+      const date = new Date(weather.daily.time[i] + "T12:00:00Z");
+      const day = new Intl.DateTimeFormat("en-AU", {
+        timeZone,
+        weekday: "short",
+        day: "numeric",
+        month: "long"
+      }).format(date);
+      const desc =
+        weatherDescriptions[weather.daily.weather_code[i]] ||
+        "Conditions unavailable";
+      const rain = weather.daily.precipitation_probability_max?.[i];
 
-  lines.push(
-    "- " + day + ": " + desc + ", " +
-    Math.round(weather.daily.temperature_2m_min[i]) + "–" +
-    Math.round(weather.daily.temperature_2m_max[i]) + "°C" +
-    (rain == null ? "" : ", up to " + rain + "% chance of precipitation") +
-    "."
-  );
-}
-
-
-const question = String(rawQuestion || "");
+      lines.push(
+        "- " + day + ": " + desc + ", " +
+        Math.round(weather.daily.temperature_2m_min[i]) + "\u2013" +
+        Math.round(weather.daily.temperature_2m_max[i]) + "\u00B0C" +
+        (rain == null ? "" : ", up to " + rain + "% chance of precipitation") +
+        "."
+      );
+    }
+  }
 
 const asksTomorrow = /\b(tomorrow|next day)\b/i.test(question);
 const asksWeekend = /\b(this weekend|the weekend|weekend)\b/i.test(question);
@@ -292,7 +329,7 @@ function getDayLabel(date) {
     timeZone,
     weekday: "long",
     day: "numeric",
-    month: "short"
+    month: "long"
   }).format(new Date(date + "T12:00:00Z"));
 }
 
@@ -334,14 +371,14 @@ if (asksWeekend && asksTemperature) {
   if (weekendIndices.length) {
     const weekendLines = weekendIndices.map((index) =>
       getDayLabel(dailyDates[index]) + ": " +
-      Math.round(weather.daily.temperature_2m_min[index]) + "–" +
-      Math.round(weather.daily.temperature_2m_max[index]) + "°C"
+      Math.round(weather.daily.temperature_2m_min[index]) + "\u2013" +
+      Math.round(weather.daily.temperature_2m_max[index]) + "\u00B0C"
     );
 
     lines.splice(
       1,
       0,
-      "**Weekend temperatures in " + placeName + "**",
+      "**Weekend temperatures**",
       ...weekendLines
     );
   } else {
@@ -357,10 +394,10 @@ if (asksWeekend && asksTemperature) {
       1,
       0,
       "**Temperatures for " + getDayLabel(dailyDates[forecastIndex]) +
-        " in " + placeName + "**",
+        "**",
       "Expected temperature: " +
-        Math.round(weather.daily.temperature_2m_min[forecastIndex]) + "–" +
-        Math.round(weather.daily.temperature_2m_max[forecastIndex]) + "°C."
+        Math.round(weather.daily.temperature_2m_min[forecastIndex]) + "\u2013" +
+        Math.round(weather.daily.temperature_2m_max[forecastIndex]) + "\u00B0C"
     );
   } else {
     lines.splice(
@@ -385,7 +422,7 @@ if (asksWeekend && asksTemperature) {
       lines.splice(
         1,
         0,
-        "**Weekend rain forecast in " + placeName + "**",
+        "**Weekend rain forecast**",
         ...weekendRainLines
       );
     } else {
@@ -410,7 +447,7 @@ if (asksWeekend && asksTemperature) {
       lines.splice(
         1,
         0,
-        likelihood + dayLabel + " in " + placeName + ": up to " +
+        likelihood + dayLabel + ": up to " +
           probability + "% chance of precipitation."
       );
     } else {
@@ -440,10 +477,10 @@ if (asksWeekend && asksTemperature) {
       1,
       0,
       "**Forecast for " + getDayLabel(dailyDates[index]) +
-        " in " + placeName + "**",
+        "**",
       description + ", " +
-        Math.round(weather.daily.temperature_2m_min[index]) + "–" +
-        Math.round(weather.daily.temperature_2m_max[index]) + "°C" +
+        Math.round(weather.daily.temperature_2m_min[index]) + "\u2013" +
+        Math.round(weather.daily.temperature_2m_max[index]) + "\u00B0C" +
         (probability == null
           ? "."
           : ", up to " + probability + "% chance of precipitation.")
@@ -457,6 +494,13 @@ if (asksWeekend && asksTemperature) {
   }
 }
 
+
+if (!asksFullWeekForecast && (asksTomorrow || asksAnotherDay)) {
+  const currentConditionsStart = lines.findIndex((line) => line.startsWith("Now: "));
+  if (currentConditionsStart !== -1) {
+    lines.splice(currentConditionsStart, 2);
+  }
+}
 
 return {
   answer: lines.join("\n"),
@@ -487,10 +531,12 @@ if (request.method === "POST" && request.url === "/api/donna/live-info") {
         ? "weather"
         : body?.kind === "time"
           ? "time"
-          : "";
+          : body?.kind === "date"
+            ? "date"
+            : "";
 
     if (!kind) {
-      sendJson(response, 400, { error: "Choose either time or weather." });
+      sendJson(response, 400, { error: "Choose time, date, or weather." });
       return;
     }
 

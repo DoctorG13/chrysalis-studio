@@ -1,3 +1,36 @@
+## BizziBuddi — Weather Response and Voice Polish
+
+### Improved
+- Keep current weather conditions concise and omit the seven-day forecast unless explicitly requested.
+- Provide focused responses for rain likelihood, tomorrow, named-day and weekend forecast questions.
+- Remove repeated location references from individual forecast headings and rain-probability responses while retaining the location in the main weather heading.
+- Spell out month names in forecast dates so browser speech synthesis can read them naturally.
+- Correct temperature formatting, including the current and apparent temperature separator and forecast temperature ranges.
+
+### Testing
+- Local JavaScript syntax check passed for `server/donna-server.js`.
+- Local browser acceptance testing confirmed current weather, rain likelihood, tomorrow and seven-day forecast responses.
+- Confirmed temperature formatting and spoken forecast wording after the final refinements.
+
+**Deployment:** Not yet deployed.
+
+---
+
+## BizziBuddi — Subscriber Buddi Voice Interface
+
+### Added
+- Added browser-based Australian English voice input for subscriber Buddi.
+- Added spoken responses using browser speech synthesis.
+- Added microphone and speaker controls with voice-status feedback.
+- Preserved text chat as an alternative when voice features are unavailable.
+
+### Testing
+- Production build passed.
+- Local browser acceptance testing confirmed voice input and spoken responses are working.
+
+**Deployment:** Not yet deployed.
+
+---
 ## BizziBuddi Public Demo — Final Acceptance Improvements
 
 ### Improved
