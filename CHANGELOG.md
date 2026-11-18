@@ -1,3 +1,24 @@
+## BizziBuddi — Subscriber Buddi AI Integration
+
+### Added
+- Added an authenticated server-side AI chat endpoint for subscriber Buddi.
+- Supplied account-specific business information as context for Buddi responses.
+- Added support for recent conversation history.
+- Connected Buddi to the OpenAI API using configurable model settings.
+
+### Improved
+- Added rate limiting to subscriber AI requests.
+- Added friendly error handling that keeps provider diagnostics in server logs rather than exposing them to subscribers.
+- Preserved account authentication and existing business data safeguards.
+
+### Testing
+- JavaScript syntax checks passed for the AI service and authentication server.
+- Production build passed following the subscriber interface changes.
+- Production AI response verification pending deployment.
+
+**Deployment:** Pending.
+
+---
 ## BizziBuddi — Weather Response and Voice Polish
 
 ### Improved

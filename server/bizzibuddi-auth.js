@@ -3,6 +3,7 @@ import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { BIZZI_BUDDI_FIELD_TYPES, BIZZI_BUDDI_INDUSTRY_TEMPLATES } from "./bizzibuddi-business-config.js";
+import { askBuddiOpenAI } from "./buddi-ai.js";
 
 const COOKIE_NAME = "bizzibuddi_session";
 const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
@@ -21,6 +22,7 @@ const DB_PATH = join(DATA_DIR, "chrysalis.db");
 const BACKUP_DIR = join(DATA_DIR, "backups");
 
 const loginAttempts = new Map();
+const buddiChatAttempts = new Map();
 let database = null;
 
 function getDatabase() {
@@ -946,6 +948,28 @@ function isValidTimeString(value) {
 
 function todayDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function getBrisbaneDateKey() {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Brisbane",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function getDateDifferenceInDays(startDate, endDate) {
+  if (!isValidDateString(startDate) || !isValidDateString(endDate)) return null;
+
+  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
+  const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
+  const start = Date.UTC(startYear, startMonth - 1, startDay);
+  const end = Date.UTC(endYear, endMonth - 1, endDay);
+
+  return Math.round((end - start) / 86_400_000);
 }
 
 function validateInvoicePayload(payload) {
@@ -4352,6 +4376,182 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   }
 
   try {
+    if (url.pathname === "/api/bizzibuddi/auth/buddi/chat" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      const message = String(payload?.message || "").trim();
+      if (!message || message.length > 4000) {
+        sendJson(response, 400, {
+          ok: false,
+          error: "Please enter a question of no more than 4,000 characters.",
+        });
+        return true;
+      }
+
+      const history = Array.isArray(payload?.history)
+        ? payload.history.slice(-8).flatMap((entry) => {
+            const question = String(entry?.question || "").trim().slice(0, 2000);
+            const answer = String(entry?.answer || "").trim().slice(0, 4000);
+            return question && answer
+              ? [{ question, answer }]
+              : [];
+          })
+        : [];
+
+      // All business information is retrieved here using the authenticated
+      // session user. Never accept business records or context from the browser.
+      const nowMs = Date.now();
+      const rate = buddiChatAttempts.get(user.id);
+      if (rate && nowMs - rate.startedAt < 60_000 && rate.count >= 20) {
+        sendJson(response, 429, {
+          ok: false,
+          error: "You've sent quite a few questions. Please wait a minute and try again.",
+        }, { "Retry-After": "60" });
+        return true;
+      }
+      if (!rate || nowMs - rate.startedAt >= 60_000) {
+        buddiChatAttempts.set(user.id, { startedAt: nowMs, count: 1 });
+      } else {
+        rate.count += 1;
+      }
+
+      const account = toAccount(user);
+      const people = getPeople(user.id).map(toPerson);
+      const jobs = getJobs(user.id).map(toJob);
+      const invoices = getInvoices(user.id).map(toInvoice);
+      const appointments = getCalendar(user.id).map(toCalendarEntry);
+      const productionRecords = getProductionRecords(user.id);
+      const automationEvents = getAutomationEvents(user.id);
+      // Use the business's local Brisbane calendar date for date-sensitive
+      // answers. Date-only values are compared as calendar dates, not UTC times.
+      const today = getBrisbaneDateKey();
+      const outstandingInvoices = invoices.filter((invoice) => invoice.status !== "Paid");
+      const overdueInvoices = outstandingInvoices.filter((invoice) => invoice.dueDate && invoice.dueDate < today);
+      const productionByJob = new Map(
+        productionRecords.map((record) => [record.jobId, record])
+      );
+      const productionJobs = jobs.map((job) => {
+        const productionRecord = productionByJob.get(job.id);
+        const stage = productionRecord?.stage || job.productionStage || "Not started";
+        const dueDate = job.dueDate || productionRecord?.dueDate || "";
+        const isComplete = job.status === "Complete" || stage === "Complete";
+        const dateDifference = dueDate
+          ? getDateDifferenceInDays(dueDate, today)
+          : null;
+        const isOverdue = !isComplete && dateDifference !== null && dateDifference > 0;
+
+        return {
+          title: job.title,
+          client: job.clientName,
+          jobStatus: job.status,
+          productionStatus: stage,
+          dueDate,
+          isComplete,
+          isOverdue,
+          daysOverdue: isOverdue ? dateDifference : 0,
+          daysUntilDue: !isComplete && dateDifference !== null && dateDifference < 0
+            ? Math.abs(dateDifference)
+            : null,
+          productionProgress: job.productionProgress,
+          taskCount: productionRecord?.tasks?.length || 0,
+          completedTaskCount: productionRecord?.tasks?.filter((task) => task.complete).length || 0,
+          tasks: (productionRecord?.tasks || []).slice(0, 10).map((task) => ({
+            title: task.title,
+            complete: Boolean(task.complete),
+          })),
+        };
+      }).sort((left, right) => {
+        if (left.isOverdue !== right.isOverdue) return left.isOverdue ? -1 : 1;
+        if (left.isOverdue && right.isOverdue) return right.daysOverdue - left.daysOverdue;
+        if (!left.dueDate) return 1;
+        if (!right.dueDate) return -1;
+        return left.dueDate.localeCompare(right.dueDate);
+      });
+
+      const businessContext = {
+        product: "BizziBuddi",
+        businessName: account.business || "Your business",
+        membership: account.plan || "Free",
+        today,
+        people: people.slice(0, 100).map((person) => ({ name: person.name, relationshipType: person.relationshipType })),
+        jobs: jobs.slice(0, 100).map((job) => ({
+          title: job.title,
+          client: job.clientName,
+          status: job.status,
+          dueDate: job.dueDate,
+          price: job.price,
+        })),
+        calendar: {
+          upcomingCount: appointments.filter((item) => item.date >= today && item.status !== "Cancelled").length,
+          upcoming: appointments
+            .filter((item) => item.date >= today && item.status !== "Cancelled")
+            .slice(0, 20)
+            .map((item) => ({ title: item.title, date: item.date, time: item.time, person: item.personName, status: item.status })),
+        },
+        finance: {
+          invoiceCount: invoices.length,
+          outstandingCount: outstandingInvoices.length,
+          outstandingAmount: outstandingInvoices.reduce((sum, invoice) => sum + Math.max(0, Number(invoice.balance) || 0), 0),
+          overdueCount: overdueInvoices.length,
+          overdue: overdueInvoices.slice(0, 20).map((invoice) => ({
+            number: invoice.number, client: invoice.personName, balance: invoice.balance, dueDate: invoice.dueDate,
+          })),
+          outstanding: outstandingInvoices.slice(0, 100).map((invoice) => ({
+            number: invoice.number, client: invoice.personName, amount: invoice.amount,
+            amountPaid: invoice.amountPaid, balance: invoice.balance, dueDate: invoice.dueDate, status: invoice.status,
+          })),
+        },
+        production: {
+          jobCount: productionJobs.length,
+          overdueCount: productionJobs.filter((job) => job.isOverdue).length,
+          jobs: productionJobs.slice(0, 100),
+        },
+        automation: {
+          eventCount: automationEvents.length,
+          recentEvents: automationEvents.slice(0, 12).map((event) => ({ title: event.title, detail: event.detail, createdAt: event.created_at || event.createdAt })),
+        },
+        summary: {
+          totalPeople: people.length,
+          totalJobs: jobs.length,
+          openJobs: jobs.filter((job) => job.status !== "Complete").length,
+          jobsByStatus: ["New", "In progress", "Waiting", "Complete"].map((status) => ({
+            status, count: jobs.filter((job) => job.status === status).length,
+          })),
+          productionRecords: productionRecords.length,
+        },
+      };
+
+      let answer;
+      try {
+        answer = await askBuddiOpenAI({
+          message,
+          history,
+          context: businessContext,
+        });
+      } catch (error) {
+        // Keep provider diagnostics in server logs; never expose API or
+        // provider error details to the subscriber.
+        console.error("Buddi AI request failed:", error);
+        sendJson(response, 502, {
+          ok: false,
+          error: "Buddi is temporarily unavailable. Please try again shortly.",
+        });
+        return true;
+      }
+
+      sendJson(response, 200, { ok: true, authenticated: true, answer });
+      return true;
+    }
+
     if (url.pathname === "/api/bizzibuddi/auth/register" && request.method === "POST") {
       const payload = await readJsonBody(request);
       const account = createAccount(payload);

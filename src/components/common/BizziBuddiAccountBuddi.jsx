@@ -13,23 +13,36 @@ function getLiveInfoRequest(question, conversation = []) {
 
   const weatherTerm =
     /\b(weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b/i;
+  const dateTerm =
+    /\b(?:what day is it(?: today)?|what(?:'s| is) today's date|today's date|what date is it|what(?:'s| is) the date|current date|local date|date today|day today)\b/i;
   const timeTerm =
-    /\b(what time|current time|time is it|local time|world clock|time in|what is the time|what day is it|what date is it|current date|local date|date in|day in)\b/i;
+    /\b(what time|current time|time is it|local time|world clock|time in|what is the time)\b/i;
 
   const locationPattern =
     /\b(?:weather|wheather|weahter|wether|waether|wheater|forcast|forecast|temperature|temp|rain|raining|rainy|windy|precipitation|warm|hot|weekend|weekends)\b.*?\b(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
   const timeLocationPattern =
-    /\b(?:what time is it|what is the time|current time|local time|world clock|time in|what day is it|what date is it|current date|local date|date in|day in)\s+(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+    /\b(?:what time is it|what is the time|current time|local time|world clock|time in)\s+(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
+  const dateLocationPattern =
+    /\b(?:what day is it(?: today)?|what(?:'s| is) today's date|today's date|what date is it|what(?:'s| is) the date|current date|local date|date today|day today)\s+(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
   const generalLocationPattern =
     /\b(?:how is it|how's it|hows it|what is it like|what's it like|whats it like|how is the weather|how's the weather|hows the weather)\s+(?:like\s+)?(?:in|for|at)\s+(.+?)\s*[?.!]*$/i;
 
   function extractLocation(text) {
-    const sources = String(text || "").split(/\r?\n/);
+    const sourceText = String(text || "");
+
+    // Error messages can quote the original question and then append
+    // troubleshooting text. Never treat that whole message as a location.
+    if (/\b(?:i couldn't find|i could not find|temporarily unavailable)\b/i.test(sourceText)) {
+      return "";
+    }
+
+    const sources = sourceText.split(/\r?\n/);
 
     for (const source of sources) {
       const match =
         source.match(locationPattern) ||
         source.match(timeLocationPattern) ||
+        source.match(dateLocationPattern) ||
         source.match(generalLocationPattern);
       if (!match?.[1]) continue;
 
@@ -52,7 +65,6 @@ function getLiveInfoRequest(question, conversation = []) {
   const latestEntry = conversation[0] || {};
   const latestAnswer = String(latestEntry.answer || "");
 
-
   const contextEntry = conversation.find((entry) => {
     const priorQuestion = String(entry.question || "");
     const priorAnswer = String(entry.answer || "");
@@ -64,7 +76,7 @@ function getLiveInfoRequest(question, conversation = []) {
     return Boolean(extractLocation(priorAnswer)) ||
       Boolean(extractLocation(priorQuestion)) ||
       /\b(weather|forecast|rain|temperature|warm|hot|weekend|sunday|saturday|tomorrow|monday|tuesday|wednesday|thursday|friday)\b/i.test(priorQuestion) ||
-      /\b(current time in|time zone:)\b/i.test(priorAnswer);
+      /\b(current time in|time zone:|today's date in|today is .* in)\b/i.test(priorAnswer);
   });
 
   const previousQuestion = String(contextEntry?.question || "");
@@ -76,7 +88,6 @@ function getLiveInfoRequest(question, conversation = []) {
     extractLocation(previousAnswer) ||
     extractLocation(previousQuestion);
 
-
   const asksCalendarRange =
     /\b(calendar|appointment|appointments|booking|bookings|events|tasks|schedule|scheduled)\b/i.test(normalisedValue);
   const asksWeeklyForecast =
@@ -87,12 +98,13 @@ function getLiveInfoRequest(question, conversation = []) {
     /\b(weather|forecast|rain|temperature|warm|hot|precipitation)\b/i.test(previousQuestion) ||
     /\b(weather in|forecast for|chance of precipitation|temperatures for)\b/i.test(previousAnswer);
   const asksWeather = weatherTerm.test(normalisedValue) || (asksWeeklyForecast && priorConversationIsWeather);
+  const asksDate = dateTerm.test(normalisedValue);
   const asksTime = timeTerm.test(normalisedValue);
   const isLocationPrompt = locationPromptPattern.test(latestAnswer);
 
   const bareLocation =
     /^[A-Za-z][A-Za-z .,'-]{1,70}$/.test(value) &&
-    !/^(today|tomorrow|tonight|weather|wheather|forecast|time|rain|here|there|friday|saturday|sunday|monday|tuesday|wednesday|thursday|warm|hot|weekend|weekends)$/i.test(value);
+    !/^(today|tomorrow|tonight|weather|wheather|forecast|time|date|day|rain|here|there|friday|saturday|sunday|monday|tuesday|wednesday|thursday|warm|hot|weekend|weekends)$/i.test(value);
 
   const refersToPreviousLocation =
     /\b(here|there|that location|that city|that town|same place|that area)\b/i.test(value);
@@ -107,31 +119,32 @@ function getLiveInfoRequest(question, conversation = []) {
     Boolean(contextEntry) &&
     (refersToPreviousLocation || asksAboutAnotherDay || soundsLikeFollowUp || (isLocationPrompt && bareLocation));
 
-  if (!asksWeather && !asksTime && !isFollowUp) return null;
+  if (!asksWeather && !asksDate && !asksTime && !isFollowUp) return null;
 
   const isDayOnlyFollowUp =
     /^(?:and\s+)?(?:what about\s+)?(?:today|tomorrow|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday)[?.!]*$/i.test(value);
   const previousContextIsTime =
-    /\b(what time|current time|time is it|local time|world clock|time in|what is the time|what day is it|what date is it|current date|local date|date in|day in)\b/i.test(previousQuestion) ||
+    /\b(what time|current time|time is it|local time|world clock|time in|what is the time)\b/i.test(previousQuestion) ||
     /current time in|time zone:/i.test(previousAnswer);
 
   // A bare day after a current-time response most naturally asks for weather
-  // on that day. The time endpoint only reports the current time, so do not
-  // send a future-day question to it or return today's time as the answer.
+  // on that day. The time endpoint only reports the current time.
   const dayFollowUpAfterTime =
-    isDayOnlyFollowUp && previousContextIsTime && !asksWeather && !asksTime;
+    isDayOnlyFollowUp && previousContextIsTime && !asksWeather && !asksDate && !asksTime;
 
   let kind;
 
   if (dayFollowUpAfterTime) {
     kind = "weather";
+  } else if (asksDate && !asksWeather) {
+    kind = "date";
   } else if (asksTime && !asksWeather) {
     kind = "time";
   } else if (asksWeather) {
     kind = "weather";
   } else {
     const priorTimeQuestion =
-      /\b(what time|current time|time is it|local time|world clock|time in|what is the time|what day is it|what date is it|current date|local date|date in|day in)\b/i.test(previousQuestion);
+      /\b(what time|current time|time is it|local time|world clock|time in|what is the time)\b/i.test(previousQuestion);
     const priorTimeAnswer =
       /current time in|time zone:/i.test(previousAnswer);
 
@@ -154,8 +167,6 @@ function getLiveInfoRequest(question, conversation = []) {
     location = value;
   } else if (explicitLocationMatchesPrevious) {
     location = previousLocation;
-  } else if (bareLocation && soundsLikeFollowUp) {
-    location = value;
   } else if (refersToPreviousLocation || !location) {
     location = previousLocation;
   }
@@ -164,12 +175,16 @@ function getLiveInfoRequest(question, conversation = []) {
     location = "here";
   }
 
+  // Date questions without an explicit or remembered location use Brisbane.
+  if (kind === "date" && !location) {
+    location = "Brisbane";
+  }
+
   const asksRainLikelihood =
     /\b(likely|chance|probability|will it rain|rain likely)\b/i.test(normalisedValue) &&
     /\b(rain|precipitation)\b/i.test(normalisedValue);
 
-  // Make weekly forecast intent explicit for the server. This also normalises
-  // "seven-day" (hyphenated) to wording the forecast handler recognises.
+  // Make weekly forecast intent explicit for the server.
   let requestQuestion = asksWeeklyForecast
     ? "Show me the next seven days weather forecast" + (location ? " for " + location : "") + "."
     : value;
@@ -209,7 +224,6 @@ function getLiveInfoRequest(question, conversation = []) {
     asksRainLikelihood,
   };
 }
-
 function normalise(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -632,7 +646,7 @@ function getFinanceIntelligence(rawQuestion, invoices, people) {
   // "overdue" or "late" on its own must not divert production, job, or
   // appointment questions away from the subscriber Buddi AI endpoint.
   const hasFinanceContext =
-    /\\b(?:invoice|invoices|payment|payments|deposit|deposits|money|owe|owing|outstanding|balance|balances|receivable|paid|unpaid)\\b/.test(value);
+    /\b(?:invoice|invoices|payment|payments|deposit|deposits|money|owe|owing|outstanding|balance|balances|receivable|paid|unpaid)\b/.test(value);
 
   if (!hasFinanceContext) return null;
 
@@ -898,10 +912,15 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
   const questionInputRef = useRef(null);
   const recognitionRef = useRef(null);
   const lastSpokenAnswerRef = useRef("");
+  const continuousConversationRef = useRef(false);
+  const restartRecognitionTimerRef = useRef(null);
   const [question, setQuestion] = useState("");
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [speakResponses, setSpeakResponses] = useState(false);
+  const [continuousConversation, setContinuousConversation] = useState(false);
+  const [drivingMode, setDrivingMode] = useState(false);
+  const previousSpeakResponsesRef = useRef(false);
   const [voiceMessage, setVoiceMessage] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [conversation, setConversation] = useState([]);
@@ -923,43 +942,19 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     setVoiceSupported(Boolean(SpeechRecognition));
   }, []);
 
-  useEffect(() => {
-    if (!speakResponses || !conversation.length || typeof window === "undefined" || !window.speechSynthesis) return;
-
-    const latest = conversation[0];
-    const answer = String(latest?.answer || "").trim();
-    const key = String(latest?.question || "") + "::" + answer;
-    if (!answer || key === lastSpokenAnswerRef.current) return;
-
-    lastSpokenAnswerRef.current = key;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(answer.replace(/[*#•]/g, " "));
-    utterance.lang = "en-AU";
-    utterance.rate = 1;
-    window.speechSynthesis.speak(utterance);
-  }, [conversation, speakResponses]);
-
-  useEffect(() => () => {
-    recognitionRef.current?.stop?.();
-    if (typeof window !== "undefined" && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-  }, []);
-
-  function toggleVoiceInput() {
-    if (isListening) {
-      recognitionRef.current?.stop?.();
-      return;
-    }
-
+  function startVoiceRecognition() {
     const SpeechRecognition =
       typeof window !== "undefined" &&
       (window.SpeechRecognition || window.webkitSpeechRecognition);
 
     if (!SpeechRecognition) {
       setVoiceMessage("Voice input is not supported by this browser. Try the latest Chrome or Edge.");
+      setContinuousConversation(false);
+      continuousConversationRef.current = false;
       return;
     }
+
+    if (recognitionRef.current) return;
 
     const recognition = new SpeechRecognition();
     recognition.lang = "en-AU";
@@ -970,8 +965,11 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
 
     recognition.onstart = () => {
       setIsListening(true);
-      setVoiceMessage("Listening… speak naturally, then pause.");
-      setSpeakResponses(true);
+      setVoiceMessage(
+        continuousConversationRef.current
+          ? "Continuous conversation is on. I'm listening…"
+          : "Listening… speak naturally, then pause."
+      );
     };
 
     recognition.onresult = (event) => {
@@ -985,33 +983,207 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
     };
 
     recognition.onerror = (event) => {
-      setVoiceMessage(
-        event.error === "not-allowed"
-          ? "Microphone access was blocked. Allow microphone access in your browser settings."
-          : "I couldn't hear that clearly. Please try again."
-      );
       setIsListening(false);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        continuousConversationRef.current = false;
+        setContinuousConversation(false);
+        setVoiceMessage("Microphone access was blocked. Allow microphone access in your browser settings.");
+      } else {
+        setVoiceMessage("I couldn't hear that clearly. Please try again.");
+      }
     };
 
     recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
       setIsListening(false);
-      recognitionRef.current = null;
+
       const transcript = finalTranscript.trim();
       if (transcript) {
         setQuestion("");
         setVoiceMessage("Sending your question to Buddi…");
         askBuddi(transcript);
+      } else if (continuousConversationRef.current) {
+        setVoiceMessage("I didn't catch that. I'll listen again in a moment…");
+        restartRecognitionTimerRef.current = window.setTimeout(() => {
+          restartRecognitionTimerRef.current = null;
+          if (continuousConversationRef.current && !recognitionRef.current) {
+            startVoiceRecognition();
+          }
+        }, 900);
       } else {
-        setVoiceMessage((current) => current === "Listening… speak naturally, then pause." ? "I didn't catch that. Tap the microphone and try again." : current);
+        setVoiceMessage((current) =>
+          current === "Listening… speak naturally, then pause."
+            ? "I didn't catch that. Tap the microphone and try again."
+            : current
+        );
       }
     };
 
     try {
       recognition.start();
     } catch {
+      recognitionRef.current = null;
       setIsListening(false);
       setVoiceMessage("The microphone couldn't start. Please try again.");
     }
+  }
+
+  useEffect(() => {
+    if (!speakResponses || !conversation.length || typeof window === "undefined" || !window.speechSynthesis) return;
+
+    const latest = conversation[0];
+    const answer = String(latest?.answer || "").trim();
+    const key = String(latest?.question || "") + "::" + answer;
+    if (!answer || key === lastSpokenAnswerRef.current) return;
+
+    lastSpokenAnswerRef.current = key;
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(answer.replace(/[*#•]/g, " "));
+    utterance.lang = "en-AU";
+    utterance.rate = 1;
+
+    utterance.onstart = () => {
+      setVoiceMessage("Buddi is speaking…");
+    };
+
+    utterance.onend = () => {
+      if (continuousConversationRef.current) {
+        setVoiceMessage("Buddi has finished. Listening again…");
+        restartRecognitionTimerRef.current = window.setTimeout(() => {
+          restartRecognitionTimerRef.current = null;
+          if (continuousConversationRef.current && !recognitionRef.current) {
+            startVoiceRecognition();
+          }
+        }, 500);
+      } else {
+        setVoiceMessage((current) => current === "Buddi is speaking…" ? "" : current);
+      }
+    };
+
+    utterance.onerror = () => {
+      if (continuousConversationRef.current) {
+        setVoiceMessage("Spoken playback stopped. Listening again…");
+        restartRecognitionTimerRef.current = window.setTimeout(() => {
+          restartRecognitionTimerRef.current = null;
+          if (continuousConversationRef.current && !recognitionRef.current) {
+            startVoiceRecognition();
+          }
+        }, 700);
+      }
+    };
+
+    window.speechSynthesis.speak(utterance);
+  }, [conversation, speakResponses]);
+
+  useEffect(() => () => {
+    continuousConversationRef.current = false;
+    if (restartRecognitionTimerRef.current) {
+      window.clearTimeout(restartRecognitionTimerRef.current);
+    }
+    recognitionRef.current?.stop?.();
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
+  function toggleVoiceInput() {
+    if (isListening) {
+      recognitionRef.current?.stop?.();
+      return;
+    }
+
+    // Pressing the microphone while Buddi is speaking stops playback
+    // and gives the user the floor.
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    if (restartRecognitionTimerRef.current) {
+      window.clearTimeout(restartRecognitionTimerRef.current);
+      restartRecognitionTimerRef.current = null;
+    }
+    setSpeakResponses(true);
+    startVoiceRecognition();
+  }
+
+  function toggleDrivingMode() {
+    if (drivingMode) {
+      setDrivingMode(false);
+      continuousConversationRef.current = false;
+      setContinuousConversation(false);
+
+      if (restartRecognitionTimerRef.current) {
+        window.clearTimeout(restartRecognitionTimerRef.current);
+        restartRecognitionTimerRef.current = null;
+      }
+
+      recognitionRef.current?.stop?.();
+
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+
+      setSpeakResponses(previousSpeakResponsesRef.current);
+      setVoiceMessage("Driving Mode ended.");
+      return;
+    }
+
+    if (!voiceSupported) {
+      setVoiceMessage("Voice input is not supported by this browser. Try the latest Chrome or Edge.");
+      return;
+    }
+
+    previousSpeakResponsesRef.current = speakResponses;
+    const latestEntry = conversation[0];
+    if (latestEntry) {
+      lastSpokenAnswerRef.current =
+        String(latestEntry.question || "") + "::" + String(latestEntry.answer || "").trim();
+    }
+    setDrivingMode(true);
+    setSpeakResponses(true);
+    continuousConversationRef.current = true;
+    setContinuousConversation(true);
+    setVoiceMessage("Driving Mode is starting. Buddi is listening.");
+
+    if (restartRecognitionTimerRef.current) {
+      window.clearTimeout(restartRecognitionTimerRef.current);
+      restartRecognitionTimerRef.current = null;
+    }
+
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    if (!recognitionRef.current) {
+      startVoiceRecognition();
+    }
+  }
+
+  function toggleContinuousConversation() {
+    const nextEnabled = !continuousConversationRef.current;
+    continuousConversationRef.current = nextEnabled;
+    setContinuousConversation(nextEnabled);
+
+    if (restartRecognitionTimerRef.current) {
+      window.clearTimeout(restartRecognitionTimerRef.current);
+      restartRecognitionTimerRef.current = null;
+    }
+
+    if (!nextEnabled) {
+      recognitionRef.current?.stop?.();
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+      setVoiceMessage("Continuous conversation turned off.");
+      return;
+    }
+
+    setSpeakResponses(true);
+    setVoiceMessage("Starting continuous conversation…");
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    startVoiceRecognition();
   }
 
   useEffect(() => {
@@ -1491,7 +1663,11 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
     key: `location-${index}`,
     label: place.location,
     onClick: () => askBuddi(
-      `${liveInfoRequest.kind === "time" ? "What time is it in" : "What's the weather in"} ${place.location}?`
+      `${liveInfoRequest.kind === "time"
+        ? "What time is it in"
+        : liveInfoRequest.kind === "date"
+          ? "What's today's date in"
+          : "What's the weather in"} ${place.location}?`
     ),
   }));
 
@@ -1667,7 +1843,64 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
   }
 
   return (
-    <section style={panelStyle}>
+    <section style={drivingMode ? drivingPanelStyle : panelStyle}>
+      {drivingMode ? (
+        <div style={drivingScreenStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <BizziBuddiLogo size={42} showWordmark={false} />
+            <div>
+              <div style={eyebrowStyle}>BIZZIBUDDI</div>
+              <h2 style={{ margin: 0, color: "#FFFFFF", fontSize: 25 }}>Driving Mode</h2>
+            </div>
+          </div>
+
+          <div style={drivingStatusStyle} role="status" aria-live="polite">
+            <div style={drivingPulseStyle}>
+              <span style={{ fontSize: 42 }} aria-hidden="true">
+                {isListening ? "🎙" : isLoading ? "…" : "🔊"}
+              </span>
+            </div>
+            <strong style={{ fontSize: 19 }}>
+              {isListening ? "Listening" : isLoading ? "Buddi is thinking" : "Buddi is ready"}
+            </strong>
+            <span style={{ color: "#B8C6D6", fontSize: 14, textAlign: "center" }}>
+              {voiceMessage || "Speak naturally. Buddi will respond aloud."}
+            </span>
+          </div>
+
+          <div style={drivingConversationStyle}>
+            {conversation[0] ? (
+              <>
+                <div style={{ color: "#8EA5B9", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>YOUR LAST MESSAGE</div>
+                <p style={{ margin: "0 0 18px", color: "#FFFFFF", fontSize: 17, lineHeight: 1.5 }}>
+                  {conversation[0].question}
+                </p>
+                <div style={{ color: "#00B4DB", fontSize: 12, fontWeight: 700, marginBottom: 8 }}>BUDDI</div>
+                <p style={{ margin: 0, color: "#FFFFFF", fontSize: 20, lineHeight: 1.55 }}>
+                  {renderAnswer(conversation[0].answer)}
+                </p>
+              </>
+            ) : (
+              <p style={{ margin: 0, color: "#B8C6D6", fontSize: 17, textAlign: "center", lineHeight: 1.5 }}>
+                Hello! I'm here. What would you like to talk about?
+              </p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleDrivingMode}
+            style={drivingExitButtonStyle}
+          >
+            End Driving Mode
+          </button>
+
+          <p style={drivingSafetyNoteStyle}>
+            Set up Driving Mode before you start moving. Keep your attention on the road and do not operate the screen while driving.
+          </p>
+        </div>
+      ) : (
+        <>
       <div style={panelHeaderStyle}>
         <button type="button" onClick={onBack} style={backButtonStyle}>← Back to business</button>
         <div style={assistantHeaderRowStyle}>
@@ -1712,9 +1945,44 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
               cursor: voiceSupported && !isLoading ? "pointer" : "not-allowed",
             }}
             aria-label={isListening ? "Stop voice input" : "Speak to Buddi"}
-            title={voiceSupported ? (isListening ? "Stop listening" : "Speak to Buddi") : "Voice input is not supported by this browser"}
+            title={voiceSupported ? (isListening ? "Stop listening" : "Speak to Buddi; this also interrupts spoken playback") : "Voice input is not supported by this browser"}
           >
             {isListening ? "■" : "🎙"}
+          </button>
+          <button
+            type="button"
+            onClick={toggleContinuousConversation}
+            disabled={!voiceSupported || isLoading}
+            style={{
+              ...voiceButtonStyle,
+              ...(continuousConversation ? voiceEnabledButtonStyle : {}),
+              opacity: voiceSupported ? 1 : 0.55,
+              cursor: voiceSupported && !isLoading ? "pointer" : "not-allowed",
+              minWidth: 42,
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+            aria-label={continuousConversation ? "Turn continuous conversation off" : "Turn continuous conversation on"}
+            title={continuousConversation ? "Continuous conversation on — click to stop" : "Start continuous conversation"}
+          >
+            {continuousConversation ? "AUTO" : "↻"}
+          </button>
+          <button
+            type="button"
+            onClick={toggleDrivingMode}
+            disabled={!voiceSupported || isLoading}
+            style={{
+              ...voiceButtonStyle,
+              minWidth: 42,
+              fontSize: 11,
+              fontWeight: 700,
+              opacity: voiceSupported ? 1 : 0.55,
+              cursor: voiceSupported && !isLoading ? "pointer" : "not-allowed",
+            }}
+            aria-label="Enter Driving Mode"
+            title="Open the dedicated voice-first Driving Mode"
+          >
+            DRIVE
           </button>
           <button
             type="button"
@@ -2253,9 +2521,83 @@ if (payload.needsLocationChoice && Array.isArray(payload.locations) && payload.l
           <span>Buddi uses the current BizziBuddi account data supplied to this session. It does not create or change records from this screen.</span>
         </div>
       </div>
+        </>
+      )}
     </section>
   );
 }
+
+const drivingPanelStyle = {
+  width: "100%",
+  minHeight: "min(820px, calc(100vh - 40px))",
+  boxSizing: "border-box",
+  padding: 24,
+  borderRadius: 20,
+  border: "1px solid rgba(0,180,219,.42)",
+  background: "radial-gradient(circle at 50% 25%, rgba(0,180,219,.16), transparent 42%), #071321",
+  color: "#FFFFFF",
+};
+
+const drivingScreenStyle = {
+  minHeight: "min(760px, calc(100vh - 88px))",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 24,
+  maxWidth: 760,
+  margin: "0 auto",
+};
+
+const drivingStatusStyle = {
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  gap: 12,
+  padding: "20px 12px 4px",
+};
+
+const drivingPulseStyle = {
+  width: 116,
+  height: 116,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: "50%",
+  border: "2px solid rgba(0,180,219,.75)",
+  background: "rgba(0,180,219,.12)",
+  boxShadow: "0 0 36px rgba(0,180,219,.18)",
+};
+
+const drivingConversationStyle = {
+  width: "100%",
+  minHeight: 180,
+  boxSizing: "border-box",
+  padding: 22,
+  borderRadius: 18,
+  border: "1px solid rgba(255,255,255,.12)",
+  background: "rgba(255,255,255,.045)",
+};
+
+const drivingExitButtonStyle = {
+  width: "100%",
+  maxWidth: 420,
+  minHeight: 64,
+  border: "1px solid rgba(255,255,255,.2)",
+  borderRadius: 16,
+  background: "#B42332",
+  color: "#FFFFFF",
+  fontSize: 18,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const drivingSafetyNoteStyle = {
+  maxWidth: 520,
+  margin: "0 auto",
+  color: "#A9B8C8",
+  fontSize: 12,
+  lineHeight: 1.5,
+  textAlign: "center",
+};
 
 const jobDraftCardStyle = {
   marginTop: 20,
