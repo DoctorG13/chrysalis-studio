@@ -89,8 +89,21 @@ export default function BizzibuddiAccountPage() {
                           ? "account"
                           : "overview";
   const [workspaceNavSection, setWorkspaceNavSection] = useState(initialWorkspaceNavSection);
+  const [workspaceFlyoutSection, setWorkspaceFlyoutSection] = useState("");
+  const [workspaceFlyoutTop, setWorkspaceFlyoutTop] = useState(0);
+  const previousWorkspaceNavSection = useRef(initialWorkspaceNavSection);
+  const workspaceNavOrder = ["today", "people", "work", "finance", "insights", "assist", "account"];
+  const workspaceSubnavDirection =
+    workspaceNavOrder.indexOf(workspaceNavSection) >=
+    workspaceNavOrder.indexOf(previousWorkspaceNavSection.current)
+      ? "forward"
+      : "backward";
   const [workspaceNavItem, setWorkspaceNavItem] = useState(initialWorkspaceNavItem);
   const [workspaceScrollTarget, setWorkspaceScrollTarget] = useState("");
+
+  useEffect(() => {
+    previousWorkspaceNavSection.current = workspaceNavSection;
+  }, [workspaceNavSection]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,8 +130,8 @@ export default function BizzibuddiAccountPage() {
         // Some workspace views (including Reports) mount their target only after
         // account data has loaded. Wait for the target and the sticky nav layout
         // instead of giving up after a short, fixed delay.
-        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
-        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        // The sidebar sits beside the content and no longer overlays scroll targets.
+        const navHeight = 0;
         // Leave a clear gap below the sticky navigation so the target is not clipped.
         const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
 
@@ -164,14 +177,7 @@ export default function BizzibuddiAccountPage() {
         return;
       }
 
-      const shortcuts = { d: "dashboard", p: "people", j: "jobs", c: "calendar", f: "finance", a: "automation", r: "reports" };
-      const nextView = shortcuts[event.key.toLowerCase()];
-      if (!nextView || !account) return;
-
-      event.preventDefault();
-      selectView(nextView);
-      setMessage("");
-      setBuddiPrompt("");
+      // Workspace navigation is handled by the visible sidebar.
     }
 
     window.addEventListener("keydown", handleKeyboardShortcuts);
@@ -420,6 +426,32 @@ export default function BizzibuddiAccountPage() {
     const query = params.toString();
     const nextUrl = window.location.pathname + (query ? "?" + query : "");
     window.history.pushState({}, "", nextUrl);
+  }
+
+  function openWorkspaceFlyoutOnHover(section, event) {
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 761px)").matches) {
+      const trigger = event?.currentTarget;
+      const nav = trigger?.closest(".bizzibuddi-workspace-sticky-nav");
+      if (trigger && nav) {
+        const triggerRect = trigger.getBoundingClientRect();
+        const navRect = nav.getBoundingClientRect();
+        setWorkspaceFlyoutTop(Math.max(0, Math.round(triggerRect.top - navRect.top)));
+      }
+      setWorkspaceFlyoutSection(section);
+    }
+  }
+
+  function handleWorkspaceNavActivation(section, action) {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 760px)").matches) {
+      setWorkspaceFlyoutSection((current) => current === section ? "" : section);
+    }
+    action();
+  }
+
+  function closeWorkspaceFlyoutOnPointerLeave() {
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 761px)").matches) {
+      setWorkspaceFlyoutSection("");
+    }
   }
 
   function navigateWorkspaceSection(section) {
@@ -952,7 +984,7 @@ export default function BizzibuddiAccountPage() {
           <button type="button" onClick={() => setShortcutHelpOpen(false)} style={smallActionButton}>Close</button>
         </div>
         <div style={{ display: "grid", gap: 8, marginTop: 16 }}>
-          {[["D","Dashboard"],["P","People"],["J","Jobs"],["C","Calendar"],["F","Finance"],["A","Automation"],["R","Reports"],["?","Show / hide shortcuts"],["Esc","Close shortcuts"]].map(([key,label]) => (
+          {[["?","Show / hide shortcuts"],["Esc","Close shortcuts"]].map(([key,label]) => (
             <div key={key} style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center" }}>
               <span style={{ color: MUTED, fontSize: 13 }}>{label}</span>
               <kbd style={{ minWidth: 34, padding: "5px 8px", borderRadius: 7, border: "1px solid " + BORDER, background: "rgba(255,255,255,.06)", color: TEXT, textAlign: "center", fontSize: 12, fontWeight: 800 }}>{key}</kbd>
@@ -979,7 +1011,8 @@ export default function BizzibuddiAccountPage() {
           <div style={previewBadge}>Secure account and login · People, Jobs, Calendar and Finance are account-backed · No live billing</div>
         </section>
 
-        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" style={view === "demo" || view === "first-run" || view === "onboarding" ? { ...workspaceNavShell, display: "none" } : workspaceNavShell}>
+        <div className={account && !["demo", "first-run", "onboarding"].includes(view) ? "bizzibuddi-workspace-layout has-sidebar" : "bizzibuddi-workspace-layout"}>
+        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" onMouseLeave={closeWorkspaceFlyoutOnPointerLeave} style={view === "demo" || view === "first-run" || view === "onboarding" ? { ...workspaceNavShell, display: "none" } : workspaceNavShell}>
           {view === "demo" ? null : !account ? (
             <div className="bizzibuddi-account-nav-main">
               {[["login", "Log in"], ["create", "Create account"], ["demo", "Explore demo"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
@@ -996,65 +1029,73 @@ export default function BizzibuddiAccountPage() {
               >
                 <button
                   type="button"
-                  onClick={() => navigateWorkspaceSection("today")}
+                  onMouseEnter={(event) => openWorkspaceFlyoutOnHover("today", event)}
+                  onFocus={(event) => openWorkspaceFlyoutOnHover("today", event)}
+                  onClick={() => handleWorkspaceNavActivation("today", () => navigateWorkspaceSection("today"))}
                   style={workspaceMainTab(workspaceNavSection === "today")}
                   aria-selected={workspaceNavSection === "today"}
                 >
-                  <span aria-hidden="true">⌂</span> Today
+                  <span className="bizzibuddi-workspace-nav-button"><WorkspaceNavIcon name="today" /><span>Today</span></span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => selectView("people", { workspaceNavItem: "people-all" })}
+                  onMouseEnter={(event) => openWorkspaceFlyoutOnHover("people", event)}
+                  onFocus={(event) => openWorkspaceFlyoutOnHover("people", event)}
+                  onClick={() => handleWorkspaceNavActivation("people", () => selectView("people", { workspaceNavItem: "people-all" }))}
                   style={workspaceMainTab(workspaceNavSection === "people")}
                   aria-selected={workspaceNavSection === "people"}
                 >
-                  PEOPLE
+                  <span className="bizzibuddi-workspace-nav-button"><WorkspaceNavIcon name="people" /><span>People</span></span>
                 </button>
                 {[
-                  ["work", "WORK"],
-                  ["finance", "FINANCE"],
-                  ["insights", "INSIGHTS"],
-                  ["assist", "ASSIST"],
-                  ["account", "ACCOUNT"],
-                ].map(([key, label]) => (
+                  ["work", "Work", "work"],
+                  ["finance", "Finance", "finance"],
+                  ["insights", "Insights", "insights"],
+                  ["assist", "Assist", "assist"],
+                  ["account", "Account", "account"],
+                ].map(([key, label, icon]) => (
                   <button
                     key={key}
                     type="button"
-                    onClick={() => navigateWorkspaceSection(key)}
+                    onMouseEnter={(event) => openWorkspaceFlyoutOnHover(key, event)}
+                    onFocus={(event) => openWorkspaceFlyoutOnHover(key, event)}
+                    onClick={() => handleWorkspaceNavActivation(key, () => navigateWorkspaceSection(key))}
                     style={workspaceMainTab(workspaceNavSection === key)}
                     aria-selected={workspaceNavSection === key}
                   >
-                    {label}
+                    <span className="bizzibuddi-workspace-nav-button"><WorkspaceNavIcon name={icon} /><span>{label}</span></span>
                   </button>
                 ))}
               </div>
 
-              {(
-              <div
-                className="bizzibuddi-workspace-subnav"
-                aria-label={workspaceNavSection + " submenu"}
-                style={workspaceSubnavTray}
-              >
-                <div style={workspaceSubnavItems(workspaceNavSection)}>
-                  {(getWorkspaceSubnav(account)[workspaceNavSection] || []).map((item) => (
-                    <button
-                      key={item[0]}
-                      type="button"
-                      onClick={() => navigateWorkspaceSubitem(workspaceNavSection, item)}
-                      style={workspaceSubnavTab(workspaceNavItem === item[0], workspaceNavSection, item[0])}
-                      title={item[1]}
-                    >
-                      {item[1]}
-                    </button>
-                  ))}
+              {workspaceFlyoutSection && (
+                <div
+                  key={workspaceFlyoutSection}
+                  className={`bizzibuddi-workspace-subnav is-${workspaceSubnavDirection}`}
+                  aria-label={workspaceFlyoutSection + " submenu"}
+                  style={{ ...workspaceSubnavTray, top: workspaceFlyoutTop }}
+                >
+                  <div style={workspaceSubnavItems(workspaceFlyoutSection)}>
+                    {(getWorkspaceSubnav(account)[workspaceFlyoutSection] || []).map((item) => (
+                      <button
+                        key={item[0]}
+                        type="button"
+                        onClick={() => navigateWorkspaceSubitem(workspaceFlyoutSection, item)}
+                        style={workspaceSubnavTab(workspaceNavItem === item[0], workspaceFlyoutSection, item[0])}
+                        title={item[1]}
+                      >
+                        {item[1]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
               )}
             </div>
           )}
 
         </nav>
 
+        <div className="bizzibuddi-workspace-content">
           {account && !["demo", "first-run", "onboarding"].includes(view) && (
             <div className="bizzibuddi-help-rail" aria-label="Help and support">
               <button
@@ -1393,7 +1434,8 @@ export default function BizzibuddiAccountPage() {
             onReports={() => selectView("reports")}
           />
         )}
-
+        </div>
+        </div>
 
         <style>{`
               .bizzibuddi-skip-link {
@@ -1806,6 +1848,200 @@ export default function BizzibuddiAccountPage() {
               @media (prefers-reduced-motion: reduce) {
                 .bizzibuddi-buddi-launcher { animation: none !important; }
               }
+              .bizzibuddi-workspace-layout {
+                margin-top: 22px;
+              }
+              .bizzibuddi-workspace-layout.has-sidebar {
+                display: grid;
+                grid-template-columns: 214px minmax(0, 1fr);
+                align-items: start;
+                gap: 18px;
+              }
+              .bizzibuddi-workspace-content {
+                min-width: 0;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-layout.has-sidebar > .bizzibuddi-account-nav {
+                position: sticky;
+                top: 12px;
+                align-self: start;
+                width: 100%;
+                max-height: none;
+                margin: 0 !important;
+                padding: 10px;
+                overflow: visible;
+                z-index: 220;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-sticky-nav {
+                position: relative;
+                overflow: visible;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-main-nav {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 6px;
+                overflow: visible;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-main-nav button {
+                display: flex;
+                align-items: center;
+                justify-content: flex-start;
+                min-height: 44px;
+                padding: 9px 11px;
+                text-align: left;
+                letter-spacing: 0;
+              }
+              .bizzibuddi-workspace-nav-button {
+                display: flex;
+                align-items: center;
+                gap: 11px;
+                width: 100%;
+                min-width: 0;
+                text-align: left;
+              }
+              .bizzibuddi-workspace-nav-icon {
+                display: block;
+                flex: 0 0 21px;
+                color: #7FDFF0;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-main-nav button[aria-selected="true"] .bizzibuddi-workspace-nav-icon {
+                color: #FFFFFF;
+              }
+              .bizzibuddi-account-page .bizzibuddi-account-nav {
+                position: relative;
+                z-index: 260;
+                overflow: visible;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-subnav {
+                position: absolute;
+                top: 0;
+                left: 100%;
+                z-index: 240;
+                display: block;
+                width: 224px;
+                max-width: min(224px, calc(100vw - 250px));
+                max-height: calc(100vh - 24px);
+                min-height: 0;
+                margin: 0;
+                padding: 12px;
+                box-sizing: border-box;
+                border: 1px solid rgba(0,180,219,.30);
+                border-radius: 12px;
+                background: #071D30;
+                box-shadow: 0 18px 42px rgba(0,0,0,.52);
+                backdrop-filter: blur(14px);
+                -webkit-backdrop-filter: blur(14px);
+                overflow-x: hidden;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                animation: bizzibuddiWorkspaceSubnavSlideForward 360ms cubic-bezier(.16,1,.3,1) both;
+                will-change: transform, opacity;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-subnav.is-backward {
+                animation-name: bizzibuddiWorkspaceSubnavSlideBackward;
+              }
+              @keyframes bizzibuddiWorkspaceSubnavSlideForward {
+                from { opacity: 0; transform: translateX(36px); }
+                65% { opacity: 1; }
+                to { opacity: 1; transform: translateX(0); }
+              }
+              @keyframes bizzibuddiWorkspaceSubnavSlideBackward {
+                from { opacity: 0; transform: translateX(-36px); }
+                65% { opacity: 1; }
+                to { opacity: 1; transform: translateX(0); }
+              }
+              @media (prefers-reduced-motion: reduce) {
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav {
+                  animation: none !important;
+                  will-change: auto;
+                }
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-subnav > div {
+                display: flex;
+                flex-direction: column;
+                align-items: stretch;
+                justify-content: flex-start;
+                gap: 6px;
+                overflow: visible;
+              }
+              .bizzibuddi-account-page .bizzibuddi-workspace-subnav button {
+                width: 100%;
+                min-height: 34px;
+                padding: 8px 10px;
+                border-radius: 8px;
+                text-align: left;
+                white-space: normal;
+              }
+              .bizzibuddi-account-page .bizzibuddi-production-subnav {
+                top: 12px !important;
+              }
+              @media (max-width: 900px) {
+                .bizzibuddi-workspace-layout.has-sidebar {
+                  grid-template-columns: 190px minmax(0, 1fr);
+                  gap: 14px;
+                }
+              }
+              @media (max-width: 760px) {
+                .bizzibuddi-workspace-layout.has-sidebar {
+                  display: block;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-layout.has-sidebar > .bizzibuddi-account-nav {
+                  position: relative !important;
+                  top: auto !important;
+                  max-height: none;
+                  margin: 0 0 16px !important;
+                  overflow: visible;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav {
+                  position: relative;
+                  top: auto;
+                  left: auto;
+                  width: 100% !important;
+                  max-width: none !important;
+                  max-height: none;
+                  margin-top: 12px;
+                  padding: 12px 0 0;
+                  border: 1px solid rgba(0,180,219,.30);
+                  border-radius: 10px;
+                  background: rgba(6,28,47,.98);
+                  box-shadow: none;
+                  backdrop-filter: none;
+                  -webkit-backdrop-filter: none;
+                  overflow: visible;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-main-nav {
+                  grid-template-columns: repeat(3, minmax(0, 1fr));
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-main-nav button {
+                  justify-content: center;
+                  min-height: 58px;
+                  padding: 7px 5px;
+                  text-align: center;
+                }
+                .bizzibuddi-workspace-nav-button {
+                  flex-direction: column;
+                  justify-content: center;
+                  gap: 5px;
+                  text-align: center;
+                  font-size: 10px;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav > div {
+                  flex-direction: row !important;
+                  flex-wrap: wrap !important;
+                  align-items: stretch;
+                }
+                .bizzibuddi-account-page .bizzibuddi-workspace-subnav button {
+                  flex: 1 1 auto;
+                  width: auto;
+                  text-align: center;
+                }
+                .bizzibuddi-account-page .bizzibuddi-production-subnav {
+                  top: 12px !important;
+                }
+              }
+              @media (max-width: 560px) {
+                .bizzibuddi-account-page .bizzibuddi-workspace-main-nav {
+                  grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+              }
         `}</style>
 
         {account && (
@@ -1824,6 +2060,54 @@ export default function BizzibuddiAccountPage() {
       </div>
     </main>
     </>
+  );
+}
+
+function WorkspaceNavIcon({ name }) {
+  let artwork;
+
+  switch (name) {
+    case "today":
+      artwork = <><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9.5V21h13V9.5M9 21v-7h6v7" /></>;
+      break;
+    case "people":
+      artwork = <><circle cx="9" cy="8" r="3.2" /><path d="M2.8 20v-1.2a6.2 6.2 0 0 1 12.4 0V20z" /><path d="M16 5.2a3.2 3.2 0 0 1 0 6.2M18 14.2a5.2 5.2 0 0 1 3.2 4.8V20" /></>;
+      break;
+    case "work":
+      artwork = <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3 12h18M10 12v2h4v-2" /></>;
+      break;
+    case "finance":
+      artwork = <><rect x="3" y="5" width="18" height="15" rx="2" /><path d="M3 9h18M16 14h2M6 5V3h12v2" /></>;
+      break;
+    case "insights":
+      artwork = <><path d="M3 3v18h18" /><path d="m7 14 4-4 3 2 6-7" /><path d="M16 5h4v4" /></>;
+      break;
+    case "assist":
+      artwork = <><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" /></>;
+      break;
+    case "account":
+      artwork = <><circle cx="12" cy="8" r="3.5" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></>;
+      break;
+    default:
+      artwork = <circle cx="12" cy="12" r="8" />;
+  }
+
+  return (
+    <svg
+      className="bizzibuddi-workspace-nav-icon"
+      viewBox="0 0 24 24"
+      width="21"
+      height="21"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {artwork}
+    </svg>
   );
 }
 
@@ -4931,8 +5215,8 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
   function scrollToProductionEditor() {
     const editor = productionEditorRef.current || document.getElementById("bizzibuddi-production-editor");
     if (!editor) return;
-    const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
-    const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+    // The sidebar sits beside the content and no longer overlays scroll targets.
+    const navHeight = 0;
     const targetTop = editor.getBoundingClientRect().top + window.scrollY - navHeight - 20;
     window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
   }
@@ -5485,10 +5769,10 @@ function ProductionPanel({ account, jobs, records, templates, timeEntries, initi
         <p style={copyStyle}>One place to see what is on the workroom floor, what is due, what is ready and what needs to move next.</p>
       </div>
 
-      <nav aria-label="Production section shortcuts" className="bizzibuddi-production-subnav" style={{ position: "sticky", top: 96, zIndex: 30, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginTop: 14, padding: 9, border: "1px solid rgba(0,180,219,.25)", borderRadius: 12, background: "rgba(6,26,43,.96)", boxShadow: "0 8px 20px rgba(0,0,0,.18)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
+      <nav aria-label="Production section shortcuts" className="bizzibuddi-production-subnav" style={{ position: "sticky", top: 12, zIndex: 30, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 7, marginTop: 14, padding: 9, border: "1px solid rgba(0,180,219,.25)", borderRadius: 12, background: "rgba(6,26,43,.96)", boxShadow: "0 8px 20px rgba(0,0,0,.18)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}>
         <span style={{ color: CYAN, fontSize: 10, fontWeight: 900, letterSpacing: ".06em", padding: "0 5px" }}>JUMP TO</span>
         {[["queue", "Job queue", "bizzibuddi-production-queue"], ["workload", "Workload", "bizzibuddi-production-workload"], ["work-item", "Work item", "bizzibuddi-production-work-item"], ["tasks", "Tasks", "bizzibuddi-production-tasks"], ["update", "Update production", "bizzibuddi-production-editor"], ["templates", "Templates", "bizzibuddi-production-templates"], ["time", "Time tracking", "bizzibuddi-production-time"]].map(([key, label, targetId]) => (
-          <button key={key} type="button" onClick={() => { const target = document.getElementById(targetId); if (!target) return; const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav"); const subnav = document.querySelector(".bizzibuddi-production-subnav"); const offset = (nav?.getBoundingClientRect().height || 0) + (subnav?.getBoundingClientRect().height || 0) + 18; window.scrollTo({ top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset), behavior: "smooth" }); }} style={{ border: "1px solid " + BORDER, borderRadius: 999, padding: "7px 10px", background: "rgba(255,255,255,.045)", color: TEXT, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "normal" }}>{label}</button>
+          <button key={key} type="button" onClick={() => { const target = document.getElementById(targetId); if (!target) return; const subnav = document.querySelector(".bizzibuddi-production-subnav"); const offset = (subnav?.getBoundingClientRect().height || 0) + 18; window.scrollTo({ top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset), behavior: "smooth" }); }} style={{ border: "1px solid " + BORDER, borderRadius: 999, padding: "7px 10px", background: "rgba(255,255,255,.045)", color: TEXT, fontSize: 11, fontWeight: 800, cursor: "pointer", whiteSpace: "normal" }}>{label}</button>
         ))}
       </nav>
 
@@ -7384,8 +7668,8 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
       window.requestAnimationFrame(() => {
         const element = selectedInvoiceRef.current;
         if (!element) return;
-        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
-        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        // The sidebar sits beside the content and no longer overlays scroll targets.
+        const navHeight = 0;
         const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 48;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
@@ -7439,8 +7723,8 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
       window.requestAnimationFrame(() => {
         const element = createInvoiceFormRef.current;
         if (!element) return;
-        const nav = document.querySelector(".bizzibuddi-workspace-sticky-nav");
-        const navHeight = nav ? nav.getBoundingClientRect().height : 0;
+        // The sidebar sits beside the content and no longer overlays scroll targets.
+        const navHeight = 0;
         const targetTop = element.getBoundingClientRect().top + window.scrollY - navHeight - 12;
         window.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
       });
@@ -12251,15 +12535,14 @@ const workspaceStickyNav = {
   margin: 0,
   padding: 0,
   background: "transparent",
-  overflow: "hidden",
+  overflow: "visible",
 };
 const workspaceMainNav = {
   display: "grid",
-  gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-  gap: 5,
+  gap: 6,
   width: "100%",
   minWidth: 0,
-  overflow: "hidden",
+  overflow: "visible",
 };
 const workspaceMainTab = (active) => ({
   width: "100%",
@@ -12278,17 +12561,17 @@ const workspaceMainTab = (active) => ({
   whiteSpace: "normal",
 });
 const workspaceSubnavTray = {
-  display: "grid",
-  gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-  width: "100%",
+  display: "block",
+  width: "224px",
   minWidth: 0,
-  minHeight: 30,
+  minHeight: 0,
   margin: 0,
-  padding: "2px 0 1px",
+  padding: 12,
   boxSizing: "border-box",
-  borderTop: "1px solid rgba(0,180,219,.10)",
-  background: "linear-gradient(180deg, rgba(0,180,219,.03), rgba(0,180,219,0))",
-  overflow: "hidden",
+  border: "1px solid rgba(0,180,219,.30)",
+  borderRadius: 12,
+  background: "#071D30",
+  overflow: "visible",
 };
 const workspaceSubnavItems = (section) => {
   const layout = {
@@ -12305,12 +12588,13 @@ const workspaceSubnavItems = (section) => {
     minWidth: 0,
     maxWidth: "100%",
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    rowGap: 3,
-    flexWrap: "wrap",
-    overflow: "hidden",
+    flexDirection: "column",
+    alignItems: "stretch",
+    justifyContent: "flex-start",
+    gap: 5,
+    rowGap: 5,
+    flexWrap: "nowrap",
+    overflow: "visible",
   };
 };
 const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
@@ -12320,15 +12604,16 @@ const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
   overflow: "visible",
   textOverflow: "clip",
   border: "1px solid " + (active ? CYAN : "rgba(255,255,255,.10)"),
-  borderRadius: 999,
-  padding: "4px 9px",
+  borderRadius: 8,
+  padding: "8px 10px",
   background: active ? "rgba(0,180,219,.13)" : "rgba(255,255,255,.025)",
   color: active ? TEXT : MUTED,
   fontSize: 10,
   fontWeight: 700,
   lineHeight: 1.1,
   cursor: "pointer",
-  whiteSpace: "nowrap",
+  whiteSpace: "normal",
+  textAlign: "left",
 });
 const workspaceSubnav = {
   people: [
