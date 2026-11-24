@@ -360,14 +360,18 @@ function validateTargetDoesNotContainDonna(database) {
   }
 }
 
-function valuesMatch(existing, incoming, columns) {
-  return columns.every((column) => {
+function differingColumns(existing, incoming, columns) {
+  return columns.filter((column) => {
     const left = existing[column];
     const right = incoming[column];
-    if (left === right) return true;
-    if (left == null && right == null) return true;
-    return false;
+    if (left === right) return false;
+    if (left == null && right == null) return false;
+    return true;
   });
+}
+
+function valuesMatch(existing, incoming, columns) {
+  return differingColumns(existing, incoming, columns).length === 0;
 }
 
 function insertOrVerifyRows(database, tableName, rows) {
@@ -456,8 +460,16 @@ function insertOrVerifyRows(database, tableName, rows) {
     );
 
     if (existing) {
-      if (!valuesMatch(existing, row, columns)) {
-        fail(`Existing production record in ${tableName} differs from the migration package. Import refused without changing records.`);
+      const differences = differingColumns(existing, row, columns);
+      if (differences.length) {
+        const recordId = primaryKey
+          .map((column) => `${column}=${String(row[column])}`)
+          .join(", ");
+        fail(
+          `Existing production record conflict. Table: ${tableName}. ` +
+          `Record: ${recordId}. Different fields: ${differences.join(", ")}. ` +
+          "Import refused without changing records."
+        );
       }
       alreadyPresent += 1;
       continue;

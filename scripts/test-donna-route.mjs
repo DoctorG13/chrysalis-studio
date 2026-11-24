@@ -1,4 +1,3 @@
-
 import assert from "node:assert/strict";
 import {
   copyFileSync,
@@ -16,6 +15,7 @@ import { DatabaseSync } from "node:sqlite";
 import { createHash } from "node:crypto";
 
 import { handleDonnaMigrationRoute } from "../server/donna-migration-route.js";
+import { importDonnaMigration } from "../server/donna-migration-import.js";
 
 const projectRoot = process.cwd();
 
@@ -30,6 +30,8 @@ const packagePath = resolve(
 );
 
 const confirmation = "IMPORT DONNA CHRYSALIS WORKSPACE";
+const testAdminHeader = "x-test-admin";
+const testAdminValue = "authorized";
 
 const donna = {
   id: "27f7b2a7-0a47-424c-870e-853fb0e2b03f",
@@ -61,6 +63,7 @@ copyFileSync(sourceDatabase, testDatabase);
 const packageBytes = readFileSync(packagePath);
 
 let server;
+let baseUrl;
 
 function openDatabase(path, readOnly = true) {
   return new DatabaseSync(path, {
@@ -80,6 +83,77 @@ function getDatabaseChecks(database) {
       "PRAGMA foreign_key_check"
     ).all().length,
   };
+}
+
+function sendJson(response, status, body) {
+  if (response.headersSent || response.writableEnded) return;
+
+  response.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
+  response.end(JSON.stringify(body));
+}
+
+function authenticate(request, response) {
+  if (request.headers[testAdminHeader] !== testAdminValue) {
+    sendJson(response, 401, {
+      ok: false,
+      error: "Authentication required.",
+    });
+    return false;
+  }
+
+  return true;
+}
+
+function requireSameOrigin(request, response) {
+  const origin = request.headers.origin;
+  const expectedOrigin = `http://${request.headers.host}`;
+
+  if (!origin || origin !== expectedOrigin) {
+    sendJson(response, 403, {
+      ok: false,
+      error: "A valid same-origin request is required.",
+    });
+    return false;
+  }
+
+  return true;
+}
+
+async function postMigration(mode, {
+  authenticated = true,
+  origin = baseUrl,
+  confirm = false,
+} = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (origin !== null) {
+    headers.Origin = origin;
+  }
+
+  if (authenticated) {
+    headers[testAdminHeader] = testAdminValue;
+  }
+
+  if (confirm) {
+    headers["X-Migration-Confirmation"] = confirmation;
+  }
+
+  const response = await fetch(
+    `${baseUrl}/api/admin/donna-migration?mode=${mode}`,
+    {
+      method: "POST",
+      headers,
+      body: packageBytes,
+    }
+  );
+
+  const result = await response.json();
+  return { response, result };
 }
 
 try {
@@ -124,29 +198,8 @@ try {
       request,
       response,
       url,
-      authenticate: (request, response) => {
-        if (request.headers["x-test-admin"] !== "authorized") {
-          response.writeHead(401, { "Content-Type": "application/json" });
-          response.end(JSON.stringify({
-            ok: false,
-            error: "Authentication required.",
-          }));
-          return false;
-        }
-        return true;
-      },
-      requireSameOrigin: (request, response) => {
-        const expectedOrigin = `http://${request.headers.host}`;
-        if (!request.headers.origin || request.headers.origin !== expectedOrigin) {
-          response.writeHead(403, { "Content-Type": "application/json" });
-          response.end(JSON.stringify({
-            ok: false,
-            error: "A valid same-origin request is required.",
-          }));
-          return false;
-        }
-        return true;
-      },
+      authenticate,
+      requireSameOrigin,
       databasePath: testDatabase,
       backupDirectory,
     });
@@ -163,98 +216,51 @@ try {
   });
 
   const address = server.address();
-  const baseUrl = `http://127.0.0.1:${address.port}`;
+  baseUrl = `http://127.0.0.1:${address.port}`;
 
-  // Security Test 1: Reject a request without administrator authentication.
-  const unauthenticated = await fetch(
-    `${baseUrl}/api/admin/donna-migration?mode=dry-run`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Origin: baseUrl,
-      },
-      body: packageBytes,
-    }
-  );
+  // Test 1: An unauthenticated request must be rejected before processing.
+  const unauthenticated = await postMigration("dry-run", {
+    authenticated: false,
+  });
 
-  assert.equal(unauthenticated.status, 401);
-  assert.match((await unauthenticated.json()).error, /authentication/i);
+  assert.equal(unauthenticated.response.status, 401);
+  assert.equal(unauthenticated.result.ok, false);
+  assert.match(unauthenticated.result.error, /authentication/i);
 
-  // Security Test 2: Reject an authenticated request from another origin.
-  const crossOrigin = await fetch(
-    `${baseUrl}/api/admin/donna-migration?mode=dry-run`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Test-Admin": "authorized",
-        Origin: "https://attacker.example",
-      },
-      body: packageBytes,
-    }
-  );
+  // Test 2: An authenticated request from another origin must be rejected.
+  const crossOrigin = await postMigration("dry-run", {
+    origin: "https://untrusted.example",
+  });
 
-  assert.equal(crossOrigin.status, 403);
-  assert.match((await crossOrigin.json()).error, /origin/i);
+  assert.equal(crossOrigin.response.status, 403);
+  assert.equal(crossOrigin.result.ok, false);
+  assert.match(crossOrigin.result.error, /origin/i);
 
-  // Security Test 3: Reject an authenticated request with no Origin header.
-  const missingOrigin = await fetch(
-    `${baseUrl}/api/admin/donna-migration?mode=dry-run`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Test-Admin": "authorized",
-      },
-      body: packageBytes,
-    }
-  );
+  // Test 3: An authenticated request without an Origin must be rejected.
+  const missingOrigin = await postMigration("dry-run", {
+    origin: null,
+  });
 
-  assert.equal(missingOrigin.status, 403);
-  assert.match((await missingOrigin.json()).error, /origin/i);
-  // Test 1: A commit without explicit confirmation must be rejected.
-  const rejectedCommit = await fetch(
-    `${baseUrl}/api/admin/donna-migration?mode=commit`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Test-Admin": "authorized",
-        Origin: baseUrl,
-      },
-      body: packageBytes,
-    }
-  );
+  assert.equal(missingOrigin.response.status, 403);
+  assert.equal(missingOrigin.result.ok, false);
+  assert.match(missingOrigin.result.error, /origin/i);
 
-  const rejectedResult = await rejectedCommit.json();
+  // Test 4: A commit without explicit confirmation must be rejected.
+  const rejectedCommit = await postMigration("commit");
 
-  assert.equal(rejectedCommit.status, 400);
-  assert.match(rejectedResult.error, /confirmation/i);
+  assert.equal(rejectedCommit.response.status, 400);
+  assert.match(rejectedCommit.result.error, /confirmation/i);
 
-  // Test 2: A dry-run must validate but leave the database unchanged.
-  const dryRun = await fetch(
-    `${baseUrl}/api/admin/donna-migration?mode=dry-run`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Test-Admin": "authorized",
-        Origin: baseUrl,
-      },
-      body: packageBytes,
-    }
-  );
+  // Test 5: A dry-run must validate but leave the database unchanged.
+  const dryRun = await postMigration("dry-run");
 
-  const dryRunResult = await dryRun.json();
-
-  assert.equal(dryRun.status, 200);
-  assert.equal(dryRunResult.ok, true);
-  assert.equal(dryRunResult.mode, "dry-run");
-  assert.equal(dryRunResult.committed, false);
-  assert.equal(dryRunResult.totalImported, 96);
-  assert.equal(dryRunResult.integrity, "ok");
-  assert.equal(dryRunResult.foreignKeyViolations, 0);
+  assert.equal(dryRun.response.status, 200);
+  assert.equal(dryRun.result.ok, true);
+  assert.equal(dryRun.result.mode, "dry-run");
+  assert.equal(dryRun.result.committed, false);
+  assert.equal(dryRun.result.totalImported, 96);
+  assert.equal(dryRun.result.integrity, "ok");
+  assert.equal(dryRun.result.foreignKeyViolations, 0);
 
   const afterDryRun = openDatabase(testDatabase);
 
@@ -286,56 +292,44 @@ try {
     afterDryRun.close();
   }
 
-  // Test 3: Perform a confirmed commit against the disposable database.
-  const committed = await fetch(
-    `${baseUrl}/api/admin/donna-migration?mode=commit`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Test-Admin": "authorized",
-        Origin: baseUrl,
-        "X-Migration-Confirmation": confirmation,
-      },
-      body: packageBytes,
-    }
-  );
-
-  const commitResult = await committed.json();
+  // Test 6: Perform a confirmed commit against the disposable database.
+  const committed = await postMigration("commit", {
+    confirm: true,
+  });
 
   assert.equal(
-    committed.status,
+    committed.response.status,
     200,
-    `Commit request failed: ${JSON.stringify(commitResult)}`
+    `Commit request failed: ${JSON.stringify(committed.result)}`
   );
 
-  assert.equal(commitResult.ok, true);
-  assert.equal(commitResult.mode, "commit");
-  assert.equal(commitResult.committed, true);
-  assert.equal(commitResult.totalImported, 96);
-  assert.equal(commitResult.integrity, "ok");
-  assert.equal(commitResult.foreignKeyViolations, 0);
+  assert.equal(committed.result.ok, true);
+  assert.equal(committed.result.mode, "commit");
+  assert.equal(committed.result.committed, true);
+  assert.equal(committed.result.totalImported, 96);
+  assert.equal(committed.result.integrity, "ok");
+  assert.equal(committed.result.foreignKeyViolations, 0);
 
-  // Test 4: Verify that a pre-import backup was created and verified.
-  assert.ok(commitResult.backup);
-  assert.equal(commitResult.backup.verified, true);
-  assert.equal(commitResult.backup.integrity, "ok");
-  assert.equal(commitResult.backup.foreignKeyViolations, 0);
-  assert.ok(commitResult.backup.name);
+  // Test 7: Verify that a pre-import backup was created and verified.
+  assert.ok(committed.result.backup);
+  assert.equal(committed.result.backup.verified, true);
+  assert.equal(committed.result.backup.integrity, "ok");
+  assert.equal(committed.result.backup.foreignKeyViolations, 0);
+  assert.ok(committed.result.backup.name);
   assert.ok(
-    Number.isSafeInteger(commitResult.backup.sizeBytes) &&
-      commitResult.backup.sizeBytes > 0,
+    Number.isSafeInteger(committed.result.backup.sizeBytes) &&
+      committed.result.backup.sizeBytes > 0,
     "Pre-import backup must report a positive verified size"
   );
   assert.match(
-    commitResult.backup.sha256,
+    committed.result.backup.sha256,
     /^[a-f0-9]{64}$/,
     "Pre-import backup must report a valid SHA-256 digest"
   );
 
   const backupPath = join(
     backupDirectory,
-    commitResult.backup.name
+    committed.result.backup.name
   );
 
   assert.ok(
@@ -344,15 +338,17 @@ try {
   );
   assert.equal(
     statSync(backupPath).size,
-    commitResult.backup.sizeBytes,
+    committed.result.backup.sizeBytes,
     "Reported backup size must match the actual file"
   );
+
   const actualBackupSha256 = createHash("sha256")
     .update(readFileSync(backupPath))
     .digest("hex");
+
   assert.equal(
     actualBackupSha256,
-    commitResult.backup.sha256,
+    committed.result.backup.sha256,
     "Reported backup SHA-256 must match the actual file"
   );
 
@@ -386,7 +382,112 @@ try {
     backupDatabase.close();
   }
 
-  // Test 5: Verify Donna and the original four customers are present.
+  // Test 7B: Verify conflicting records are identified and rolled back.
+  const conflictDatabasePath = join(
+    temporaryDirectory,
+    "conflict-chrysalis.db"
+  );
+
+  copyFileSync(testDatabase, conflictDatabasePath);
+
+  const conflictDatabase = openDatabase(
+    conflictDatabasePath,
+    false
+  );
+
+  try {
+    const migrationPackage = JSON.parse(
+      packageBytes.toString("utf8")
+    );
+
+    const incomingJob =
+      migrationPackage.tables.bizzibuddi_jobs.rows[0];
+
+    assert.ok(incomingJob?.id, "Migration package has no test job.");
+
+    const originalJob = conflictDatabase.prepare(
+      `SELECT id, user_id, title
+       FROM bizzibuddi_jobs
+       WHERE id = ? AND user_id = ?`
+    ).get(incomingJob.id, donna.id);
+
+    assert.ok(originalJob, "Imported test job was not found.");
+
+    const sentinel = "__donna_migration_conflict_test__";
+
+    const updateResult = conflictDatabase.prepare(
+      `UPDATE bizzibuddi_jobs
+       SET title = ?
+       WHERE id = ? AND user_id = ?`
+    ).run(sentinel, incomingJob.id, donna.id);
+
+    assert.equal(updateResult.changes, 1);
+
+    const conflictBefore = conflictDatabase.prepare(
+      `SELECT id, user_id, title
+       FROM bizzibuddi_jobs
+       WHERE id = ? AND user_id = ?`
+    ).get(incomingJob.id, donna.id);
+
+    let conflictError;
+
+    try {
+      importDonnaMigration({
+        database: conflictDatabase,
+        packagePath,
+        mode: "dry-run",
+      });
+    } catch (error) {
+      conflictError = error;
+    }
+
+    assert.ok(
+      conflictError,
+      "Importer did not reject the deliberately altered job."
+    );
+
+    assert.match(
+      conflictError.message,
+      /bizzibuddi_jobs/
+    );
+
+    assert.match(
+      conflictError.message,
+      new RegExp(
+        `Record: id=${incomingJob.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`
+      )
+    );
+
+    assert.match(
+      conflictError.message,
+      /Different fields:.*title/
+    );
+
+    assert.doesNotMatch(
+      conflictError.message,
+      /__donna_migration_conflict_test__/
+    );
+
+    const conflictAfter = conflictDatabase.prepare(
+      `SELECT id, user_id, title
+       FROM bizzibuddi_jobs
+       WHERE id = ? AND user_id = ?`
+    ).get(incomingJob.id, donna.id);
+
+    assert.deepEqual(conflictAfter, conflictBefore);
+
+    const conflictChecks = getDatabaseChecks(conflictDatabase);
+
+    assert.equal(conflictChecks.integrity, "ok");
+    assert.equal(conflictChecks.foreignKeyViolations, 0);
+
+    console.log("Conflict diagnostic:       passed");
+    console.log("Conflict rollback:         passed");
+    console.log("Conflict data values:      not exposed");
+  } finally {
+    conflictDatabase.close();
+  }
+  // Test 8: Verify Donna and the original four customers are present.
   const migratedDatabase = openDatabase(testDatabase);
 
   try {
@@ -430,8 +531,11 @@ try {
     assert.equal(checks.foreignKeyViolations, 0);
 
     console.log("");
-    console.log("DONNA HTTP ROUTE COMMIT TEST PASSED");
-    console.log("===================================");
+    console.log("DONNA HTTP ROUTE SECURITY AND COMMIT TEST PASSED");
+    console.log("================================================");
+    console.log("Unauthenticated request:     rejected (401)");
+    console.log("Cross-origin request:        rejected (403)");
+    console.log("Missing Origin request:      rejected (403)");
     console.log("Commit without confirmation: rejected");
     console.log("Dry-run validation:          passed");
     console.log("Confirmed test commit:       passed");
@@ -447,6 +551,8 @@ try {
     console.log("IMPORTANT: All changes were made only to a");
     console.log("temporary disposable database on this PC.");
     console.log("Railway production was not modified.");
+    console.log("The authentication and Origin checks above");
+    console.log("exercise the route callbacks, not Railway login.");
   } finally {
     migratedDatabase.close();
   }
