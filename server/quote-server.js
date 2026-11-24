@@ -1,8 +1,9 @@
-﻿import { createServer } from "node:http";
+import { createServer } from "node:http";
 import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
+import { calculateQuoteAmounts } from "../shared/invoice-quote-money.js";
 
 const PORT = Number(
   process.env.CHRYSALIS_QUOTE_API_PORT || 4182
@@ -332,48 +333,13 @@ function normalizeQuote(
   const now =
     new Date().toISOString();
 
-  const lineItems =
-    Array.isArray(
-      source.lineItems
-    )
-      ? source.lineItems
-      : [];
-
-  const subtotal = Number(
-    source.subtotal ??
-      lineItems.reduce(
-        (sum, item) =>
-          sum +
-          Number(
-            item.quantity || 0
-          ) *
-            Number(
-              item.rate || 0
-            ),
-        0
-      )
-  );
-
-  const gst = Number(
-    source.gst ?? 0
-  );
-
-  const total = Number(
-    source.total ??
-      subtotal + gst
-  );
-
-  const depositRequired =
-    Number(
-      source.depositRequired ??
-        source.deposit ??
-        0
-    );
-
-  const balance = Math.max(
-    0,
-    total - depositRequired
-  );
+  const lineItems = Array.isArray(source.lineItems)
+    ? source.lineItems
+    : [];
+  const amounts = calculateQuoteAmounts({
+    ...source,
+    lineItems,
+  });
 
   return {
     ...source,
@@ -397,14 +363,14 @@ function normalizeQuote(
         ""
     ),
 
-    amount: total,
+    amount: amounts.total,
 
-    subtotal,
-    gst,
-    total,
+    subtotal: amounts.subtotal,
+    gst: amounts.gst,
+    total: amounts.total,
 
-    depositRequired,
-    balance,
+    depositRequired: amounts.depositRequired,
+    balance: amounts.balance,
 
     status: String(
       source.status || "Draft"

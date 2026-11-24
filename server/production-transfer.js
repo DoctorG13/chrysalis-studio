@@ -376,8 +376,10 @@ function getPublicForwardingHeaders(request) {
   const publicHost = String(request.headers.host || "")
     .split(",")[0]
     .trim();
+
   const forwardedProto = String(
-    request.headers["x-forwarded-proto"] || "https"
+    request.headers["x-forwarded-proto"] ||
+      (request.socket?.encrypted ? "https" : "http")
   )
     .split(",")[0]
     .trim();
@@ -469,6 +471,7 @@ const authConfig = validateAuthConfiguration();
 // The existing production gateway remains the source of truth for all normal
 // application traffic. It binds to localhost:4172 so this transfer gateway
 // can add the authenticated file-transfer endpoints on the public PORT.
+process.env.DONNA_API_PORT = process.env.DONNA_API_PORT || "4283";
 process.env.PORT = String(INTERNAL_PORT);
 await import("./production.js");
 await waitForInternalGateway();

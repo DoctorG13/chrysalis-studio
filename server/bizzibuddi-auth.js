@@ -4,6 +4,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { BIZZI_BUDDI_FIELD_TYPES, BIZZI_BUDDI_INDUSTRY_TEMPLATES } from "./bizzibuddi-business-config.js";
 import { askBuddiOpenAI } from "./buddi-ai.js";
+import { fromCents, toCents } from "../shared/money.js";
 
 const COOKIE_NAME = "bizzibuddi_session";
 const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
@@ -14,6 +15,28 @@ const SCRYPT_N = 32768;
 const SCRYPT_R = 8;
 const SCRYPT_P = 3;
 const SCRYPT_KEY_LENGTH = 64;
+
+function readMoneyCents(value, errorMessage) {
+  try {
+    return toCents(value);
+  } catch {
+    throw new Error(errorMessage);
+  }
+}
+
+function calculatedMoneyCents(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) {
+    throw new TypeError("Calculated money must be a finite number.");
+  }
+
+  const cents = Math.round(amount * 100);
+  if (!Number.isSafeInteger(cents) || Math.abs(amount - cents / 100) > 0.000001) {
+    throw new RangeError("Calculated amount is outside the supported monetary precision.");
+  }
+
+  return cents;
+}
 
 const DATA_DIR = resolve(
   process.env.CHRYSALIS_DATA_DIR || join(process.cwd(), "data")
@@ -603,7 +626,11 @@ function validateJobPayload(payload) {
   const status = String(payload?.status || "New").trim();
   const dueDate = String(payload?.dueDate || "").trim();
   const description = String(payload?.description || "").trim();
-  const price = Number(payload?.price ?? 0);
+  const priceInput = payload?.price === "" ? 0 : (payload?.price ?? 0);
+  const priceCents = readMoneyCents(
+    priceInput,
+    "Job price must be a valid amount with no more than two decimal places."
+  );
 
   if (!title || title.length > 160) {
     throw new Error("Job name is required and must be 160 characters or fewer.");
@@ -625,7 +652,7 @@ function validateJobPayload(payload) {
     throw new Error("Job description must be 2000 characters or fewer.");
   }
 
-  if (!Number.isFinite(price) || price < 0 || price > 100000000) {
+  if (priceCents < 0 || priceCents > 10000000000) {
     throw new Error("Job price must be a valid non-negative amount.");
   }
 
@@ -635,7 +662,7 @@ function validateJobPayload(payload) {
     status,
     dueDate,
     description,
-    price: Math.round(price * 100) / 100,
+    price: fromCents(priceCents),
   };
 }
 
@@ -974,7 +1001,10 @@ function getDateDifferenceInDays(startDate, endDate) {
 
 function validateInvoicePayload(payload) {
   const personId = String(payload?.personId || "").trim();
-  const amount = Number(payload?.amount ?? 0);
+  const amountCents = readMoneyCents(
+    payload?.amount ?? 0,
+    "Invoice amount must be a valid amount with no more than two decimal places."
+  );
   const issueDate = String(payload?.issueDate || todayDate()).trim();
   const dueDate = String(payload?.dueDate || "").trim();
   const description = String(payload?.description || "").trim().slice(0, 200);
@@ -982,7 +1012,7 @@ function validateInvoicePayload(payload) {
   const notes = String(payload?.notes || "").trim().slice(0, 1000);
 
   if (!personId) throw new Error("Please select a person for this invoice.");
-  if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
+  if (amountCents <= 0 || amountCents > 10000000000) {
     throw new Error("Invoice amount must be greater than zero.");
   }
   if (!isValidDateString(issueDate)) {
@@ -994,7 +1024,7 @@ function validateInvoicePayload(payload) {
 
   return {
     personId,
-    amount: Math.round(amount * 100) / 100,
+    amount: fromCents(amountCents),
     issueDate,
     dueDate,
     description,
@@ -1333,7 +1363,7 @@ function updateInvoice(userId, invoiceId, payload) {
     }
 
     const paid = getInvoicePaymentTotal(userId, invoiceId);
-    if (values.amount + 0.000001 < paid) {
+    if (calculatedMoneyCents(values.amount) < calculatedMoneyCents(paid)) {
       throw new Error("The invoice total cannot be less than payments already recorded.");
     }
 
@@ -1488,23 +1518,25 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
 
     // Read the latest total after obtaining the write lock.
     const currentPaid = getInvoicePaymentTotal(userId, invoiceId);
-    const balance = Math.max(
-      0,
-      Number(invoice.amount || 0) - currentPaid
-    );
-
-    const maximum = paymentType === "Refund"
-      ? Math.max(0, currentPaid)
-      : balance;
+    const currentPaidCents = calculatedMoneyCents(currentPaid);
+    const invoiceAmountCents = calculatedMoneyCents(Number(invoice.amount || 0));
+    const balanceCents = Math.max(0, invoiceAmountCents - currentPaidCents);
+    const maximumCents = paymentType === "Refund"
+      ? Math.max(0, currentPaidCents)
+      : balanceCents;
+    const maximum = fromCents(maximumCents);
 
     const requestedAmount =
       payload?.amount === undefined ||
       payload?.amount === null ||
       payload?.amount === ""
         ? maximum
-        : Number(payload.amount);
-
-    const amount = Math.round(requestedAmount * 100) / 100;
+        : payload.amount;
+    const amountCents = readMoneyCents(
+      requestedAmount,
+      "Payment or refund amount must be a valid amount with no more than two decimal places."
+    );
+    const amount = fromCents(amountCents);
 
     const method = String(payload?.method || "Other")
       .trim()
@@ -1516,9 +1548,7 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
       payload?.description || paymentType
     ).trim().slice(0, 160) || paymentType;
 
-    if (!Number.isFinite(amount) ||
-        amount <= 0 ||
-        amount > maximum + 0.000001) {
+    if (amountCents <= 0 || amountCents > maximumCents) {
       throw new Error(
         paymentType === "Refund"
           ? `Refund amount must be greater than zero and no more than the amount received (${maximum.toFixed(2)}).`
@@ -1563,8 +1593,9 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
       now
     );
 
-    const nextPaid = currentPaid +
-      (paymentType === "Refund" ? -amount : amount);
+    const nextPaidCents = currentPaidCents +
+      (paymentType === "Refund" ? -amountCents : amountCents);
+    const nextPaid = fromCents(nextPaidCents);
 
     const nextStatus = getInvoiceStatus(
       invoice.amount,
@@ -1633,6 +1664,7 @@ function recordInvoicePayment(userId, invoiceId, payload = {}) {
 }
 function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
   const database = getDatabase();
+  let actualInvoiceId = invoiceId;
 
   // Lock the invoice payment history before calculating the new balance.
   // This prevents concurrent changes from invalidating refund safeguards.
@@ -1659,7 +1691,7 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       return null;
     }
 
-    const actualInvoiceId = payment.invoice_id;
+    actualInvoiceId = payment.invoice_id;
 
     const oldType = payment.payment_type === "Refund"
       ? "Refund"
@@ -1687,9 +1719,12 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
       payload?.amount === null ||
       payload?.amount === ""
         ? currentAmount
-        : Number(payload.amount);
-
-    const amount = Math.round(amountInput * 100) / 100;
+        : payload.amount;
+    const amountCents = readMoneyCents(
+      amountInput,
+      "Payment or refund amount must be a valid amount with no more than two decimal places."
+    );
+    const amount = fromCents(amountCents);
 
     const method = String(payload?.method || payment.method || "Other")
       .trim()
@@ -1703,9 +1738,8 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
         : payload.description
     ).trim().slice(0, 160) || nextType;
 
-    if (!Number.isFinite(amount) ||
-        amount <= 0 ||
-        amount > maximum + 0.000001) {
+    const maximumCents = calculatedMoneyCents(maximum);
+    if (amountCents <= 0 || amountCents > maximumCents) {
       throw new Error(
         nextType === "Refund"
           ? `Refund amount must be greater than zero and no more than the available amount received (${maximum.toFixed(2)}).`
@@ -1714,12 +1748,14 @@ function updateInvoicePayment(userId, invoiceId, paymentId, payload = {}) {
     }
 
     // Calculate the resulting net receipts before saving anything.
-    const nextPaid = netWithoutCurrent +
-      (nextType === "Refund" ? -amount : amount);
+    const netWithoutCurrentCents = calculatedMoneyCents(netWithoutCurrent);
+    const nextPaidCents = netWithoutCurrentCents +
+      (nextType === "Refund" ? -amountCents : amountCents);
+    const nextPaid = fromCents(nextPaidCents);
 
     // A payment cannot be reduced below the value of existing refunds.
-    if (nextPaid < -0.000001) {
-      const minimumRequired = Math.max(0, -netWithoutCurrent);
+    if (nextPaidCents < 0) {
+      const minimumRequired = fromCents(Math.max(0, -netWithoutCurrentCents));
 
       throw new Error(
         `Payment amount must be at least ${minimumRequired.toFixed(2)} to cover refunds already recorded.`
@@ -2070,8 +2106,12 @@ function validateJobPaymentValues(payload, existing = null) {
   const amountInput =
     payload?.amount === undefined || payload?.amount === null || payload?.amount === ""
       ? Number(existing?.amount || 0)
-      : Number(payload.amount);
-  const amount = Math.round(amountInput * 100) / 100;
+      : payload.amount;
+  const amountCents = readMoneyCents(
+    amountInput,
+    "Payment amount must be a valid amount with no more than two decimal places."
+  );
+  const amount = fromCents(amountCents);
   const method = String(payload?.method ?? existing?.method ?? "Other")
     .trim()
     .slice(0, 60) || "Other";
@@ -2080,7 +2120,7 @@ function validateJobPaymentValues(payload, existing = null) {
     .trim()
     .slice(0, 160) || paymentType;
 
-  if (!Number.isFinite(amount) || amount <= 0 || amount > 100000000) {
+  if (amountCents <= 0 || amountCents > 10000000000) {
     throw new Error("Payment amount must be greater than zero and no more than $100,000,000.");
   }
 
@@ -2117,7 +2157,7 @@ function recordJobPayment(userId, jobId, payload = {}) {
     const currentPaid = getJobPaymentTotal(userId, jobId);
     const maximum = getJobPaymentMaximum(job, currentPaid, values.paymentType);
 
-    if (values.amount > maximum + 0.000001) {
+    if (Number.isFinite(maximum) && toCents(values.amount) > calculatedMoneyCents(maximum)) {
       const limitText = Number.isFinite(maximum)
         ? formatPaymentAuditCurrency(maximum)
         : "the available amount";
@@ -2227,15 +2267,15 @@ function updateJobPayment(userId, jobId, paymentId, payload = {}) {
 
     if (values.paymentType === "Refund") {
       const maximumRefund = Math.max(0, netWithoutCurrent);
-      if (values.amount > maximumRefund + 0.000001) {
+      if (calculatedMoneyCents(values.amount) > calculatedMoneyCents(maximumRefund)) {
         throw new Error(
           `Refund amount must be greater than zero and no more than the amount received (${formatPaymentAuditCurrency(maximumRefund)}).`
         );
       }
     }
 
-    if (nextPaid < -0.000001) {
-      const minimumRequired = Math.max(0, -netWithoutCurrent);
+    if (calculatedMoneyCents(nextPaid) < 0) {
+      const minimumRequired = fromCents(Math.max(0, -calculatedMoneyCents(netWithoutCurrent)));
       throw new Error(
         `Payment amount must be at least ${formatPaymentAuditCurrency(minimumRequired)} to cover refunds already recorded.`
       );
@@ -2245,8 +2285,8 @@ function updateJobPayment(userId, jobId, paymentId, payload = {}) {
     if (
       values.paymentType !== "Refund" &&
       jobPrice > 0 &&
-      nextPaid > currentPaid + 0.000001 &&
-      nextPaid > jobPrice + 0.000001
+      calculatedMoneyCents(nextPaid) > calculatedMoneyCents(currentPaid) &&
+      calculatedMoneyCents(nextPaid) > calculatedMoneyCents(jobPrice)
     ) {
       const remaining = Math.max(0, jobPrice - netWithoutCurrent);
       throw new Error(
@@ -2399,13 +2439,18 @@ function toExpense(row) {
 }
 
 function validateExpensePayload(payload = {}) {
-  const amount = Math.round(Number(payload?.amount || 0) * 100) / 100;
+  const amountInput = payload?.amount === "" ? 0 : (payload?.amount ?? 0);
+  const amountCents = readMoneyCents(
+    amountInput,
+    "Expense amount must be a valid amount with no more than two decimal places."
+  );
+  const amount = fromCents(amountCents);
   const date = String(payload?.date || todayDate()).trim();
   const category = String(payload?.category || "Other").trim().slice(0, 80) || "Other";
   const method = String(payload?.method || "Other").trim().slice(0, 60) || "Other";
   const description = String(payload?.description || "").trim().slice(0, 160);
 
-  if (!Number.isFinite(amount) || amount <= 0) {
+  if (amountCents <= 0) {
     throw new Error("Expense amount must be greater than zero.");
   }
 
@@ -4376,6 +4421,52 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   }
 
   try {
+    if (url.pathname === "/api/bizzibuddi/auth/live-info" && request.method === "POST") {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, {
+          ok: false,
+          authenticated: false,
+          error: "Authentication required.",
+        });
+        return true;
+      }
+
+      const payload = await readJsonBody(request);
+      const kind = ["weather", "time", "date"].includes(payload?.kind)
+        ? payload.kind
+        : "";
+      const location = String(payload?.location || "").trim().slice(0, 120);
+      const question = String(payload?.question || "").trim().slice(0, 2000);
+
+      if (!kind) {
+        sendJson(response, 400, {
+          ok: false,
+          error: "Choose time, date, or weather.",
+        });
+        return true;
+      }
+
+      try {
+        const donnaPort = Number(process.env.DONNA_API_PORT || 4184);
+        const upstream = await fetch(`http://127.0.0.1:${donnaPort}/api/donna/live-info`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind, location, question }),
+          signal: AbortSignal.timeout(20000),
+        });
+        const result = await upstream.json();
+        sendJson(response, upstream.status, result);
+      } catch (error) {
+        console.error("BizziBuddi live information request failed:", error);
+        sendJson(response, 502, {
+          ok: false,
+          error: "Live information is temporarily unavailable. Please try again shortly.",
+        });
+      }
+      return true;
+    }
+
     if (url.pathname === "/api/bizzibuddi/auth/buddi/chat" && request.method === "POST") {
       const user = getSessionUser(request);
       if (!user) {
@@ -5143,12 +5234,12 @@ export async function handleBizziBuddiAuthRequest(request, response) {
         request.method === "PUT") {
       const paymentsPrefix = "/api/bizzibuddi/auth/invoices/";
       const paymentRoute = url.pathname.slice(paymentsPrefix.length);
-      const [rawInvoiceId, rawPaymentId, extra] = paymentRoute.split("/");
+      const [rawInvoiceId, paymentsSegment, rawPaymentId, extra] = paymentRoute.split("/");
 
       const invoiceId = decodeURIComponent(rawInvoiceId || "").trim();
       const paymentId = decodeURIComponent(rawPaymentId || "").trim();
 
-      if (!invoiceId || !paymentId || extra || invoiceId.includes("/") || paymentId.includes("/")) {
+      if (!invoiceId || paymentsSegment !== "payments" || !paymentId || extra || invoiceId.includes("/") || paymentId.includes("/")) {
         sendJson(response, 404, { ok: false, error: "Payment not found." });
         return true;
       }
@@ -5881,7 +5972,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   } catch (error) {
     console.error("BizziBuddi authentication request failed:", error);
 
-    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|invoice|payment|Payment|refund|Refund|Template|template task|production template|START FRESH|confirmation|business data/.test(
+    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|Expense|Job price|invoice|payment|Payment|refund|Refund|Template|template task|production template|START FRESH|confirmation|business data/.test(
       error instanceof Error ? error.message : ""
     )
       ? 400

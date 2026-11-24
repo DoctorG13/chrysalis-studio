@@ -1,6 +1,6 @@
 import { createServer } from "node:http";
 
-const PORT = 4184;
+const PORT = Number(process.env.DONNA_API_PORT || 4184);
 const API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const MAX_BODY_BYTES = 512 * 1024;

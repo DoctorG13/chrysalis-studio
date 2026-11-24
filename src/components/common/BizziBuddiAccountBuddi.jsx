@@ -1653,7 +1653,7 @@ export default function BizziBuddiAccountBuddi({ account, people, jobs, appointm
       setIsLoading(true);
       setJobDraft(null); setAppointmentDraft(null); setPaymentDraft(null); setInvoiceDraft(null); setNewClientDraft(null); setJobMessage("");
       try {
-        const response = await fetch("/api/donna/live-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(liveInfoRequest) });
+        const response = await fetch("/api/bizzibuddi/auth/live-info", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(liveInfoRequest) });
         const payload = await response.json().catch(() => ({}));
         
 if (!response.ok) throw new Error(payload?.error || "Live information is temporarily unavailable.");

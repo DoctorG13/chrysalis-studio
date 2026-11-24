@@ -3,6 +3,8 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import crypto from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
+import { fromCents, toCents } from "../shared/money.js";
+import { calculateInvoiceAmountCents, reconcileInvoiceCents } from "../shared/invoice-quote-money.js";
 
 const PORT = Number(process.env.CHRYSALIS_INVOICE_API_PORT || 4181);
 const DATA_DIR = resolve(process.env.CHRYSALIS_DATA_DIR || join(process.cwd(), "data"));
@@ -36,10 +38,7 @@ function readJsonBody(request) {
 function parseJson(value, fallback) { try { return JSON.parse(value); } catch { return fallback; } }
 
 function invoiceTotal(invoice) {
-  const lineItems = Array.isArray(invoice.lineItems) ? invoice.lineItems : [];
-  const calculated = lineItems.reduce((sum, item) => sum + Number(item.quantity || 0) * Number(item.rate || 0), 0);
-  const total = Number(invoice.total ?? invoice.amount ?? calculated);
-  return Number.isFinite(total) ? Math.max(total, 0) : 0;
+  return fromCents(calculateInvoiceAmountCents(invoice));
 }
 
 function todayString() {
@@ -56,48 +55,50 @@ function getInvoicePayments(database, invoiceId) {
     .all(invoiceId)
     .map((row) => {
       const payment = parseJson(row.data_json, {});
-      const amount = Number(row.amount || 0);
+      const amountCents = toCents(row.amount || 0);
       const isRefund =
         String(payment.paymentType || "").trim().toLowerCase() === "refund";
 
       return {
-        amount,
-        signedAmount: isRefund ? -amount : amount,
+        amount: fromCents(amountCents),
+        isRefund,
       };
     });
 }
 
 function reconcileInvoice(database, invoice) {
-  const total = invoiceTotal(invoice);
+  const totalCents = calculateInvoiceAmountCents(invoice);
 
   if (!invoice.jobId) {
-    const storedPaid = Number(invoice.amountPaid || 0);
-    const paid = Number.isFinite(storedPaid) ? Math.max(storedPaid, 0) : 0;
-    const balance = Math.max(total - paid, 0);
+    const storedPaidCents = toCents(invoice.amountPaid || 0);
+    if (storedPaidCents < 0) {
+      throw new Error("Invoice amount paid cannot be negative.");
+    }
+    const paidCents = Math.min(storedPaidCents, totalCents);
     return {
       ...invoice,
-      amountPaid: Math.round(paid * 100) / 100,
-      balance: Math.round(balance * 100) / 100,
+      amountPaid: fromCents(paidCents),
+      balance: fromCents(Math.max(totalCents - paidCents, 0)),
       paymentStatus: invoice.status || "Draft",
     };
   }
 
-  const paid = getInvoicePayments(database, invoice.id).reduce(
-    (sum, row) => sum + row.signedAmount,
-    0
+  const reconciled = reconcileInvoiceCents(
+    totalCents,
+    getInvoicePayments(database, invoice.id)
   );
-  const roundedPaid = Math.round(Math.max(paid, 0) * 100) / 100;
-  const balance = Math.round(Math.max(total - roundedPaid, 0) * 100) / 100;
+  const paidCents = toCents(reconciled.amountPaid);
+  const balanceCents = toCents(reconciled.balance);
   const baseStatus = String(invoice.status || "Draft");
 
   let paymentStatus = baseStatus;
 
   if (baseStatus !== "Draft") {
-    if (balance <= 0 && total > 0) {
+    if (balanceCents <= 0 && totalCents > 0) {
       paymentStatus = "Paid";
-    } else if (invoice.dueDate && invoice.dueDate < todayString() && balance > 0) {
+    } else if (invoice.dueDate && invoice.dueDate < todayString() && balanceCents > 0) {
       paymentStatus = "Overdue";
-    } else if (roundedPaid > 0) {
+    } else if (paidCents > 0) {
       paymentStatus = "Part Paid";
     } else {
       paymentStatus = "Issued";
@@ -106,8 +107,8 @@ function reconcileInvoice(database, invoice) {
 
   return {
     ...invoice,
-    amountPaid: roundedPaid,
-    balance,
+    amountPaid: reconciled.amountPaid,
+    balance: reconciled.balance,
     paymentStatus,
     status: paymentStatus,
   };
@@ -143,7 +144,12 @@ function assertRelations(database, invoice) {
 function normalizeInvoice(input, existing = null) {
   const source = { ...(existing || {}), ...(input || {}) };
   const now = new Date().toISOString();
-  return { ...source, id: String(source.id || crypto.randomUUID()), clientId: String(source.clientId || ""), jobId: source.jobId ? String(source.jobId) : "", number: String(source.number || source.invoiceNumber || ""), amount: Number(source.amount || 0), status: String(source.status || "Draft"), issueDate: String(source.issueDate || source.date || now.slice(0, 10)), dueDate: String(source.dueDate || ""), createdAt: String(existing?.createdAt || source.createdAt || now), updatedAt: now };
+  const amountCents = calculateInvoiceAmountCents(source);
+  if (amountCents < 0) {
+    throw new Error("Invoice amount cannot be negative.");
+  }
+
+  return { ...source, id: String(source.id || crypto.randomUUID()), clientId: String(source.clientId || ""), jobId: source.jobId ? String(source.jobId) : "", number: String(source.number || source.invoiceNumber || ""), amount: fromCents(amountCents), status: String(source.status || "Draft"), issueDate: String(source.issueDate || source.date || now.slice(0, 10)), dueDate: String(source.dueDate || ""), createdAt: String(existing?.createdAt || source.createdAt || now), updatedAt: now };
 }
 
 function updateStoredInvoices(database, table, id, invoiceId, invoice, remove = false) {

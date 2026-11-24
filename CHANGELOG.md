@@ -1,3 +1,17 @@
+## Financial Precision — Invoice and Quote APIs
+
+### Improved
+- Reconcile standalone invoice totals, payments, refunds and balances using integer cents.
+- Reject invoice amounts and payment records with more than two decimal places instead of rounding them during reconciliation.
+- Calculate quote line-item subtotals in cents and reject line items that cannot resolve to an exact cent value.
+- Derive quote totals from subtotal plus GST and validate supplied subtotal, total and deposit values for consistency.
+
+### Testing
+- Added focused invoice and quote monetary calculation tests covering precision rejection, reconciliation, mismatched totals and deposit limits.
+
+**Deployment:** Pending.
+
+---
 ## BizziBuddi — Subscriber Buddi AI Integration
 
 ### Added

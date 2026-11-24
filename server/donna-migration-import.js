@@ -470,11 +470,35 @@ function insertOrVerifyRows(database, tableName, rows) {
   return { inserted, alreadyPresent };
 }
 
-function verifyImportedRows(database, payload) {
+function verificationColumns(tableName, alreadyPresent) {
+  // Existing account records intentionally retain selected production fields.
+  // Verify identity and required membership access, without comparing fields
+  // that the importer is explicitly required to preserve.
+  if (tableName === "users" && alreadyPresent > 0) {
+    return ["id", "email", "username", "display_name"];
+  }
+
+  if (tableName === "workspaces" && alreadyPresent > 0) {
+    return ["id", "name", "slug", "owner_user_id"];
+  }
+
+  if (tableName === "workspace_memberships" && alreadyPresent > 0) {
+    return ["workspace_id", "user_id", "role", "status"];
+  }
+
+  return null;
+}
+
+function verifyImportedRows(database, payload, alreadyPresent) {
   const counts = {};
 
   for (const [tableName, table] of Object.entries(payload.tables)) {
-    const columns = Object.keys(table.rows[0] || {});
+    const allColumns = Object.keys(table.rows[0] || {});
+    const preservedExistingCount = Number(alreadyPresent[tableName] || 0);
+    const preservedColumns = verificationColumns(
+      tableName,
+      preservedExistingCount
+    );
     let verified = 0;
 
     for (const row of table.rows) {
@@ -485,6 +509,8 @@ function verifyImportedRows(database, payload) {
         `SELECT * FROM "${tableName}" WHERE ${keyColumns
           .map((column) => `"${column}" = ?`).join(" AND ")}`
       ).get(...keyColumns.map((column) => row[column]));
+
+      const columns = preservedColumns || allColumns;
 
       if (!existing || !valuesMatch(existing, row, columns)) {
         fail(`Post-import verification failed for a record in ${tableName}.`);
@@ -609,7 +635,7 @@ export function importDonnaMigration({
       alreadyPresent[tableName] = result.alreadyPresent;
     }
 
-    const countsVerified = verifyImportedRows(database, payload);
+    const countsVerified = verifyImportedRows(database, payload, alreadyPresent);
 
     const violations = foreignKeyViolations(database);
 

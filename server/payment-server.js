@@ -3,6 +3,7 @@ import { existsSync, mkdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import crypto from "node:crypto";
+import { fromCents, toCents } from "../shared/money.js";
 
 const DEFAULT_PORT = 4178;
 const MAX_REQUEST_BYTES = 2 * 1024 * 1024;
@@ -138,9 +139,17 @@ function normalizePayment(input, existing = null) {
     ...(input || {}),
   };
 
-  const amount = Number(source.amount);
+  let amountCents;
 
-  if (!Number.isFinite(amount) || amount <= 0) {
+  try {
+    amountCents = toCents(source.amount);
+  } catch {
+    throw new Error(
+      "Payment amount must be a valid amount with no more than two decimal places."
+    );
+  }
+
+  if (amountCents <= 0) {
     throw new Error("Payment amount must be greater than $0.");
   }
 
@@ -156,7 +165,7 @@ function normalizePayment(input, existing = null) {
     clientId: String(source.clientId || ""),
     jobId: String(source.jobId || ""),
     invoiceId: String(source.invoiceId || ""),
-    amount: Math.round(amount * 100) / 100,
+    amount: fromCents(amountCents),
     date,
     method: String(source.method || ""),
     description: String(source.description || "Payment"),

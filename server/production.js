@@ -42,6 +42,7 @@ const SERVICES = [
   { name: "timeline", script: "server/timeline-server.js", args: [], envKey: "CHRYSALIS_TIMELINE_API_PORT", port: 4280 },
   { name: "invoices", script: "server/invoice-server.js", args: [], envKey: "CHRYSALIS_INVOICE_API_PORT", port: 4281 },
   { name: "quotes", script: "server/quote-server.js", args: [], envKey: "CHRYSALIS_QUOTE_API_PORT", port: 4282 },
+  { name: "donna", script: "server/donna-server.js", args: [], envKey: "DONNA_API_PORT", port: 4283 },
 ];
 
 const ROUTES = [
