@@ -4123,3 +4123,16 @@ All notable changes to Chrysalis are recorded here.
 - Improved PDF pagination, table layout and readability.
 
 **Testing:** Passed. Verified report period filtering, job-payment totals, refund handling, CSV export, JSON export, PDF export and one-page PDF layout.
+
+### Donna Workspace Migration — Production Preparation
+
+- Added an administrator migration page for importing Donna's Chrysalis Clothes workspace.
+- Added a protected migration API with authenticated access and same-origin checks.
+- Added migration package validation, including account and workspace identity, schema, record counts and migration history.
+- Added a dry-run process that validates the import without committing changes.
+- Added automatic pre-import SQLite backup creation for confirmed production imports.
+- Added backup verification covering file size, SHA-256 checksum, database integrity and foreign-key constraints.
+- Added explicit confirmation safeguards before production data is changed.
+- Preserved existing customer accounts and account-specific production data during migration.
+
+**Testing:** Passed. Verified the 96-record migration against a disposable database, confirmed all four original customer accounts remained intact, tested rejection without confirmation, and verified the pre-import backup. Production deployment and import remain pending.

@@ -147,7 +147,9 @@ assertContains(read("server/bizzibuddi-auth.js"), "finance-payment-removed", "pa
 assertContains(read("server/bizzibuddi-auth.js"), "finance-payment-updated", "payment updated audit event");
 assertContains(read("server/bizzibuddi-auth.js"), "finance-payment-recorded", "payment recorded audit event");
 assertContains(read("server/bizzibuddi-auth.js"), "function getInvoicePaymentActivity", "persistent finance payment activity");
-assertContains(read("server/bizzibuddi-auth.js"), "const actualInvoiceId = payment.invoice_id;", "payment correction uses persisted payment invoice identity");
+assertContains(auth, "if (!payment || payment.invoice_id !== invoiceId)", "payment correction verifies persisted invoice identity");
+assertContains(auth, "actualInvoiceId = payment.invoice_id;", "payment correction uses persisted payment invoice identity");
+assertContains(auth, "getInvoicePaymentTotal(userId, actualInvoiceId)", "payment correction calculates balance against persisted invoice");
 assertContains(read("server/bizzibuddi-auth.js"), "UPDATE bizzibuddi_payments", "payment correction persistence");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "function handleUpdatePayment", "Finance payment correction handler");
 assertContains(read("src/pages/BizzibuddiAccountPage.jsx"), "Remove", "Finance payment removal UI");
@@ -208,4 +210,4 @@ assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "outsta
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "getFinanceIntelligence", "account Buddi finance intelligence");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "currently outstanding", "account Buddi outstanding balance answer");
 assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "overdue invoice", "account Buddi overdue invoice answer");
-assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Open finance →", "account Buddi finance navigation action");
+assertContains(read("src/components/common/BizziBuddiAccountBuddi.jsx"), "Open finance", "account Buddi finance navigation action");

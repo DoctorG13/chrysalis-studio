@@ -1,7 +1,12 @@
-
-import { createWriteStream, existsSync, unlinkSync } from "node:fs";
+import {
+  createReadStream,
+  createWriteStream,
+  existsSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
 import { join } from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { DatabaseSync, backup as sqliteBackup } from "node:sqlite";
 import { importDonnaMigration } from "./donna-migration-import.js";
 
@@ -11,14 +16,12 @@ const COMMIT_CONFIRMATION = "IMPORT DONNA CHRYSALIS WORKSPACE";
 
 function sendJson(response, statusCode, payload) {
   const body = JSON.stringify(payload, null, 2);
-
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
   });
-
   response.end(body);
 }
 
@@ -26,54 +29,63 @@ function receivePackage(request, destination) {
   return new Promise((resolveUpload, rejectUpload) => {
     let settled = false;
     let size = 0;
-
+    let failure = null;
     const output = createWriteStream(destination, { flags: "wx" });
 
     const fail = (error) => {
-      if (settled) return;
-      settled = true;
+      if (settled || failure) return;
+      failure = error;
       output.destroy();
-      rejectUpload(error);
+      output.once("close", () => {
+        if (settled) return;
+        settled = true;
+        rejectUpload(failure);
+      });
     };
 
     output.on("error", fail);
     output.on("finish", () => {
-      if (settled) return;
+      if (settled || failure) return;
       settled = true;
       resolveUpload(size);
     });
 
     request.on("data", (chunk) => {
-      if (settled) return;
-
+      if (settled || failure) return;
       size += chunk.length;
-
       if (size > MAX_UPLOAD_BYTES) {
         fail(new Error("Migration package exceeds the 100 MB upload limit."));
         request.resume();
         return;
       }
-
       if (!output.write(chunk)) {
         request.pause();
-        output.once("drain", () => request.resume());
+        output.once("drain", () => {
+          if (!settled && !failure) request.resume();
+        });
       }
     });
 
     request.on("end", () => {
-      if (!settled) output.end();
+      if (!settled && !failure) output.end();
     });
-
+    request.on("aborted", () => {
+      fail(new Error("Migration package upload was interrupted by the client."));
+    });
     request.on("error", fail);
-    output.on("error", fail);
   });
+}
+
+async function calculateSha256(filePath) {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(filePath)) hash.update(chunk);
+  return hash.digest("hex");
 }
 
 async function createPreImportBackup(databasePath, backupDirectory) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backupName = `chrysalis-before-donna-${timestamp}-${randomUUID()}.db`;
   const backupPath = join(backupDirectory, backupName);
-
   const database = new DatabaseSync(databasePath, {
     timeout: 10000,
     enableForeignKeyConstraints: true,
@@ -88,27 +100,45 @@ async function createPreImportBackup(databasePath, backupDirectory) {
   if (!existsSync(backupPath)) {
     throw new Error("The pre-import Railway backup could not be verified.");
   }
+  const backupStats = statSync(backupPath);
+  if (!backupStats.isFile() || backupStats.size <= 0) {
+    throw new Error("The pre-import Railway backup is empty or invalid.");
+  }
 
   const verification = new DatabaseSync(backupPath, {
     readOnly: true,
     timeout: 5000,
+    enableForeignKeyConstraints: true,
   });
+  let integrity;
+  let foreignKeyViolations;
 
   try {
-    const integrity = verification.prepare(
-      "PRAGMA integrity_check"
-    ).get()?.integrity_check;
-
+    integrity = verification.prepare("PRAGMA integrity_check").get()?.integrity_check;
     if (integrity !== "ok") {
       throw new Error("The pre-import backup failed SQLite integrity verification.");
+    }
+    foreignKeyViolations = verification.prepare("PRAGMA foreign_key_check").all().length;
+    if (foreignKeyViolations !== 0) {
+      throw new Error(`The pre-import backup contains ${foreignKeyViolations} foreign-key violation(s).`);
     }
   } finally {
     verification.close();
   }
 
+  const sha256 = await calculateSha256(backupPath);
+  if (!/^[a-f0-9]{64}$/.test(sha256)) {
+    throw new Error("The pre-import backup checksum could not be verified.");
+  }
+
   return {
     name: backupName,
     path: backupPath,
+    verified: true,
+    sizeBytes: backupStats.size,
+    sha256,
+    integrity,
+    foreignKeyViolations,
   };
 }
 
@@ -121,28 +151,19 @@ export async function handleDonnaMigrationRoute({
   databasePath,
   backupDirectory,
 }) {
-  if (url.pathname !== ROUTE || request.method !== "POST") {
-    return false;
-  }
-
+  if (url.pathname !== ROUTE || request.method !== "POST") return false;
   if (!authenticate(request, response)) return true;
   if (!requireSameOrigin(request, response)) return true;
 
   const mode = url.searchParams.get("mode") || "dry-run";
-
   if (!["dry-run", "commit"].includes(mode)) {
-    sendJson(response, 400, {
-      ok: false,
-      error: "Mode must be dry-run or commit.",
-    });
+    sendJson(response, 400, { ok: false, error: "Mode must be dry-run or commit." });
     request.resume();
     return true;
   }
 
-  if (
-    mode === "commit" &&
-    request.headers["x-migration-confirmation"] !== COMMIT_CONFIRMATION
-  ) {
+  if (mode === "commit" &&
+      request.headers["x-migration-confirmation"] !== COMMIT_CONFIRMATION) {
     sendJson(response, 400, {
       ok: false,
       error: "Explicit production migration confirmation is required.",
@@ -152,7 +173,6 @@ export async function handleDonnaMigrationRoute({
   }
 
   const contentLength = Number(request.headers["content-length"] || 0);
-
   if (contentLength > MAX_UPLOAD_BYTES) {
     sendJson(response, 413, {
       ok: false,
@@ -163,10 +183,7 @@ export async function handleDonnaMigrationRoute({
   }
 
   const contentType = String(request.headers["content-type"] || "")
-    .split(";")[0]
-    .trim()
-    .toLowerCase();
-
+    .split(";")[0].trim().toLowerCase();
   if (contentType !== "application/json") {
     sendJson(response, 415, {
       ok: false,
@@ -183,13 +200,9 @@ export async function handleDonnaMigrationRoute({
 
   try {
     const uploadedBytes = await receivePackage(request, temporaryPath);
-
-    if (!uploadedBytes) {
-      throw new Error("The migration package is empty.");
-    }
+    if (!uploadedBytes) throw new Error("The migration package is empty.");
 
     let backup = null;
-
     if (mode === "commit") {
       backup = await createPreImportBackup(databasePath, backupDirectory);
     }
@@ -198,15 +211,9 @@ export async function handleDonnaMigrationRoute({
       timeout: 15000,
       enableForeignKeyConstraints: true,
     });
-
     let result;
-
     try {
-      result = importDonnaMigration({
-        database,
-        packagePath: temporaryPath,
-        mode,
-      });
+      result = importDonnaMigration({ database, packagePath: temporaryPath, mode });
     } finally {
       database.close();
     }
@@ -214,36 +221,31 @@ export async function handleDonnaMigrationRoute({
     sendJson(response, 200, {
       ...result,
       uploadedBytes,
-      backup: backup
-        ? {
-            name: backup.name,
-            verified: true,
-          }
-        : null,
+      backup: backup ? {
+        name: backup.name,
+        verified: backup.verified,
+        sizeBytes: backup.sizeBytes,
+        sha256: backup.sha256,
+        integrity: backup.integrity,
+        foreignKeyViolations: backup.foreignKeyViolations,
+      } : null,
     });
   } catch (error) {
     console.error("[Donna migration]", error);
-
     if (!response.headersSent) {
       sendJson(response, 400, {
         ok: false,
         mode,
         committed: false,
-        error: error instanceof Error
-          ? error.message
-          : "Donna migration failed.",
+        error: error instanceof Error ? error.message : "Donna migration failed.",
       });
     }
   } finally {
     try {
       if (existsSync(temporaryPath)) unlinkSync(temporaryPath);
     } catch (error) {
-      console.error(
-        "[Donna migration] Unable to remove temporary upload:",
-        error
-      );
+      console.error("[Donna migration] Unable to remove temporary upload:", error);
     }
   }
-
   return true;
 }
