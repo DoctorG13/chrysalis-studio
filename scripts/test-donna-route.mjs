@@ -156,6 +156,26 @@ async function postMigration(mode, {
   return { response, result };
 }
 
+async function postInspect({
+  authenticated = true,
+  origin = baseUrl,
+} = {}) {
+  const headers = {};
+
+  if (origin !== null) headers.Origin = origin;
+  if (authenticated) headers[testAdminHeader] = testAdminValue;
+
+  const response = await fetch(
+    `${baseUrl}/api/admin/donna-migration/inspect-conflict`,
+    {
+      method: "POST",
+      headers,
+    }
+  );
+
+  return { response, result: await response.json() };
+}
+
 try {
   // Capture the four existing Railway customer usernames before testing.
   const originalDatabase = openDatabase(testDatabase);
@@ -309,6 +329,70 @@ try {
   assert.equal(committed.result.totalImported, 96);
   assert.equal(committed.result.integrity, "ok");
   assert.equal(committed.result.foreignKeyViolations, 0);
+
+  // Test 6B: Inspect the imported conflict record through the read-only route.
+  const inspectUnauthenticated = await postInspect({ authenticated: false });
+  assert.equal(inspectUnauthenticated.response.status, 401);
+
+  const inspectCrossOrigin = await postInspect({
+    origin: "https://untrusted.example",
+  });
+  assert.equal(inspectCrossOrigin.response.status, 403);
+
+  const inspectMissingOrigin = await postInspect({ origin: null });
+  assert.equal(inspectMissingOrigin.response.status, 403);
+
+  const packageDataForInspection = JSON.parse(packageBytes.toString("utf8"));
+  const expectedConflictJob = packageDataForInspection.tables
+    .bizzibuddi_jobs.rows.find(
+      (row) => row.id === "bf11f4cf-923b-405f-b336-851eac9ae409"
+    );
+
+  assert.ok(expectedConflictJob, "The expected conflict job is missing from the package.");
+
+  const beforeInspectionDb = openDatabase(testDatabase);
+  let beforeInspection;
+
+  try {
+    beforeInspection = beforeInspectionDb.prepare(`
+      SELECT id, title, updated_at, due_date
+      FROM bizzibuddi_jobs
+      WHERE id = ? AND user_id = ?
+    `).get(expectedConflictJob.id, donna.id);
+  } finally {
+    beforeInspectionDb.close();
+  }
+
+  const inspected = await postInspect();
+
+  assert.equal(inspected.response.status, 200);
+  assert.equal(inspected.result.ok, true);
+  assert.equal(inspected.result.readOnly, true);
+  assert.deepEqual({ ...inspected.result.record }, { ...beforeInspection });
+  assert.deepEqual(
+    Object.keys(inspected.result.record).sort(),
+    ["due_date", "id", "title", "updated_at"]
+  );
+
+  const afterInspectionDb = openDatabase(testDatabase);
+
+  try {
+    const afterInspection = afterInspectionDb.prepare(`
+      SELECT id, title, updated_at, due_date
+      FROM bizzibuddi_jobs
+      WHERE id = ? AND user_id = ?
+    `).get(expectedConflictJob.id, donna.id);
+
+    assert.deepEqual(afterInspection, beforeInspection);
+    assert.equal(getDatabaseChecks(afterInspectionDb).integrity, "ok");
+  } finally {
+    afterInspectionDb.close();
+  }
+
+  console.log("Read-only conflict inspection: passed");
+  console.log("Inspection authentication:     passed");
+  console.log("Inspection cross-origin guard: passed");
+  console.log("Inspection database unchanged: passed");
 
   // Test 7: Verify that a pre-import backup was created and verified.
   assert.ok(committed.result.backup);

@@ -13,6 +13,9 @@ import { importDonnaMigration } from "./donna-migration-import.js";
 const ROUTE = "/api/admin/donna-migration";
 const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 const COMMIT_CONFIRMATION = "IMPORT DONNA CHRYSALIS WORKSPACE";
+const INSPECT_ROUTE = `${ROUTE}/inspect-conflict`;
+const CONFLICT_JOB_ID = "bf11f4cf-923b-405f-b336-851eac9ae409";
+const DONNA_USER_ID = "27f7b2a7-0a47-424c-870e-853fb0e2b03f";
 
 function sendJson(response, statusCode, payload) {
   const body = JSON.stringify(payload, null, 2);
@@ -151,9 +154,62 @@ export async function handleDonnaMigrationRoute({
   databasePath,
   backupDirectory,
 }) {
-  if (url.pathname !== ROUTE || request.method !== "POST") return false;
+  const isInspection = url.pathname === INSPECT_ROUTE;
+  const isMigration = url.pathname === ROUTE;
+
+  if (request.method !== "POST" || (!isInspection && !isMigration)) {
+    return false;
+  }
+
   if (!authenticate(request, response)) return true;
   if (!requireSameOrigin(request, response)) return true;
+
+  if (isInspection) {
+    request.resume();
+
+    let database;
+
+    try {
+      database = new DatabaseSync(databasePath, {
+        readOnly: true,
+        timeout: 5000,
+        enableForeignKeyConstraints: true,
+      });
+
+      const record = database.prepare(`
+        SELECT id, title, updated_at, due_date
+        FROM bizzibuddi_jobs
+        WHERE id = ? AND user_id = ?
+      `).get(CONFLICT_JOB_ID, DONNA_USER_ID);
+
+      if (!record) {
+        sendJson(response, 404, {
+          ok: false,
+          error: "The specified conflicting job was not found.",
+        });
+        return true;
+      }
+
+      sendJson(response, 200, {
+        ok: true,
+        readOnly: true,
+        record,
+      });
+    } catch (error) {
+      console.error("[Donna migration inspection]", error);
+
+      if (!response.headersSent) {
+        sendJson(response, 500, {
+          ok: false,
+          error: "The conflicting record could not be inspected.",
+        });
+      }
+    } finally {
+      database?.close();
+    }
+
+    return true;
+  }
 
   const mode = url.searchParams.get("mode") || "dry-run";
   if (!["dry-run", "commit"].includes(mode)) {

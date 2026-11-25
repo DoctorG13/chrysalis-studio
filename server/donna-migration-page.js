@@ -44,6 +44,13 @@ button:disabled{opacity:.55;cursor:wait}
 <span id="loginStatus" class="muted"></span>
 </div>
 
+<section id="inspectPanel" class="panel hidden">
+<h2>Production conflict inspection</h2>
+<p>Read the existing conflicting job directly from Railway. This inspection does not upload a package or change database records.</p>
+<button id="inspectConflict" type="button">Inspect conflicting record</button>
+<pre id="inspectResult" class="panel result hidden"></pre>
+</section>
+
 <div class="warning">
 <strong>Important:</strong> The dry-run checks the migration package against the live Railway database without committing changes. A separate verified database backup is created only when you explicitly start the production import.
 </div>
@@ -99,6 +106,38 @@ function invalidateDryRun(){
   $('confirmation').value='';
 }
 
+async function inspectConflict(){
+  if(!adminAuthenticated){
+    throw new Error('Sign in as the Railway administrator first.');
+  }
+
+  const button=$('inspectConflict');
+  button.disabled=true;
+  $('inspectResult').classList.add('hidden');
+  showStatus('Reading the conflicting record from Railway in read-only mode...','');
+
+  try{
+    const response=await fetch('/api/admin/donna-migration/inspect-conflict',{
+      method:'POST',
+      credentials:'same-origin',
+      cache:'no-store'
+    });
+
+    const data=await response.json();
+
+    $('inspectResult').classList.remove('hidden');
+    $('inspectResult').textContent=JSON.stringify(data,null,2);
+
+    if(!response.ok||!data.ok||data.readOnly!==true){
+      throw new Error(data.error||'The read-only inspection was not successful.');
+    }
+
+    showStatus('Read-only inspection completed. No production records were changed.','success');
+  }finally{
+    button.disabled=false;
+  }
+}
+
 async function upload(mode){
   if(!adminAuthenticated){
     throw new Error('Sign in as the Railway administrator first.');
@@ -131,6 +170,15 @@ async function upload(mode){
 
   return data;
 }
+
+$('inspectConflict').addEventListener('click',async()=>{
+  if(requestInProgress)return;
+  try{
+    await inspectConflict();
+  }catch(error){
+    showStatus('Inspection failed: '+error.message,'error');
+  }
+});
 
 $('login').addEventListener('click',async()=>{
   if(requestInProgress)return;
@@ -168,6 +216,7 @@ $('login').addEventListener('click',async()=>{
     }
 
     adminAuthenticated=true;
+    $('inspectPanel').classList.remove('hidden');
     $('adminPassword').value='';
     status.textContent='Signed in successfully.';
     status.style.color='#176437';
