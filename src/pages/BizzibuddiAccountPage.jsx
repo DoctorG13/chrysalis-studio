@@ -4884,37 +4884,6 @@ function DashboardPanel({
         </div>
       )}
 
-      {nextAction && !nextActionIsDuplicateDeadline && (
-        <div style={{
-          ...nextActionPanel,
-          ...(nextActionIsOverdue ? {
-            border: "1px solid rgba(248,113,113,.68)",
-            background: "linear-gradient(135deg, rgba(248,113,113,.12), rgba(37,99,235,.10))",
-          } : {}),
-        }}>
-          <div style={{
-            ...nextActionIcon,
-            ...(nextActionIsOverdue ? {
-              background: "rgba(248,113,113,.13)",
-              border: "1px solid rgba(248,113,113,.48)",
-            } : {}),
-          }}>{nextAction.icon}</div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <small style={{ ...smallText, color: nextActionIsOverdue ? "#FCA5A5" : CYAN, fontWeight: 900, letterSpacing: ".12em" }}>
-              {nextActionIsOverdue ? "OVERDUE — ACTION REQUIRED" : "NEXT ACTION"}
-            </small>
-            <strong style={{ display: "block", marginTop: 4, fontSize: 21 }}>{nextAction.title}</strong>
-            <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 13 }}>
-              {nextAction.detail}{nextActionIsOverdue && !/action required/i.test(nextAction.detail || "") ? " Action required." : ""}
-            </span>
-          </div>
-          {nextActionHandler && (
-            <button type="button" onClick={nextActionHandler} style={nextActionButton}>
-              {nextActionLabel} →
-            </button>
-          )}
-        </div>
-      )}
 
       <div id="today-overview" className="bizzibuddi-today-overview" style={attentionPanel}>
         <div style={attentionHeader}>
@@ -10753,9 +10722,9 @@ function CalendarPanel({
   const [calendarType, setCalendarType] = useState("all");
   const [calendarView, setCalendarView] = useState("month");
   const [calendarCursor, setCalendarCursor] = useState(() => new Date());
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
   const calendarSectionRefs = useRef({});
   const advancedScheduling = hasBizzibuddiFeature(account?.plan, "advancedScheduling");
-  const selectedAppointmentRef = useRef(null);
 
   useEffect(() => {
     if (!initialAppointmentId) return;
@@ -10764,9 +10733,14 @@ function CalendarPanel({
 
     setCalendarFilter("all");
     setCalendarSearch("");
-    setEditingAppointment(appointment);
-    setShowForm(true);
+    setSelectedAppointment(appointment);
+    setShowForm(false);
   }, [initialAppointmentId, appointments]);
+  useEffect(() => {
+    if (!selectedAppointment?.id) return;
+    const updated = appointments.find((item) => String(item.id) === String(selectedAppointment.id));
+    setSelectedAppointment(updated || null);
+  }, [appointments]);
   const calendarTodayKey = new Date().toISOString().slice(0, 10);
   const sortedAppointments = [...appointments].sort((a, b) => {
     const aKey = String(a.date || "") + "T" + String(a.time || "00:00");
@@ -10788,32 +10762,13 @@ function CalendarPanel({
     return true;
   });
 
-  useEffect(() => {
-    if (!initialAppointmentId || !selectedAppointmentRef.current) return undefined;
-
-    const frame = window.requestAnimationFrame(() => {
-      selectedAppointmentRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [initialAppointmentId, visibleAppointments]);
   const appointmentTypes = ["all", "Booked", "Confirmed", "Pending", "Cancelled"];
   const calendarCounts = {
     today: appointments.filter((appointment) => appointment.date === calendarTodayKey).length,
     upcoming: appointments.filter((appointment) => !appointment.date || appointment.date >= calendarTodayKey).length,
     past: appointments.filter((appointment) => appointment.date && appointment.date < calendarTodayKey).length,
   };
-  const scheduledProduction = (productionRecords || [])
-    .filter((record) => record.dueDate)
-    .map((record) => ({
-      ...record,
-      dueDateValue: String(record.dueDate),
-    }))
-    .sort((a, b) => a.dueDateValue.localeCompare(b.dueDateValue));
-  const productionSchedule = scheduledProduction.filter((record) => record.dueDateValue >= calendarTodayKey).slice(0, 6);
+
 
   function scrollToCalendarSection(key) {
     calendarSectionRefs.current[key]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -10881,6 +10836,7 @@ function CalendarPanel({
     setError("");
     try {
       await onDeleteAppointment(appointment.id);
+      setSelectedAppointment(null);
     } catch (requestError) {
       setError(requestError.message || "We could not delete this appointment.");
     }
@@ -10914,48 +10870,14 @@ function CalendarPanel({
       )}
     <div style={{ position: "sticky", top: 70, zIndex: 9, marginTop: 16, padding: "8px 10px", border: "1px solid " + BORDER, borderRadius: 12, background: "rgba(13,38,60,.97)", backdropFilter: "blur(12px)", boxShadow: "0 10px 24px rgba(0,0,0,.18)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-        <span style={{ ...smallText, fontWeight: 800, marginRight: 3 }}>FITTINGS</span>
+        <span style={{ ...smallText, fontWeight: 800, marginRight: 3 }}>CALENDAR</span>
         <button type="button" onClick={() => scrollToCalendarSection("calendar")} style={smallActionButton}>Calendar</button>
         <button type="button" onClick={() => scrollToCalendarSection("appointments")} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>Appointments · {appointments.length}</button>
       </div>
     </div>
-    <div ref={(node) => { calendarSectionRefs.current.appointments = node; }} id="calendar-appointments" style={{ scrollMarginTop: 110 }} />
 
     </div>
 
-    {productionSchedule.length > 0 && (
-      <div style={{ ...todayViewPanel, marginTop: 18 }}>
-        <div style={todayViewHeader}>
-          <div>
-            <small style={smallText}>GARMENT SCHEDULE</small>
-            <h3 style={{ margin: "6px 0 5px", fontSize: 20 }}>Production ready-by dates.</h3>
-            <p style={{ ...copyStyle, margin: 0 }}>Upcoming production deadlines alongside your appointments.</p>
-          </div>
-          <span style={todayViewDate}>{productionSchedule.length} scheduled</span>
-        </div>
-        <div style={{ display: "grid", gap: 9, marginTop: 14 }}>
-          {productionSchedule.map((record) => (
-            <article key={record.id} style={todayViewItem}>
-              <div style={{ minWidth: 0 }}>
-                <strong>{record.jobTitle || "Production job"}</strong>
-                <span style={{ ...smallText, display: "block", marginTop: 3 }}>
-                  Ready by {formatProductionDate(record.dueDateValue)} · {record.stage || "Not started"}
-                </span>
-              </div>
-              {record.jobId && (
-                <button
-                  type="button"
-                  onClick={() => onOpenProduction?.(record.jobId)}
-                  style={smallActionButton}
-                >
-                  Open production →
-                </button>
-              )}
-            </article>
-          ))}
-        </div>
-      </div>
-    )}
 
     {appointments.length > 0 ? (
       <>
@@ -11067,7 +10989,7 @@ function CalendarPanel({
               </div>
 
               {(() => {
-                const cellAppointments = (date) => sortedAppointments.filter((appointment) => appointment.date === calendarDateKey(date));
+                const cellAppointments = (date) => visibleAppointments.filter((appointment) => appointment.date === calendarDateKey(date));
                 const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
                 if (calendarView === "month") {
@@ -11093,7 +11015,7 @@ function CalendarPanel({
                             <div style={{ fontSize: 11, fontWeight: 700, color: isToday ? TEXT : MUTED }}>{date.getDate()}</div>
                             <div style={{ display: "grid", gap: 4, marginTop: 6 }}>
                               {items.slice(0, 3).map((appointment) => (
-                                <button key={appointment.id} type="button" onClick={() => { startEdit(appointment); requestAnimationFrame(() => document.getElementById("calendar-appointment-" + appointment.id)?.scrollIntoView({ behavior: "smooth", block: "center" })); }} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(0,180,219,.35)", borderRadius: 6, padding: "5px 6px", background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer", fontSize: 10, lineHeight: 1.25 }}>
+                                <button key={appointment.id} type="button" onClick={() => { setSelectedAppointment(appointment); setShowForm(false); requestAnimationFrame(() => document.getElementById("calendar-appointments")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} style={{ width: "100%", textAlign: "left", border: "1px solid rgba(0,180,219,.35)", borderRadius: 6, padding: "5px 6px", background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer", fontSize: 10, lineHeight: 1.25 }}>
                                   <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.time || "All day"}</strong>
                                   <span style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{appointment.title || "Appointment"}</span>
                                 </button>
@@ -11129,7 +11051,7 @@ function CalendarPanel({
                           </div>
                           <div style={{ display: "grid", gap: 8, padding: 10 }}>
                             {items.length > 0 ? items.map((appointment) => (
-                              <button key={appointment.id} type="button" onClick={() => startEdit(appointment)} style={{ textAlign: "left", border: "1px solid rgba(0,180,219,.40)", borderRadius: 8, padding: 9, background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer" }}>
+                              <button key={appointment.id} type="button" onClick={() => { setSelectedAppointment(appointment); setShowForm(false); requestAnimationFrame(() => document.getElementById("calendar-appointments")?.scrollIntoView({ behavior: "smooth", block: "start" })); }} style={{ textAlign: "left", border: "1px solid rgba(0,180,219,.40)", borderRadius: 8, padding: 9, background: "rgba(0,180,219,.10)", color: TEXT, cursor: "pointer" }}>
                                 <strong style={{ display: "block", fontSize: 12 }}>{appointment.time || "All day"}</strong>
                                 <span style={{ display: "block", marginTop: 3, fontSize: 12 }}>{appointment.title || "Appointment"}</span>
                                 {appointment.personName && <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 10 }}>{appointment.personName}</span>}
@@ -11149,57 +11071,37 @@ function CalendarPanel({
           )}
         </div>
 
-        {visibleAppointments.length > 0 ? (
-          <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
-            {visibleAppointments.map((appointment) => (
-          <article
-            id={"calendar-appointment-" + appointment.id}
-            key={appointment.id}
-            ref={String(initialAppointmentId) === String(appointment.id) ? selectedAppointmentRef : null}
-            style={{
-              ...appointmentCard,
-              ...(String(initialAppointmentId) === String(appointment.id)
-                ? {
-                    border: "1px solid rgba(0,180,219,.62)",
-                    boxShadow: "0 14px 30px rgba(0,180,219,.10)",
-                  }
-                : {}),
-              scrollMarginTop: 24,
-            }}
+        {selectedAppointment ? (
+          <div
+            id="calendar-appointments"
+            style={{ ...appointmentCard, marginTop: 16, border: "1px solid rgba(0,180,219,.55)", boxShadow: "0 12px 28px rgba(0,180,219,.08)", scrollMarginTop: 110 }}
           >
             <div style={{ minWidth: 0 }}>
-              <strong style={{ display: "block", fontSize: 17 }}>{appointment.title}</strong>
+              <small style={{ ...smallText, color: CYAN, fontWeight: 800, letterSpacing: ".1em" }}>SELECTED CALENDAR ITEM</small>
+              <strong style={{ display: "block", fontSize: 18, marginTop: 5 }}>{selectedAppointment.title || "Appointment"}</strong>
               <span style={smallText}>
-                {formatAppointmentDate(appointment.date, appointment.time)}
-                {appointment.personName ? " · " + appointment.personName : ""}
-                {appointment.jobTitle ? " · " + appointment.jobTitle : ""}
+                {formatAppointmentDate(selectedAppointment.date, selectedAppointment.time)}
+                {selectedAppointment.personName ? " · " + selectedAppointment.personName : ""}
+                {selectedAppointment.jobTitle ? " · " + selectedAppointment.jobTitle : ""}
               </span>
-              {appointment.notes && (
-                <span style={{ ...smallText, display: "block", marginTop: 5 }}>
-                  {appointment.notes}
-                </span>
+              {selectedAppointment.notes && (
+                <span style={{ ...smallText, display: "block", marginTop: 6 }}>{selectedAppointment.notes}</span>
               )}
               {advancedScheduling && (
                 <span style={{ ...smallText, display: "block", marginTop: 5 }}>
-                  {(appointment.duration || 60) + " min"}
-                  {appointment.buffer ? " · " + appointment.buffer + " min buffer" : ""}
-                  {" · " + (appointment.status || "Booked")}
+                  {(selectedAppointment.duration || 60) + " min"}
+                  {selectedAppointment.buffer ? " · " + selectedAppointment.buffer + " min buffer" : ""}
+                  {" · " + (selectedAppointment.status || "Booked")}
                 </span>
               )}
             </div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => startEdit(appointment)} style={smallActionButton}>Edit</button>
-              <button type="button" onClick={() => handleDelete(appointment)} style={smallDangerButton}>Delete</button>
+              <button type="button" onClick={() => startEdit(selectedAppointment)} style={smallActionButton}>Edit</button>
+              <button type="button" onClick={() => handleDelete(selectedAppointment)} style={smallDangerButton}>Delete</button>
+              <button type="button" onClick={() => setSelectedAppointment(null)} style={{ ...smallActionButton, borderColor: BORDER, color: MUTED }}>Close</button>
             </div>
-            </article>
-            ))}
           </div>
-        ) : (
-          <div style={{ ...emptyPeople, marginTop: 16 }}>
-            <strong>No appointments in this view.</strong>
-            <p style={copyStyle}>Try another calendar filter or add a new appointment.</p>
-          </div>
-        )}
+        ) : null}
       </>
     ) : (
       <div style={emptyPeople}>
@@ -12819,10 +12721,6 @@ const workspaceSubnav = {
   ],
 };
 function getWorkspaceSubnav(account) {
-  const terminology = account?.terminology || {};
-  const personLabel = terminology.person || "People";
-  const jobLabel = terminology.job || "Jobs";
-  const appointmentLabel = terminology.appointment || "Calendar";
   return {
     ...workspaceSubnav,
     today: [
@@ -12838,11 +12736,11 @@ function getWorkspaceSubnav(account) {
       ["contacts", "Contacts", "people"],
     ],
     work: [
-      ["jobs", jobLabel, "jobs"],
+      ["jobs", "Jobs", "jobs"],
       ["production", "Production", "production"],
     ],
     calendar: [
-      ["calendar", appointmentLabel, "calendar", "calendar-grid"],
+      ["calendar", "Calendar", "calendar", "calendar-grid"],
       ["calendar-appointments", "Appointments", "calendar", "calendar-appointments"],
       ["calendar-add", "Add appointment", "calendar", "calendar-appointment-form"],
     ],

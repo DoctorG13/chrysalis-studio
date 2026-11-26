@@ -1,3 +1,19 @@
+## BizziBuddi — Release 1: Navigation and Calendar Corrections
+
+### Improved
+- Removed the redundant NEXT ACTION banner from the Today dashboard.
+- Refined Calendar navigation and appointment selection.
+- Display appointment details only after selecting a calendar item.
+- Removed the garment production schedule from the Calendar page.
+- Standardised the Work navigation label to Jobs.
+
+### Testing
+- Production build passed.
+- All six local Release 1 acceptance checks passed.
+
+**Deployment:** Pending.
+
+---
 ## BizziBuddi — Calendar Navigation and Today Dashboard
 
 ### Added
