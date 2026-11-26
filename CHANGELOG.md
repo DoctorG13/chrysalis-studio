@@ -1,4 +1,18 @@
-## BizziBuddi — Release 1: Navigation and Calendar Corrections
+﻿## BizziBuddi — Release 2: Global Search
+
+### Added
+- Added global workspace search across clients, jobs, calendar appointments and fittings, invoices, and expenses.
+- Added direct navigation from search results to the relevant workspace records.
+- Added Ctrl+K / Cmd+K keyboard shortcut to open search.
+
+### Testing
+- Local production build passed.
+- Initial local search testing completed.
+
+**Deployment:** Pending.
+
+---
+## BizziBuddi â€” Release 1: Navigation and Calendar Corrections
 
 ### Improved
 - Removed the redundant NEXT ACTION banner from the Today dashboard.
@@ -14,7 +28,7 @@
 **Deployment:** Pending.
 
 ---
-## BizziBuddi — Calendar Navigation and Today Dashboard
+## BizziBuddi â€” Calendar Navigation and Today Dashboard
 
 ### Added
 - Added Calendar as a primary item in the main workspace navigation.
@@ -33,7 +47,7 @@
 
 **Deployment:** Pending.
 
-## Financial Precision — Invoice and Quote APIs
+## Financial Precision â€” Invoice and Quote APIs
 
 ### Improved
 - Reconcile standalone invoice totals, payments, refunds and balances using integer cents.
@@ -47,7 +61,7 @@
 **Deployment:** Pending.
 
 ---
-## BizziBuddi — Subscriber Buddi AI Integration
+## BizziBuddi â€” Subscriber Buddi AI Integration
 
 ### Added
 - Added an authenticated server-side AI chat endpoint for subscriber Buddi.
@@ -68,7 +82,7 @@
 **Deployment:** Pending.
 
 ---
-## BizziBuddi — Weather Response and Voice Polish
+## BizziBuddi â€” Weather Response and Voice Polish
 
 ### Improved
 - Keep current weather conditions concise and omit the seven-day forecast unless explicitly requested.
@@ -86,7 +100,7 @@
 
 ---
 
-## BizziBuddi — Subscriber Buddi Voice Interface
+## BizziBuddi â€” Subscriber Buddi Voice Interface
 
 ### Added
 - Added browser-based Australian English voice input for subscriber Buddi.
@@ -101,7 +115,7 @@
 **Deployment:** Not yet deployed.
 
 ---
-## BizziBuddi Public Demo — Final Acceptance Improvements
+## BizziBuddi Public Demo â€” Final Acceptance Improvements
 
 ### Improved
 
@@ -123,7 +137,7 @@
 **Deployment:** Pending final release checks and explicit approval.
 
 ---
-## BizziBuddi Finance — Invoice Refund Recording
+## BizziBuddi Finance â€” Invoice Refund Recording
 
 ### Added
 - Added an explicit Payment received / Refund issued transaction choice to invoice payment entry.
@@ -146,7 +160,7 @@
 
 ---
 
-## BizziBuddi — Production Task Removal Confirmation
+## BizziBuddi â€” Production Task Removal Confirmation
 
 ### Improved
 
@@ -160,7 +174,7 @@
 
 ---
 
-## Finance — Invoice descriptions, job links and notes
+## Finance â€” Invoice descriptions, job links and notes
 
 ### Added
 
@@ -173,7 +187,7 @@
 
 ---
 
-## Finance — Inline invoice creation
+## Finance â€” Inline invoice creation
 
 ### Improved
 
@@ -186,7 +200,7 @@
 
 ---
 
-## Finance — Invoice action build correction
+## Finance â€” Invoice action build correction
 
 ### Fixed
 
@@ -196,7 +210,7 @@
 
 ---
 
-## Finance — Create invoice action placement
+## Finance â€” Create invoice action placement
 
 ### Improved
 
@@ -207,7 +221,7 @@
 
 ---
 
-## Calendar — Add appointment action placement
+## Calendar â€” Add appointment action placement
 
 ### Improved
 
@@ -219,7 +233,7 @@
 
 ---
 
-## BizziBuddi — People submenu refresh restoration
+## BizziBuddi â€” People submenu refresh restoration
 
 ### Fixed
 
@@ -231,7 +245,7 @@
 
 ---
 
-## BizziBuddi — People, Clients and Contacts
+## BizziBuddi â€” People, Clients and Contacts
 
 ### Added
 - Added a persistent Client/Contact relationship type to each People record.
@@ -244,7 +258,7 @@
 
 ---
 
-## BizziBuddi Workspace — People Navigation
+## BizziBuddi Workspace â€” People Navigation
 
 ### Improved
 - Give People its own top-level workspace destination so clients and contacts are immediately discoverable.
@@ -258,7 +272,7 @@
 
 ---
 
-## BizziBuddi People — Default Client Since Date
+## BizziBuddi People â€” Default Client Since Date
 
 ### Improved
 - Default the Client since date to the user's local current date when adding a new person.
@@ -272,7 +286,7 @@
 
 ---
 
-## BizziBuddi — Public Root Landing Page
+## BizziBuddi â€” Public Root Landing Page
 
 ### Fixed
 - Serve the BizziBuddi public landing page at the domain root (`/`) instead of falling through to the legacy Chrysalis Studio staff authentication gate.
@@ -285,7 +299,7 @@
 
 ---
 
-## BizziBuddi — Fresh Database Quotes Migration Fix
+## BizziBuddi â€” Fresh Database Quotes Migration Fix
 
 ### Fixed
 - Create an empty legacy-compatible `quotes` source table immediately before migration 3 when a fresh database does not yet contain one.
@@ -299,7 +313,7 @@
 
 ---
 
-## BizziBuddi — Railway Production Database Startup Ordering
+## BizziBuddi â€” Railway Production Database Startup Ordering
 
 ### Fixed
 - Start the database service first and wait for its health check, ensuring schema migrations finish before dependent backend services open SQLite.
@@ -313,7 +327,7 @@
 
 ---
 
-## BizziBuddi Finance — Invoice Payment Allocation and Refund Reconciliation
+## BizziBuddi Finance â€” Invoice Payment Allocation and Refund Reconciliation
 
 ## BizziBuddi Finance - Invoice Payment Allocation and Refund Reconciliation
 
@@ -337,7 +351,7 @@
 - Production build and full local release checks remain required before deployment.
 
 ---
-## BizziBuddi — Production Task Persistence and Readiness Fix
+## BizziBuddi â€” Production Task Persistence and Readiness Fix
 
 ### Fixed
 - Persist production task creation, completion, and removal.
@@ -366,7 +380,7 @@
 
 ---
 
-## BizziBuddi Finance — Clear Invoice Deletion Warning
+## BizziBuddi Finance â€” Clear Invoice Deletion Warning
 
 ### Fixed
 
@@ -379,7 +393,7 @@
 
 ---
 
-## BizziBuddi Finance — Invoice API Payment-History Protection
+## BizziBuddi Finance â€” Invoice API Payment-History Protection
 
 ### Fixed
 
@@ -398,7 +412,7 @@
 
 ---
 
-## BizziBuddi Finance — Invoice Payment-History Protection
+## BizziBuddi Finance â€” Invoice Payment-History Protection
 
 ### Fixed
 
@@ -415,7 +429,7 @@
 
 ---
 
-## BizziBuddi Finance — Invoice Edit and Delete Handler Fix
+## BizziBuddi Finance â€” Invoice Edit and Delete Handler Fix
 
 ### Fixed
 
@@ -425,27 +439,27 @@
 
 ---
 
-## BizziBuddi Finance — Invoice Scroll Visibility
+## BizziBuddi Finance â€” Invoice Scroll Visibility
 
 ### Improved
 
-- Increased the clearance below the sticky workspace navigation to 48px for Finance → Invoices navigation, the Add Invoice form, and the focused invoice card.
+- Increased the clearance below the sticky workspace navigation to 48px for Finance â†’ Invoices navigation, the Add Invoice form, and the focused invoice card.
 - Increased scroll-margin spacing on invoice navigation, form, and card targets so browser-driven scrolling also avoids the sticky navigation.
 - Preserved existing invoice creation, invoice highlighting, and navigation behaviour.
 
 ---
 
-## BizziBuddi Finance — Invoices Navigation Scroll
+## BizziBuddi Finance â€” Invoices Navigation Scroll
 
 ### Fixed
 
-- Connected the Finance → Invoices submenu to the top **+ Add Invoice** button.
+- Connected the Finance â†’ Invoices submenu to the top **+ Add Invoice** button.
 - Removed the duplicate invoice-list target ID so navigation scrolls to the intended action, including when the invoice list is empty.
 - Preserved existing invoice creation, list rendering and post-save focus behaviour.
 
 ---
 
-## Finance — Invoice Form and Navigation Restoration
+## Finance â€” Invoice Form and Navigation Restoration
 
 ### Fixed
 - Make both **+ Add Invoice** actions scroll to the newly opened invoice form.
@@ -458,7 +472,7 @@
 
 ---
 
-## Finance — Invoice Management Fixes
+## Finance â€” Invoice Management Fixes
 
 ### Fixed
 - List newest invoices first consistently in the API and account UI.
@@ -475,9 +489,9 @@
 
 ---
 
-## BizziBuddi — Ask Buddi Live Follow-ups and Header Layout
+## BizziBuddi â€” Ask Buddi Live Follow-ups and Header Layout
 
-## BizziBuddi — Weather and Time Follow-up Improvements
+## BizziBuddi â€” Weather and Time Follow-up Improvements
 
 ### Improved
 - Retain resolved city and region context across weather and time follow-up questions.
@@ -496,12 +510,12 @@
 
 
 ### Fixed
-- Preserve live-information intent for short follow-ups such as a city name or “Current weather — Brisbane” when weather is already being discussed.
+- Preserve live-information intent for short follow-ups such as a city name or â€œCurrent weather â€” Brisbaneâ€ when weather is already being discussed.
 - Carry the original question to the weather service so rain-likelihood questions can be answered directly using the forecast's daily precipitation probability.
 - Keep live-information lookup failures visible rather than silently falling back to business-only answers.
 
 ### Improved
-- Placed “Hi, I’m Buddi” and “How can I help today?” in a shared responsive header row on wider screens, stacking naturally on narrow screens.
+- Placed â€œHi, Iâ€™m Buddiâ€ and â€œHow can I help today?â€ in a shared responsive header row on wider screens, stacking naturally on narrow screens.
 - Kept the question composer directly beneath the header and the conversation below it.
 
 ### Testing
@@ -509,7 +523,7 @@
 
 ---
 
-## BizziBuddi — Live Information Foundation: World Clock and Weather
+## BizziBuddi â€” Live Information Foundation: World Clock and Weather
 
 ### Added
 
@@ -526,18 +540,18 @@
 
 ---
 
-## BizziBuddi — Ask Buddi Welcome and Optional Suggestions
+## BizziBuddi â€” Ask Buddi Welcome and Optional Suggestions
 
 ### Improved
 
 - Simplified the welcome message and placed the question composer immediately beneath it.
-- Moved frequently asked questions below the composer and made them collapsed by default behind “Show frequently asked questions”.
+- Moved frequently asked questions below the composer and made them collapsed by default behind â€œShow frequently asked questionsâ€.
 - Kept normal Ask Buddi opening idle; explicit dashboard prompts and clicked suggestions continue to submit as intended.
 - Preserved conversation history, business-aware responses, and existing navigation actions.
 
 ---
 
-## BizziBuddi — Finance and Invoice Lifecycle Acceptance
+## BizziBuddi â€” Finance and Invoice Lifecycle Acceptance
 
 ### Verified
 
@@ -548,7 +562,7 @@
 
 ---
 
-## BizziBuddi — Payment Edit Initialization Fix
+## BizziBuddi â€” Payment Edit Initialization Fix
 
 ### Fixed
 
@@ -557,7 +571,7 @@
 
 ---
 
-## BizziBuddi — Atomic Payment Audit Events
+## BizziBuddi â€” Atomic Payment Audit Events
 
 ### Fixed
 
@@ -567,38 +581,38 @@
 
 ---
 
-## BizziBuddi — Overdue Invoice Due Signal
+## BizziBuddi â€” Overdue Invoice Due Signal
 
 ### Fixed
 
-- Display “Payment overdue” for unpaid invoices whose due date has passed, even if their stored status is still “Part Paid” or another non-paid status.
-- Preserve “Due today” and “Due soon” labels for invoices that have not passed their due date.
+- Display â€œPayment overdueâ€ for unpaid invoices whose due date has passed, even if their stored status is still â€œPart Paidâ€ or another non-paid status.
+- Preserve â€œDue todayâ€ and â€œDue soonâ€ labels for invoices that have not passed their due date.
 
 ---
 
-## BizziBuddi — Finance Submenu Label Visibility
+## BizziBuddi â€” Finance Submenu Label Visibility
 
 ### Changed
 
 - Allocated more horizontal space to the Finance submenu.
-- Gave “Expenses & Outgoings” additional width so the full label is visible instead of being truncated.
+- Gave â€œExpenses & Outgoingsâ€ additional width so the full label is visible instead of being truncated.
 - Preserved the existing compact submenu layout for other sections.
 
 ---
 
-## BizziBuddi — Branded Expense Removal Confirmation
+## BizziBuddi â€” Branded Expense Removal Confirmation
 
 ### Changed
 
 - Replaced the browser-native expense deletion prompt with a branded, accessible confirmation dialog.
 - Show the expense amount, date, category and description before removal.
-- Require an explicit “Yes, remove expense” action; “Keep expense” cancels without changing records.
+- Require an explicit â€œYes, remove expenseâ€ action; â€œKeep expenseâ€ cancels without changing records.
 - Keep the dialog open during the request and show any removal error in the dialog.
 - Do not dismiss the dialog when clicking the backdrop or pressing Escape.
 
 ---
 
-## BizziBuddi — Expense Recording HTTP 500 Fix
+## BizziBuddi â€” Expense Recording HTTP 500 Fix
 
 ### Fixed
 
@@ -608,7 +622,7 @@
 
 ---
 
-## BizziBuddi — Workspace Scroll Target Reliability
+## BizziBuddi â€” Workspace Scroll Target Reliability
 
 ### Fixed
 
@@ -617,16 +631,16 @@
 
 ---
 
-## BizziBuddi — Reports Navigation Target
+## BizziBuddi â€” Reports Navigation Target
 
 ### Fixed
 
-- Changed the Insights → Reports submenu target from the lower report-summary cards to the report-period selector at the start of Reports.
+- Changed the Insights â†’ Reports submenu target from the lower report-summary cards to the report-period selector at the start of Reports.
 - Kept the existing sticky-navigation offset so the period controls remain visible after navigation.
 
 ---
 
-## BizziBuddi — Reports Period Selection Stability
+## BizziBuddi â€” Reports Period Selection Stability
 
 ### Fixed
 
@@ -637,7 +651,7 @@
 
 ---
 
-## BizziBuddi — Reports Date Ranges and Export Formats
+## BizziBuddi â€” Reports Date Ranges and Export Formats
 
 ### Added
 - Added report periods for this month, last month, last three months, current Australian financial year, selectable prior financial years, custom dates, and all-time activity.
@@ -646,10 +660,10 @@
 - Added PDF (print-to-PDF) and JSON export alongside CSV; exports include selected-period context.
 
 ### Notes
-- PDF export uses the browser print dialog; choose “Save as PDF”.
+- PDF export uses the browser print dialog; choose â€œSave as PDFâ€.
 - No third-party PDF dependency was added.
 
-## BizziBuddi — Reference Logo Integration
+## BizziBuddi â€” Reference Logo Integration
 
 ### Changed
 
@@ -658,7 +672,7 @@
 - Preserved the existing light-surface logo rendering.
 - The gold sections now follow the supplied reference's visual placement and proportions.
 
-## BizziBuddi — Final Gold Arc Reference Match
+## BizziBuddi â€” Final Gold Arc Reference Match
 
 ### Fixed
 
@@ -668,7 +682,7 @@
 - The second gold segment ends at the exact bottom datum of the white mark.
 - Removed the previous independently guessed gold geometry.
 
-## BizziBuddi — Gold Bars Traced From Reference
+## BizziBuddi â€” Gold Bars Traced From Reference
 
 ### Fixed
 
@@ -677,7 +691,7 @@
 - Matched the reference's two lower-right segment angles and spacing.
 - Preserved the existing white mark, cyan segment and blue segments.
 
-## BizziBuddi — Gold Reference Geometry
+## BizziBuddi â€” Gold Reference Geometry
 
 ### Fixed
 
@@ -686,7 +700,7 @@
 - Kept the same inner and outer ring radii and consistent segment gap.
 - Preserved the lower gold endpoint at the white curve baseline.
 
-## BizziBuddi — Gold Bar Width Correction
+## BizziBuddi â€” Gold Bar Width Correction
 
 ### Fixed
 
@@ -694,7 +708,7 @@
 - Removed the previous oversized gold geometry.
 - Kept the gold as rounded continuation segments in the lower-right of the circular mark.
 
-## BizziBuddi — Gold Baseline Alignment
+## BizziBuddi â€” Gold Baseline Alignment
 
 ### Fixed
 
@@ -702,7 +716,7 @@
 - Preserved the rounded gold segment construction and lower-right placement.
 - Kept the white mark and upper coloured arc unchanged.
 
-## BizziBuddi — Gold Arc Reference Match
+## BizziBuddi â€” Gold Arc Reference Match
 
 ### Fixed
 
@@ -711,7 +725,7 @@
 - Gold uses the exact same inner radius, outer radius and centre as the rest of the coloured arc.
 - Removed the previous downward/out-of-line gold geometry.
 
-## BizziBuddi — Approved Gold Logo Geometry
+## BizziBuddi â€” Approved Gold Logo Geometry
 
 ### Changed
 
@@ -720,7 +734,7 @@
 - Preserved the white mark, clock hands, cyan segment and blue segments.
 - Established this geometry as the current shared BizziBuddi logo component.
 
-## BizziBuddi — Gold Arc Inline Alignment
+## BizziBuddi â€” Gold Arc Inline Alignment
 
 ### Fixed
 
@@ -728,7 +742,7 @@
 - Matched the gold segment thickness to the existing coloured ring.
 - Kept the white mark unchanged.
 
-## BizziBuddi — Unified Colour Arc Geometry
+## BizziBuddi â€” Unified Colour Arc Geometry
 
 ### Fixed
 
@@ -736,7 +750,7 @@
 - All five coloured segments now share the same centre and inner/outer radii.
 - Gold segments follow the same rounded construction as the blue segments instead of using independent shapes.
 
-## BizziBuddi — Gold Arc Continuation Fix
+## BizziBuddi â€” Gold Arc Continuation Fix
 
 ### Fixed
 
@@ -744,7 +758,7 @@
 - Matched the blue arc's centre, radii, segment proportions and spacing.
 - Updated the reusable icon artwork to use the same corrected geometry.
 
-## BizziBuddi — Gold Arc Alignment Correction
+## BizziBuddi â€” Gold Arc Alignment Correction
 
 ### Fixed
 
@@ -752,7 +766,7 @@
 - Matched the gold curvature and segment geometry to the existing blue construction.
 - Restored consistent radial alignment through the full coloured arc.
 
-## BizziBuddi — Gold Arc Final Geometry
+## BizziBuddi â€” Gold Arc Final Geometry
 
 ### Fixed
 
@@ -760,7 +774,7 @@
 - Matched the segment thickness, curvature and spacing to the existing blue construction.
 - Balanced the second gold segment so the lower arc reads as one continuous designed system.
 
-## BizziBuddi — Gold Arc Proportion Polish
+## BizziBuddi â€” Gold Arc Proportion Polish
 
 ### Changed
 
@@ -768,7 +782,7 @@
 - Preserved the circular alignment, segment gaps and bottom alignment with the white mark.
 - Kept the overall logo proportions unchanged.
 
-## BizziBuddi — Gold Logo Geometry Fix
+## BizziBuddi â€” Gold Logo Geometry Fix
 
 ### Fixed
 
@@ -776,7 +790,7 @@
 - Aligned the final gold segment's lower edge with the bottom edge of the white BizziBuddi mark.
 - Preserved the intentional gaps between colour segments.
 
-## BizziBuddi — Gold Arc Logo
+## BizziBuddi â€” Gold Arc Logo
 
 ### Changed
 
@@ -785,7 +799,7 @@
 - Added reusable SVG logo artwork to src/assets/.
 - Preserved the existing cyan, blue and white brand colours.
 
-## BizziBuddi — Flush-Top Landing Alignment
+## BizziBuddi â€” Flush-Top Landing Alignment
 
 ### Changed
 
@@ -793,7 +807,7 @@
 - Tightened the hero's top margin so the BizziBuddi header begins directly at the top edge.
 - Preserved the compact landing layout while removing the final visible top gap.
 
-## BizziBuddi — Top-Aligned Account Landing
+## BizziBuddi â€” Top-Aligned Account Landing
 
 ### Changed
 
@@ -801,7 +815,7 @@
 - Tightened the header-to-hero spacing so the BizziBuddi brand and primary account message appear immediately.
 - Preserved the compact hero and navigation styling.
 
-## BizziBuddi — Compact Landing Hero
+## BizziBuddi â€” Compact Landing Hero
 
 ### Changed
 
@@ -809,7 +823,7 @@
 - Tightened header, hero, headline, supporting copy, status badge and navigation spacing.
 - Reduced typography and padding so the application entry controls appear much sooner in the viewport.
 
-## BizziBuddi — Account Landing Space Polish
+## BizziBuddi â€” Account Landing Space Polish
 
 ### Changed
 
@@ -818,7 +832,7 @@
 - Reduced navigation spacing and button footprint.
 - Preserved the existing branding, hierarchy and functionality while making the first viewport substantially more compact.
 
-## BizziBuddi — First-Run Welcome
+## BizziBuddi â€” First-Run Welcome
 
 ### Added
 
@@ -828,7 +842,7 @@
 - Focuses the first-run experience by hiding the normal workspace navigation and marketing hero until the user chooses where to go.
 - Keeps the existing Dashboard first-day state as a persistent fallback after the first-run screen is dismissed.
 
-## BizziBuddi — First-Day Dashboard Empty State
+## BizziBuddi â€” First-Day Dashboard Empty State
 
 ### Added
 
@@ -837,11 +851,11 @@
 - Keeps the optional Getting Started guide and Ask Buddi available from the empty state.
 - Automatically gives way to the normal operating dashboard once business data exists.
 
-## BizziBuddi — Invoice Lifecycle
+## BizziBuddi â€” Invoice Lifecycle
 
 ### Added
 
-- Added explicit **Draft → Issued → Part Paid → Paid / Overdue** invoice lifecycle handling.
+- Added explicit **Draft â†’ Issued â†’ Part Paid â†’ Paid / Overdue** invoice lifecycle handling.
 - New invoices can now be saved as **Draft** or **Save & issue**.
 - Draft invoices cannot accept payments until they are issued.
 - Added an **Issue invoice** action for draft invoices.
@@ -849,7 +863,7 @@
 
 ---
 
-## BizziBuddi — Payment Activity After Removal
+## BizziBuddi â€” Payment Activity After Removal
 
 ### Fixed
 
@@ -859,7 +873,7 @@
 
 ---
 
-## BizziBuddi — Finance Confirmation & Submenu Scrolling
+## BizziBuddi â€” Finance Confirmation & Submenu Scrolling
 
 ### Fixed
 
@@ -869,15 +883,15 @@
 - Fixed workspace submenu scrolling so Finance items scroll to their relevant sections without immediately jumping back to the top.
 - Made the Finance Payments anchor unique so the Payments submenu reliably lands on the payment history area.
 
-## BizziBuddi — Finance Confirmation & Submenu Navigation
+## BizziBuddi â€” Finance Confirmation & Submenu Navigation
 
 ### Fixed
 
 - Replaced the browser-native payment removal confirmation with an in-app confirmation dialog showing the payment amount, invoice, date and method.
 - Added clear **Keep payment** and **Remove payment** actions before deletion.
-- Added a stable Finance → Payments scroll anchor so the Payments submenu navigates directly to payment history.
+- Added a stable Finance â†’ Payments scroll anchor so the Payments submenu navigates directly to payment history.
 
-## BizziBuddi — Payment Confirmation & Finance Navigation
+## BizziBuddi â€” Payment Confirmation & Finance Navigation
 
 ### Improved
 
@@ -887,7 +901,7 @@
 - Finance submenu targets continue to use the workspace section scrolling system for Revenue, Invoices, Payments, Expenses & Outgoings and Cashflow Outlook.
 - Fixed the Finance panel render introduced while adding the confirmation dialog.
 
-## BizziBuddi — Payment Confirmation & Finance Navigation Polish
+## BizziBuddi â€” Payment Confirmation & Finance Navigation Polish
 
 ### Improved
 
@@ -901,7 +915,7 @@
 
 ---
 
-## BizziBuddi — Finance Confirmation & Navigation Polish
+## BizziBuddi â€” Finance Confirmation & Navigation Polish
 
 ### Improved
 
@@ -914,7 +928,7 @@
 
 ---
 
-## BizziBuddi — Acceptance Test Form & Navigation Fixes
+## BizziBuddi â€” Acceptance Test Form & Navigation Fixes
 
 ### Fixed
 
@@ -926,7 +940,7 @@
 
 ---
 
-## BizziBuddi — Logical Logout Navigation
+## BizziBuddi â€” Logical Logout Navigation
 
 ### Fixed
 
@@ -956,7 +970,7 @@
 - Keeps the guide skippable so experienced users can work normally.
 - Keeps the guide available from the dashboard for returning users.
 
-## BizziBuddi — Business Setup 2.0\n\n### Added\n\n- Reworked first-run Business Setup into a four-step onboarding flow.\n- Step 1 captures business name and business type, including Other / custom.\n- Step 2 lets the business owner review and customise People, Work and Appointment terminology.\n- Step 3 previews industry starter custom fields and allows unwanted fields to be removed before entering the workspace.\n- Step 4 provides a final configuration summary before opening the workspace.\n- Starter configuration is persisted through the existing business profile and custom-field APIs.\n\n---\n\n## BizziBuddi — CSV Export Parse Fix\n\n### Fixed\n\n- Corrected the malformed CSV line-join string in `BizzibuddiAccountPage.jsx`.\n- Restored valid JavaScript syntax for report CSV generation.\n\n---\n\n## BizziBuddi — Authentication Error UX\n\n### Improved\n\n- Login and account-creation errors now appear prominently inside the authentication card.\n- Server errors such as duplicate email/username are shown immediately without requiring the user to scroll back to the top.\n- Missing credentials and invalid email/password input are validated before submission with clear, field-specific messages.\n- Authentication error feedback uses an assertive accessible alert and automatically brings the message into view.\n\n---\n\n## BizziBuddi Demo — Feedback Parse Fix\n\n### Fixed\n\n- Corrected the Demo workspace source formatting introduced during the action-feedback timer fix.\n- Restored the 4-second visible action feedback timer without invalid escaped line breaks.\n\n---\n\n## BizziBuddi Demo — Action Feedback Visibility\n\n### Fixed\n\n- Demo action feedback now remains visible for 4 seconds instead of being cleared immediately.\n- Rapid successive actions replace the previous notice cleanly without stacking timers.\n- The feedback notice remains sticky and visually prominent while navigating the Demo workspace.\n\n\n---\n\n## BizziBuddi Demo Action Feedback
+## BizziBuddi â€” Business Setup 2.0\n\n### Added\n\n- Reworked first-run Business Setup into a four-step onboarding flow.\n- Step 1 captures business name and business type, including Other / custom.\n- Step 2 lets the business owner review and customise People, Work and Appointment terminology.\n- Step 3 previews industry starter custom fields and allows unwanted fields to be removed before entering the workspace.\n- Step 4 provides a final configuration summary before opening the workspace.\n- Starter configuration is persisted through the existing business profile and custom-field APIs.\n\n---\n\n## BizziBuddi â€” CSV Export Parse Fix\n\n### Fixed\n\n- Corrected the malformed CSV line-join string in `BizzibuddiAccountPage.jsx`.\n- Restored valid JavaScript syntax for report CSV generation.\n\n---\n\n## BizziBuddi â€” Authentication Error UX\n\n### Improved\n\n- Login and account-creation errors now appear prominently inside the authentication card.\n- Server errors such as duplicate email/username are shown immediately without requiring the user to scroll back to the top.\n- Missing credentials and invalid email/password input are validated before submission with clear, field-specific messages.\n- Authentication error feedback uses an assertive accessible alert and automatically brings the message into view.\n\n---\n\n## BizziBuddi Demo â€” Feedback Parse Fix\n\n### Fixed\n\n- Corrected the Demo workspace source formatting introduced during the action-feedback timer fix.\n- Restored the 4-second visible action feedback timer without invalid escaped line breaks.\n\n---\n\n## BizziBuddi Demo â€” Action Feedback Visibility\n\n### Fixed\n\n- Demo action feedback now remains visible for 4 seconds instead of being cleared immediately.\n- Rapid successive actions replace the previous notice cleanly without stacking timers.\n- The feedback notice remains sticky and visually prominent while navigating the Demo workspace.\n\n\n---\n\n## BizziBuddi Demo Action Feedback
 
 ### Changed
 
@@ -967,13 +981,13 @@
 
 ---
 
-## BizziBuddi Business Type — Other / Custom
+## BizziBuddi Business Type â€” Other / Custom
 
 ### Added
 
 - Added **Other / custom** as a business-type option for businesses that do not fit the available industry templates.
 - Uses the flexible General terminology without imposing industry-specific starter fields.
-- Available during onboarding and in Account → Business Profile.
+- Available during onboarding and in Account â†’ Business Profile.
 
 ---
 
@@ -987,7 +1001,7 @@
 
 ---
 
-## BizziBuddi Demo Sandbox — Proper Data Entry UX
+## BizziBuddi Demo Sandbox â€” Proper Data Entry UX
 
 ### Changed
 
@@ -1024,7 +1038,7 @@
 - Added configurable business profiles with industry starting templates for general business, dressmaking, hairdressing, tattoo studios, schools, trades and consulting.
 - Added configurable business terminology so industry language can sit above the shared BizziBuddi core.
 - Added persistent custom-field definitions and values for People, Jobs, Appointments and Invoices.
-- Added Account → Business Profile configuration for selecting an industry template and adding custom fields.
+- Added Account â†’ Business Profile configuration for selecting an industry template and adding custom fields.
 - Kept demo data isolated from real BizziBuddi account storage.
 
 ### Changed
@@ -1037,7 +1051,7 @@
 
 ### Added
 
-- Added a secure **Account → Start fresh** business-data reset workflow.
+- Added a secure **Account â†’ Start fresh** business-data reset workflow.
 - Requires the explicit confirmation phrase **START FRESH** before deletion.
 - Creates a full database safety backup before clearing account data.
 - Clears account-scoped People, Jobs, Calendar, Finance, Expenses, Production, Production Templates, Production Time, Measurements and Automation data.
@@ -1312,7 +1326,7 @@
 - Renamed Cashflow to Cashflow Outlook to better describe the linked cashflow view.
 - Preserved all existing Finance routes, anchors, sticky navigation behaviour and no-horizontal-scroll safeguards.
 
-## BizziBuddi Workspace Navigation — Responsive No-Scroll Polish
+## BizziBuddi Workspace Navigation â€” Responsive No-Scroll Polish
 
 ### Changed
 
@@ -1324,7 +1338,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Compact Sticky No-Scroll Refinement
+## BizziBuddi Workspace Navigation â€” Compact Sticky No-Scroll Refinement
 
 ### Changed
 
@@ -1336,7 +1350,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Utility Rail Outside Sticky Nav
+## BizziBuddi Workspace Navigation â€” Utility Rail Outside Sticky Nav
 
 ### Changed
 
@@ -1347,7 +1361,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Sticky Utility Rail Fix
+## BizziBuddi Workspace Navigation â€” Sticky Utility Rail Fix
 
 ### Changed
 
@@ -1358,7 +1372,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Help Rail Placement
+## BizziBuddi Workspace Navigation â€” Help Rail Placement
 
 ### Changed
 
@@ -1369,7 +1383,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Sticky Help Rail
+## BizziBuddi Workspace Navigation â€” Sticky Help Rail
 
 ### Changed
 
@@ -1382,7 +1396,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Compact Sticky Menu
+## BizziBuddi Workspace Navigation â€” Compact Sticky Menu
 
 ### Changed
 
@@ -1395,7 +1409,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Sticky Fix
+## BizziBuddi Workspace Navigation â€” Sticky Fix
 
 ### Changed
 
@@ -1405,7 +1419,7 @@
 - Kept the submenu aligned beneath the selected main-menu section and wrapped within the available width.
 
 ---
-## BizziBuddi Workspace Navigation — Sticky, No-Scroll Polish
+## BizziBuddi Workspace Navigation â€” Sticky, No-Scroll Polish
 
 ### Changed
 
@@ -1430,7 +1444,7 @@
 - Adjusted internal anchor scrolling so selected submenu destinations are not hidden beneath the sticky navigation.
 
 ---
-## BizziBuddi Workspace Navigation — Sticky No-Scroll Navigation
+## BizziBuddi Workspace Navigation â€” Sticky No-Scroll Navigation
 
 ### Changed
 
@@ -1442,7 +1456,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — Sticky Finance Navigation
+## BizziBuddi Workspace Navigation â€” Sticky Finance Navigation
 
 ### Changed
 
@@ -1454,7 +1468,7 @@
 
 ---
 
-## BizziBuddi Workspace Navigation — No-Scroll Layout
+## BizziBuddi Workspace Navigation â€” No-Scroll Layout
 
 ### Changed
 
@@ -1616,7 +1630,7 @@
 - The repair targets the affected invoice/payment by persisted invoice and payment identity without changing the current payment row.
 - Creates a database backup before applying the repair.
 - Restores the original **$150.00 Cash** recorded snapshot for the affected payment.
-- Preserves a real **$300.00 → $100.00** update event when one already exists and removes only the earlier synthetic repair duplicate.
+- Preserves a real **$300.00 â†’ $100.00** update event when one already exists and removes only the earlier synthetic repair duplicate.
 - If the real update event is genuinely missing, the utility restores it using a stable source key.
 - Safe to rerun without creating duplicate audit events.
 
@@ -1661,7 +1675,7 @@
 ### Fixed
 
 - Corrected the legacy payment-audit migration amount parser so historical edited-payment events can be recognised correctly.
-- Ensured a legacy $150 → $300 payment edit can be presented as a Payment recorded event followed by a Payment updated audit event instead of two recorded events.
+- Ensured a legacy $150 â†’ $300 payment edit can be presented as a Payment recorded event followed by a Payment updated audit event instead of two recorded events.
 - Prevented the legacy migration path from failing silently because of an incorrectly escaped whitespace expression.
 
 ---
@@ -1690,14 +1704,14 @@
 
 - Payment Activity now records customer-facing invoice numbers rather than internal invoice IDs.
 - Payment recorded events include amount, payment date, method and description.
-- Payment updated events include old → new values for amount, date, method and description.
+- Payment updated events include old â†’ new values for amount, date, method and description.
 - Payment removed events retain the removed payment's amount, date, method and description.
 
 ## BizziBuddi Payment Activity Polish
 
 ### Changed
 
-- Formatted Payment Activity timestamps for the Australian locale as **2 Oct 2026 · 1:09 PM**.
+- Formatted Payment Activity timestamps for the Australian locale as **2 Oct 2026 Â· 1:09 PM**.
 - Formatted fallback activity amounts as currency.
 - Replaced the internal invoice UUID in fallback activity descriptions with the customer-facing invoice number.
 - Kept Payment History as the transaction ledger and Payment Activity as the separate audit trail.
@@ -1738,7 +1752,7 @@
 ### Changed
 
 - Replaced the small native **PAYMENT ACTIVITY** details control beneath invoice payment history with a prominent expandable activity panel.
-- Added a clear **▸ / ▾** expand indicator and event-count badge.
+- Added a clear **â–¸ / â–¾** expand indicator and event-count badge.
 - Kept activity collapsed by default while allowing each invoice to expand independently.
 - Preserved the existing dark BizziBuddi visual language and persisted payment activity data.
 - Continued displaying recorded payment activity with event detail and timestamp information.
@@ -1748,7 +1762,7 @@
 ### Added
 
 - Added a prominent expandable **Payment Activity** row directly beneath Finance's **Recent Payments** ledger.
-- Made the entire header clickable with a visible **▸ / ▾** expand indicator.
+- Made the entire header clickable with a visible **â–¸ / â–¾** expand indicator.
 - Added an event-count badge and kept the activity collapsed by default.
 - Clearly separated the activity history from the actual payment transaction ledger.
 - Loaded payment activity from the persistent database timeline.
@@ -1780,7 +1794,7 @@
 - Added account-scoped payment removal from Finance with confirmation and automatic invoice balance/status recalculation.
 - Routed Finance payment corrections through a payment-specific API endpoint so editing no longer depends on the invoice card's route identity.
 - Finance payment corrections now use the persisted payment invoice ID when sending an edit request.
-- Made payment corrections resolve the persisted payment record by its account-scoped payment ID, avoiding stale parent-invoice state from causing a false “Payment not found” response.
+- Made payment corrections resolve the persisted payment record by its account-scoped payment ID, avoiding stale parent-invoice state from causing a false â€œPayment not foundâ€ response.
 
 ### Added
 
@@ -1815,7 +1829,7 @@
 ### Improved
 
 - Indented invoice payment history so it reads as supporting detail beneath the invoice.
-- Simplified payment rows by removing the redundant “Payment received” label.
+- Simplified payment rows by removing the redundant â€œPayment receivedâ€ label.
 - Kept amount, date, method and optional payment description visible in a more compact layout.
 
 ## Finance Payment History Reliability
@@ -1848,7 +1862,7 @@
 ### Added
 
 - Buddi now answers read-only finance questions directly from the current account invoice data.
-- “Who owes me money?” returns outstanding balances grouped by client.
+- â€œWho owes me money?â€ returns outstanding balances grouped by client.
 - Client-specific questions return the client's outstanding invoices and balances.
 - Overdue questions identify invoices past their due date with remaining balances.
 - Outstanding/unpaid questions return the current aggregate balance.
@@ -1867,7 +1881,7 @@
 
 ### Added
 
-- Buddi can now recognise invoice requests such as “Create an invoice for Jessica Williams for Wedding Dress, $2,400.”
+- Buddi can now recognise invoice requests such as â€œCreate an invoice for Jessica Williams for Wedding Dress, $2,400.â€
 - Invoice details are pre-filled into a review form with client, description, amount, issue date and due date.
 - The default due date is seven days from creation when no due date is specified.
 - Invoice descriptions are now persisted in the account-backed finance database.
@@ -1877,7 +1891,7 @@
 
 ### Added
 
-- Buddi can now recognise payment requests such as “Record a $500 payment from Jessica Williams.”
+- Buddi can now recognise payment requests such as â€œRecord a $500 payment from Jessica Williams.â€
 - Payment details are pre-filled into a confirmation form, including client, amount, date, method, description and outstanding invoice.
 - When a client has multiple outstanding invoices, Buddi requires an explicit invoice selection before recording the payment.
 - Payments are validated against the selected invoice balance before saving.
@@ -1887,14 +1901,14 @@
 
 ### Fixed
 
-- Buddi now recognises conversational booking requests such as “Book Jessica Williams in for a fitting next Tuesday at 2pm.”
-- The appointment parser now handles the person-first “book [person] in for [appointment]” phrasing and removes leading articles from the appointment title.
+- Buddi now recognises conversational booking requests such as â€œBook Jessica Williams in for a fitting next Tuesday at 2pm.â€
+- The appointment parser now handles the person-first â€œbook [person] in for [appointment]â€ phrasing and removes leading articles from the appointment title.
 
 ## Buddi Natural-Language Appointment Creation
 
 ### Added
 
-- Buddi can now recognise natural-language appointment requests such as “Book Jessica Williams in for a fitting next Tuesday at 2pm.”
+- Buddi can now recognise natural-language appointment requests such as â€œBook Jessica Williams in for a fitting next Tuesday at 2pm.â€
 - Appointment dates, times, duration, status and client details are pre-filled into a review form.
 - Existing client matching and the existing new-client creation flow are supported.
 - Appointment creation remains confirmation-gated; nothing is saved until the user confirms.
@@ -1937,7 +1951,7 @@
 
 ### Fixed
 
-- Fixed natural-language job requests such as “create a job for Sarah, wedding dress” so the client phrase is removed cleanly from the job title.
+- Fixed natural-language job requests such as â€œcreate a job for Sarah, wedding dressâ€ so the client phrase is removed cleanly from the job title.
 - Buddi now remembers the requested person name when it cannot match that name to an account person.
 - Unmatched client names now require an explicit person selection before the job can be saved, preventing accidental assignment to the wrong client.
 - Cleaned residual punctuation from job titles after natural-language date, price, and client parsing.
@@ -1996,7 +2010,7 @@
 
 - Calendar deep links now highlight and smoothly scroll to the exact appointment record.
 - The selected appointment remains visually identifiable while its editor is open.
-- Upcoming garment production entries in Calendar now provide a direct **Open production →** action.
+- Upcoming garment production entries in Calendar now provide a direct **Open production â†’** action.
 - Production links preserve the exact job focus when opening the Production workspace.
 
 ## Today Summary Spacing + Job Detail Next Actions
@@ -2008,12 +2022,12 @@
 - Kept the summary responsive so the four metrics collapse cleanly on narrower screens.
 - Added a focused **Next Action** area to the selected Job.
 - Job next actions now reflect the current production state:
-  - overdue production → Open production
-  - outstanding production tasks → Open production
-  - ready / stage update needed → Open production
-  - not started → Start production
-  - waiting job → Review job
-  - complete job → Review timeline
+  - overdue production â†’ Open production
+  - outstanding production tasks â†’ Open production
+  - ready / stage update needed â†’ Open production
+  - not started â†’ Start production
+  - waiting job â†’ Review job
+  - complete job â†’ Review timeline
 - Selected Jobs are highlighted and smoothly scrolled into view when opened from a deep link or timeline selection.
 - Preserved the existing Timeline, Production, Edit and Delete actions.
 
@@ -2063,7 +2077,7 @@
 
 - Added a dedicated Finance Attention panel to Buddi for overdue, due-today and upcoming unpaid invoices.
 - Added urgency styling consistent with production attention states.
-- Added direct **Open finance →** navigation from each highlighted invoice.
+- Added direct **Open finance â†’** navigation from each highlighted invoice.
 
 ### Improved
 
@@ -2120,7 +2134,7 @@
 
 ### Workflow
 
-Buddi identifies an opportunity → proposes the action → user confirms → production record is updated.
+Buddi identifies an opportunity â†’ proposes the action â†’ user confirms â†’ production record is updated.
 
 ## Buddi Production Workload Awareness
 
@@ -2133,7 +2147,7 @@ Buddi identifies an opportunity → proposes the action → user confirms → pr
 
 ### Workflow
 
-Production workload → Buddi → production workspace
+Production workload â†’ Buddi â†’ production workspace
 
 ## BizziBuddi Production Workload Balancing
 
@@ -2167,7 +2181,7 @@ Production now answers both **what is happening** and **where the workload press
 
 ### Workflow
 
-People → Client timeline → Job → Production
+People â†’ Client timeline â†’ Job â†’ Production
 
 ---
 
@@ -2210,7 +2224,7 @@ People → Client timeline → Job → Production
 
 ### Workflow
 
-Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard / Buddi
+Jobs â†’ Production queue â†’ Stage / tasks â†’ Ready â†’ Complete â†’ Dashboard / Buddi
 
 ---
 
@@ -2262,7 +2276,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 - Reorganised the signed-in workspace navigation into clear groups: Today, Work, Money, Insights, Assist and Account.
 - Replaced the ambiguous "Account preview" workspace entry with a clear Today home.
-- Added a concise "How BizziBuddi works" workflow guide to the dashboard linking People → Jobs → Production → Calendar → Finance.
+- Added a concise "How BizziBuddi works" workflow guide to the dashboard linking People â†’ Jobs â†’ Production â†’ Calendar â†’ Finance.
 - Kept account/login navigation separate from the signed-in business workspace.
 - Added responsive behaviour for the grouped workspace navigation on smaller screens.
 
@@ -2396,7 +2410,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Fixed
 
-- Fixed the Dashboard Today View production due-soon window so it matches the displayed “next 7 days” label.
+- Fixed the Dashboard Today View production due-soon window so it matches the displayed â€œnext 7 daysâ€ label.
 - Production ready-by dates within seven days now appear consistently alongside invoices due within seven days.
 - Added a workflow contract check to prevent the production due-soon window from regressing to a shorter range.
 
@@ -2525,7 +2539,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Business data → Health indicator → Context → Operating decision`
+`Business data â†’ Health indicator â†’ Context â†’ Operating decision`
 
 ---
 
@@ -2541,7 +2555,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Business activity → Recent activity → Source module → Continue work`
+`Business activity â†’ Recent activity â†’ Source module â†’ Continue work`
 
 ---
 
@@ -2557,7 +2571,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Business activity → Priority signal → Ordered action queue → Next action`
+`Business activity â†’ Priority signal â†’ Ordered action queue â†’ Next action`
 
 ---
 
@@ -2573,7 +2587,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`People → Search → Match client → Continue client workflow`
+`People â†’ Search â†’ Match client â†’ Continue client workflow`
 
 ---
 
@@ -2589,7 +2603,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Person → Measurement snapshot → History → Compare changes over time`
+`Person â†’ Measurement snapshot â†’ History â†’ Compare changes over time`
 
 ---
 
@@ -2604,7 +2618,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Person → Jobs → Appointments → Invoices → Production → Client timeline`
+`Person â†’ Jobs â†’ Appointments â†’ Invoices â†’ Production â†’ Client timeline`
 
 ---
 
@@ -2653,7 +2667,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Invoice → Balance → Due date → Payment warning → Mark paid`
+`Invoice â†’ Balance â†’ Due date â†’ Payment warning â†’ Mark paid`
 
 ---
 
@@ -2668,7 +2682,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Job → Production stage → Tasks → Readiness → Due-date signal`
+`Job â†’ Production stage â†’ Tasks â†’ Readiness â†’ Due-date signal`
 
 ---
 
@@ -2683,7 +2697,7 @@ Jobs → Production queue → Stage / tasks → Ready → Complete → Dashboard
 
 ### Workflow
 
-`Job → Stage → Tasks → Readiness → Action`
+`Job â†’ Stage â†’ Tasks â†’ Readiness â†’ Action`
 
 The readiness state is derived from persisted production data and does not replace the existing five-stage production workflow.
 
@@ -2702,7 +2716,7 @@ The readiness state is derived from persisted production data and does not repla
 
 ### Workflow
 
-`Job → Production stage → Tasks → Task progress → Timeline`
+`Job â†’ Production stage â†’ Tasks â†’ Task progress â†’ Timeline`
 
 The five production stages remain the primary workflow state, while task completion provides the granular work-progress view.
 
@@ -2719,7 +2733,7 @@ The five production stages remain the primary workflow state, while task complet
 
 ### Workflow
 
-`Job → Production stage → Progress → Timeline`
+`Job â†’ Production stage â†’ Progress â†’ Timeline`
 
 The existing five-stage Production workflow remains the source of truth for production progress.
 
@@ -3076,7 +3090,7 @@ The existing five-stage Production workflow remains the source of truth for prod
 
 ## BizziBuddi Dashboard-to-Buddi Attention Flow
 
-- Connected the dashboard's **Ask Buddi what needs attention →** action directly to Buddi.
+- Connected the dashboard's **Ask Buddi what needs attention â†’** action directly to Buddi.
 - Added the dashboard attention picture to Buddi's supplied business context so the response is grounded in the same overdue payments, today's appointments, waiting jobs and ready production items shown on the dashboard.
 - Automatically sends **What needs attention today?** when that dashboard action is used, instead of merely opening the Buddi screen.
 - Added BizziBuddi-specific assistant guidance to keep attention responses concise, prioritised and practical.
@@ -3193,7 +3207,7 @@ All notable changes to Chrysalis are recorded here.
 - Added a dedicated Buddi assistant experience inside the BizziBuddi account dashboard.
 - Added an Ask Buddi dashboard action that opens the assistant with the current local BizziBuddi business data as context.
 - Added quick business questions covering attention, workload, upcoming activity, outstanding money and jobs in progress.
-- Added the visible “Buddi is thinking” animation while the assistant is processing a request.
+- Added the visible â€œBuddi is thinkingâ€ animation while the assistant is processing a request.
 - Added business-aware assistant prompting so the shared OpenAI service identifies the account experience as BizziBuddi and responds as Buddi.
 - Kept this first account integration informational only: Buddi does not create or modify BizziBuddi records from this screen.
 
@@ -3347,9 +3361,9 @@ All notable changes to Chrysalis are recorded here.
 
 ### Membership levels
 
-- Free — People & contacts, Basic jobs, Calendar and Dashboard.
-- Professional — Free features plus Advanced scheduling, Payments & invoices and Automation.
-- Business — Professional features plus Production tracking, Advanced reporting, Priority features and Professional controls.
+- Free â€” People & contacts, Basic jobs, Calendar and Dashboard.
+- Professional â€” Free features plus Advanced scheduling, Payments & invoices and Automation.
+- Business â€” Professional features plus Production tracking, Advanced reporting, Priority features and Professional controls.
 
 ## BizziBuddi Jobs Workspace Preview
 
@@ -3359,7 +3373,7 @@ All notable changes to Chrysalis are recorded here.
 - Added job creation with a job name, client assignment and status.
 - Added a simple jobs list with client and status visibility.
 - Added local-only job persistence in the browser.
-- Connected the workspace welcome screen's “Create a job” action to the Jobs workspace.
+- Connected the workspace welcome screen's â€œCreate a jobâ€ action to the Jobs workspace.
 - Kept job creation dependent on a person being available for assignment.
 
 
@@ -3370,7 +3384,7 @@ All notable changes to Chrysalis are recorded here.
 - Added the first functional People workspace to the local BizziBuddi preview.
 - Added a simple people list with name, email and phone details.
 - Added local-only person creation and browser persistence.
-- Connected the workspace welcome screen's “Add your people” action to the People workspace.
+- Connected the workspace welcome screen's â€œAdd your peopleâ€ action to the People workspace.
 - Kept the feature independent from the existing Chrysalis People page and real database until the BizziBuddi workspace architecture is ready.
 
 
@@ -3380,7 +3394,7 @@ All notable changes to Chrysalis are recorded here.
 
 - Reworked the completed local account dashboard into a simple BizziBuddi workspace welcome screen.
 - Replaced the simulated account-dashboard messaging with workspace-focused People, Jobs and plan starting points.
-- Added a clearer “your workspace is ready” experience after onboarding.
+- Added a clearer â€œyour workspace is readyâ€ experience after onboarding.
 - Kept all actions local and clearly marked the workspace as a development preview.
 - Removed the unused business-name field from account creation so workspace naming remains part of the onboarding step.
 
@@ -3592,26 +3606,26 @@ All notable changes to Chrysalis are recorded here.
 - Compact the opening BizziBuddi hero so the core message is visible with substantially less vertical space.
 - Reduced the logo, headline, supporting copy and spacing while preserving the existing CTAs.
 - Removed the three supporting hero cards from the opening section so the primary brand message has a cleaner, tighter presentation.
-- Set the opening brand lockup to “BUSINESS SUPPORT, SIMPLIFIED.” as requested.
+- Set the opening brand lockup to â€œBUSINESS SUPPORT, SIMPLIFIED.â€ as requested.
 
 
 ## BizziBuddi Hero Messaging Polish
 
 ### Changed
 
-- Set “Your personal assistant for business.” as the primary hero headline.
-- Set “Gives you time.” as the prominent supporting brand promise.
-- Set “Helping you organise, plan and grow.” as supporting explanatory copy.
-- Kept “Business management, simplified.” as the approved BizziBuddi tagline.
+- Set â€œYour personal assistant for business.â€ as the primary hero headline.
+- Set â€œGives you time.â€ as the prominent supporting brand promise.
+- Set â€œHelping you organise, plan and grow.â€ as supporting explanatory copy.
+- Kept â€œBusiness management, simplified.â€ as the approved BizziBuddi tagline.
 - Left pricing and account buttons unchanged as development placeholders.
 
 ## BizziBuddi Hero Brand Message
 
 ### Changed
 
-- Updated the BizziBuddi tagline from “Business support, simplified.” to “Business management, simplified.”
+- Updated the BizziBuddi tagline from â€œBusiness support, simplified.â€ to â€œBusiness management, simplified.â€
 - Applied the revised wording consistently to the landing-page hero lockup and sidebar BizziBuddi branding.
-- Preserved the existing logo geometry, palette and supporting “Your personal assistant for business.” message.
+- Preserved the existing logo geometry, palette and supporting â€œYour personal assistant for business.â€ message.
 
 ## BizziBuddi Landing Hero Hierarchy
 
@@ -3680,10 +3694,10 @@ All notable changes to Chrysalis are recorded here.
 
 ### Changed
 
-- Replaced the old pink “B” platform card in the sidebar footer with the approved BizziBuddi clock logo and wordmark.
+- Replaced the old pink â€œBâ€ platform card in the sidebar footer with the approved BizziBuddi clock logo and wordmark.
 - Applied the navy, blue and cyan BizziBuddi palette to the footer card and upgrade button.
-- Added the approved “Business support, simplified.” and “Your personal assistant for business.” messaging.
-- Updated the dark BizziBuddi wordmark so “Bizzi” remains light while “Buddi” retains the approved blue treatment.
+- Added the approved â€œBusiness support, simplified.â€ and â€œYour personal assistant for business.â€ messaging.
+- Updated the dark BizziBuddi wordmark so â€œBizziâ€ remains light while â€œBuddiâ€ retains the approved blue treatment.
 
 ---
 
@@ -3692,7 +3706,7 @@ All notable changes to Chrysalis are recorded here.
 ### Changed
 
 - Replaced the old BizziBuddi sidebar footer badge with the approved BizziBuddi clock logo and wordmark.
-- Added the approved “Business support, simplified.” lockup and “Your personal assistant for business.” descriptor.
+- Added the approved â€œBusiness support, simplified.â€ lockup and â€œYour personal assistant for business.â€ descriptor.
 - Kept the footer's existing plans and upgrade action.
 - Corrected the Sidebar JSX closing structure so the application compiles cleanly.
 
@@ -3724,8 +3738,8 @@ All notable changes to Chrysalis are recorded here.
 ### Changed
 
 - Refined the BizziBuddi clock mark to match the supplied brand artwork more closely.
-- Updated the wordmark to the navy/blue split used in the supplied artwork and added the ™ mark.
-- Added the full brand lockup treatment with “BUSINESS SUPPORT, SIMPLIFIED.”, “Your personal assistant for business.” and “ORGANISE | PLAN | DO | GROW”.
+- Updated the wordmark to the navy/blue split used in the supplied artwork and added the â„¢ mark.
+- Added the full brand lockup treatment with â€œBUSINESS SUPPORT, SIMPLIFIED.â€, â€œYour personal assistant for business.â€ and â€œORGANISE | PLAN | DO | GROWâ€.
 - Applied the refined lockup to the BizziBuddi website hero while retaining the compact mark for the Buddi assistant and launcher.
 
 ---
@@ -3734,12 +3748,12 @@ All notable changes to Chrysalis are recorded here.
 
 ### Changed
 
-- Introduced the new BizziBuddi clock-inspired lowercase “b” logo.
+- Introduced the new BizziBuddi clock-inspired lowercase â€œbâ€ logo.
 - Added the navy, blue and cyan BizziBuddi brand palette with slate and light neutrals.
 - Applied the new logo and branding to the public BizziBuddi landing page and account experience.
 - Updated the Buddi launcher and assistant panel to use the new BizziBuddi visual identity.
-- Added the supporting brand message “Business support, simplified.” and “Your personal assistant for business.”
-- Added the “Organise | Plan | Do | Grow” brand feature line.
+- Added the supporting brand message â€œBusiness support, simplified.â€ and â€œYour personal assistant for business.â€
+- Added the â€œOrganise | Plan | Do | Growâ€ brand feature line.
 - Kept the clock mark's three arc segments evenly spaced while increasing in size clockwise.
 
 ---
@@ -3748,7 +3762,7 @@ All notable changes to Chrysalis are recorded here.
 
 ### Fixed
 
-- Restored the visible “Buddi is thinking” label alongside the thinking dots.
+- Restored the visible â€œBuddi is thinkingâ€ label alongside the thinking dots.
 - Moved the dot animation styling into the Buddi component so the three dots animate independently and reliably.
 - Added staggered animation delays to create a clear bouncing/pulsing sequence.
 - Kept the thinking indicator visually prominent while Buddi is processing a request.
@@ -3792,7 +3806,7 @@ All notable changes to Chrysalis are recorded here.
 ### Added
 
 - Added the BizziBuddi Assistant interface and Buddi branding.
-- Added a more prominent “Ask Buddi” launcher for quick access to the assistant.
+- Added a more prominent â€œAsk Buddiâ€ launcher for quick access to the assistant.
 - Added a visible thinking animation while Buddi processes a question.
 - Added natural-language question handling through the connected assistant service.
 - Added workspace context so Buddi can answer questions about clients, jobs, garments, payments and upcoming work.
@@ -3841,7 +3855,7 @@ All notable changes to Chrysalis are recorded here.
 - Added username capture to the local BizziBuddi account preview.
 - Added email-address-or-username login matching for the local mock account flow.
 - Linked the public `/login` route to the BizziBuddi account and plans experience.
-- Added a `View BizziBuddi plans & upgrade →` call-to-action to the Chrysalis sidebar platform card.
+- Added a `View BizziBuddi plans & upgrade â†’` call-to-action to the Chrysalis sidebar platform card.
 
 ### Changed
 
@@ -3946,8 +3960,8 @@ All notable changes to Chrysalis are recorded here.
 ### Changed
 
 - Reworked the hero hierarchy so the main workspace message is the dominant headline.
-- Reduced the emphasis of the supporting “Run your business. With BizziBuddi.” line.
-- Removed the redundant “Included in your workspace” labels from feature cards.
+- Reduced the emphasis of the supporting â€œRun your business. With BizziBuddi.â€ line.
+- Removed the redundant â€œIncluded in your workspaceâ€ labels from feature cards.
 - Expanded the descriptions for People, Jobs, Production, Calendar, Finance and Reports.
 - Refined typography throughout the landing page with lighter font weights, particularly in navigation, branding, buttons and footer content.
 - Improved hero text sizing and wrapping for clearer presentation across screen sizes.
@@ -3983,7 +3997,7 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
-## BizziBuddi Demo — People Workspace Positioning
+## BizziBuddi Demo â€” People Workspace Positioning
 
 ### Fixed
 
@@ -3995,19 +4009,19 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
-## BizziBuddi Demo — Navigation Isolation
+## BizziBuddi Demo â€” Navigation Isolation
 
 ### Changed
 
 - Demo mode now hides the authenticated workspace main navigation.
 - Demo mode also hides the authenticated Ask Buddi / Help utility rail.
 - The Demo workspace's own Overview, People, Jobs, Calendar, Finance, Production, Automation, Custom fields and Ask Buddi navigation is now the only navigation presented while exploring the sandbox.
-- Prevents Demo → People from accidentally routing into the real account-backed People workspace.
+- Prevents Demo â†’ People from accidentally routing into the real account-backed People workspace.
 
 
 ---
 
-## BizziBuddi Demo — Session Persistence
+## BizziBuddi Demo â€” Session Persistence
 
 ### Added
 
@@ -4020,19 +4034,19 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
-## BizziBuddi Demo — Route Persistence Fix
+## BizziBuddi Demo â€” Route Persistence Fix
 
 ### Fixed
 
 - Demo module selection now writes an explicit view=demo route.
 - The active Demo module is stored in the URL as demoModule.
-- Refreshing Demo → People, Jobs, Calendar, Finance or another Demo module now remains inside the isolated Demo workspace.
+- Refreshing Demo â†’ People, Jobs, Calendar, Finance or another Demo module now remains inside the isolated Demo workspace.
 - Prevents a Demo module from being interpreted as the authenticated account-backed workspace after refresh.
 
 
 ---
 
-## BizziBuddi Demo — Authenticated Refresh Isolation
+## BizziBuddi Demo â€” Authenticated Refresh Isolation
 
 ### Fixed
 
@@ -4044,7 +4058,7 @@ All notable changes to Chrysalis are recorded here.
 
 ---
 
-## BizziBuddi Demo → Real Account Handoff
+## BizziBuddi Demo â†’ Real Account Handoff
 
 ### Added
 
@@ -4056,16 +4070,16 @@ All notable changes to Chrysalis are recorded here.
 - Business type is persisted through the existing account configuration flow so BizziBuddi can apply the appropriate terminology and starter fields.
 
 
-## BizziBuddi — First Real Business Workflow
+## BizziBuddi â€” First Real Business Workflow
 
-- [x] Add a guided Person → Job → Appointment → Payment → Today workflow
+- [x] Add a guided Person â†’ Job â†’ Appointment â†’ Payment â†’ Today workflow
 - [x] Reflect real account data in each workflow step
 - [x] Show the next incomplete workflow action directly from Dashboard
 - [x] Keep completed steps visibly marked and disable completed actions
 - [x] Return to Today as the final workflow step
 
 
-## BizziBuddi — Real Business Buddi
+## BizziBuddi â€” Real Business Buddi
 
 - [x] Make Buddi quick prompts respond to the current account state
 - [x] Show a live business snapshot inside Buddi
@@ -4073,15 +4087,15 @@ All notable changes to Chrysalis are recorded here.
 - [x] Keep existing real-account actions and confirmation workflows intact
 
 
-## BizziBuddi — First Workflow Cross-Linking
+## BizziBuddi â€” First Workflow Cross-Linking
 
-- [x] Auto-link an appointment to a client’s only job when unambiguous
+- [x] Auto-link an appointment to a clientâ€™s only job when unambiguous
 - [x] Let appointment review explicitly select the linked job
-- [x] Preserve person → job → appointment relationships in the real account
+- [x] Preserve person â†’ job â†’ appointment relationships in the real account
 - [x] Give Buddi relationship-aware workflow context for real businesses
-- [x] Keep invoice → payment linkage anchored to the selected client invoice
+- [x] Keep invoice â†’ payment linkage anchored to the selected client invoice
 
-## BizziBuddi Reports — Selection-First Download Flow
+## BizziBuddi Reports â€” Selection-First Download Flow
 
 ### Improved
 
@@ -4091,13 +4105,13 @@ All notable changes to Chrysalis are recorded here.
 - Disabled download actions while report data is loading or refreshing, preventing export of a stale period.
 - Kept refresh alongside the download actions, using the selected date range.
 
-## BizziBuddi Reports — Clearer Period Selection
+## BizziBuddi Reports â€” Clearer Period Selection
 
 - Added a visible two-step guide: choose the report period first, then download.
 - Highlighted the report-period selector with a numbered step marker and stronger visual treatment.
 - Made the date-range purpose and its effect on report figures and downloads explicit.
 
-## BizziBuddi — Post-login Navigation
+## BizziBuddi â€” Post-login Navigation
 
 - Route successful login and restored sessions away from the stale `?view=login` URL.
 - Send established business accounts to the Dashboard by default when no valid destination view was requested.
@@ -4107,7 +4121,7 @@ All notable changes to Chrysalis are recorded here.
 
 ## Unreleased
 
-### BizziBuddi — New Account Confirmation
+### BizziBuddi â€” New Account Confirmation
 
 - Added a clear account-created confirmation to the first workspace welcome screen.
 - Displayed the account holder, business name, username, email address and current membership.
@@ -4118,7 +4132,7 @@ All notable changes to Chrysalis are recorded here.
 **Testing:** Pending production build and deployed browser verification.
 
 
-### BizziBuddi — Live Weather Improvements
+### BizziBuddi â€” Live Weather Improvements
 - Improved location matching and disambiguation for places sharing the same name.
 - Added clickable location choices for ambiguous weather and time requests.
 - Improved contextual weather follow-ups, including tomorrow's rain probability.
@@ -4126,19 +4140,19 @@ All notable changes to Chrysalis are recorded here.
 - Verified backend syntax, production build, and weather follow-ups after backend restart.
 
 **Testing:** Passed.
-### BizziBuddi Finance — Job Payments
+### BizziBuddi Finance â€” Job Payments
 
 - Added account-scoped job payment records, separate from invoice payment allocations.
 - Added support for deposits, part payments, final payments, other payments and refunds.
 - Added authenticated API operations for recording, editing and removing job payments.
 - Added transaction safeguards, account ownership checks and payment activity auditing.
-- Added the Finance → Payments workspace, including payment history and removal confirmation.
+- Added the Finance â†’ Payments workspace, including payment history and removal confirmation.
 - Included job payments in revenue, monthly cashflow, Finance reports and CSV exports.
 - Refunded amounts are deducted from received revenue.
 - Preserved existing invoice payment handling and invoice balances.
 - Added database migration 26 and indexes for job payment records.
 
-### Backend — Startup and Database Reliability
+### Backend â€” Startup and Database Reliability
 
 - Restored the database API entry point in `server/index.js`.
 - Added safe quotes-table initialization for fresh database installations.
@@ -4146,7 +4160,7 @@ All notable changes to Chrysalis are recorded here.
 
 **Testing:** Passed. Verified job payment creation, editing, refunds, refund calculations, removal confirmation, activity history, cashflow, existing invoice records, Finance CSV export and production build.
 
-### BizziBuddi Reports — Job Payment Integration
+### BizziBuddi Reports â€” Job Payment Integration
 
 - Included account-scoped job payments in Business Reports.
 - Separated invoice payments, job receipts and job refunds in reporting totals.
@@ -4159,7 +4173,7 @@ All notable changes to Chrysalis are recorded here.
 
 **Testing:** Passed. Verified report period filtering, job-payment totals, refund handling, CSV export, JSON export, PDF export and one-page PDF layout.
 
-### Donna Workspace Migration — Production Preparation
+### Donna Workspace Migration â€” Production Preparation
 
 - Added an administrator migration page for importing Donna's Chrysalis Clothes workspace.
 - Added a protected migration API with authenticated access and same-origin checks.
@@ -4171,3 +4185,4 @@ All notable changes to Chrysalis are recorded here.
 - Preserved existing customer accounts and account-specific production data during migration.
 
 **Testing:** Passed. Verified the 96-record migration against a disposable database, confirmed all four original customer accounts remained intact, tested rejection without confirmation, and verified the pre-import backup. Production deployment and import remain pending.
+

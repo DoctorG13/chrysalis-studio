@@ -30,6 +30,7 @@ export default function BizzibuddiAccountPage() {
     jobId: initialRouteParams.get("job") || "",
     appointmentId: initialRouteParams.get("appointment") || "",
     invoiceId: initialRouteParams.get("invoice") || "",
+    expenseId: initialRouteParams.get("expense") || "",
   };
   const requestedViews = new Set(["dashboard", "people", "jobs", "calendar", "finance", "automation", "production", "reports", "buddi", "plans", "account", "help", "demo", "first-run"]);
   const requestedView = requestedViews.has(initialView) ? initialView : "";
@@ -44,6 +45,10 @@ export default function BizzibuddiAccountPage() {
   const [jobs, setJobs] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [searchExpenses, setSearchExpenses] = useState([]);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState("");
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const globalSearchInputRef = useRef(null);
   const [jobPayments, setJobPayments] = useState([]);
   const [automationEvents, setAutomationEvents] = useState([]);
   const [productionRecords, setProductionRecords] = useState([]);
@@ -166,6 +171,17 @@ export default function BizzibuddiAccountPage() {
         target instanceof HTMLTextAreaElement ||
         target instanceof HTMLSelectElement ||
         target?.isContentEditable;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setGlobalSearchOpen(true);
+        window.requestAnimationFrame(() => globalSearchInputRef.current?.focus());
+        return;
+      }
+      if (event.key === "Escape") {
+        setGlobalSearchOpen(false);
+        setShortcutHelpOpen(false);
+        return;
+      }
       if (isTyping) return;
 
       if (event.key === "?") {
@@ -174,10 +190,6 @@ export default function BizzibuddiAccountPage() {
         return;
       }
 
-      if (event.key === "Escape") {
-        setShortcutHelpOpen(false);
-        return;
-      }
 
       // Workspace navigation is handled by the visible sidebar.
     }
@@ -229,6 +241,56 @@ export default function BizzibuddiAccountPage() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!account || !hasBizzibuddiFeature(account?.plan, "finance")) {
+      setSearchExpenses([]);
+      return undefined;
+    }
+    let active = true;
+    bizzibuddiAuthRequest("/api/bizzibuddi/auth/expenses")
+      .then((result) => {
+        if (active) setSearchExpenses(Array.isArray(result.expenses) ? result.expenses : []);
+      })
+      .catch(() => {
+        if (active) setSearchExpenses([]);
+      });
+    return () => { active = false; };
+  }, [account?.id, account?.plan]);
+
+  const globalSearchResults = (() => {
+    const query = globalSearchQuery.trim().toLowerCase();
+    if (query.length < 2) return [];
+    const contains = (values) => values.some((value) => String(value ?? "").toLowerCase().includes(query));
+    const results = [];
+    people.forEach((person) => {
+      if (contains([person.name, person.phone, person.email, person.company])) results.push({ type: "Client", title: person.name || "Unnamed client", detail: [person.phone, person.email].filter(Boolean).join(" · "), view: "people", target: { personId: person.id } });
+    });
+    jobs.forEach((job) => {
+      if (contains([job.title, job.name, job.reference, job.clientName, job.status, job.description])) results.push({ type: "Job", title: job.title || job.name || "Untitled job", detail: [job.clientName, job.status, job.reference].filter(Boolean).join(" · "), view: "jobs", target: { jobId: job.id } });
+    });
+    appointments.forEach((appointment) => {
+      if (contains([appointment.title, appointment.personName, appointment.jobTitle, appointment.notes, appointment.date, appointment.status])) results.push({ type: "Calendar", title: appointment.title || "Calendar entry", detail: [appointment.personName, appointment.date, appointment.time].filter(Boolean).join(" · "), view: "calendar", target: { appointmentId: appointment.id } });
+    });
+    people.forEach((person) => {
+      (Array.isArray(person.fittings) ? person.fittings : []).forEach((fitting) => {
+        if (contains([fitting.title, fitting.type, fitting.date, fitting.notes, person.name])) results.push({ type: "Fitting", title: fitting.title || fitting.type || "Client fitting", detail: [person.name, fitting.date, fitting.notes].filter(Boolean).join(" · "), view: "people", target: { personId: person.id } });
+      });
+    });
+    invoices.forEach((invoice) => {
+      if (contains([invoice.invoiceNumber, invoice.number, invoice.personName, invoice.clientName, invoice.description, invoice.status, invoice.amount])) results.push({ type: "Invoice", title: invoice.invoiceNumber || invoice.number || "Invoice", detail: [invoice.personName || invoice.clientName, invoice.description, invoice.status].filter(Boolean).join(" · "), view: "finance", target: { invoiceId: invoice.id } });
+    });
+    searchExpenses.forEach((expense) => {
+      if (contains([expense.description, expense.category, expense.method, expense.date, expense.amount])) results.push({ type: "Expense", title: expense.description || expense.category || "Expense", detail: [expense.category, expense.date, formatCurrency(expense.amount)].filter(Boolean).join(" · "), view: "finance", target: { expenseId: expense.id } });
+    });
+    return results.slice(0, 30);
+  })();
+
+  function openGlobalSearchResult(result) {
+    setGlobalSearchOpen(false);
+    setGlobalSearchQuery("");
+    selectView(result.view, result.target);
+  }
 
   async function applyAccount(nextAccount) {
     setAccount(nextAccount);
@@ -423,6 +485,7 @@ export default function BizzibuddiAccountPage() {
     if (target.jobId) params.set("job", target.jobId);
     if (target.appointmentId) params.set("appointment", target.appointmentId);
     if (target.invoiceId) params.set("invoice", target.invoiceId);
+    if (target.expenseId) params.set("expense", target.expenseId);
     if (target.fromDemo) params.set("from", "demo");
 
     const query = params.toString();
@@ -518,6 +581,7 @@ export default function BizzibuddiAccountPage() {
       jobId: target.jobId || "",
       appointmentId: target.appointmentId || "",
       invoiceId: target.invoiceId || "",
+      expenseId: target.expenseId || "",
     };
 
     writeWorkspaceRoute(nextView, nextDeepLink);
@@ -1122,6 +1186,27 @@ export default function BizzibuddiAccountPage() {
         </nav>
 
         <div className="bizzibuddi-workspace-content">
+          {account && !["demo", "first-run", "onboarding", "login", "create"].includes(view) && (
+            <div style={{ position: "relative", maxWidth: 720, margin: "0 auto 18px", width: "100%", zIndex: 30 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid " + BORDER, borderRadius: 12, background: "rgba(15,45,74,.88)", padding: "0 14px", minHeight: 48, boxShadow: "0 8px 24px rgba(0,0,0,.12)" }}>
+                <span aria-hidden="true" style={{ color: MUTED, fontSize: 19 }}>⌕</span>
+                <input aria-label="Search clients, jobs, calendar and finance" placeholder="Search clients, jobs, calendar and finance…" value={globalSearchQuery} onFocus={() => setGlobalSearchOpen(true)} onChange={(event) => { setGlobalSearchQuery(event.target.value); setGlobalSearchOpen(true); }} ref={globalSearchInputRef} style={{ flex: 1, minWidth: 0, border: 0, outline: 0, background: "transparent", color: TEXT, fontSize: 14, padding: "13px 0" }} />
+                <kbd style={{ color: MUTED, border: "1px solid " + BORDER, borderRadius: 6, padding: "3px 6px", fontSize: 10, whiteSpace: "nowrap" }}>Ctrl K</kbd>
+                {globalSearchQuery && <button type="button" onClick={() => { setGlobalSearchQuery(""); setGlobalSearchOpen(true); globalSearchInputRef.current?.focus(); }} style={{ ...smallActionButton, margin: 0 }}>Clear</button>}
+              </div>
+              {globalSearchOpen && globalSearchQuery.trim().length >= 2 && (
+                <div role="listbox" aria-label="Search results" style={{ position: "absolute", top: "calc(100% + 7px)", left: 0, right: 0, maxHeight: 420, overflowY: "auto", border: "1px solid " + BORDER, borderRadius: 12, background: "#0B243B", boxShadow: "0 18px 45px rgba(0,0,0,.4)", padding: 8 }}>
+                  {globalSearchResults.length ? globalSearchResults.map((result, index) => (
+                    <button key={result.type + "-" + String(result.target.personId || result.target.jobId || result.target.appointmentId || result.target.invoiceId || result.target.expenseId) + "-" + index} type="button" role="option" aria-selected="false" onClick={() => openGlobalSearchResult(result)} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, width: "100%", textAlign: "left", border: 0, borderRadius: 8, padding: "10px 12px", background: "transparent", color: TEXT, cursor: "pointer" }} onMouseEnter={(event) => { event.currentTarget.style.background = "rgba(255,255,255,.08)"; }} onMouseLeave={(event) => { event.currentTarget.style.background = "transparent"; }}>
+                      <span style={{ minWidth: 0 }}><strong style={{ display: "block", fontSize: 13 }}>{result.title}</strong><small style={{ display: "block", color: MUTED, marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{result.detail || "Open record"}</small></span>
+                      <span style={{ color: CYAN, fontSize: 10, fontWeight: 800, letterSpacing: ".06em", flexShrink: 0 }}>{result.type.toUpperCase()}</span>
+                    </button>
+                  )) : <div style={{ padding: 16, color: MUTED, fontSize: 13 }}>No matching records found.</div>}
+                </div>
+              )}
+              {globalSearchOpen && globalSearchQuery.trim().length > 0 && globalSearchQuery.trim().length < 2 && <div style={{ padding: "8px 4px", color: MUTED, fontSize: 12 }}>Type at least 2 characters to search.</div>}
+            </div>
+          )}
           {account && !["demo", "first-run", "onboarding"].includes(view) && (
             <div className="bizzibuddi-help-rail" aria-label="Help and support">
               <button
@@ -1176,6 +1261,8 @@ export default function BizzibuddiAccountPage() {
             people={people}
             automationEvents={automationEvents}
             initialInvoiceId={deepLink.invoiceId}
+            initialExpenseId={deepLink.expenseId}
+            onExpensesChange={setSearchExpenses}
             onPlans={() => selectView("plans")}
             onRecordPayment={recordAccountPayment}
             onUpdatePayment={updateAccountPayment}
@@ -7666,7 +7753,7 @@ function ReportsPanel({ account, onPlans, onBack }) {
   );
 }
 
-function FinancePanel({ account, invoices, jobs, jobPayments, people, automationEvents, initialInvoiceId, onPlans, onAddInvoice, onUpdateInvoice, onDeleteInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onRecordJobPayment, onUpdateJobPayment, onDeleteJobPayment, onMarkPaid, onBack }) {
+function FinancePanel({ account, invoices, jobs, jobPayments, people, automationEvents, initialInvoiceId, initialExpenseId, onExpensesChange, onPlans, onAddInvoice, onUpdateInvoice, onDeleteInvoice, onIssueInvoice, onRecordPayment, onUpdatePayment, onDeletePayment, onRecordJobPayment, onUpdateJobPayment, onDeleteJobPayment, onMarkPaid, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const createInvoiceFormRef = useRef(null);
   const [editingInvoiceId, setEditingInvoiceId] = useState("");
@@ -7718,6 +7805,10 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
     method: "Other",
     description: "",
   });
+  useEffect(() => {
+    if (typeof onExpensesChange === "function") onExpensesChange(expenses);
+  }, [expenses, onExpensesChange]);
+
   const firstPaymentInvoiceId =
     invoices.find((invoice) => (paymentsByInvoice[invoice.id] || []).length > 0)?.id || "";
 
@@ -8283,6 +8374,15 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
     });
     setEditingExpenseId("");
   }
+
+  useEffect(() => {
+    if (!initialExpenseId) return;
+    const expense = expenses.find((item) => String(item.id) === String(initialExpenseId));
+    if (!expense) return;
+    setShowExpenseForm(false);
+    setEditingExpenseId("");
+    window.setTimeout(() => document.getElementById("expense-record-" + expense.id)?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
+  }, [initialExpenseId, expenses]);
 
   function startAddExpense() {
     setError("");
@@ -9432,10 +9532,13 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
 
       {expenses.length > 0 ? (
         <div style={{ display: "grid", gap: 3, marginTop: 14 }}>
-          {expenses.slice(0, 12).map((expense) => (
+          {(initialExpenseId ? expenses : expenses.slice(0, 12)).map((expense) => (
             <div
               key={expense.id}
+              id={"expense-record-" + expense.id}
               style={{
+                scrollMarginTop: 100,
+                background: String(initialExpenseId) === String(expense.id) ? "rgba(0,180,219,.12)" : "transparent",
                 display: "grid",
                 gridTemplateColumns: "minmax(82px, auto) minmax(90px, auto) 1fr auto",
                 alignItems: "center",
