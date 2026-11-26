@@ -55,8 +55,10 @@ export default function BizzibuddiAccountPage() {
       ? "today"
       : requestedView === "people"
         ? "people-all"
-        : requestedView === "jobs" || requestedView === "calendar" || requestedView === "production"
-          ? "work"
+        : requestedView === "calendar"
+          ? "calendar"
+          : requestedView === "jobs" || requestedView === "production"
+            ? "work"
           : requestedView === "finance"
         ? "finance"
         : requestedView === "reports"
@@ -92,7 +94,7 @@ export default function BizzibuddiAccountPage() {
   const [workspaceFlyoutSection, setWorkspaceFlyoutSection] = useState("");
   const [workspaceFlyoutTop, setWorkspaceFlyoutTop] = useState(0);
   const previousWorkspaceNavSection = useRef(initialWorkspaceNavSection);
-  const workspaceNavOrder = ["today", "people", "work", "finance", "insights", "assist", "account"];
+  const workspaceNavOrder = ["today", "people", "work", "calendar", "finance", "insights", "assist", "account"];
   const workspaceSubnavDirection =
     workspaceNavOrder.indexOf(workspaceNavSection) >=
     workspaceNavOrder.indexOf(previousWorkspaceNavSection.current)
@@ -458,6 +460,10 @@ export default function BizzibuddiAccountPage() {
     const firstItem = workspaceSubnav[section]?.[0];
     setWorkspaceNavSection(section);
     setWorkspaceNavItem(firstItem?.[0] || "overview");
+    if (section === "today") {
+      selectView("dashboard", { workspaceAnchor: "today-operating-start", workspaceNavItem: "overview" });
+      return;
+    }
     if (section === "people") {
       selectView("people", { workspaceNavItem: "people-all" });
       return;
@@ -548,7 +554,9 @@ export default function BizzibuddiAccountPage() {
       setWorkspaceNavSection("today");
     } else if (nextView === "people") {
       setWorkspaceNavSection("people");
-    } else if (["jobs", "calendar", "production"].includes(nextView)) {
+    } else if (nextView === "calendar") {
+      setWorkspaceNavSection("calendar");
+    } else if (["jobs", "production"].includes(nextView)) {
       setWorkspaceNavSection("work");
     } else if (nextView === "finance") {
       setWorkspaceNavSection("finance");
@@ -623,7 +631,9 @@ export default function BizzibuddiAccountPage() {
           setWorkspaceNavSection("today");
         } else if (nextView === "people") {
           setWorkspaceNavSection("people");
-        } else if (["jobs", "calendar", "production"].includes(nextView)) {
+        } else if (nextView === "calendar") {
+          setWorkspaceNavSection("calendar");
+        } else if (["jobs", "production"].includes(nextView)) {
           setWorkspaceNavSection("work");
         } else if (nextView === "finance") {
           setWorkspaceNavSection("finance");
@@ -688,6 +698,8 @@ export default function BizzibuddiAccountPage() {
         if (destinationView === "dashboard") {
           setWorkspaceNavSection("today");
           setWorkspaceNavItem("overview");
+          // A fresh login always starts at the welcome heading.
+          setWorkspaceScrollTarget("__top__");
         }
       } else {
         writeWorkspaceRoute("onboarding");
@@ -1046,6 +1058,20 @@ export default function BizzibuddiAccountPage() {
                   aria-selected={workspaceNavSection === "people"}
                 >
                   <span className="bizzibuddi-workspace-nav-button"><WorkspaceNavIcon name="people" /><span>People</span></span>
+                </button>
+                <button
+                  type="button"
+                  onMouseEnter={(event) => openWorkspaceFlyoutOnHover("calendar", event)}
+                  onFocus={(event) => openWorkspaceFlyoutOnHover("calendar", event)}
+                  onClick={() => handleWorkspaceNavActivation("calendar", () => {
+                    setWorkspaceNavSection("calendar");
+                    selectView("calendar", { workspaceNavItem: "calendar" });
+                  })}
+                  style={workspaceMainTab(workspaceNavSection === "calendar")}
+                  aria-selected={workspaceNavSection === "calendar"}
+                  aria-label="Open Calendar"
+                >
+                  <span className="bizzibuddi-workspace-nav-button"><WorkspaceNavIcon name="calendar" /><span>Calendar</span></span>
                 </button>
                 {[
                   ["work", "Work", "work"],
@@ -2075,6 +2101,9 @@ function WorkspaceNavIcon({ name }) {
       break;
     case "work":
       artwork = <><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7M3 12h18M10 12v2h4v-2" /></>;
+      break;
+    case "calendar":
+      artwork = <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2" /></>;
       break;
     case "finance":
       artwork = <><rect x="3" y="5" width="18" height="15" rx="2" /><path d="M3 9h18M16 14h2M6 5V3h12v2" /></>;
@@ -3796,6 +3825,16 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
       <p style={copyStyle}>Track the work that moves through your business from enquiry to completion.</p>
     </div>
 
+    {!showForm && (
+      <button
+        type="button"
+        onClick={startAdd}
+        style={{ ...primaryButton, maxWidth: 240, marginTop: 22 }}
+      >
+        + Create a job
+      </button>
+    )}
+
     {jobs.length > 0 ? (
       <div style={{ display: "grid", gap: 12, marginTop: 28 }}>
         {jobs.map((job) => {
@@ -3953,9 +3992,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
 
     {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
 
-    {!showForm ? (
-      <button type="button" onClick={startAdd} style={{ ...primaryButton, maxWidth: 240 }}>+ Create a job</button>
-    ) : (
+    {showForm && (
       <form key={editingJob?.id || "new-job"} onSubmit={handleSubmit} style={personForm}>
         <strong style={{ fontSize: 18 }}>{editingJob ? "Edit job" : "Create a job"}</strong>
         <Field
@@ -4459,24 +4496,43 @@ function DashboardPanel({
   appointments, invoices, automationEvents, productionRecords, productionTimeEntries = [], onGettingStartedBuddi, onDashboard,
 }) {
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
-  const todayKey = new Date().toISOString().slice(0, 10);
-  const today = new Date(todayKey + "T00:00:00");
-  const overdueInvoices = invoices.filter((invoice) => invoice.status !== "Paid" && invoice.dueDate && invoice.dueDate < todayKey);
+  const now = new Date();
+  const localDateKey = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+  const todayKey = localDateKey(now);
+  const today = new Date(`${todayKey}T00:00:00`);
+  const daysUntilDate = (dateValue) => {
+    const match = String(dateValue || "").match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/);
+    if (!match) return null;
+    const dueUtc = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    const todayParts = todayKey.split("-").map(Number);
+    const todayUtc = Date.UTC(todayParts[0], todayParts[1] - 1, todayParts[2]);
+    return Math.round((dueUtc - todayUtc) / 86400000);
+  };
+  const dateStatusLabel = (dateValue, kind) => {
+    const days = daysUntilDate(dateValue);
+    if (days === null) return "DATE NOT SET";
+    if (kind === "appointment") {
+      if (days === 0) return "TODAY · APPOINTMENT";
+      return `IN ${days} ${days === 1 ? "DAY" : "DAYS"} · APPOINTMENT`;
+    }
+    const category = kind === "production" ? "PRODUCTION" : "INVOICE";
+    if (days < 0) return `OVERDUE · ${category}`;
+    if (days === 0) return `DUE TODAY · ${category}`;
+    return `DUE IN ${days} ${days === 1 ? "DAY" : "DAYS"} · ${category}`;
+  };
+  const overdueInvoices = invoices.filter((invoice) =>
+    invoice.status !== "Paid" && invoice.dueDate && daysUntilDate(invoice.dueDate) < 0
+  );
   const dueSoonInvoices = invoices.filter((invoice) => {
     if (invoice.status === "Paid" || !invoice.dueDate) return false;
-    const due = new Date(invoice.dueDate + "T00:00:00");
-    const days = Math.ceil((due - today) / 86400000);
-    return days >= 0 && days <= 7;
+    const days = daysUntilDate(invoice.dueDate);
+    return days !== null && days >= 0 && days <= 7;
   });
-  const dueSoonLabel = (dateValue) => {
-    if (!dateValue) return "Due soon";
-    const due = new Date(dateValue + "T00:00:00");
-    const days = Math.round((due - today) / 86400000);
-    if (days === 0) return "Today";
-    if (days === 1) return "Tomorrow";
-    if (days >= 2 && days <= 7) return "This week";
-    return "Due soon";
-  };
   const appointmentsToday = appointments
     .filter((appointment) => appointment.date === todayKey)
     .sort((a, b) => String(a.time || "").localeCompare(String(b.time || "")));
@@ -4496,17 +4552,63 @@ function DashboardPanel({
     return minutes !== null && minutes <= currentMinutes && currentMinutes - minutes < 60;
   });
   const upcomingAppointments = appointmentsToday.filter((appointment) => appointment.id !== nowAppointment?.id);
+  const upcomingAppointmentsWithinWeek = appointments
+    .filter((appointment) => {
+      if (!appointment.date || appointment.status === "Cancelled") return false;
+      const days = daysUntilDate(appointment.date);
+      return days !== null && days > 0 && days <= 7;
+    })
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.time || "").localeCompare(String(b.time || "")));
   const waitingJobs = jobs.filter((job) => job.status === "Waiting");
   const openJobs = jobs.filter((job) => job.status !== "Complete").length;
   const productionNeedsAttention = jobs.filter((job) =>
     ["Overdue", "Tasks outstanding", "Stage update needed"].includes(job.productionReadiness)
   );
-  const productionDueSoon = jobs.filter((job) => {
-    if (!job.productionDueDate || job.productionReadiness === "Complete") return false;
-    const due = new Date(job.productionDueDate + "T00:00:00");
-    const days = Math.ceil((due - today) / 86400000);
-    return days >= 0 && days <= 7;
-  });
+  const productionDueItems = jobs
+    .map((job) => {
+      const productionRecord = productionRecords.find((record) => record.jobId === job.id);
+      const dueDate = productionRecord?.dueDate || job.productionDueDate || "";
+      const days = daysUntilDate(dueDate);
+      if (!dueDate || days === null || days > 7 || job.status === "Complete" ||
+          job.productionReadiness === "Complete" || productionRecord?.stage === "Complete") return null;
+      return { ...job, productionDueDate: dueDate, daysUntilDue: days };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+  const dateItems = [
+    ...overdueInvoices.map((invoice) => ({
+      key: `invoice-${invoice.id}`,
+      type: "invoice",
+      date: invoice.dueDate,
+      title: invoice.clientName || invoice.client || invoice.number || "Invoice",
+      detail: dateStatusLabel(invoice.dueDate, "invoice"),
+      onClick: () => onFinance?.(invoice.id),
+    })),
+    ...dueSoonInvoices.map((invoice) => ({
+      key: `invoice-${invoice.id}`,
+      type: "invoice",
+      date: invoice.dueDate,
+      title: invoice.clientName || invoice.client || invoice.number || "Invoice",
+      detail: dateStatusLabel(invoice.dueDate, "invoice"),
+      onClick: () => onFinance?.(invoice.id),
+    })),
+    ...productionDueItems.map((job) => ({
+      key: `production-${job.id}`,
+      type: "production",
+      date: job.productionDueDate,
+      title: job.title || "Production job",
+      detail: dateStatusLabel(job.productionDueDate, "production"),
+      onClick: () => onJobs?.(job.id),
+    })),
+    ...upcomingAppointmentsWithinWeek.map((appointment) => ({
+      key: `appointment-${appointment.id}`,
+      type: "appointment",
+      date: appointment.date,
+      title: appointment.title || "Appointment",
+      detail: `${dateStatusLabel(appointment.date, "appointment")}${appointment.time ? ` · ${appointment.time}` : ""}`,
+      onClick: () => onCalendar?.(appointment.id),
+    })),
+  ].sort((a, b) => String(a.date).localeCompare(String(b.date)));
   const readyProduction = jobs.filter((job) => job.productionReadiness === "Ready");
   const recentAutomationFlags = automationEvents.filter((event) => event.type === "invoice-overdue");
 
@@ -4519,27 +4621,67 @@ function DashboardPanel({
     timeEntries: productionTimeEntries,
   });
 
-  const priorityItems = intelligence.priorityItemsTop.map((item) => ({
-    ...item,
-    action: item.actionKey === "finance"
-      ? "Open finance"
-      : item.actionKey === "calendar"
-        ? "Open calendar"
-        : item.actionKey === "production"
-          ? "Open production"
-          : "Open jobs",
-    onClick:
-      item.actionKey === "finance"
-        ? () => onFinance?.(item.invoiceId)
+  const priorityItems = intelligence.priorityItemsTop.map((item) => {
+    const relatedJob = item.jobId ? jobs.find((job) => job.id === item.jobId) : null;
+    const relatedProductionRecord = item.jobId
+      ? productionRecords.find((record) => record.jobId === item.jobId)
+      : null;
+    const productionDueDate = item.jobId
+      ? relatedProductionRecord?.dueDate || relatedJob?.productionDueDate || ""
+      : "";
+    const productionDaysUntilDue = productionDueDate ? daysUntilDate(productionDueDate) : null;
+    const hasProductionDeadline = Boolean(
+      item.jobId && productionDueDate && productionDaysUntilDue !== null &&
+      (item.type === "production-due-soon" || item.type === "production-attention")
+    );
+    const dateClassification = hasProductionDeadline
+      ? dateStatusLabel(productionDueDate, "production")
+      : "";
+    const dateTone = hasProductionDeadline
+      ? productionDaysUntilDue < 0
+        ? "urgent"
+        : productionDaysUntilDue === 0
+          ? "attention"
+          : "today"
+      : item.tone;
+
+    return {
+      ...item,
+      ...(hasProductionDeadline ? {
+        dateClassification,
+        tone: dateTone,
+      } : {}),
+      action: item.actionKey === "finance"
+        ? "Open finance"
         : item.actionKey === "calendar"
-          ? () => onCalendar?.(item.appointmentId)
+          ? "Open calendar"
           : item.actionKey === "production"
-            ? () => onProduction?.(item.jobId)
-            : () => onJobs?.(item.jobId),
-  }));
+            ? "Open production"
+            : "Open jobs",
+      onClick:
+        item.actionKey === "finance"
+          ? () => onFinance?.(item.invoiceId)
+          : item.actionKey === "calendar"
+            ? () => onCalendar?.(item.appointmentId)
+            : item.actionKey === "production"
+              ? () => onProduction?.(item.jobId)
+              : () => onJobs?.(item.jobId),
+    };
+  });
 
   const actionCount = intelligence.priorityCount;
   const nextAction = priorityItems[0] || null;
+  const nextActionIsOverdue = Boolean(
+    nextAction && (
+      nextAction.urgent ||
+      nextAction.tone === "urgent" ||
+      /overdue|has passed|past due/i.test(
+        [nextAction.title, nextAction.detail, nextAction.label, nextAction.status, nextAction.reason]
+          .filter(Boolean)
+          .join(" ")
+      )
+    )
+  );
   const nextActionLabel = nextAction?.actionKey === "finance"
     ? "Open finance"
     : nextAction?.actionKey === "calendar"
@@ -4550,6 +4692,9 @@ function DashboardPanel({
           ? "Open jobs"
           : "Open workspace";
   const nextActionHandler = nextAction?.onClick || null;
+  const nextActionIsDuplicateDeadline = Boolean(
+    nextAction?.invoiceId && dateItems.some((item) => item.key === `invoice-${nextAction.invoiceId}`)
+  );
   const recentActivity = [
     ...(automationEvents || []).map((event) => ({ key: "automation-" + event.id, date: event.createdAt || event.updatedAt, icon: "⚙️", label: "Automation", title: event.title || event.type || "Automation event", detail: event.detail || "A business automation event was recorded.", onClick: onAutomation })),
     ...(jobs || []).map((job) => ({ key: "job-" + job.id, date: job.updatedAt || job.createdAt, icon: "📋", label: "Job", title: job.title || "Job updated", detail: "Status: " + (job.status || "New"), onClick: () => onJobs?.(job.id) })),
@@ -4621,7 +4766,7 @@ function DashboardPanel({
       <h2 style={sectionHeading}>Welcome to {account?.business || "your business"}.</h2>
       <p style={copyStyle}>Your business is ready. This is your operating view — what needs attention, what is happening today and where to go next.</p>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginTop: 18, padding: "10px 12px", borderRadius: 12, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
+      <div id="today-operating-start" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginTop: 18, padding: "10px 12px", borderRadius: 12, border: "1px solid " + BORDER, background: "rgba(255,255,255,.025)" }}>
         <div style={{ minWidth: 0 }}>
           <small style={smallText}>TODAY</small>
           <strong style={{ display: "block", marginTop: 3, fontSize: 16 }}>{today.toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" })}</strong>
@@ -4630,10 +4775,12 @@ function DashboardPanel({
           <button type="button" onClick={() => document.getElementById("today-priority-list")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={todayJumpButton}>Priorities <span>{actionCount}</span></button>
           <button type="button" onClick={() => document.getElementById("today-upcoming")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={todayJumpButton}>Upcoming <span>{appointmentsToday.length}</span></button>
           <button type="button" onClick={() => document.getElementById("today-attention")?.scrollIntoView({ behavior: "smooth", block: "start" })} style={todayJumpButton}>Attention <span>{notificationCount}</span></button>
+          <button type="button" onClick={() => onCalendar?.()} style={{ ...todayJumpButton, borderColor: "rgba(0,180,219,.45)", color: CYAN }}>Open Calendar →</button>
         </div>
       </div>
 
-      <div style={{ marginTop: 20, padding: 16, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(0,180,219,.045)" }}>
+      {isBrandNewBusiness && (
+        <div style={{ marginTop: 20, padding: 16, borderRadius: 14, border: "1px solid " + BORDER, background: "rgba(0,180,219,.045)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div>
             <small style={smallText}>HOW BIZZIBUDDI WORKS</small>
@@ -4674,6 +4821,7 @@ function DashboardPanel({
           <span>1</span><span>→</span><span>2</span><span>→</span><span>3</span><span>→</span><span>4</span><span>→</span><span>5</span>
         </div>
       </div>
+      )}
 
       {isBrandNewBusiness && (
         <div
@@ -4736,13 +4884,29 @@ function DashboardPanel({
         </div>
       )}
 
-      {nextAction && (
-        <div style={nextActionPanel}>
-          <div style={nextActionIcon}>{nextAction.icon}</div>
+      {nextAction && !nextActionIsDuplicateDeadline && (
+        <div style={{
+          ...nextActionPanel,
+          ...(nextActionIsOverdue ? {
+            border: "1px solid rgba(248,113,113,.68)",
+            background: "linear-gradient(135deg, rgba(248,113,113,.12), rgba(37,99,235,.10))",
+          } : {}),
+        }}>
+          <div style={{
+            ...nextActionIcon,
+            ...(nextActionIsOverdue ? {
+              background: "rgba(248,113,113,.13)",
+              border: "1px solid rgba(248,113,113,.48)",
+            } : {}),
+          }}>{nextAction.icon}</div>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <small style={{ ...smallText, color: CYAN, fontWeight: 900, letterSpacing: ".12em" }}>NEXT ACTION</small>
+            <small style={{ ...smallText, color: nextActionIsOverdue ? "#FCA5A5" : CYAN, fontWeight: 900, letterSpacing: ".12em" }}>
+              {nextActionIsOverdue ? "OVERDUE — ACTION REQUIRED" : "NEXT ACTION"}
+            </small>
             <strong style={{ display: "block", marginTop: 4, fontSize: 21 }}>{nextAction.title}</strong>
-            <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 13 }}>{nextAction.detail}</span>
+            <span style={{ display: "block", marginTop: 3, color: MUTED, fontSize: 13 }}>
+              {nextAction.detail}{nextActionIsOverdue && !/action required/i.test(nextAction.detail || "") ? " Action required." : ""}
+            </span>
           </div>
           {nextActionHandler && (
             <button type="button" onClick={nextActionHandler} style={nextActionButton}>
@@ -4787,14 +4951,15 @@ function DashboardPanel({
         {priorityItems.length > 0 ? (
           <div id="today-priority-list" style={attentionList}>
             {priorityItems.map((item, index) => {
-              const urgencyLabel =
+              const urgencyLabel = item.dateClassification || (
                 item.tone === "urgent"
                   ? "URGENT"
                   : item.tone === "attention"
                     ? "ATTENTION"
                     : item.tone === "today"
                       ? "TODAY"
-                      : "NEXT";
+                      : "NEXT"
+              );
               const urgencyStyle =
                 item.tone === "urgent"
                   ? { color: "#ff9b9b", background: "rgba(255,107,107,.10)", borderColor: "rgba(255,107,107,.25)" }
@@ -4851,47 +5016,25 @@ function DashboardPanel({
           <div style={todayViewCard}>
             <small style={smallText}>NOW</small>
             <strong style={todayViewMetric}>{nowAppointment ? "1" : "—"}</strong>
-            <span style={todayViewLabel}>{nowAppointment ? "appointment in progress" : "no appointment right now"}</span>
-            {nowAppointment ? (
+            <span style={todayViewLabel}>{nowAppointment ? "appointment in progress" : "nothing scheduled right now"}</span>
+            {nowAppointment && (
               <button type="button" onClick={() => onCalendar?.(nowAppointment.id)} style={todayViewItem}>
-                <span>Now · {nowAppointment.time || "Time not set"}</span>
+                <span>{nowAppointment.time || "Time not set"}</span>
                 <strong>{nowAppointment.title || "Appointment"}</strong>
               </button>
-            ) : (
-              <span style={todayViewEmpty}>Nothing scheduled in the current hour.</span>
             )}
           </div>
 
           <div style={todayViewCard}>
             <small style={smallText}>TODAY</small>
             <strong style={todayViewMetric}>{appointmentsToday.length}</strong>
-            <span style={todayViewLabel}>{appointmentsToday.length === 1 ? "appointment" : "appointments"}</span>
-            {upcomingAppointments.slice(0, 3).map((appointment) => (
+            <span style={todayViewLabel}>{appointmentsToday.length === 1 ? "appointment booked" : "appointments booked"}</span>
+            {upcomingAppointments.slice(0, 2).map((appointment) => (
               <button key={appointment.id} type="button" onClick={() => onCalendar?.(appointment.id)} style={todayViewItem}>
                 <span>{appointment.time || "Time not set"}</span>
                 <strong>{appointment.title || "Appointment"}</strong>
               </button>
             ))}
-            {appointmentsToday.length === 0 && <span style={todayViewEmpty}>No appointments booked for today.</span>}
-          </div>
-
-          <div style={todayViewCard}>
-            <small style={smallText}>DUE SOON</small>
-            <strong style={todayViewMetric}>{dueSoonInvoices.length + productionDueSoon.length}</strong>
-            <span style={todayViewLabel}>items in the next 7 days</span>
-            {dueSoonInvoices.slice(0, 2).map((invoice) => (
-              <button key={`today-invoice-${invoice.id}`} type="button" onClick={() => onFinance?.(invoice.id)} style={todayViewItem}>
-                <span>{dueSoonLabel(invoice.dueDate)} · {invoice.dueDate}</span>
-                <strong>{invoice.clientName || invoice.client || "Invoice"}</strong>
-              </button>
-            ))}
-            {productionDueSoon.slice(0, 2).map((job) => (
-              <button key={`today-production-${job.id}`} type="button" onClick={() => onJobs?.(job.id)} style={todayViewItem}>
-                <span>{dueSoonLabel(job.productionDueDate)} · Production</span>
-                <strong>{job.title || "Production job"}</strong>
-              </button>
-            ))}
-            {dueSoonInvoices.length === 0 && productionDueSoon.length === 0 && <span style={todayViewEmpty}>Nothing due in the next few days.</span>}
           </div>
 
           <div style={todayViewCard}>
@@ -4899,31 +5042,46 @@ function DashboardPanel({
             <strong style={todayViewMetric}>{productionNeedsAttention.length + waitingJobs.length}</strong>
             <span style={todayViewLabel}>jobs needing a workflow step</span>
             {[...productionNeedsAttention, ...waitingJobs.filter((job) => !productionNeedsAttention.some((item) => item.id === job.id))]
-              .slice(0, 4)
+              .slice(0, 2)
               .map((job) => {
-                const status = productionNeedsAttention.includes(job)
-                  ? job.productionReadiness
-                  : "Waiting";
-                const statusStyle =
-                  status === "Overdue"
-                    ? { color: "#ff9b9b", background: "rgba(255,107,107,.10)", borderColor: "rgba(255,107,107,.25)" }
-                    : status === "Tasks outstanding"
-                      ? { color: "#f6c453", background: "rgba(246,196,83,.10)", borderColor: "rgba(246,196,83,.25)" }
-                      : status === "Stage update needed"
-                        ? { color: CYAN, background: "rgba(0,180,219,.10)", borderColor: "rgba(0,180,219,.25)" }
-                        : { color: MUTED, background: "rgba(255,255,255,.05)", borderColor: "rgba(255,255,255,.10)" };
+                const status = productionNeedsAttention.includes(job) ? job.productionReadiness : "Waiting";
                 return (
                   <button key={`today-workflow-${job.id}`} type="button" onClick={() => onJobs?.(job.id)} style={todayViewItem}>
-                    <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                      <span>{job.title || "Job"}</span>
-                      <span style={{ color: statusStyle.color, background: statusStyle.background, border: "1px solid " + statusStyle.borderColor, borderRadius: 999, padding: "2px 6px", fontSize: 9, fontWeight: 900, letterSpacing: ".06em", whiteSpace: "nowrap" }}>{status.toUpperCase()}</span>
-                    </span>
-                    <strong>{status === "Waiting" ? "Waiting for next step" : status}</strong>
+                    <strong>{job.title || "Job"}</strong>
+                    <span>{status === "Waiting" ? "Waiting for next step" : status}</span>
                   </button>
                 );
               })}
-            {productionNeedsAttention.length === 0 && waitingJobs.length === 0 && <span style={todayViewEmpty}>No workflow blockers are showing.</span>}
           </div>
+        </div>
+
+        <div id="today-deadlines" style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid " + BORDER }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+            <strong style={{ fontSize: 16 }}>Dates & deadlines</strong>
+            <span style={{ color: MUTED, fontSize: 12 }}>{dateItems.length} upcoming or outstanding</span>
+          </div>
+          {dateItems.length > 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 8, marginTop: 10 }}>
+              {dateItems.slice(0, 12).map((item) => {
+                const isOverdue = item.detail.startsWith("OVERDUE");
+                const isToday = item.detail.startsWith("TODAY") || item.detail.startsWith("DUE TODAY");
+                const statusColor = isOverdue ? "#ff9b9b" : isToday ? "#f6c453" : CYAN;
+                const categoryLabel = item.type === "appointment" ? "APPOINTMENT" : item.type === "production" ? "PRODUCTION" : "INVOICE";
+                return (
+                  <button key={item.key} type="button" onClick={item.onClick} style={{ ...todayViewItem, marginTop: 0, minHeight: 70 }}>
+                    <span style={{ display: "flex", justifyContent: "space-between", gap: 8, width: "100%", flexWrap: "wrap" }}>
+                      <span style={{ color: statusColor, fontSize: 10, fontWeight: 800 }}>{item.detail}</span>
+                      <span style={{ color: MUTED, fontSize: 9, fontWeight: 800 }}>{categoryLabel}</span>
+                    </span>
+                    <strong>{item.title}</strong>
+                    <span style={{ color: MUTED, fontSize: 11 }}>{item.date}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <span style={todayViewEmpty}>No upcoming appointments or outstanding dates in the next 7 days.</span>
+          )}
         </div>
       </div>
 
@@ -12058,9 +12216,9 @@ const membershipFeatureGrid = { display: "grid", gridTemplateColumns: "repeat(au
 const membershipFeature = (available) => ({ display: "flex", alignItems: "flex-start", gap: 9, padding: 12, borderRadius: 10, border: "1px solid " + (available ? "rgba(0,180,219,.28)" : BORDER), background: available ? "rgba(0,180,219,.08)" : "rgba(255,255,255,.025)", color: available ? TEXT : MUTED });
 
 const todayViewPanel = {
-  marginTop: 16, padding: 18, borderRadius: 16,
-  border: "1px solid " + BORDER,
-  background: "rgba(255,255,255,.025)",
+  marginTop: 16, padding: "16px 0", borderRadius: 0,
+  border: "0", borderTop: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER,
+  background: "transparent",
 };
 const todayViewHeader = {
   display: "flex", alignItems: "flex-start", justifyContent: "space-between",
@@ -12072,12 +12230,12 @@ const todayViewDate = {
   color: MUTED, fontSize: 12, fontWeight: 700,
 };
 const todayViewGrid = {
-  display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-  gap: 9, marginTop: 14,
+  display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+  gap: 18, marginTop: 14,
 };
 const todayViewCard = {
-  display: "flex", flexDirection: "column", minWidth: 0, padding: 15,
-  borderRadius: 13, border: "1px solid " + BORDER, background: "rgba(6,26,43,.42)",
+  display: "flex", flexDirection: "column", minWidth: 0, padding: "8px 4px",
+  border: "0", borderLeft: "1px solid " + BORDER, borderRadius: 0, background: "transparent",
 };
 const todayViewMetric = { display: "block", marginTop: 7, fontSize: 30, lineHeight: 1 };
 const todayViewLabel = { display: "block", marginTop: 5, color: MUTED, fontSize: 12 };
@@ -12578,6 +12736,7 @@ const workspaceSubnavItems = (section) => {
     today: { gridColumn: "1 / -1" },
     people: { gridColumn: "1 / -1" },
     work: { gridColumn: "1 / -1" },
+    calendar: { gridColumn: "1 / -1" },
     finance: { gridColumn: "1 / -1" },
     insights: { gridColumn: "1 / -1" },
     assist: { gridColumn: "1 / -1" },
@@ -12598,8 +12757,8 @@ const workspaceSubnavItems = (section) => {
   };
 };
 const workspaceSubnavTab = (active, section = "", itemKey = "") => ({
-  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
-  minWidth: ["finance", "today", "people", "work", "insights", "assist", "account"].includes(section) ? 0 : undefined,
+  flex: section === "finance" ? (itemKey === "expenses" ? "2.1 1 0" : itemKey === "cashflow" ? "1.35 1 0" : "0.9 1 0") : ["finance", "today", "people", "work", "calendar", "insights", "assist", "account"].includes(section) ? "1 1 0" : "0 0 auto",
+  minWidth: ["finance", "today", "people", "work", "calendar", "insights", "assist", "account"].includes(section) ? 0 : undefined,
   boxSizing: "border-box",
   overflow: "visible",
   textOverflow: "clip",
@@ -12629,8 +12788,12 @@ const workspaceSubnav = {
   ],
   work: [
     ["jobs", "Jobs", "jobs"],
-    ["calendar", "Calendar", "calendar"],
     ["production", "Production", "production"],
+  ],
+  calendar: [
+    ["calendar", "Calendar", "calendar", "calendar-grid"],
+    ["calendar-appointments", "Appointments", "calendar", "calendar-appointments"],
+    ["calendar-add", "Add appointment", "calendar", "calendar-appointment-form"],
   ],
   finance: [
     ["finance-overview", "Revenue", "finance", "finance-revenue"],
@@ -12662,6 +12825,13 @@ function getWorkspaceSubnav(account) {
   const appointmentLabel = terminology.appointment || "Calendar";
   return {
     ...workspaceSubnav,
+    today: [
+      ["overview", "Overview", "dashboard", "today-overview"],
+      ["priorities", "Priorities", "dashboard", "today-priority-list"],
+      ["upcoming", "Upcoming", "dashboard", "today-upcoming"],
+      ["attention", "Attention", "dashboard", "today-attention"],
+      ["calendar", "Calendar", "calendar"],
+    ],
     people: [
       ["people-all", "All People", "people"],
       ["clients", "Clients", "people"],
@@ -12669,8 +12839,12 @@ function getWorkspaceSubnav(account) {
     ],
     work: [
       ["jobs", jobLabel, "jobs"],
-      ["calendar", appointmentLabel, "calendar"],
       ["production", "Production", "production"],
+    ],
+    calendar: [
+      ["calendar", appointmentLabel, "calendar", "calendar-grid"],
+      ["calendar-appointments", "Appointments", "calendar", "calendar-appointments"],
+      ["calendar-add", "Add appointment", "calendar", "calendar-appointment-form"],
     ],
   };
 }

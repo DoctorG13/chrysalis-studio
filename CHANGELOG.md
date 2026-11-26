@@ -1,3 +1,22 @@
+## BizziBuddi — Calendar Navigation and Today Dashboard
+
+### Added
+- Added Calendar as a primary item in the main workspace navigation.
+- Added Calendar-specific navigation for Calendar, Appointments and Add appointment.
+- Added a direct Calendar link from the Today dashboard.
+
+### Improved
+- Updated Calendar navigation so its flyout displays the relevant Calendar options.
+- Improved Today dashboard date and deadline visibility, including appointments, invoices and production deadlines.
+- Reduced duplicated invoice alerts and refined Today dashboard layout.
+- Moved the Create a Job action to the top of the Jobs page.
+
+### Testing
+- Production build completed successfully.
+- Calendar navigation and Today dashboard changes manually tested.
+
+**Deployment:** Pending.
+
 ## Financial Precision — Invoice and Quote APIs
 
 ### Improved
