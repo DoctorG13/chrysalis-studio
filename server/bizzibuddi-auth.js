@@ -1,6 +1,6 @@
 import { DatabaseSync, backup as sqliteBackup } from "node:sqlite";
 import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { BIZZI_BUDDI_FIELD_TYPES, BIZZI_BUDDI_INDUSTRY_TEMPLATES } from "./bizzibuddi-business-config.js";
 import { askBuddiOpenAI } from "./buddi-ai.js";
@@ -4369,6 +4369,45 @@ async function resetBizziBuddiBusinessData(userId) {
   };
 }
 
+const BUSINESS_LOGO_MAX_BYTES = 3 * 1024 * 1024;
+
+function businessLogoFilePath(userId) {
+  const safeUserId = String(userId || "").replace(/[^a-zA-Z0-9_-]/g, "");
+  if (!safeUserId) throw new Error("Invalid account identifier.");
+  const directory = join(DATA_DIR, "business-logos");
+  if (!existsSync(directory)) mkdirSync(directory, { recursive: true });
+  return join(directory, `${safeUserId}.img`);
+}
+
+function detectBusinessLogoType(buffer) {
+  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return "image/png";
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return "image/jpeg";
+  if (buffer.length >= 12 && buffer.toString("ascii", 0, 4) === "RIFF" && buffer.toString("ascii", 8, 12) === "WEBP") return "image/webp";
+  return "";
+}
+
+async function readBusinessLogoBody(request) {
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > BUSINESS_LOGO_MAX_BYTES) throw new Error("The logo must be 3 MB or smaller.");
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks, size);
+}
+
+function sendBusinessLogo(response, buffer, contentType) {
+  response.writeHead(200, {
+    "Content-Type": contentType,
+    "Content-Length": buffer.length,
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; sandbox",
+  });
+  response.end(buffer);
+}
+
 export async function handleBizziBuddiAuthRequest(request, response) {
   const url = new URL(
     request.url || "/",
@@ -5797,6 +5836,54 @@ export async function handleBizziBuddiAuthRequest(request, response) {
       }
     }
 
+    if (url.pathname === "/api/bizzibuddi/auth/business-logo" && ["GET", "PUT", "DELETE"].includes(request.method)) {
+      const user = getSessionUser(request);
+      if (!user) {
+        sendJson(response, 401, { ok: false, authenticated: false, error: "Authentication required." });
+        return true;
+      }
+
+      const logoPath = businessLogoFilePath(user.id);
+      if (request.method === "GET") {
+        if (!existsSync(logoPath)) {
+          sendJson(response, 404, { ok: false, error: "No business logo has been uploaded." });
+          return true;
+        }
+        const image = readFileSync(logoPath);
+        const contentType = detectBusinessLogoType(image);
+        if (!contentType) {
+          unlinkSync(logoPath);
+          sendJson(response, 404, { ok: false, error: "The stored business logo is invalid." });
+          return true;
+        }
+        sendBusinessLogo(response, image, contentType);
+        return true;
+      }
+
+      if (request.method === "DELETE") {
+        if (existsSync(logoPath)) unlinkSync(logoPath);
+        sendJson(response, 200, { ok: true, removed: true });
+        return true;
+      }
+
+      const image = await readBusinessLogoBody(request);
+      const contentType = detectBusinessLogoType(image);
+      if (!contentType) {
+        sendJson(response, 400, { ok: false, error: "Please upload a valid PNG, JPG or WebP image." });
+        return true;
+      }
+      const temporaryPath = `${logoPath}.${randomUUID()}.tmp`;
+      try {
+        writeFileSync(temporaryPath, image, { flag: "wx" });
+        renameSync(temporaryPath, logoPath);
+      } catch (error) {
+        if (existsSync(temporaryPath)) unlinkSync(temporaryPath);
+        throw error;
+      }
+      sendJson(response, 200, { ok: true, uploaded: true });
+      return true;
+    }
+
     if (url.pathname === "/api/bizzibuddi/auth/business-profile" && (request.method === "GET" || request.method === "PUT")) {
       const user = getSessionUser(request);
       if (!user) {
@@ -5972,7 +6059,7 @@ export async function handleBizziBuddiAuthRequest(request, response) {
   } catch (error) {
     console.error("BizziBuddi authentication request failed:", error);
 
-    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|Expense|Job price|invoice|payment|Payment|refund|Refund|Template|template task|production template|START FRESH|confirmation|business data/.test(
+    const status = /already exists|Username|email address|full name|Password|Business name|Invoice amount|Expense|Job price|invoice|payment|Payment|refund|Refund|Template|template task|production template|START FRESH|confirmation|business data|logo must be/.test(
       error instanceof Error ? error.message : ""
     )
       ? 400

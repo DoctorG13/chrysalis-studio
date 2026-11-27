@@ -789,6 +789,16 @@ const MIGRATIONS = [
         ON bizzibuddi_job_payments(user_id, job_id);
     `,
   },
+  {
+    version: 27,
+    name: "bizzibuddi-workspace-contact-details",
+    sql: `
+      ALTER TABLE workspaces ADD COLUMN business_phone TEXT NOT NULL DEFAULT '';
+      ALTER TABLE workspaces ADD COLUMN business_email TEXT NOT NULL DEFAULT '';
+      ALTER TABLE workspaces ADD COLUMN business_address TEXT NOT NULL DEFAULT '';
+      ALTER TABLE workspaces ADD COLUMN business_website TEXT NOT NULL DEFAULT '';
+    `,
+  },
 
 ];
 

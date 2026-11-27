@@ -39,7 +39,9 @@ export default function BizzibuddiAccountPage() {
   );
   const [deepLink, setDeepLink] = useState(initialDeepLink);
   const [account, setAccount] = useState(null);
+  const [businessLogoVersion, setBusinessLogoVersion] = useState(0);
   const [message, setMessage] = useState("");
+  const [actionNotice, setActionNotice] = useState(null);
   const [buddiPrompt, setBuddiPrompt] = useState("");
   const [people, setPeople] = useState([]);
   const [jobs, setJobs] = useState([]);
@@ -55,6 +57,16 @@ export default function BizzibuddiAccountPage() {
   const [productionTemplates, setProductionTemplates] = useState([]);
   const [productionTimeEntries, setProductionTimeEntries] = useState([]);
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+
+  useEffect(() => {
+    if (!actionNotice) return undefined;
+    const timeout = window.setTimeout(() => setActionNotice(null), 3600);
+    return () => window.clearTimeout(timeout);
+  }, [actionNotice]);
+
+  function notifyAction(type, text) {
+    setActionNotice({ type, text, id: Date.now() });
+  }
   const initialWorkspaceNavSection =
     requestedView === "dashboard" || !requestedView
       ? "today"
@@ -568,6 +580,7 @@ export default function BizzibuddiAccountPage() {
       "reports",
       "buddi",
       "account",
+      "membership",
     ]);
 
     if (protectedViews.has(nextView) && !account) {
@@ -1070,7 +1083,7 @@ export default function BizzibuddiAccountPage() {
       </div>
     )}
 
-    <a className="bizzibuddi-skip-link" href="#bizzibuddi-account-content">Skip to account content</a>
+    <a className="bizzibuddi-skip-link" href="#bizzibuddi-account-content">Skip to workspace content</a>
 
     <main className="bizzibuddi-account-page" style={pageStyle}>
       <div style={ambientGlow} />
@@ -1088,7 +1101,7 @@ export default function BizzibuddiAccountPage() {
         </section>
 
         <div className={account && !["demo", "first-run", "onboarding"].includes(view) ? "bizzibuddi-workspace-layout has-sidebar" : "bizzibuddi-workspace-layout"}>
-        <nav aria-label="Account preview navigation" className="bizzibuddi-account-nav" onMouseLeave={closeWorkspaceFlyoutOnPointerLeave} style={view === "demo" || view === "first-run" || view === "onboarding" ? { ...workspaceNavShell, display: "none" } : workspaceNavShell}>
+        <nav aria-label="Workspace navigation" className="bizzibuddi-account-nav" onMouseLeave={closeWorkspaceFlyoutOnPointerLeave} style={view === "demo" || view === "first-run" || view === "onboarding" ? { ...workspaceNavShell, display: "none" } : workspaceNavShell}>
           {view === "demo" ? null : !account ? (
             <div className="bizzibuddi-account-nav-main">
               {[["login", "Log in"], ["create", "Create account"], ["demo", "Explore demo"], ["plans", "Plans & upgrade"]].map(([key, label]) => (
@@ -1097,6 +1110,21 @@ export default function BizzibuddiAccountPage() {
             </div>
           ) : (
             <div className="bizzibuddi-workspace-sticky-nav" style={workspaceStickyNav}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px 13px", marginBottom: 8, borderBottom: "1px solid " + BORDER }}>
+                {account?.id && (
+                  <img
+                    key={businessLogoVersion}
+                    src={`/api/bizzibuddi/auth/business-logo?v=${businessLogoVersion}`}
+                    alt={`${account.business || "Business"} logo`}
+                    onError={(event) => { event.currentTarget.style.display = "none"; }}
+                    style={{ width: 42, height: 42, objectFit: "contain", borderRadius: 8, background: "rgba(255,255,255,.07)", padding: 3, flex: "0 0 auto" }}
+                  />
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ color: TEXT, fontSize: 13, fontWeight: 800, lineHeight: 1.25, overflowWrap: "anywhere" }}>{account?.business || "Your business"}</div>
+                  <div style={{ color: MUTED, fontSize: 10, marginTop: 3 }}>Business workspace</div>
+                </div>
+              </div>
               <div
                 className="bizzibuddi-workspace-main-nav"
                 role="tablist"
@@ -1142,7 +1170,7 @@ export default function BizzibuddiAccountPage() {
                   ["finance", "Finance", "finance"],
                   ["insights", "Insights", "insights"],
                   ["assist", "Assist", "assist"],
-                  ["account", "Account", "account"],
+                  ["account", "Settings", "account"],
                 ].map(([key, label, icon]) => (
                   <button
                     key={key}
@@ -1233,6 +1261,31 @@ export default function BizzibuddiAccountPage() {
           )}
 
         {message && !["login", "create"].includes(view) && <div role="status" aria-live="polite" aria-atomic="true" style={messageStyle}>{message}</div>}
+        {actionNotice && (
+          <div
+            key={actionNotice.id}
+            role={actionNotice.type === "error" ? "alert" : "status"}
+            aria-live={actionNotice.type === "error" ? "assertive" : "polite"}
+            aria-atomic="true"
+            style={{
+              position: "fixed",
+              top: 20,
+              right: 24,
+              zIndex: 1500,
+              width: "min(390px, calc(100vw - 32px))",
+              padding: "13px 16px",
+              borderRadius: 12,
+              border: "1px solid " + (actionNotice.type === "error" ? "rgba(248,113,113,.55)" : "rgba(52,211,153,.5)"),
+              background: actionNotice.type === "error" ? "#3B1720" : "#10352F",
+              color: "#FFFFFF",
+              boxShadow: "0 14px 34px rgba(0,0,0,.3)",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            {actionNotice.text}
+          </div>
+        )}
         {view === "demo" && <BizziBuddiDemoWorkspace onExit={() => selectView("login")} onCreateAccount={() => selectView("create", { fromDemo: true })} />}
         {view === "login" && <AuthPanel mode="login" account={account} errorMessage={message === "You have been logged out." ? "" : message} successMessage={message === "You have been logged out." ? message : ""} onSubmit={handleLogin} onSwitch={() => selectView("create")} onExploreDemo={openDemoWorkspace} />}
         {view === "create" && <AuthPanel mode="create" fromDemo={new URLSearchParams(window.location.search).get("from") === "demo"} errorMessage={message} onSubmit={handleCreateAccount} onSwitch={() => selectView("login")} />}
@@ -1250,7 +1303,8 @@ export default function BizzibuddiAccountPage() {
           />
         )}
         {view === "plans" && <PlansPanel onSelectPlan={selectPlan} />}
-        {view === "account" && <AccountPanel account={account} onBack={() => selectView("dashboard")} onPlans={() => selectView("plans")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} />}
+        {view === "account" && <BusinessProfilePanel account={account} onBack={() => selectView("dashboard")} onResetBusiness={resetBusinessData} onAccountUpdate={setAccount} onLogoChange={() => setBusinessLogoVersion((version) => version + 1)} logoVersion={businessLogoVersion} />}
+        {view === "membership" && <MembershipPanel account={account} onBack={() => selectView("dashboard")} onSelectPlan={selectPlan} />}
         {view === "dashboard" && <DashboardPanel account={account} onPlans={() => selectView("plans")} onPeople={() => selectView("people")} onJobs={(jobId) => selectView("jobs", jobId ? { jobId } : {})} onCalendar={(appointmentId) => selectView("calendar", appointmentId ? { appointmentId } : {})} onFinance={(invoiceId) => selectView("finance", invoiceId ? { invoiceId } : {})} onAutomation={() => selectView("automation")} onProduction={(jobId) => selectView("production", jobId ? { jobId } : {})} onReports={() => selectView("reports")} onDashboard={() => selectView("dashboard")} onBuddi={() => openBuddi()} onAttentionBuddi={() => openBuddi("What needs attention today?")} onLogout={handleLogout} people={people} jobs={jobs} appointments={appointments} invoices={invoices} automationEvents={automationEvents} productionRecords={productionRecords} productionTimeEntries={productionTimeEntries} onGettingStartedBuddi={() => selectView("help")} />}
         {view === "finance" && (
           <FinancePanel
@@ -1389,12 +1443,13 @@ export default function BizzibuddiAccountPage() {
             appointments={appointments}
             invoices={invoices}
             productionRecords={productionRecords}
+            onNotify={notifyAction}
             onAddPerson={async (person) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/people", {
                 method: "POST",
                 body: JSON.stringify(person),
               });
-              setPeople((current) => [...current, result.person]);
+              setPeople((current) => [result.person, ...current.filter((item) => item.id !== result.person.id)]);
               return result.person;
             }}
             onUpdatePerson={async (personId, person) => {
@@ -1428,19 +1483,22 @@ export default function BizzibuddiAccountPage() {
             }}
             initialPersonId={deepLink.personId}
             onOpenJob={(jobId) => selectView("jobs", { jobId })}
+            onCreateJob={(personId) => selectView("jobs", { personId })}
             onBack={() => selectView("dashboard")}
           />
         )}
         {view === "jobs" && (
           <JobsPanel
             jobs={jobs}
+            initialPersonId={deepLink.personId}
             people={people}
+            onNotify={notifyAction}
             onAddJob={async (job) => {
               const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/jobs", {
                 method: "POST",
                 body: JSON.stringify(job),
               });
-              setJobs((current) => [...current, result.job]);
+              setJobs((current) => [result.job, ...current.filter((item) => item.id !== result.job.id)]);
               return result.job;
             }}
             onUpdateJob={async (jobId, job) => {
@@ -2202,7 +2260,7 @@ function WorkspaceNavIcon({ name }) {
       artwork = <><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z" /></>;
       break;
     case "account":
-      artwork = <><circle cx="12" cy="8" r="3.5" /><path d="M4.5 21a7.5 7.5 0 0 1 15 0" /></>;
+      artwork = <><path d="M12 3.5v2M12 18.5v2M20.5 12h-2M5.5 12h-2M18 6l-1.4 1.4M7.4 16.6 6 18M18 18l-1.4-1.4M7.4 7.4 6 6" /><circle cx="12" cy="12" r="6.2" /><circle cx="12" cy="12" r="2.2" /></>;
       break;
     default:
       artwork = <circle cx="12" cy="12" r="8" />;
@@ -2923,7 +2981,43 @@ function CustomFieldsEditor({ entityType, entityId, onChange }) {
   );
 }
 
-function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, initialPersonId, onBack, activePeopleFilter = "people-all", onPeopleFilterChange }) {
+function BizziBuddiConfirmDialog({ title, message, confirmLabel = "Delete", onConfirm, onCancel, busy = false }) {
+  return (
+    <div
+      role="presentation"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !busy) onCancel?.();
+      }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 10000,
+        display: "grid", placeItems: "center", padding: 20,
+        background: "rgba(3, 10, 20, 0.72)",
+      }}
+    >
+      <section
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="bizzibuddi-confirm-title"
+        aria-describedby="bizzibuddi-confirm-message"
+        style={{
+          width: "min(100%, 460px)", padding: 24, borderRadius: 16,
+          background: "var(--bb-card, #101d2b)", color: "var(--bb-text, #f4f7fb)",
+          border: "1px solid var(--bb-border, #344354)",
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <h3 id="bizzibuddi-confirm-title" style={{ margin: "0 0 10px", fontSize: 19 }}>{title}</h3>
+        <p id="bizzibuddi-confirm-message" style={{ margin: "0 0 22px", lineHeight: 1.55, color: "var(--bb-muted, #b5c0cc)" }}>{message}</p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" }}>
+          <button type="button" onClick={onCancel} disabled={busy} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>Cancel</button>
+          <button type="button" onClick={onConfirm} disabled={busy} style={{ ...primaryButton, width: "auto", marginTop: 0, background: "#b83245" }}>{busy ? "Deleting…" : confirmLabel}</button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, onAddPerson, onUpdatePerson, onDeletePerson, onOpenJob, onCreateJob, onNotify, initialPersonId, onBack, activePeopleFilter = "people-all", onPeopleFilterChange }) {
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -2936,6 +3030,8 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [customFieldValues, setCustomFieldValues] = useState({});
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!initialPersonId) return;
@@ -3017,20 +3113,25 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
-    setSaving(true);
 
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    const person = {
+      name: String(form.get("name") || "").trim(),
+      email: String(form.get("email") || "").trim(),
+      phone: String(form.get("phone") || "").trim(),
+      clientSince: String(form.get("clientSince") || "").trim(),
+      relationshipType: String(form.get("relationshipType") || "client").trim(),
+    };
+
+    if (person.relationshipType === "client" && !person.email && !person.phone) {
+      setError("Please enter at least one contact detail — either a phone number or an email address.");
+      return;
+    }
+
+    setSaving(true);
 
     try {
-      const person = {
-        name: String(form.get("name") || "").trim(),
-        email: String(form.get("email") || "").trim(),
-        phone: String(form.get("phone") || "").trim(),
-        clientSince: String(form.get("clientSince") || "").trim(),
-        relationshipType: String(form.get("relationshipType") || "client").trim(),
-      };
-
       let savedPerson;
       if (editingPerson) {
         savedPerson = await onUpdatePerson(editingPerson.id, person);
@@ -3045,29 +3146,39 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
         );
       }
 
+      const wasEditing = Boolean(editingPerson);
       formElement.reset();
       setEditingPerson(null);
       setShowForm(false);
+      onNotify?.("success", wasEditing ? "Person updated successfully." : "Person added successfully.");
     } catch (requestError) {
-      setError(requestError.message || "We could not save this person.");
+      const errorMessage = requestError.message || "We could not save this person.";
+      setError(errorMessage);
+      onNotify?.("error", errorMessage);
     } finally {
       setSaving(false);
     }
   }
 
-  async function handleDelete(person) {
-    const confirmed = window.confirm(
-      `Delete ${person.name}? This will permanently remove this person from your BizziBuddi People list.`
-    );
+  function handleDelete(person) {
+    setPendingDelete(person);
+  }
 
-    if (!confirmed) return;
-
+  async function confirmDeletePerson() {
+    if (!pendingDelete) return;
+    setDeleting(true);
     setError("");
-
     try {
-      await onDeletePerson(person.id);
+      await onDeletePerson(pendingDelete.id);
+      if (selectedPersonId === pendingDelete.id) setSelectedPersonId(null);
+      setPendingDelete(null);
+      onNotify?.("success", "Person deleted successfully.");
     } catch (requestError) {
-      setError(requestError.message || "We could not delete this person.");
+      const errorMessage = requestError.message || "We could not delete this person.";
+      setError(errorMessage);
+      onNotify?.("error", errorMessage);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -3160,7 +3271,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       <button type="button" onClick={startAdd} style={{ ...primaryButton, width: "auto", marginTop: 0 }}>+ Add a person</button>
     </div>
 
-    {showForm ? (
+    {showForm && !editingPerson ? (
       <form key={editingPerson?.id || "new-person"} onSubmit={handleSubmit} style={personForm}>
         <strong style={{ fontSize: 18 }}>{editingPerson ? "Edit person" : "Add a person"}</strong>
         <Field
@@ -3183,6 +3294,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           type="email"
           placeholder="you@example.com"
           defaultValue={editingPerson?.email || ""}
+          required={false}
         />
         <Field
           name="phone"
@@ -3190,7 +3302,14 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
           type="tel"
           placeholder="Phone number"
           defaultValue={editingPerson?.phone || ""}
+          required={false}
         />
+        {error && error.includes("at least one contact detail") && (
+          <div role="alert" aria-live="assertive" style={{ ...messageStyle, marginTop: 0 }}>
+            <strong>Contact detail required</strong>
+            <span>{error}</span>
+          </div>
+        )}
         <Field
           name="clientSince"
           label="Client since"
@@ -3538,7 +3657,16 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                   <button type="button" onClick={() => handleOpenJob(primaryJob.id)} style={{ ...primaryButton, width: "auto", marginTop: 0, padding: "7px 11px", fontSize: 12 }}>
                     Open job
                   </button>
-                ) : (
+                ) : (person.relationshipType || "client") === "client" ? (
+                  <button
+                    type="button"
+                    onClick={() => onCreateJob?.(person.id)}
+                    style={{ ...primaryButton, width: "auto", marginTop: 0, padding: "7px 11px", fontSize: 12 }}
+                  >
+                    + Add Job
+                  </button>
+                ) : null}
+                {(!primaryJob || isTimelineOpen) && (
                   <button
                     type="button"
                     onClick={() => {
@@ -3548,7 +3676,7 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                         setMeasurements([]);
                       }
                     }}
-                    style={{ ...primaryButton, width: "auto", marginTop: 0, padding: "7px 11px", fontSize: 12 }}
+                    style={smallActionButton}
                   >
                     {isTimelineOpen ? "Hide timeline" : "Timeline"}
                   </button>
@@ -3666,6 +3794,80 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
                   )}
                 </div>
               )}
+              {showForm && editingPerson?.id === person.id && (
+                <div style={{ width: "100%", marginTop: 16 }}>
+                  {showForm && editingPerson?.id === person.id ? (
+      <form key={editingPerson?.id || "new-person"} onSubmit={handleSubmit} style={personForm}>
+        <strong style={{ fontSize: 18 }}>{"Edit client"}</strong>
+        <Field
+          name="name"
+          label="Name"
+          type="text"
+          placeholder="Client or contact name"
+          defaultValue={editingPerson?.name || ""}
+        />
+        <label style={fieldStyle}>
+          Relationship
+          <select name="relationshipType" defaultValue={editingPerson?.relationshipType || "client"} style={inputStyle}>
+            <option value="client">Client</option>
+            <option value="contact">Contact</option>
+          </select>
+        </label>
+        <Field
+          name="email"
+          label="Email address"
+          type="email"
+          placeholder="you@example.com"
+          defaultValue={editingPerson?.email || ""}
+          required={false}
+        />
+        <Field
+          name="phone"
+          label="Phone"
+          type="tel"
+          placeholder="Phone number"
+          defaultValue={editingPerson?.phone || ""}
+          required={false}
+        />
+        {error && error.includes("at least one contact detail") && (
+          <div role="alert" aria-live="assertive" style={{ ...messageStyle, marginTop: 0 }}>
+            <strong>Contact detail required</strong>
+            <span>{error}</span>
+          </div>
+        )}
+        <Field
+          name="clientSince"
+          label="Client since"
+          type="date"
+          defaultValue={
+            editingPerson
+              ? editingPerson.clientSince || ""
+              : (() => {
+                  const today = new Date();
+                  const year = today.getFullYear();
+                  const month = String(today.getMonth() + 1).padStart(2, "0");
+                  const day = String(today.getDate()).padStart(2, "0");
+                  return `${year}-${month}-${day}`;
+                })()
+          }
+        />
+        <CustomFieldsEditor
+          entityType="person"
+          entityId={editingPerson?.id || ""}
+          onChange={setCustomFieldValues}
+        />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button type="submit" disabled={saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: saving ? 0.7 : 1 }}>
+            {saving ? "Saving…" : editingPerson ? "Save changes" : "Save person"}
+          </button>
+          <button type="button" onClick={cancelForm} disabled={saving} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    ) : null}
+                </div>
+              )}
             </article>
           );
         })}
@@ -3686,12 +3888,21 @@ function PeoplePanel({ people, jobs, appointments, invoices, productionRecords, 
       </div>
     )}
 
-    {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
+    {error && !error.includes("at least one contact detail") && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
+    {pendingDelete && (
+      <BizziBuddiConfirmDialog
+        title="Delete this person?"
+        message={`Delete ${pendingDelete.name}? This will permanently remove this person from your BizziBuddi People list.`}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={confirmDeletePerson}
+        busy={deleting}
+      />
+    )}
 
   </section>;
 }
 
-function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJobId, onOpenProduction, onOpenJob, onBack }) {
+function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJobId, initialPersonId, onNotify, onOpenProduction, onOpenJob, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [error, setError] = useState("");
@@ -3701,7 +3912,29 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
   const [timeline, setTimeline] = useState([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState("");
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const focusedJobRef = useRef(null);
+  const jobFormRef = useRef(null);
+
+  useEffect(() => {
+    if (!initialPersonId) return;
+    setError("");
+    setEditingJob(null);
+    setSelectedJobId("");
+    setShowForm(true);
+  }, [initialPersonId]);
+
+  useEffect(() => {
+    if (!showForm || editingJob) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      jobFormRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [showForm, editingJob, initialPersonId]);
 
   useEffect(() => {
     if (!initialJobId) return;
@@ -3788,6 +4021,12 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
         );
       }
 
+      if (!editingJob) {
+        onNotify?.("success", "Job created successfully.");
+      } else {
+        onNotify?.("success", "Job updated successfully.");
+      }
+
       formElement.reset();
       setEditingJob(null);
       setShowForm(false);
@@ -3798,19 +4037,22 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
     }
   }
 
-  async function handleDelete(job) {
-    const confirmed = window.confirm(
-      `Delete ${job.title}? This will permanently remove this job from your BizziBuddi Jobs list.`
-    );
+  function handleDelete(job) {
+    setPendingDelete(job);
+  }
 
-    if (!confirmed) return;
-
+  async function confirmDeleteJob() {
+    if (!pendingDelete) return;
+    setDeleting(true);
     setError("");
-
     try {
-      await onDeleteJob(job.id);
+      await onDeleteJob(pendingDelete.id);
+      setPendingDelete(null);
+      onNotify?.("success", "Job deleted successfully.");
     } catch (requestError) {
       setError(requestError.message || "We could not delete this job.");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -3934,6 +4176,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
             ref={isFocused ? focusedJobRef : null}
             style={{
               ...jobCard,
+              flexWrap: "wrap",
               ...(isFocused
                 ? {
                     border: "1px solid rgba(0,180,219,.62)",
@@ -4066,21 +4309,10 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
                 </div>
               )}
             </div>
-          </article>
-          );
-        })}
-      </div>
-    ) : (
-      <div style={emptyPeople}>
-        <strong>No jobs created yet.</strong>
-        <p style={copyStyle}>Create your first job to start tracking work in your business.</p>
-      </div>
-    )}
-
-    {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
-
-    {showForm && (
-      <form key={editingJob?.id || "new-job"} onSubmit={handleSubmit} style={personForm}>
+            {showForm && editingJob?.id === job.id && (
+              <div style={{ marginTop: 14, width: "100%", minWidth: 0, flex: "1 1 100%" }}>
+                {showForm && editingJob?.id === job.id && (
+      <form ref={jobFormRef} key={editingJob?.id || "new-job"} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 24 }}>
         <strong style={{ fontSize: 18 }}>{editingJob ? "Edit job" : "Create a job"}</strong>
         <Field
           name="title"
@@ -4090,7 +4322,7 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
           defaultValue={editingJob?.title || ""}
         />
         <label style={fieldStyle}>Client
-          <select required name="personId" defaultValue={editingJob?.personId || ""} style={inputStyle}>
+          <select required name="personId" defaultValue={editingJob?.personId || initialPersonId || ""} style={inputStyle}>
             <option value="" disabled>Select a person</option>
             {people.map((person) => (
               <option key={person.id} value={person.id}>{person.name}</option>
@@ -4130,6 +4362,81 @@ function JobsPanel({ jobs, people, onAddJob, onUpdateJob, onDeleteJob, initialJo
         {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create a job.</p>}
       </form>
     )}
+              </div>
+            )}
+          </article>
+          );
+        })}
+      </div>
+    ) : (
+      <div style={emptyPeople}>
+        <strong>No jobs created yet.</strong>
+        <p style={copyStyle}>Create your first job to start tracking work in your business.</p>
+      </div>
+    )}
+
+    {error && <div role="alert" style={{ ...messageStyle, marginTop: 18 }}>{error}</div>}
+
+    {showForm && !editingJob && (
+      <form ref={jobFormRef} key={editingJob?.id || "new-job"} onSubmit={handleSubmit} style={{ ...personForm, scrollMarginTop: 24 }}>
+        <strong style={{ fontSize: 18 }}>{editingJob ? "Edit job" : "Create a job"}</strong>
+        <Field
+          name="title"
+          label="Job name"
+          type="text"
+          placeholder="e.g. Wedding dress alteration"
+          defaultValue={editingJob?.title || ""}
+        />
+        <label style={fieldStyle}>Client
+          <select required name="personId" defaultValue={editingJob?.personId || initialPersonId || ""} style={inputStyle}>
+            <option value="" disabled>Select a person</option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>{person.name}</option>
+            ))}
+          </select>
+        </label>
+        <label style={fieldStyle}>Due date
+          <input name="dueDate" type="date" defaultValue={editingJob?.dueDate || ""} style={inputStyle} />
+        </label>
+        <label style={fieldStyle}>Description
+          <textarea name="description" rows={4} placeholder="Describe the work, garment or outcome." defaultValue={editingJob?.description || ""} style={{ ...inputStyle, padding: "12px 15px", minHeight: 110, resize: "vertical" }} />
+        </label>
+        <label style={fieldStyle}>Price (AUD)
+          <input name="price" type="number" min="0" step="0.01" defaultValue={editingJob?.price || ""} placeholder="0.00" style={inputStyle} />
+        </label>
+        <label style={fieldStyle}>Status
+          <select name="status" defaultValue={editingJob?.status || "New"} style={inputStyle}>
+            <option>New</option>
+            <option>In progress</option>
+            <option>Waiting</option>
+            <option>Complete</option>
+          </select>
+        </label>
+        <CustomFieldsEditor
+          entityType="job"
+          entityId={editingJob?.id || ""}
+          onChange={setCustomFieldValues}
+        />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+          <button type="submit" disabled={people.length === 0 || saving} style={{ ...primaryButton, width: "auto", marginTop: 0, opacity: people.length === 0 || saving ? 0.5 : 1 }}>
+            {saving ? "Saving…" : editingJob ? "Save changes" : "Save job"}
+          </button>
+          <button type="button" onClick={cancelForm} disabled={saving} style={{ ...secondaryButton, width: "auto", marginTop: 0 }}>
+            Cancel
+          </button>
+        </div>
+        {people.length === 0 && <p style={{ ...smallText, marginBottom: 0 }}>Add a person first, then you can create a job.</p>}
+      </form>
+    )}
+    {pendingDelete && (
+      <BizziBuddiConfirmDialog
+        title="Delete this job?"
+        message={`Delete ${pendingDelete.title}? This will permanently remove this job from your BizziBuddi Jobs list.`}
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={confirmDeleteJob}
+        busy={deleting}
+      />
+    )}
   </section>;
 }
 
@@ -4137,12 +4444,21 @@ function PlansPanel({ onSelectPlan }) {
   return <section id="plans-membership"><div style={centerStyle}><h2 style={sectionHeading}>Get more time back.</h2><p style={copyStyle}>Choose the level of BizziBuddi that fits your business. Your selected membership is saved to your BizziBuddi account in this development preview.</p></div><div style={plansGrid}>{plans.map((plan) => <article key={plan.id} style={{ ...cardStyle(), border: plan.featured ? `2px solid ${RED}` : `1px solid ${BORDER}`, display: "flex", flexDirection: "column" }}>{plan.featured && <span style={popularBadge}>MOST POPULAR</span>}<h3 style={planTitle}>{plan.name}</h3><div style={priceStyle}>{plan.price}<small style={smallText}>{plan.period}</small></div><p style={copyStyle}>{plan.description}</p><ul style={{ paddingLeft: 20, lineHeight: 2, flex: 1 }}>{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul><button type="button" onClick={() => onSelectPlan(plan.name)} style={plan.featured ? primaryButton : secondaryButton}>{plan.name === "Free" ? "Start Free" : `Choose ${plan.name}`}</button></article>)}</div></section>;
 }
 
-function BusinessSetupPanel({ account, onAccountUpdate }) {
+function BusinessSetupPanel({ account, onAccountUpdate, onLogoChange, logoVersion }) {
   const [profile, setProfile] = useState(null);
+  const [personalName, setPersonalName] = useState(account?.name || "");
+  const [businessName, setBusinessName] = useState(account?.business || "");
+  const [businessPhone, setBusinessPhone] = useState(account?.businessPhone || "");
+  const [businessEmail, setBusinessEmail] = useState(account?.businessEmail || "");
+  const [businessAddress, setBusinessAddress] = useState(account?.businessAddress || "");
+  const [businessWebsite, setBusinessWebsite] = useState(account?.businessWebsite || "");
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [logoBusy, setLogoBusy] = useState(false);
+  const [logoError, setLogoError] = useState("");
+  const [hasBusinessLogo, setHasBusinessLogo] = useState(false);
   const [newField, setNewField] = useState({ entityType: "person", name: "", fieldType: "text", unit: "", options: "" });
 
   useEffect(() => {
@@ -4162,6 +4478,94 @@ function BusinessSetupPanel({ account, onAccountUpdate }) {
     return () => { active = false; };
   }, [account?.id]);
 
+  useEffect(() => {
+    setPersonalName(account?.name || "");
+    setBusinessName(account?.business || "");
+    setBusinessPhone(account?.businessPhone || "");
+    setBusinessEmail(account?.businessEmail || "");
+    setBusinessAddress(account?.businessAddress || "");
+    setBusinessWebsite(account?.businessWebsite || "");
+  }, [account?.name, account?.business, account?.businessPhone, account?.businessEmail, account?.businessAddress, account?.businessWebsite]);
+
+  async function uploadBusinessLogo(file) {
+    if (!file) return;
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setLogoError("Please choose a PNG, JPG or WebP image.");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setLogoError("The logo must be 3 MB or smaller.");
+      return;
+    }
+    setLogoBusy(true);
+    setLogoError("");
+    try {
+      const response = await fetch("/api/bizzibuddi/auth/business-logo", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "The business logo could not be uploaded.");
+      onLogoChange?.();
+    } catch (error) {
+      setLogoError(error.message || "The business logo could not be uploaded.");
+    } finally {
+      setLogoBusy(false);
+    }
+  }
+
+  async function removeBusinessLogo() {
+    setLogoBusy(true);
+    setLogoError("");
+    try {
+      const response = await fetch("/api/bizzibuddi/auth/business-logo", { method: "DELETE", credentials: "same-origin" });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "The business logo could not be removed.");
+      onLogoChange?.();
+    } catch (error) {
+      setLogoError(error.message || "The business logo could not be removed.");
+    } finally {
+      setLogoBusy(false);
+    }
+  }
+
+  async function saveBusinessProfile() {
+    const business = businessName.trim();
+    if (!business) {
+      setMessage("Please enter a business name.");
+      return;
+    }
+    if (!personalName.trim()) {
+      setMessage("Please enter your name.");
+      return;
+    }
+    setSaving(true);
+    setMessage("");
+    try {
+      const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/business-profile", {
+        method: "PUT",
+        body: JSON.stringify({
+          name: personalName.trim(),
+          business,
+          businessPhone: businessPhone.trim(),
+          businessEmail: businessEmail.trim(),
+          businessAddress: businessAddress.trim(),
+          businessWebsite: businessWebsite.trim(),
+          businessType: profile?.businessType || account?.businessType || "general",
+        }),
+      });
+      onAccountUpdate?.(result.account);
+      setMessage("Your account and business details have been saved.");
+    } catch (error) {
+      setMessage(error.message || "Your business profile could not be saved.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function chooseIndustry(event) {
     const businessType = event.target.value;
     setSaving(true);
@@ -4170,7 +4574,12 @@ function BusinessSetupPanel({ account, onAccountUpdate }) {
       const result = await bizzibuddiAuthRequest("/api/bizzibuddi/auth/business-profile", {
         method: "PUT",
         body: JSON.stringify({
-          business: account?.business || "",
+          name: personalName.trim(),
+          business: businessName.trim() || account?.business || "",
+          businessPhone: businessPhone.trim(),
+          businessEmail: businessEmail.trim(),
+          businessAddress: businessAddress.trim(),
+          businessWebsite: businessWebsite.trim(),
           businessType,
         }),
       });
@@ -4235,73 +4644,175 @@ function BusinessSetupPanel({ account, onAccountUpdate }) {
   if (loading) return <article style={{ ...reportCard, marginTop: 22 }}><small style={smallText}>BUSINESS PROFILE</small><p style={copyStyle}>Loading your business configuration…</p></article>;
 
   const currentTemplate = profile?.industries?.find((item) => item.key === profile?.businessType);
+  const profileChanged =
+    personalName.trim() !== (account?.name || "") ||
+    businessName.trim() !== (account?.business || "") ||
+    businessPhone.trim() !== (account?.businessPhone || "") ||
+    businessEmail.trim() !== (account?.businessEmail || "") ||
+    businessAddress.trim() !== (account?.businessAddress || "") ||
+    businessWebsite.trim() !== (account?.businessWebsite || "");
 
   return (
     <article id="account-business-setup" style={{ ...reportCard, marginTop: 22 }}>
       <div style={reportCardHeading}>
         <div>
-          <small style={smallText}>BUSINESS PROFILE</small>
-          <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Make BizziBuddi fit your business.</strong>
+          <small style={smallText}>ACCOUNT & BUSINESS PROFILE</small>
+          <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Your details.</strong>
         </div>
         {currentTemplate && <span style={advancedBadge}>{currentTemplate.name}</span>}
       </div>
-      <p style={copyStyle}>Choose an industry starting point, then add your own fields. The core BizziBuddi workflow stays the same.</p>
+      <p style={copyStyle}>Keep your personal account details and business contact information up to date.</p>
 
-      <label style={fieldStyle}>
-        Business type
-        <select value={profile?.businessType || "general"} onChange={chooseIndustry} disabled={saving} style={inputStyle}>
-          {(profile?.industries?.length ? profile.industries : [
-            { key: "general", name: "General business" },
-            { key: "dressmaker", name: "Dressmaker / fashion" },
-            { key: "hairdresser", name: "Hairdresser / salon" },
-            { key: "tattooist", name: "Tattooist / studio" },
-            { key: "school", name: "School / education" },
-            { key: "trades", name: "Trades / field service" },
-            { key: "consultant", name: "Consultant / professional services" },
-            { key: "other", name: "Other / custom" },
-          ]).map((industry) => <option key={industry.key} value={industry.key}>{industry.name}</option>)}
-        </select>
-      </label>
+      <div style={{ marginTop: 18, paddingBottom: 18, borderBottom: "1px solid " + BORDER }}>
+        <small style={smallText}>PERSONAL DETAILS</small>
+        <label style={fieldStyle}>
+          Your name
+          <input value={personalName} onChange={(event) => setPersonalName(event.target.value)} maxLength={120} autoComplete="name" placeholder="Your name" disabled={saving} style={inputStyle} />
+        </label>
+        <label style={fieldStyle}>
+          Login email
+          <input value={account?.email || ""} readOnly disabled style={{ ...inputStyle, opacity: .72, cursor: "not-allowed" }} />
+        </label>
+        <p style={{ ...smallText, marginTop: 5 }}>Your login email is protected. Changing it will be available when email verification is implemented.</p>
+        <label style={fieldStyle}>
+          Username
+          <input value={account?.username ? "@" + account.username : ""} readOnly disabled style={{ ...inputStyle, opacity: .72, cursor: "not-allowed" }} />
+        </label>
+      </div>
 
-      {profile?.terminology && (
-        <div style={{ ...reportRows, marginTop: 18 }}>
-          {Object.entries(profile.terminology).map(([key, value]) => (
-            <div key={key} style={reportRow}><span>{key}</span><strong>{value}</strong></div>
-          ))}
+      <div style={{ marginTop: 18 }}>
+        <small style={smallText}>BUSINESS DETAILS</small>
+        <label style={fieldStyle}>
+          Business name
+          <input value={businessName} onChange={(event) => setBusinessName(event.target.value)} maxLength={120} placeholder="Enter your business name" disabled={saving} style={inputStyle} />
+        </label>
+        <section style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", padding: 14, margin: "16px 0", border: "1px solid " + BORDER, borderRadius: 12, background: "rgba(255,255,255,.025)" }}>
+        <div style={{ width: 88, height: 88, display: "grid", placeItems: "center", borderRadius: 10, border: "1px dashed " + BORDER, background: "rgba(255,255,255,.04)", overflow: "hidden", flex: "0 0 auto" }}>
+          <img key={logoVersion} src={`/api/bizzibuddi/auth/business-logo?v=${logoVersion}`} alt="Business logo preview" onLoad={() => setHasBusinessLogo(true)} onError={(event) => { setHasBusinessLogo(false); event.currentTarget.style.display = "none"; }} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 5 }} />
+          {!hasBusinessLogo && <span style={{ color: MUTED, fontSize: 11, textAlign: "center", padding: 6 }}>No logo uploaded</span>}
         </div>
-      )}
+        <div style={{ minWidth: 220, flex: "1 1 260px" }}>
+          <strong style={{ display: "block", color: TEXT, fontSize: 14 }}>Your business logo</strong>
+          <p style={{ ...copyStyle, fontSize: 12, margin: "5px 0 10px" }}>This is your business identity. The BizziBuddi product logo stays separate and unchanged. PNG, JPG or WebP · Maximum 3 MB.</p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <label style={{
+              ...secondaryButton,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxSizing: "border-box",
+              width: "auto",
+              minHeight: 48,
+              lineHeight: 1.2,
+              margin: 0,
+              padding: "0 20px",
+              textAlign: "center",
+              verticalAlign: "middle",
+              cursor: logoBusy ? "wait" : "pointer",
+              opacity: logoBusy ? .6 : 1,
+            }}>
+              {logoBusy ? "Please wait…" : hasBusinessLogo ? "Change logo" : "Upload logo"}
+              <input type="file" accept="image/png,image/jpeg,image/webp" disabled={logoBusy} onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; uploadBusinessLogo(file); }} style={{ display: "none" }} />
+            </label>
+            {hasBusinessLogo && <button type="button" disabled={logoBusy} onClick={removeBusinessLogo} style={{
+              ...secondaryButton,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxSizing: "border-box",
+              width: "auto",
+              minHeight: 48,
+              lineHeight: 1.2,
+              margin: 0,
+              padding: "0 20px",
+              textAlign: "center",
+              verticalAlign: "middle",
+              opacity: logoBusy ? .6 : 1,
+            }}>Remove logo</button>}
+          </div>
+          {logoError && <p role="alert" style={{ color: "#ff9b9b", fontSize: 12, margin: "8px 0 0" }}>{logoError}</p>}
+        </div>
+      </section>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
+          <label style={{ ...fieldStyle, marginTop: 0 }}>
+            Business phone
+            <input value={businessPhone} onChange={(event) => setBusinessPhone(event.target.value)} maxLength={40} autoComplete="tel" placeholder="Business phone number" disabled={saving} style={inputStyle} />
+          </label>
+          <label style={{ ...fieldStyle, marginTop: 0 }}>
+            Business email
+            <input type="email" value={businessEmail} onChange={(event) => setBusinessEmail(event.target.value)} maxLength={254} autoComplete="email" placeholder="contact@yourbusiness.com" disabled={saving} style={inputStyle} />
+          </label>
+        </div>
+        <label style={fieldStyle}>
+          Business address
+          <textarea value={businessAddress} onChange={(event) => setBusinessAddress(event.target.value)} maxLength={300} rows={2} placeholder="Street, suburb, state and postcode" disabled={saving} style={{ ...inputStyle, minHeight: 76, resize: "vertical" }} />
+        </label>
+        <label style={fieldStyle}>
+          Website
+          <input type="url" value={businessWebsite} onChange={(event) => setBusinessWebsite(event.target.value)} maxLength={300} autoComplete="url" placeholder="https://www.yourbusiness.com" disabled={saving} style={inputStyle} />
+        </label>
+        <button type="button" onClick={saveBusinessProfile} disabled={saving || !businessName.trim() || !personalName.trim() || !profileChanged} style={{ ...primaryButton, width: "auto", minHeight: 44, marginTop: 8 }}>
+          {saving ? "Saving…" : "Save account & business details"}
+        </button>
+      </div>
 
       <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid " + BORDER }}>
-        <small style={smallText}>CUSTOM FIELDS</small>
-        <p style={{ ...copyStyle, marginTop: 8 }}>These fields belong to your business profile and can later be used on People, Jobs, Appointments and Invoices.</p>
-        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-          {fields.filter((field) => field.active).map((field) => (
-            <div key={field.id} style={reportRow}>
-              <span><strong>{field.name}</strong><small style={{ display: "block", color: MUTED }}>{field.entityType} · {field.fieldType}{field.unit ? " · " + field.unit : ""}</small></span>
-              <button type="button" onClick={() => removeField(field.id)} disabled={saving} style={textButton}>Remove</button>
-            </div>
-          ))}
-        </div>
+        <small style={smallText}>BUSINESS CONFIGURATION</small>
+        <label style={fieldStyle}>
+          Business type
+          <select value={profile?.businessType || "general"} onChange={chooseIndustry} disabled={saving} style={inputStyle}>
+            {(profile?.industries?.length ? profile.industries : [
+              { key: "general", name: "General business" },
+              { key: "dressmaker", name: "Dressmaker / fashion" },
+              { key: "hairdresser", name: "Hairdresser / salon" },
+              { key: "tattooist", name: "Tattooist / studio" },
+              { key: "school", name: "School / education" },
+              { key: "trades", name: "Trades / field service" },
+              { key: "consultant", name: "Consultant / professional services" },
+              { key: "other", name: "Other / custom" },
+            ]).map((industry) => <option key={industry.key} value={industry.key}>{industry.name}</option>)}
+          </select>
+        </label>
+        {profile?.terminology && (
+          <div style={{ ...reportRows, marginTop: 18 }}>
+            {Object.entries(profile.terminology).map(([key, value]) => (
+              <div key={key} style={reportRow}><span>{key}</span><strong>{value}</strong></div>
+            ))}
+          </div>
+        )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginTop: 14 }}>
-          <select value={newField.entityType} onChange={(event) => setNewField((current) => ({ ...current, entityType: event.target.value }))} style={inputStyle}>
-            <option value="person">People</option><option value="job">Jobs</option><option value="appointment">Appointments</option><option value="invoice">Invoices</option>
-          </select>
-          <input value={newField.name} onChange={(event) => setNewField((current) => ({ ...current, name: event.target.value }))} placeholder="Field name" style={inputStyle} />
-          <select value={newField.fieldType} onChange={(event) => setNewField((current) => ({ ...current, fieldType: event.target.value }))} style={inputStyle}>
-            {["text","long_text","number","currency","date","yes_no","dropdown","multi_select","phone","email","url","measurement","percentage"].map((type) => <option key={type} value={type}>{type.replace("_"," ")}</option>)}
-          </select>
-          <input value={newField.unit} onChange={(event) => setNewField((current) => ({ ...current, unit: event.target.value }))} placeholder="Unit (optional)" style={inputStyle} />
-          <input value={newField.options} onChange={(event) => setNewField((current) => ({ ...current, options: event.target.value }))} placeholder="Options, comma separated" style={inputStyle} />
+        <div style={{ marginTop: 22, paddingTop: 18, borderTop: "1px solid " + BORDER }}>
+          <small style={smallText}>CUSTOM FIELDS</small>
+          <p style={{ ...copyStyle, marginTop: 8 }}>These fields belong to your business profile and can later be used on People, Jobs, Appointments and Invoices.</p>
+          <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+            {fields.filter((field) => field.active).map((field) => (
+              <div key={field.id} style={reportRow}>
+                <span><strong>{field.name}</strong><small style={{ display: "block", color: MUTED }}>{field.entityType} · {field.fieldType}{field.unit ? " · " + field.unit : ""}</small></span>
+                <button type="button" onClick={() => removeField(field.id)} disabled={saving} style={textButton}>Remove</button>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 8, marginTop: 14 }}>
+            <select value={newField.entityType} onChange={(event) => setNewField((current) => ({ ...current, entityType: event.target.value }))} style={inputStyle}>
+              <option value="person">People</option><option value="job">Jobs</option><option value="appointment">Appointments</option><option value="invoice">Invoices</option>
+            </select>
+            <input value={newField.name} onChange={(event) => setNewField((current) => ({ ...current, name: event.target.value }))} placeholder="Field name" style={inputStyle} />
+            <select value={newField.fieldType} onChange={(event) => setNewField((current) => ({ ...current, fieldType: event.target.value }))} style={inputStyle}>
+              {["text","long_text","number","currency","date","yes_no","dropdown","multi_select","phone","email","url","measurement","percentage"].map((type) => <option key={type} value={type}>{type.replace("_"," ")}</option>)}
+            </select>
+            <input value={newField.unit} onChange={(event) => setNewField((current) => ({ ...current, unit: event.target.value }))} placeholder="Unit (optional)" style={inputStyle} />
+            <input value={newField.options} onChange={(event) => setNewField((current) => ({ ...current, options: event.target.value }))} placeholder="Options, comma separated" style={inputStyle} />
+          </div>
+          <button type="button" onClick={addField} disabled={saving || !newField.name.trim()} style={{ ...primaryButton, width: "auto", minHeight: 40 }}>{saving ? "Saving…" : "+ Add custom field"}</button>
         </div>
-        <button type="button" onClick={addField} disabled={saving || !newField.name.trim()} style={{ ...primaryButton, width: "auto", minHeight: 40 }}>{saving ? "Saving…" : "+ Add custom field"}</button>
       </div>
       {message && <p style={{ ...smallText, marginBottom: 0 }}>{message}</p>}
     </article>
   );
 }
 
-function AccountPanel({ account, onBack, onPlans, onResetBusiness, onAccountUpdate }) {
+function BusinessProfilePanel({ account, onBack, onResetBusiness, onAccountUpdate, onLogoChange, logoVersion }) {
   const [resetOpen, setResetOpen] = useState(false);
   const [confirmation, setConfirmation] = useState("");
   const [resetting, setResetting] = useState(false);
@@ -4328,42 +4839,15 @@ function AccountPanel({ account, onBack, onPlans, onResetBusiness, onAccountUpda
     <section style={cardStyle(940)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
       <div style={{ marginTop: 22 }}>
-        <p style={eyebrowStyle}>ACCOUNT</p>
-        <h2 style={sectionHeading}>Your account.</h2>
-        <p style={copyStyle}>Manage your BizziBuddi account details and membership from one place.</p>
+        <p style={eyebrowStyle}>SETTINGS / BUSINESS PROFILE</p>
+        <h2 style={sectionHeading}>Business profile.</h2>
+        <p style={copyStyle}>Manage your personal details, business contact information, industry, terminology and custom fields.</p>
       </div>
-      <div id="account-details" style={{ ...reportSectionGrid, marginTop: 28 }}>
-        <article style={reportCard}>
-          <div style={reportCardHeading}>
-            <div>
-              <small style={smallText}>BUSINESS</small>
-              <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>{account?.business || "Your business"}</strong>
-            </div>
-          </div>
-          <div style={reportRows}>
-            <div style={reportRow}><span>Account name</span><strong>{account?.name || "—"}</strong></div>
-            <div style={reportRow}><span>Email</span><strong>{account?.email || "—"}</strong></div>
-            <div style={reportRow}><span>Username</span><strong>@{account?.username || "—"}</strong></div>
-          </div>
-        </article>
-        <article id="account-membership" style={reportCard}>
-          <div style={reportCardHeading}>
-            <div>
-              <small style={smallText}>MEMBERSHIP</small>
-              <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>{account?.plan || "Free"}</strong>
-            </div>
-          </div>
-          <p style={{ ...copyStyle, marginTop: 14 }}>Your current BizziBuddi membership and available upgrade options.</p>
-          <button type="button" onClick={onPlans} style={{ ...primaryButton, width: "auto" }}>View plans & membership</button>
-        </article>
-      </div>
-
-      <BusinessSetupPanel account={account} onAccountUpdate={onAccountUpdate} />
-
-      <article style={{ ...reportCard, marginTop: 22, borderColor: "rgba(220,38,38,.38)" }}>
+      <BusinessSetupPanel account={account} onAccountUpdate={onAccountUpdate} onLogoChange={onLogoChange} logoVersion={logoVersion} />
+      <article id="settings-data" style={{ ...reportCard, marginTop: 22, borderColor: "rgba(220,38,38,.38)" }}>
         <div style={reportCardHeading}>
           <div>
-            <small style={smallText}>BUSINESS DATA</small>
+            <small style={smallText}>WORKSPACE DATA</small>
             <strong style={{ display: "block", marginTop: 5, fontSize: 18 }}>Start fresh</strong>
           </div>
         </div>
@@ -4371,19 +4855,10 @@ function AccountPanel({ account, onBack, onPlans, onResetBusiness, onAccountUpda
           Permanently clear the business data in this BizziBuddi account and start with an empty workspace.
           Your account, login, membership and business identity will remain.
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            setResetError("");
-            setConfirmation("");
-            setResetOpen(true);
-          }}
-          style={{ ...textButton, color: "#FCA5A5" }}
-        >
+        <button type="button" onClick={() => { setResetError(""); setConfirmation(""); setResetOpen(true); }} style={{ ...textButton, color: "#FCA5A5" }}>
           Start fresh →
         </button>
       </article>
-
       {resetOpen && (
         <div
           role="dialog"
@@ -4452,6 +4927,37 @@ function AccountPanel({ account, onBack, onPlans, onResetBusiness, onAccountUpda
           </div>
         </div>
       )}
+    </section>
+  );
+}
+
+function MembershipPanel({ account, onBack, onSelectPlan }) {
+  return (
+    <section style={cardStyle(1100)}>
+      <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
+      <div style={{ marginTop: 22 }}>
+        <p style={eyebrowStyle}>SETTINGS / MEMBERSHIP</p>
+        <h2 style={sectionHeading}>Your membership.</h2>
+        <p style={copyStyle}>Review your current BizziBuddi plan and explore the options available to your business.</p>
+      </div>
+      <article id="account-membership" style={{ ...reportCard, marginTop: 26 }}>
+        <div style={reportCardHeading}>
+          <div>
+            <small style={smallText}>CURRENT PLAN</small>
+            <strong style={{ display: "block", marginTop: 5, fontSize: 22 }}>{account?.plan || "Free"}</strong>
+          </div>
+          {(account?.subscriptionStatus || account?.subscription_status) && <span style={advancedBadge}>{account.subscriptionStatus || account.subscription_status}</span>}
+        </div>
+        <p style={{ ...copyStyle, marginTop: 12 }}>This is the membership currently associated with your BizziBuddi account.</p>
+      </article>
+      <div style={{ marginTop: 42 }}>
+        <div style={centerStyle}>
+          <p style={eyebrowStyle}>PLANS & OPTIONS</p>
+          <h3 style={{ ...sectionHeading, fontSize: "clamp(26px, 4vw, 36px)" }}>Choose what works for you.</h3>
+          <p style={copyStyle}>Compare the available plans below. Your current membership is shown above.</p>
+        </div>
+        <div style={{ marginTop: 24 }}><PlansPanel onSelectPlan={onSelectPlan} /></div>
+      </div>
     </section>
   );
 }
@@ -8494,6 +9000,25 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
     }
   }
 
+  function printInvoiceDocument(invoice) {
+    const printWindow = window.open("", "_blank", "width=900,height=750");
+    if (!printWindow) {
+      setError("Please allow pop-ups to print or save an invoice as a PDF.");
+      return;
+    }
+    const escapeHtml = (value) => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+    const client = people.find((person) => String(person.id) === String(invoice.personId || invoice.clientId)) || null;
+    const job = jobs.find((item) => String(item.id) === String(invoice.jobId)) || null;
+    const businessName = account?.business || "Your business";
+    const clientName = client?.name || invoice.personName || invoice.clientName || "Client";
+    const amount = Number(invoice.amount || 0);
+    const paid = Number(invoice.amountPaid || 0);
+    const balance = Math.max(0, Number(invoice.balance ?? amount - paid));
+    const logoUrl = `/api/bizzibuddi/auth/business-logo?print=${Date.now()}`;
+    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Invoice ${escapeHtml(invoice.number || "")}</title><style>@page{size:A4;margin:18mm}*{box-sizing:border-box}body{font:14px/1.5 Arial,sans-serif;color:#182534;margin:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;border-bottom:3px solid #2563eb;padding-bottom:18px}.brand{display:flex;align-items:center;gap:14px;min-width:0}.logo{width:104px;height:76px;object-fit:contain}.business{font-size:20px;font-weight:700}.details{color:#526575;font-size:12px;margin-top:4px;white-space:pre-line}.product{font-size:10px;color:#526575;margin-top:9px;letter-spacing:.04em}.heading{text-align:right}.heading h1{font-size:28px;margin:0 0 4px}.muted{color:#617181}.grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin:30px 0}.label{font-size:10px;font-weight:700;letter-spacing:.1em;color:#607080;margin-bottom:7px}.client{font-size:16px;font-weight:700}.meta{text-align:right}.meta div{margin:3px 0}.desc{margin:30px 0 12px;padding:16px;border:1px solid #dbe3ea;border-radius:6px}.totals{width:280px;margin:20px 0 0 auto}.totals div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e2e8ee}.totals .balance{font-size:17px;font-weight:700;border-bottom:2px solid #182534}.notes{margin-top:30px;color:#526575}.footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #e2e8ee;padding-top:9px;font-size:10px;color:#617181;text-align:center}@media print{.footer{position:fixed}}</style></head><body><header class="top"><div class="brand">${`<img class="logo" src="${logoUrl}" alt="Business logo" onerror="this.style.display='none'">`}<div><div class="business">${escapeHtml(businessName)}</div><div class="details">${escapeHtml([account?.businessAddress, account?.businessPhone, account?.businessEmail, account?.businessWebsite].filter(Boolean).join("\n"))}</div></div></div><div class="heading"><h1>INVOICE</h1><strong>${escapeHtml(invoice.number || "Draft invoice")}</strong><div class="muted">${escapeHtml(invoice.status || "Draft")}</div></div></header><section class="grid"><div><div class="label">BILL TO</div><div class="client">${escapeHtml(clientName)}</div><div class="details">${escapeHtml([client?.phone, client?.email].filter(Boolean).join("\n"))}</div></div><div class="meta"><div><span class="muted">Issue date </span><strong>${escapeHtml(formatInvoiceDate(invoice.issueDate))}</strong></div><div><span class="muted">Due date </span><strong>${escapeHtml(formatInvoiceDate(invoice.dueDate))}</strong></div>${job ? `<div><span class="muted">Job </span><strong>${escapeHtml(job.title || job.name || "")}</strong></div>` : ""}</div></section><section class="desc"><div class="label">DESCRIPTION</div>${escapeHtml(invoice.description || "Services supplied")}</section>${invoice.notes ? `<section class="notes"><div class="label">NOTES</div>${escapeHtml(invoice.notes)}</section>` : ""}<section class="totals"><div><span>Total</span><strong>${escapeHtml(formatCurrency(amount))}</strong></div><div><span>Paid</span><strong>${escapeHtml(formatCurrency(paid))}</strong></div><div class="balance"><span>Balance owing</span><strong>${escapeHtml(formatCurrency(balance))}</strong></div></section><footer class="footer">Powered by BizziBuddi · Business management, simplified.</footer><script>window.onload=()=>window.print()</script></body></html>`);
+    printWindow.document.close();
+  }
+
   if (!available) {
     return <section style={cardStyle(760)}>
       <button type="button" onClick={onBack} style={textButton}>← Back to business</button>
@@ -10150,6 +10675,7 @@ function FinancePanel({ account, invoices, jobs, jobPayments, people, automation
                 Issued {formatInvoiceDate(invoice.issueDate)}
               </span>
               <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 8 }}>
+                <button type="button" disabled={saving} onClick={() => printInvoiceDocument(invoice)} style={smallActionButton}>Print / PDF</button>
                 <button type="button" disabled={saving} onClick={() => startEditInvoice(invoice)} style={smallActionButton}>Edit</button>
                 <button type="button" disabled={saving} onClick={() => handleDeleteInvoice(invoice)} style={{ ...smallActionButton, color: "#ff9a9a", borderColor: "rgba(255,120,120,.35)" }}>Delete</button>
               </div>
@@ -12817,9 +13343,9 @@ const workspaceSubnav = {
     ["automation", "Automation", "automation"],
   ],
   account: [
-    ["plans", "Plans", "plans", "plans-membership"],
-    ["membership", "Membership", "account", "account-membership"],
-    ["account", "Account", "account", "account-details"],
+    ["plans", "Plans & upgrades", "membership", "plans-membership"],
+    ["membership", "Membership", "membership", "account-membership"],
+    ["account", "Business profile", "account", "account-details"],
     ["logout", "Log out", "logout"],
   ],
 };

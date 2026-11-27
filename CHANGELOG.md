@@ -1,4 +1,27 @@
-﻿## BizziBuddi — Release 2: Global Search
+﻿## BizziBuddi — Release 3: Business Profile, Branding and Workflow Improvements
+
+### Added
+- Added editable business contact details in Settings → Business Profile.
+- Added business logo upload, preview, replacement and removal.
+- Added customer business logo and business details to invoice printing.
+- Added customer business branding to the workspace while preserving BizziBuddi's own product identity.
+
+### Improved
+- Renamed Account navigation to Settings and separated Business Profile and Membership.
+- Improved client and job creation, editing and deletion workflows.
+- Added consistent confirmation and success notifications.
+- Positioned edit forms directly beneath the relevant client or job.
+- Improved client contact validation, requiring at least one phone number or email address.
+
+### Testing
+- Production build passed.
+- Release checks passed.
+- Workflow contract tests passed.
+- Local client/job workflow and business logo functionality manually tested.
+
+**Deployment:** Pending.
+
+## BizziBuddi — Release 2: Global Search
 
 ### Added
 - Added global workspace search across clients, jobs, calendar appointments and fittings, invoices, and expenses.
